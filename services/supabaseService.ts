@@ -1,5 +1,24 @@
 import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
-import { DatabasePost, Post } from '../types';
+import { 
+  DatabasePost, 
+  Post, 
+  BrandVoice, 
+  DatabaseBrandVoice,
+  AudienceProfile,
+  DatabaseAudienceProfile,
+  Campaign,
+  DatabaseCampaign,
+  ContentSeries,
+  DatabaseContentSeries,
+  ContentTemplate,
+  DatabaseContentTemplate,
+  ImageStyle,
+  DatabaseImageStyle,
+  AnalyticsData,
+  DatabaseAnalyticsData,
+  PerformanceReport,
+  EngagementData
+} from '../types';
 
 // Supabase configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -108,6 +127,312 @@ export const db = {
   deletePost: async (id: string): Promise<void> => {
     const { error } = await supabase
       .from('posts')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  // Brand Voices CRUD operations
+  getBrandVoices: async (): Promise<BrandVoice[]> => {
+    const { data, error } = await supabase
+      .from('brand_voices')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseBrandVoiceToBrandVoice);
+  },
+
+  addBrandVoice: async (brandVoice: Omit<DatabaseBrandVoice, 'id' | 'user_id' | 'created_at'>): Promise<BrandVoice> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('brand_voices')
+      .insert({
+        ...brandVoice,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseBrandVoiceToBrandVoice(data);
+  },
+
+  updateBrandVoice: async (id: string, updates: Partial<Omit<DatabaseBrandVoice, 'id' | 'user_id'>>): Promise<BrandVoice> => {
+    const { data, error } = await supabase
+      .from('brand_voices')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseBrandVoiceToBrandVoice(data);
+  },
+
+  deleteBrandVoice: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('brand_voices')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  // Audience Profiles CRUD operations
+  getAudienceProfiles: async (): Promise<AudienceProfile[]> => {
+    const { data, error } = await supabase
+      .from('audience_profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseAudienceProfileToAudienceProfile);
+  },
+
+  addAudienceProfile: async (profile: Omit<DatabaseAudienceProfile, 'id' | 'user_id' | 'created_at'>): Promise<AudienceProfile> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('audience_profiles')
+      .insert({
+        ...profile,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseAudienceProfileToAudienceProfile(data);
+  },
+
+  updateAudienceProfile: async (id: string, updates: Partial<Omit<DatabaseAudienceProfile, 'id' | 'user_id'>>): Promise<AudienceProfile> => {
+    const { data, error } = await supabase
+      .from('audience_profiles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseAudienceProfileToAudienceProfile(data);
+  },
+
+  deleteAudienceProfile: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('audience_profiles')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  // Campaigns CRUD operations
+  getCampaigns: async (): Promise<Campaign[]> => {
+    const { data, error } = await supabase
+      .from('campaigns')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseCampaignToCampaign);
+  },
+
+  addCampaign: async (campaign: Omit<DatabaseCampaign, 'id' | 'user_id' | 'created_at'>): Promise<Campaign> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('campaigns')
+      .insert({
+        ...campaign,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseCampaignToCampaign(data);
+  },
+
+  updateCampaign: async (id: string, updates: Partial<Omit<DatabaseCampaign, 'id' | 'user_id'>>): Promise<Campaign> => {
+    const { data, error } = await supabase
+      .from('campaigns')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseCampaignToCampaign(data);
+  },
+
+  deleteCampaign: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('campaigns')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  // Content Series CRUD operations
+  getContentSeries: async (): Promise<ContentSeries[]> => {
+    const { data, error } = await supabase
+      .from('content_series')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseContentSeriesToContentSeries);
+  },
+
+  addContentSeries: async (series: Omit<DatabaseContentSeries, 'id' | 'user_id' | 'created_at'>): Promise<ContentSeries> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('content_series')
+      .insert({
+        ...series,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseContentSeriesToContentSeries(data);
+  },
+
+  updateContentSeries: async (id: string, updates: Partial<Omit<DatabaseContentSeries, 'id' | 'user_id'>>): Promise<ContentSeries> => {
+    const { data, error } = await supabase
+      .from('content_series')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseContentSeriesToContentSeries(data);
+  },
+
+  deleteContentSeries: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('content_series')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  // Content Templates CRUD operations
+  getContentTemplates: async (): Promise<ContentTemplate[]> => {
+    const { data, error } = await supabase
+      .from('content_templates')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseContentTemplateToContentTemplate);
+  },
+
+  addContentTemplate: async (template: Omit<DatabaseContentTemplate, 'id' | 'user_id' | 'created_at'>): Promise<ContentTemplate> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('content_templates')
+      .insert({
+        ...template,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseContentTemplateToContentTemplate(data);
+  },
+
+  updateContentTemplate: async (id: string, updates: Partial<Omit<DatabaseContentTemplate, 'id' | 'user_id'>>): Promise<ContentTemplate> => {
+    const { data, error } = await supabase
+      .from('content_templates')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseContentTemplateToContentTemplate(data);
+  },
+
+  deleteContentTemplate: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('content_templates')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  // Image Styles CRUD operations
+  getImageStyles: async (): Promise<ImageStyle[]> => {
+    const { data, error } = await supabase
+      .from('image_styles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseImageStyleToImageStyle);
+  },
+
+  addImageStyle: async (style: Omit<DatabaseImageStyle, 'id' | 'user_id' | 'created_at'>): Promise<ImageStyle> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('image_styles')
+      .insert({
+        ...style,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseImageStyleToImageStyle(data);
+  },
+
+  updateImageStyle: async (id: string, updates: Partial<Omit<DatabaseImageStyle, 'id' | 'user_id'>>): Promise<ImageStyle> => {
+    const { data, error } = await supabase
+      .from('image_styles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseImageStyleToImageStyle(data);
+  },
+
+  deleteImageStyle: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('image_styles')
       .delete()
       .eq('id', id);
 
