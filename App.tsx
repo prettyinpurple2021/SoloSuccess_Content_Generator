@@ -5,6 +5,7 @@ import { auth, db, transformPostToDatabasePost, User } from './services/supabase
 import * as geminiService from './services/geminiService';
 import * as schedulerService from './services/schedulerService';
 import * as bloggerService from './services/bloggerService';
+import { postScheduler } from './services/postScheduler';
 import { CalendarIcon, ListIcon, SparklesIcon, PLATFORMS, TONES, AUDIENCES, Spinner, PLATFORM_CONFIG, CopyIcon } from './constants';
 import CalendarView from './components/CalendarView';
 import { marked } from 'marked';
@@ -119,6 +120,8 @@ const App: React.FC = () => {
     useEffect(() => {
         if (!isAuthReady || !user) {
             setAllScheduledPosts([]);
+            // Stop scheduler when user is not authenticated
+            postScheduler.stop();
             return;
         }
 
@@ -139,8 +142,12 @@ const App: React.FC = () => {
             setAllScheduledPosts(posts);
         });
 
+        // Start the post scheduler
+        postScheduler.start();
+
         return () => {
             subscription?.unsubscribe();
+            postScheduler.stop();
         };
     }, [isAuthReady, user]);
 
@@ -321,6 +328,11 @@ const App: React.FC = () => {
         if (!user || !scheduleDate || (!editingPostId && (!selectedIdea || !blogPost))) {
             setErrorMessage("Missing content or schedule date.");
             return;
+        }
+
+        // Request notification permission for scheduled posts
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+            await Notification.requestPermission();
         }
         const scheduledDate = new Date(scheduleDate);
         const postData = editingPostId ? allScheduledPosts.find(p => p.id === editingPostId) : null;
@@ -503,6 +515,16 @@ const App: React.FC = () => {
                     Your AI-powered partner for building your empire and achieving 
                     <span className="gradient-text font-bold"> extraordinary success</span>
                 </p>
+                {user && (
+                    <div className="mt-4 flex justify-center">
+                        <div className="flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm">
+                            <div className={`w-2 h-2 rounded-full ${postScheduler.getStatus().isRunning ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                            <span className="text-white/80">
+                                Scheduler {postScheduler.getStatus().isRunning ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                    </div>
+                )}
             </header>
 
             <main className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -859,28 +881,37 @@ const App: React.FC = () => {
                     <div className="glass-card-inner">
                         <div className="flex justify-between items-center mb-8">
                             <h3 className="text-4xl font-display font-black text-white">📚 Content Library</h3>
-                            <div className="flex items-center gap-3 p-2 bg-white/10 rounded-xl border border-white/20 backdrop-filter blur-15">
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 p-2 bg-white/10 rounded-xl border border-white/20 backdrop-filter blur-15">
+                                    <button 
+                                        onClick={() => setViewMode('list')} 
+                                        className={`p-3 rounded-lg transition-all ${
+                                            viewMode === 'list' 
+                                                ? 'bg-gradient-to-r from-purple-500/80 to-pink-500/80 text-white shadow-lg' 
+                                                : 'text-white hover:bg-white/10'
+                                        }`} 
+                                        aria-label="List view"
+                                    >
+                                        <ListIcon />
+                                    </button>
+                                    <button 
+                                        onClick={() => setViewMode('calendar')} 
+                                        className={`p-3 rounded-lg transition-all ${
+                                            viewMode === 'calendar' 
+                                                ? 'bg-gradient-to-r from-purple-500/80 to-pink-500/80 text-white shadow-lg' 
+                                                : 'text-white hover:bg-white/10'
+                                        }`} 
+                                        aria-label="Calendar view"
+                                    >
+                                        <CalendarIcon />
+                                    </button>
+                                </div>
                                 <button 
-                                    onClick={() => setViewMode('list')} 
-                                    className={`p-3 rounded-lg transition-all ${
-                                        viewMode === 'list' 
-                                            ? 'bg-gradient-to-r from-purple-500/80 to-pink-500/80 text-white shadow-lg' 
-                                            : 'text-white hover:bg-white/10'
-                                    }`} 
-                                    aria-label="List view"
+                                    onClick={() => postScheduler.triggerCheck()} 
+                                    className="px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 text-sm rounded-lg border border-green-500/30 transition-all"
+                                    title="Check for posts to publish now"
                                 >
-                                    <ListIcon />
-                                </button>
-                                <button 
-                                    onClick={() => setViewMode('calendar')} 
-                                    className={`p-3 rounded-lg transition-all ${
-                                        viewMode === 'calendar' 
-                                            ? 'bg-gradient-to-r from-purple-500/80 to-pink-500/80 text-white shadow-lg' 
-                                            : 'text-white hover:bg-white/10'
-                                    }`} 
-                                    aria-label="Calendar view"
-                                >
-                                    <CalendarIcon />
+                                    Check Now
                                 </button>
                             </div>
                     </div>
