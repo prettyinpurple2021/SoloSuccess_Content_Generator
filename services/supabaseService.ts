@@ -437,6 +437,254 @@ export const db = {
       .eq('id', id);
 
     if (error) throw error;
+  },
+
+  // Analytics Data Operations
+  insertPostAnalytics: async (analytics: Omit<DatabaseAnalyticsData, 'id' | 'recorded_at'>): Promise<AnalyticsData> => {
+    const { data, error } = await supabase
+      .from('post_analytics')
+      .insert({
+        ...analytics,
+        recorded_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseAnalyticsDataToAnalyticsData(data);
+  },
+
+  getPostAnalytics: async (postId: string): Promise<AnalyticsData[]> => {
+    const { data, error } = await supabase
+      .from('post_analytics')
+      .select('*')
+      .eq('post_id', postId)
+      .order('recorded_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseAnalyticsDataToAnalyticsData);
+  },
+
+  getEngagementMetrics: async (postId: string, platform?: string): Promise<AnalyticsData[]> => {
+    let query = supabase
+      .from('post_analytics')
+      .select('*')
+      .eq('post_id', postId);
+
+    if (platform) {
+      query = query.eq('platform', platform);
+    }
+
+    const { data, error } = await query.order('recorded_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseAnalyticsDataToAnalyticsData);
+  },
+
+  getAnalyticsByTimeframe: async (startDate: Date, endDate: Date, platform?: string): Promise<AnalyticsData[]> => {
+    let query = supabase
+      .from('post_analytics')
+      .select('*')
+      .gte('recorded_at', startDate.toISOString())
+      .lte('recorded_at', endDate.toISOString());
+
+    if (platform) {
+      query = query.eq('platform', platform);
+    }
+
+    const { data, error } = await query.order('recorded_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseAnalyticsDataToAnalyticsData);
+  },
+
+  generatePerformanceReport: async (timeframe: string): Promise<PerformanceReport> => {
+    const endDate = new Date();
+    let startDate = new Date();
+
+    // Calculate start date based on timeframe
+    switch (timeframe) {
+      case 'week':
+        startDate.setDate(endDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(endDate.getMonth() - 1);
+        break;
+      case 'quarter':
+        startDate.setMonth(endDate.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(endDate.getDate() - 7); // Default to week
+    }
+
+    // Get analytics data for the timeframe
+    const analyticsData = await db.getAnalyticsByTimeframe(startDate, endDate);
+    
+    // Get posts for the timeframe
+    const { data: postsData, error: postsError } = await supabase
+      .from('posts')
+      .select('*')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
+
+    if (postsError) throw postsError;
+
+    const posts = (postsData || []).map(transformDatabasePostToPost);
+
+    // Calculate metrics
+    const totalPosts = posts.length;
+    const totalEngagement = analyticsData.reduce((sum, data) => 
+      sum + data.likes + data.shares + data.comments + data.clicks, 0);
+    const totalImpressions = analyticsData.reduce((sum, data) => sum + data.impressions, 0);
+    const avgEngagementRate = totalImpressions > 0 ? (totalEngagement / totalImpressions) * 100 : 0;
+
+    // Group by platform
+    const platformBreakdown: { [platform: string]: any } = {};
+    analyticsData.forEach(data => {
+      if (!platformBreakdown[data.platform]) {
+        platformBreakdown[data.platform] = {
+          posts: 0,
+          totalLikes: 0,
+          totalShares: 0,
+          totalComments: 0,
+          avgEngagementRate: 0
+        };
+      }
+      platformBreakdown[data.platform].totalLikes += data.likes;
+      platformBreakdown[data.platform].totalShares += data.shares;
+      platformBreakdown[data.platform].totalComments += data.comments;
+    });
+
+    // Count posts per platform
+    posts.forEach(post => {
+      Object.keys(post.socialMediaPosts || {}).forEach(platform => {
+        if (platformBreakdown[platform]) {
+          platformBreakdown[platform].posts += 1;
+        }
+      });
+    });
+
+    // Calculate engagement rates per platform
+    Object.keys(platformBreakdown).forEach(platform => {
+      const platformAnalytics = analyticsData.filter(data => data.platform === platform);
+      const platformImpressions = platformAnalytics.reduce((sum, data) => sum + data.impressions, 0);
+      const platformEngagement = platformAnalytics.reduce((sum, data) => 
+        sum + data.likes + data.shares + data.comments + data.clicks, 0);
+      platformBreakdown[platform].avgEngagementRate = platformImpressions > 0 ? 
+        (platformEngagement / platformImpressions) * 100 : 0;
+    });
+
+    return {
+      timeframe,
+      totalPosts,
+      totalEngagement,
+      avgEngagementRate,
+      topContent: [], // Will be populated by separate analysis
+      platformBreakdown,
+      trends: [], // Will be populated by trend analysis
+      recommendations: [] // Will be populated by optimization engine
+    };
+  },
+
+  // Real-time subscriptions for analytics
+  subscribeToAnalytics: (callback: (analytics: AnalyticsData[]) => void) => {
+    return supabase
+      .channel('analytics_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'post_analytics' },
+        async () => {
+          // Refetch analytics data when any change occurs
+          try {
+            const { data, error } = await supabase
+              .from('post_analytics')
+              .select('*')
+              .order('recorded_at', { ascending: false });
+
+            if (error) throw error;
+
+            const analytics = (data || []).map(transformDatabaseAnalyticsDataToAnalyticsData);
+            callback(analytics);
+          } catch (error) {
+            console.error('Error fetching analytics after change:', error);
+          }
+        }
+      )
+      .subscribe();
+  },
+
+  // Batch insert analytics data
+  batchInsertAnalytics: async (analyticsArray: Omit<DatabaseAnalyticsData, 'id' | 'recorded_at'>[]): Promise<AnalyticsData[]> => {
+    const timestamp = new Date().toISOString();
+    const dataWithTimestamp = analyticsArray.map(analytics => ({
+      ...analytics,
+      recorded_at: timestamp
+    }));
+
+    const { data, error } = await supabase
+      .from('post_analytics')
+      .insert(dataWithTimestamp)
+      .select();
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseAnalyticsDataToAnalyticsData);
+  },
+
+  // Get top performing content
+  getTopPerformingContent: async (limit: number = 10, timeframe?: string): Promise<AnalyticsData[]> => {
+    let query = supabase
+      .from('post_analytics')
+      .select('*');
+
+    if (timeframe) {
+      const endDate = new Date();
+      let startDate = new Date();
+      
+      switch (timeframe) {
+        case 'week':
+          startDate.setDate(endDate.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(endDate.getMonth() - 1);
+          break;
+        case 'quarter':
+          startDate.setMonth(endDate.getMonth() - 3);
+          break;
+      }
+
+      query = query
+        .gte('recorded_at', startDate.toISOString())
+        .lte('recorded_at', endDate.toISOString());
+    }
+
+    const { data, error } = await query
+      .order('likes', { ascending: false })
+      .order('shares', { ascending: false })
+      .order('comments', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return (data || []).map(transformDatabaseAnalyticsDataToAnalyticsData);
+  },
+
+  // Update analytics data
+  updateAnalytics: async (id: string, updates: Partial<Omit<DatabaseAnalyticsData, 'id' | 'post_id' | 'recorded_at'>>): Promise<AnalyticsData> => {
+    const { data, error } = await supabase
+      .from('post_analytics')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseAnalyticsDataToAnalyticsData(data);
   }
 };
 
@@ -457,7 +705,15 @@ function transformDatabasePostToPost(dbPost: DatabasePost): Post {
     postedAt: dbPost.posted_at ? new Date(dbPost.posted_at) : undefined,
     selectedImage: dbPost.selected_image,
     summary: dbPost.summary,
-    headlines: dbPost.headlines
+    headlines: dbPost.headlines,
+    brandVoiceId: dbPost.brand_voice_id,
+    audienceProfileId: dbPost.audience_profile_id,
+    campaignId: dbPost.campaign_id,
+    seriesId: dbPost.series_id,
+    templateId: dbPost.template_id,
+    performanceScore: dbPost.performance_score,
+    optimizationSuggestions: dbPost.optimization_suggestions,
+    imageStyleId: dbPost.image_style_id
   };
 }
 
@@ -477,7 +733,128 @@ export function transformPostToDatabasePost(post: Omit<Post, 'id'>): Omit<Databa
     posted_at: post.postedAt?.toISOString(),
     selected_image: post.selectedImage,
     summary: post.summary,
-    headlines: post.headlines
+    headlines: post.headlines,
+    brand_voice_id: post.brandVoiceId,
+    audience_profile_id: post.audienceProfileId,
+    campaign_id: post.campaignId,
+    series_id: post.seriesId,
+    template_id: post.templateId,
+    performance_score: post.performanceScore,
+    optimization_suggestions: post.optimizationSuggestions,
+    image_style_id: post.imageStyleId
+  };
+}
+
+// Helper functions for Brand Voice transformations
+function transformDatabaseBrandVoiceToBrandVoice(dbBrandVoice: DatabaseBrandVoice): BrandVoice {
+  return {
+    id: dbBrandVoice.id,
+    userId: dbBrandVoice.user_id,
+    name: dbBrandVoice.name,
+    tone: dbBrandVoice.tone,
+    vocabulary: dbBrandVoice.vocabulary,
+    writingStyle: dbBrandVoice.writing_style,
+    targetAudience: dbBrandVoice.target_audience,
+    sampleContent: dbBrandVoice.sample_content,
+    createdAt: new Date(dbBrandVoice.created_at)
+  };
+}
+
+// Helper functions for Audience Profile transformations
+function transformDatabaseAudienceProfileToAudienceProfile(dbProfile: DatabaseAudienceProfile): AudienceProfile {
+  return {
+    id: dbProfile.id,
+    userId: dbProfile.user_id,
+    name: dbProfile.name,
+    ageRange: dbProfile.age_range,
+    industry: dbProfile.industry,
+    interests: dbProfile.interests,
+    painPoints: dbProfile.pain_points,
+    preferredContentTypes: dbProfile.preferred_content_types,
+    engagementPatterns: dbProfile.engagement_patterns,
+    createdAt: new Date(dbProfile.created_at)
+  };
+}
+
+// Helper functions for Campaign transformations
+function transformDatabaseCampaignToCampaign(dbCampaign: DatabaseCampaign): Campaign {
+  return {
+    id: dbCampaign.id,
+    userId: dbCampaign.user_id,
+    name: dbCampaign.name,
+    description: dbCampaign.description,
+    theme: dbCampaign.theme,
+    startDate: new Date(dbCampaign.start_date),
+    endDate: new Date(dbCampaign.end_date),
+    posts: [], // Will be populated by joining with posts table
+    platforms: dbCampaign.platforms,
+    status: dbCampaign.status,
+    performance: dbCampaign.performance,
+    createdAt: new Date(dbCampaign.created_at)
+  };
+}
+
+// Helper functions for Content Series transformations
+function transformDatabaseContentSeriesToContentSeries(dbSeries: DatabaseContentSeries): ContentSeries {
+  return {
+    id: dbSeries.id,
+    userId: dbSeries.user_id,
+    campaignId: dbSeries.campaign_id,
+    name: dbSeries.name,
+    theme: dbSeries.theme,
+    totalPosts: dbSeries.total_posts,
+    frequency: dbSeries.frequency,
+    currentPost: dbSeries.current_post,
+    posts: [], // Will be populated by joining with posts table
+    createdAt: new Date(dbSeries.created_at)
+  };
+}
+
+// Helper functions for Content Template transformations
+function transformDatabaseContentTemplateToContentTemplate(dbTemplate: DatabaseContentTemplate): ContentTemplate {
+  return {
+    id: dbTemplate.id,
+    userId: dbTemplate.user_id,
+    name: dbTemplate.name,
+    category: dbTemplate.category,
+    industry: dbTemplate.industry,
+    contentType: dbTemplate.content_type,
+    structure: dbTemplate.structure,
+    customizableFields: dbTemplate.customizable_fields,
+    usageCount: dbTemplate.usage_count,
+    rating: dbTemplate.rating,
+    isPublic: dbTemplate.is_public,
+    createdAt: new Date(dbTemplate.created_at)
+  };
+}
+
+// Helper functions for Image Style transformations
+function transformDatabaseImageStyleToImageStyle(dbStyle: DatabaseImageStyle): ImageStyle {
+  return {
+    id: dbStyle.id,
+    userId: dbStyle.user_id,
+    name: dbStyle.name,
+    stylePrompt: dbStyle.style_prompt,
+    colorPalette: dbStyle.color_palette,
+    visualElements: dbStyle.visual_elements,
+    brandAssets: dbStyle.brand_assets,
+    createdAt: new Date(dbStyle.created_at)
+  };
+}
+
+// Helper functions for Analytics Data transformations
+function transformDatabaseAnalyticsDataToAnalyticsData(dbAnalytics: DatabaseAnalyticsData): AnalyticsData {
+  return {
+    id: dbAnalytics.id,
+    postId: dbAnalytics.post_id,
+    platform: dbAnalytics.platform,
+    likes: dbAnalytics.likes,
+    shares: dbAnalytics.shares,
+    comments: dbAnalytics.comments,
+    clicks: dbAnalytics.clicks,
+    impressions: dbAnalytics.impressions,
+    reach: dbAnalytics.reach,
+    recordedAt: new Date(dbAnalytics.recorded_at)
   };
 }
 
