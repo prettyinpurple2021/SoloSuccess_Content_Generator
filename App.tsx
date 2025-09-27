@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 // FIX: Import Timestamp type and rename Timestamp value to avoid name collision.
-import { Post, ViewMode, LoadingState, SocialMediaPosts, GeneratedImages } from './types';
+import { Post, ViewMode, LoadingState, SocialMediaPosts, GeneratedImages, ImageStyle } from './types';
 import { auth, db, transformPostToDatabasePost, User } from './services/supabaseService';
 import * as geminiService from './services/geminiService';
 import * as schedulerService from './services/schedulerService';
@@ -8,6 +8,9 @@ import * as bloggerService from './services/bloggerService';
 import { postScheduler } from './services/postScheduler';
 import { CalendarIcon, ListIcon, SparklesIcon, PLATFORMS, TONES, AUDIENCES, Spinner, PLATFORM_CONFIG, CopyIcon } from './constants';
 import CalendarView from './components/CalendarView';
+import IntegrationManager from './components/IntegrationManager';
+import RepurposingWorkflow from './components/RepurposingWorkflow';
+import ImageStyleManager from './components/ImageStyleManager';
 import { marked } from 'marked';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -49,8 +52,9 @@ const App: React.FC = () => {
     // Repurposing Modal State
     const [showRepurposeModal, setShowRepurposeModal] = useState(false);
     const [repurposingPost, setRepurposingPost] = useState<Post | null>(null);
-    const [repurposedContent, setRepurposedContent] = useState('');
-    const [parsedRepurposedContent, setParsedRepurposedContent] = useState('');
+    
+    // Integration Manager Modal State
+    const [showIntegrationManager, setShowIntegrationManager] = useState(false);
     
     // Tagging State
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -61,6 +65,12 @@ const App: React.FC = () => {
     const [isBloggerAuthenticated, setIsBloggerAuthenticated] = useState(false);
     const [bloggerBlogs, setBloggerBlogs] = useState<any[]>([]);
     const [selectedBlogId, setSelectedBlogId] = useState<string>('');
+
+    // Image Style State
+    const [showImageStyleManager, setShowImageStyleManager] = useState(false);
+    const [imageStyles, setImageStyles] = useState<ImageStyle[]>([]);
+    const [selectedImageStyle, setSelectedImageStyle] = useState<ImageStyle | null>(null);
+    const [selectedPlatformForImage, setSelectedPlatformForImage] = useState<string>('general');
 
     const withLoading = <T extends any[]>(key: string, fn: (...args: T) => Promise<void>) => {
         return async (...args: T) => {
@@ -125,17 +135,21 @@ const App: React.FC = () => {
             return;
         }
 
-        // Initial load of posts
-        const loadPosts = async () => {
+        // Initial load of posts and image styles
+        const loadData = async () => {
             try {
-                const posts = await db.getPosts();
+                const [posts, styles] = await Promise.all([
+                    db.getPosts(),
+                    db.getImageStyles()
+                ]);
                 setAllScheduledPosts(posts);
+                setImageStyles(styles);
             } catch (error: any) {
-                setErrorMessage(`Failed to load posts: ${error.message}`);
+                setErrorMessage(`Failed to load data: ${error.message}`);
             }
         };
 
-        loadPosts();
+        loadData();
 
         // Subscribe to real-time updates
         const subscription = db.subscribeToPosts((posts) => {
@@ -177,13 +191,7 @@ const App: React.FC = () => {
         }
     }, [selectedPostForDetails]);
     
-    useEffect(() => {
-        if (repurposedContent) {
-            Promise.resolve(marked.parse(repurposedContent)).then(html => setParsedRepurposedContent(html as string));
-        } else {
-            setParsedRepurposedContent('');
-        }
-    }, [repurposedContent]);
+
 
     const clearWorkflow = () => {
         setCurrentBlogTopic('');
@@ -284,14 +292,67 @@ const App: React.FC = () => {
         setSocialMediaPosts(prev => ({...prev, [platform]: value}));
     };
     
+    const loadImageStyles = withLoading('imageStyles', async () => {
+        const styles = await db.getImageStyles();
+        setImageStyles(styles);
+    });
+
     const handleGenerateImagePrompts = withLoading('prompts', async () => {
-        const prompts = await geminiService.generateImagePrompts(blogPost);
-        setImagePrompts(prompts);
+        if (selectedImageStyle) {
+            const { prompts } = await geminiService.generateStyleConsistentPrompts(
+                selectedIdea || currentBlogTopic,
+                {
+                    stylePrompt: selectedImageStyle.stylePrompt,
+                    colorPalette: selectedImageStyle.colorPalette,
+                    visualElements: selectedImageStyle.visualElements
+                }
+            );
+            setImagePrompts(prompts);
+        } else {
+            const prompts = await geminiService.generateImagePrompts(blogPost);
+            setImagePrompts(prompts);
+        }
     });
 
     const handleGenerateImages = withLoading('images', async (prompt: string) => {
-        const images = await geminiService.generateImage(prompt);
+        const imageOptions = selectedImageStyle ? {
+            imageStyle: {
+                stylePrompt: selectedImageStyle.stylePrompt,
+                colorPalette: selectedImageStyle.colorPalette,
+                visualElements: selectedImageStyle.visualElements,
+                brandAssets: selectedImageStyle.brandAssets
+            },
+            platform: selectedPlatformForImage !== 'general' ? selectedPlatformForImage : undefined
+        } : {
+            platform: selectedPlatformForImage !== 'general' ? selectedPlatformForImage : undefined
+        };
+
+        const images = await geminiService.generateImage(prompt, imageOptions);
         setGeneratedImages(prev => ({...prev, [prompt]: images}));
+    });
+
+    const handleGenerateImageVariations = withLoading('variations', async (basePrompt: string) => {
+        if (!selectedImageStyle) {
+            setErrorMessage('Please select an image style first.');
+            return;
+        }
+
+        const { variations } = await geminiService.generateImageVariations(
+            basePrompt,
+            {
+                stylePrompt: selectedImageStyle.stylePrompt,
+                colorPalette: selectedImageStyle.colorPalette,
+                visualElements: selectedImageStyle.visualElements,
+                brandAssets: selectedImageStyle.brandAssets
+            },
+            3,
+            selectedPlatformForImage !== 'general' ? selectedPlatformForImage : undefined
+        );
+
+        setGeneratedImages(prev => ({
+            ...prev,
+            [`${basePrompt} (variations)`]: variations
+        }));
     });
 
     const handleSaveDraft = withLoading('save', async () => {
@@ -428,21 +489,7 @@ const App: React.FC = () => {
         handleCloseDetailsModal();
     };
     
-    const handleRepurposeContent = withLoading('repurpose', async (format: string) => {
-        if (!repurposingPost) return;
-        const content = await geminiService.repurposeContent(repurposingPost.content, format);
-        setRepurposedContent(content);
-    });
 
-    const handleCopyRepurposed = () => {
-        navigator.clipboard.writeText(repurposedContent);
-        setSuccessMessage('Content copied to clipboard!');
-    };
-
-    const handleBackToFormats = () => {
-        setRepurposedContent('');
-        setParsedRepurposedContent('');
-    };
 
     const handleCopyToClipboard = (text: string, type: string) => {
         navigator.clipboard.writeText(text);
@@ -516,13 +563,19 @@ const App: React.FC = () => {
                     <span className="gradient-text font-bold"> extraordinary success</span>
                 </p>
                 {user && (
-                    <div className="mt-4 flex justify-center">
+                    <div className="mt-4 flex justify-center items-center gap-4">
                         <div className="flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm">
                             <div className={`w-2 h-2 rounded-full ${postScheduler.getStatus().isRunning ? 'bg-green-400' : 'bg-red-400'}`}></div>
                             <span className="text-white/80">
                                 Scheduler {postScheduler.getStatus().isRunning ? 'Active' : 'Inactive'}
                             </span>
                         </div>
+                        <button
+                            onClick={() => setShowIntegrationManager(true)}
+                            className="bg-gradient-to-br from-secondary to-accent hover:shadow-neon-accent transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg text-sm"
+                        >
+                            🔗 Integrations
+                        </button>
                     </div>
                 )}
             </header>
@@ -820,20 +873,186 @@ const App: React.FC = () => {
                             {/* Image Generation Tab */}
                             {activeCreativeTab === 'image' && (
                                 <div className="space-y-4">
-                                    <button onClick={handleGenerateImagePrompts} disabled={isLoading.prompts} className="flex items-center gap-2 bg-primary/80 hover:bg-primary text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">
-                                        {isLoading.prompts ? <Spinner/> : <SparklesIcon/>} Generate Image Ideas
-                                    </button>
+                                    {/* Image Style and Platform Selection */}
+                                    <div className="glass-card p-4 space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <h4 className="font-semibold text-primary-foreground">Image Style & Platform</h4>
+                                            <button
+                                                onClick={() => setShowImageStyleManager(true)}
+                                                className="bg-secondary/80 hover:bg-secondary text-white text-sm py-1 px-3 rounded"
+                                            >
+                                                Manage Styles
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-primary-foreground mb-2">
+                                                    Image Style
+                                                </label>
+                                                <select
+                                                    value={selectedImageStyle?.id || ''}
+                                                    onChange={(e) => {
+                                                        const style = imageStyles.find(s => s.id === e.target.value);
+                                                        setSelectedImageStyle(style || null);
+                                                    }}
+                                                    className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
+                                                >
+                                                    <option value="">No specific style</option>
+                                                    {imageStyles.map(style => (
+                                                        <option key={style.id} value={style.id}>
+                                                            {style.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-primary-foreground mb-2">
+                                                    Target Platform
+                                                </label>
+                                                <select
+                                                    value={selectedPlatformForImage}
+                                                    onChange={(e) => setSelectedPlatformForImage(e.target.value)}
+                                                    className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
+                                                >
+                                                    <option value="general">General (16:9)</option>
+                                                    <option value="instagram">Instagram (1:1)</option>
+                                                    <option value="twitter">Twitter/X (16:9)</option>
+                                                    <option value="linkedin">LinkedIn (1.91:1)</option>
+                                                    <option value="facebook">Facebook (1.91:1)</option>
+                                                    <option value="pinterest">Pinterest (2:3)</option>
+                                                    <option value="youtube">YouTube (16:9)</option>
+                                                    <option value="tiktok">TikTok (9:16)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        {selectedImageStyle && (
+                                            <div className="bg-muted/30 p-3 rounded-lg">
+                                                <p className="text-sm text-muted-foreground mb-2">
+                                                    <strong>Style:</strong> {selectedImageStyle.name}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {selectedImageStyle.stylePrompt}
+                                                </p>
+                                                {selectedImageStyle.colorPalette.length > 0 && (
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <span className="text-xs text-muted-foreground">Colors:</span>
+                                                        {selectedImageStyle.colorPalette.slice(0, 5).map((color: string, index: number) => (
+                                                            <div
+                                                                key={index}
+                                                                className="w-4 h-4 rounded border border-border"
+                                                                style={{ backgroundColor: color }}
+                                                                title={color}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Image Generation Controls */}
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleGenerateImagePrompts} 
+                                            disabled={isLoading.prompts} 
+                                            className="flex-1 flex items-center justify-center gap-2 bg-primary/80 hover:bg-primary text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
+                                        >
+                                            {isLoading.prompts ? <Spinner/> : <SparklesIcon/>} 
+                                            {selectedImageStyle ? 'Generate Style-Consistent Ideas' : 'Generate Image Ideas'}
+                                        </button>
+                                        {selectedImageStyle && imagePrompts.length > 0 && (
+                                            <button
+                                                onClick={() => handleGenerateImageVariations(imagePrompts[0])}
+                                                disabled={isLoading.variations}
+                                                className="bg-secondary/80 hover:bg-secondary text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
+                                            >
+                                                {isLoading.variations ? <Spinner/> : 'Variations'}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Generated Image Prompts and Images */}
                                     {imagePrompts.map(prompt => (
-                                        <div key={prompt}>
-                                            <button onClick={() => handleGenerateImages(prompt)} className="text-left p-3 rounded-lg bg-muted hover:bg-muted/70 w-full mb-2">{prompt}</button>
-                                            {isLoading.images && <Spinner/>}
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {generatedImages[prompt]?.map(imgSrc => (
-                                                    <img key={imgSrc} src={imgSrc} onClick={() => setSelectedImageForPost(imgSrc)} className={`rounded-lg cursor-pointer border-4 ${selectedImageForPost === imgSrc ? 'border-accent' : 'border-transparent'}`} alt={prompt} />
+                                        <div key={prompt} className="glass-card p-4">
+                                            <div className="flex justify-between items-start gap-4 mb-3">
+                                                <p className="text-sm text-primary-foreground flex-1">{prompt}</p>
+                                                <button 
+                                                    onClick={() => handleGenerateImages(prompt)} 
+                                                    disabled={isLoading.images}
+                                                    className="bg-primary/80 hover:bg-primary text-white text-sm py-1 px-3 rounded disabled:opacity-50"
+                                                >
+                                                    {isLoading.images ? <Spinner className="h-4 w-4"/> : 'Generate'}
+                                                </button>
+                                            </div>
+                                            
+                                            {isLoading.images && (
+                                                <div className="flex justify-center py-8">
+                                                    <div className="text-center">
+                                                        <Spinner className="h-8 w-8 mx-auto mb-2"/>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Generating {selectedPlatformForImage !== 'general' ? selectedPlatformForImage : 'optimized'} images
+                                                            {selectedImageStyle ? ` with ${selectedImageStyle.name} style` : ''}...
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                {generatedImages[prompt]?.map((imgSrc, index) => (
+                                                    <div key={imgSrc} className="relative group">
+                                                        <img 
+                                                            src={imgSrc} 
+                                                            onClick={() => setSelectedImageForPost(imgSrc)} 
+                                                            className={`w-full h-32 object-cover rounded-lg cursor-pointer border-4 transition-all ${
+                                                                selectedImageForPost === imgSrc ? 'border-accent shadow-lg' : 'border-transparent hover:border-primary/50'
+                                                            }`} 
+                                                            alt={`${prompt} - variation ${index + 1}`} 
+                                                        />
+                                                        {selectedImageForPost === imgSrc && (
+                                                            <div className="absolute top-2 right-2 bg-accent text-white text-xs px-2 py-1 rounded">
+                                                                Selected
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            {selectedPlatformForImage !== 'general' ? selectedPlatformForImage : 'General'}
+                                                        </div>
+                                                    </div>
                                                 ))}
                                             </div>
                                         </div>
                                     ))}
+
+                                    {/* Image Variations */}
+                                    {generatedImages[`${imagePrompts[0]} (variations)`] && (
+                                        <div className="glass-card p-4">
+                                            <h5 className="font-semibold text-primary-foreground mb-3">Style Variations</h5>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                {generatedImages[`${imagePrompts[0]} (variations)`]?.map((imgSrc, index) => (
+                                                    <div key={imgSrc} className="relative group">
+                                                        <img 
+                                                            src={imgSrc} 
+                                                            onClick={() => setSelectedImageForPost(imgSrc)} 
+                                                            className={`w-full h-32 object-cover rounded-lg cursor-pointer border-4 transition-all ${
+                                                                selectedImageForPost === imgSrc ? 'border-accent shadow-lg' : 'border-transparent hover:border-primary/50'
+                                                            }`} 
+                                                            alt={`Variation ${index + 1}`} 
+                                                        />
+                                                        {selectedImageForPost === imgSrc && (
+                                                            <div className="absolute top-2 right-2 bg-accent text-white text-xs px-2 py-1 rounded">
+                                                                Selected
+                                                            </div>
+                                                        )}
+                                                        <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            Variation {index + 1}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -972,45 +1191,15 @@ const App: React.FC = () => {
             
             {/* Repurpose Modal */}
             {showRepurposeModal && repurposingPost && (
-                 <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4" onClick={() => setShowRepurposeModal(false)}>
-                    <div className="glass-card w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-border">
-                            <h3 className="text-2xl font-display text-secondary">Repurpose Content</h3>
-                            <p className="text-muted-foreground">Transform your blog post for a new audience.</p>
-                        </div>
-
-                       <div className="p-6 overflow-y-auto flex-grow">
-                            {isLoading.repurpose ? (
-                                <div className="flex flex-col justify-center items-center h-full">
-                                    <Spinner className="w-12 h-12" />
-                                    <p className="mt-4 text-lg">AI is working its magic...</p>
-                                </div>
-                            ) : repurposedContent ? (
-                                <>
-                                  <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: parsedRepurposedContent }}></div>
-                                </>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                                    {['Video Script', 'Email Newsletter', 'LinkedIn Article'].map((format) => (
-                                        <button key={format} onClick={() => handleRepurposeContent(format)} className="glass-card p-6 rounded-xl border-2 border-transparent hover:border-secondary transition-all group">
-                                            <div className="text-5xl mb-3 transition-transform group-hover:scale-110">{format === 'Video Script' ? '🎬' : format === 'Email Newsletter' ? '✉️' : '💼'}</div>
-                                            <h4 className="text-lg font-bold text-primary-foreground">{format}</h4>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                         <div className="p-4 bg-muted/30 border-t border-border flex flex-wrap justify-end gap-3">
-                            {repurposedContent && (
-                                <>
-                                    <button onClick={handleBackToFormats} className="bg-muted hover:bg-muted/70 text-white font-bold py-2 px-4 rounded-lg">Back to Formats</button>
-                                    <button onClick={handleCopyRepurposed} className="bg-gradient-to-br from-primary to-accent hover:shadow-neon-primary text-white font-bold py-2 px-4 rounded-lg">Copy Content</button>
-                                </>
-                            )}
-                            <button onClick={() => { setShowRepurposeModal(false); setRepurposedContent(''); }} className="bg-muted hover:bg-muted/70 text-white font-bold py-2 px-4 rounded-lg">Close</button>
-                         </div>
-                    </div>
-                 </div>
+                <RepurposingWorkflow
+                    post={repurposingPost}
+                    onClose={() => {
+                        setShowRepurposeModal(false);
+                        setRepurposingPost(null);
+                    }}
+                    onSuccess={setSuccessMessage}
+                    onError={setErrorMessage}
+                />
             )}
 
             {/* Schedule Modal */}
@@ -1061,6 +1250,21 @@ const App: React.FC = () => {
                 <div className={`fixed bottom-5 right-5 glass-card p-4 rounded-lg border-l-4 ${successMessage ? 'border-secondary' : 'border-red-500'}`}>
                     <p>{successMessage || errorMessage}</p>
                 </div>
+            )}
+
+            {/* Integration Manager Modal */}
+            <IntegrationManager
+                isOpen={showIntegrationManager}
+                onClose={() => setShowIntegrationManager(false)}
+            />
+
+            {/* Image Style Manager Modal */}
+            {showImageStyleManager && (
+                <ImageStyleManager
+                    onClose={() => setShowImageStyleManager(false)}
+                    onSuccess={setSuccessMessage}
+                    onError={setErrorMessage}
+                />
             )}
         </div>
     );

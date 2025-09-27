@@ -1,7 +1,7 @@
 // Using standard Date objects instead of Firebase Timestamps
 export type Timestamp = Date;
 
-export type PostStatus = 'draft' | 'scheduled' | 'posted';
+export type PostStatus = 'draft' | 'scheduled' | 'posted' | 'posting';
 export type ViewMode = 'list' | 'calendar';
 
 export interface SocialMediaPosts {
