@@ -445,7 +445,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </HoloButton>
           </div>
         </div>
-      </div>
+      </HoloCard>
     </div>
   );
 };

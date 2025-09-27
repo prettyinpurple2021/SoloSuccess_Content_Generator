@@ -500,7 +500,7 @@ export const HelpSystem: React.FC<HelpSystemProps> = ({
             </div>
           )}
         </div>
-      </div>
+      </HoloCard>
     </div>
   );
 };
@@ -512,10 +512,11 @@ export const HelpButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40 flex items-center justify-center"
-      title="Help & Guides"
+      className="fixed bottom-6 right-6 w-12 h-12 glass-card bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 flex items-center justify-center sparkles neon-glow"
+      title="Help & Guides ✨"
     >
       <HelpCircle className="w-6 h-6" />
+      <SparkleEffect count={2} size="small" />
     </button>
   );
 };
