@@ -37,6 +37,39 @@
   box-sizing: border-box;
 }
 
+/* Theme Modes */
+body.theme-holographic {
+  font-family: 'Space Grotesk', sans-serif;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 0, 128, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 191, 255, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 215, 0, 0.2) 0%, transparent 50%),
+    linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0a1a1a 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: white;
+}
+
+body.theme-dark {
+  font-family: 'Space Grotesk', sans-serif;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #e5e5e5;
+}
+
+body.theme-light {
+  font-family: 'Space Grotesk', sans-serif;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #1a202c;
+}
+
+/* Default fallback */
 body {
   font-family: 'Space Grotesk', sans-serif;
   background: 
@@ -47,6 +80,7 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   overflow-x: hidden;
+  color: white;
 }
 
 /* Sparkle Animation */
@@ -411,19 +445,116 @@ body {
     rgba(0, 255, 255, 0.1) 100%);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Mobile-First Responsive Design */
+.glass-card {
+  border-radius: 16px;
+  margin: 8px;
+  padding: 16px;
+}
+
+.holo-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  min-height: 44px; /* Touch-friendly minimum */
+}
+
+.girly-skull {
+  font-size: 20px;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
   .glass-card {
-    border-radius: 16px;
-    margin: 8px;
+    border-radius: 20px;
+    margin: 12px;
+    padding: 24px;
   }
   
   .holo-button {
-    padding: 10px 20px;
-    font-size: 14px;
+    padding: 12px 24px;
+    font-size: 16px;
   }
   
   .girly-skull {
-    font-size: 20px;
+    font-size: 24px;
+  }
+}
+
+/* Desktop and up */
+@media (min-width: 1024px) {
+  .glass-card {
+    margin: 16px;
+    padding: 32px;
+  }
+  
+  .holo-button {
+    padding: 14px 28px;
+    font-size: 16px;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1280px) {
+  .glass-card {
+    padding: 40px;
+  }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 767px) {
+  /* Stack elements vertically on mobile */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  /* Full width on mobile */
+  .mobile-full {
+    width: 100% !important;
+  }
+  
+  /* Hide on mobile */
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  /* Larger touch targets */
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Reduce sparkles on mobile for performance */
+  .sparkles::before,
+  .sparkles::after {
+    display: none;
+  }
+  
+  /* Simplified animations on mobile */
+  .floating {
+    animation: none;
+  }
+  
+  /* Better mobile typography */
+  .holo-text {
+    font-size: clamp(14px, 4vw, 18px);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .holo-button:hover {
+    transform: none; /* Disable hover transforms on touch devices */
+  }
+  
+  .glass-card:hover {
+    transform: none;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .sparkles::before,
+  .sparkles::after {
+    font-size: 10px; /* Smaller sparkles on high DPI */
   }
 }

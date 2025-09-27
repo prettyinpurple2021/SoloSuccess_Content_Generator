@@ -5,10 +5,12 @@ interface HolographicThemeContextType {
   glowEffect: boolean;
   rainbowMode: boolean;
   skullsEnabled: boolean;
+  themeMode: 'light' | 'dark' | 'holographic';
   setSparkleIntensity: (intensity: 'low' | 'medium' | 'high') => void;
   setGlowEffect: (enabled: boolean) => void;
   setRainbowMode: (enabled: boolean) => void;
   setSkullsEnabled: (enabled: boolean) => void;
+  setThemeMode: (mode: 'light' | 'dark' | 'holographic') => void;
 }
 
 const HolographicThemeContext = createContext<HolographicThemeContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export const HolographicThemeProvider: React.FC<{ children: React.ReactNode }> =
   const [glowEffect, setGlowEffect] = useState(true);
   const [rainbowMode, setRainbowMode] = useState(true);
   const [skullsEnabled, setSkullsEnabled] = useState(true);
+  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'holographic'>('holographic');
 
   useEffect(() => {
     // Load theme preferences from localStorage
@@ -45,20 +48,21 @@ export const HolographicThemeProvider: React.FC<{ children: React.ReactNode }> =
       sparkleIntensity,
       glowEffect,
       rainbowMode,
-      skullsEnabled
+      skullsEnabled,
+      themeMode
     };
     localStorage.setItem('holographic-theme-prefs', JSON.stringify(prefs));
 
     // Apply theme classes to body
     document.body.className = '';
-    document.body.classList.add('holographic-theme');
+    document.body.classList.add(`theme-${themeMode}`);
     
     if (glowEffect) document.body.classList.add('glow-enabled');
     if (rainbowMode) document.body.classList.add('rainbow-mode');
     if (skullsEnabled) document.body.classList.add('skulls-enabled');
     document.body.classList.add(`sparkle-${sparkleIntensity}`);
 
-  }, [sparkleIntensity, glowEffect, rainbowMode, skullsEnabled]);
+  }, [sparkleIntensity, glowEffect, rainbowMode, skullsEnabled, themeMode]);
 
   return (
     <HolographicThemeContext.Provider value={{
@@ -66,10 +70,12 @@ export const HolographicThemeProvider: React.FC<{ children: React.ReactNode }> =
       glowEffect,
       rainbowMode,
       skullsEnabled,
+      themeMode,
       setSparkleIntensity,
       setGlowEffect,
       setRainbowMode,
-      setSkullsEnabled
+      setSkullsEnabled,
+      setThemeMode
     }}>
       {children}
     </HolographicThemeContext.Provider>
@@ -333,10 +339,12 @@ export const ThemeSettings: React.FC<{
     glowEffect,
     rainbowMode,
     skullsEnabled,
+    themeMode,
     setSparkleIntensity,
     setGlowEffect,
     setRainbowMode,
-    setSkullsEnabled
+    setSkullsEnabled,
+    setThemeMode
   } = useHolographicTheme();
 
   if (!isOpen) return null;
@@ -357,6 +365,25 @@ export const ThemeSettings: React.FC<{
         </div>
 
         <div className="space-y-6">
+          {/* Theme Mode */}
+          <div>
+            <HoloText variant="subtitle" className="mb-3">
+              Theme Mode 🎨
+            </HoloText>
+            <div className="flex gap-2">
+              {(['holographic', 'dark', 'light'] as const).map((mode) => (
+                <HoloButton
+                  key={mode}
+                  onClick={() => setThemeMode(mode)}
+                  variant={themeMode === mode ? 'primary' : 'secondary'}
+                  className="flex-1 text-sm"
+                >
+                  {mode === 'holographic' ? '✨ Holo' : mode === 'dark' ? '🌙 Dark' : '☀️ Light'}
+                </HoloButton>
+              ))}
+            </div>
+          </div>
+
           {/* Sparkle Intensity */}
           <div>
             <HoloText variant="subtitle" className="mb-3">

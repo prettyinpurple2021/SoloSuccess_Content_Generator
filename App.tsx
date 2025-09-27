@@ -29,6 +29,10 @@ import RepurposingWorkflow from './components/RepurposingWorkflow';
 import ImageStyleManager from './components/ImageStyleManager';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { PerformanceInsights } from './components/PerformanceInsights';
+import DragDropContentBuilder from './components/DragDropContentBuilder';
+import VoiceCommands from './components/VoiceCommands';
+import GamificationSystem from './components/GamificationSystem';
+import { aiLearningService } from './services/aiLearningService';
 import { marked } from 'marked';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -94,6 +98,11 @@ const App: React.FC = () => {
     
     // Brand Voice and Personalization State
     const [brandVoices, setBrandVoices] = useState<BrandVoice[]>([]);
+    
+    // New Feature States
+    const [showContentBuilder, setShowContentBuilder] = useState(false);
+    const [contentBuilderBlocks, setContentBuilderBlocks] = useState([]);
+    const [showGamification, setShowGamification] = useState(false);
     const [selectedBrandVoice, setSelectedBrandVoice] = useState<BrandVoice | null>(null);
     const [showBrandVoiceManager, setShowBrandVoiceManager] = useState(false);
     
@@ -343,12 +352,48 @@ const App: React.FC = () => {
             setErrorMessage("Please generate a topic first.");
             return;
         }
+
+        // Get AI learning suggestions for better ideas
+        const suggestions = user ? aiLearningService.getPersonalizedSuggestions(user.id, {
+            currentTopic: currentBlogTopic,
+            timeOfDay: new Date().getHours(),
+            dayOfWeek: new Date().getDay()
+        }) : [];
+
         const generatedIdeas = await geminiService.generateIdeas(currentBlogTopic);
         setIdeas(generatedIdeas);
+
+        // Record interaction for learning
+        if (user) {
+            aiLearningService.recordInteraction({
+                userId: user.id,
+                type: 'content_generated',
+                data: { 
+                    topic: currentBlogTopic, 
+                    timestamp: new Date(),
+                    context: { suggestionsUsed: suggestions.length > 0 }
+                }
+            });
+        }
     });
 
     const handleGeneratePost = withLoading('post', async (idea: string) => {
         setSelectedIdea(idea);
+        
+        // Record idea selection for AI learning
+        if (user) {
+            const rejectedIdeas = ideas.filter(i => i !== idea);
+            aiLearningService.recordInteraction({
+                userId: user.id,
+                type: 'idea_selected',
+                data: { 
+                    topic: currentBlogTopic,
+                    selectedOption: idea,
+                    rejectedOptions: rejectedIdeas,
+                    timestamp: new Date()
+                }
+            });
+        }
         
         // Enhanced content generation with personalization
         const generationOptions = {
@@ -678,6 +723,19 @@ const App: React.FC = () => {
         } else {
             await db.addPost(transformPostToDatabasePost(post));
             setSuccessMessage("Draft saved successfully!");
+            
+            // Track post creation for gamification
+            if (user) {
+                aiLearningService.recordInteraction({
+                    userId: user.id,
+                    type: 'content_generated',
+                    data: { 
+                        topic: post.topic,
+                        timestamp: new Date(),
+                        context: { action: 'draft_saved' }
+                    }
+                });
+            }
         }
         clearWorkflow();
     });
@@ -724,6 +782,20 @@ const App: React.FC = () => {
         } else {
             await db.addPost(transformPostToDatabasePost(post));
             setSuccessMessage("Post scheduled successfully!");
+            
+            // Track post scheduling for gamification
+            if (user) {
+                aiLearningService.recordInteraction({
+                    userId: user.id,
+                    type: 'platform_posted',
+                    data: { 
+                        topic: post.topic,
+                        platform: 'scheduled',
+                        timestamp: new Date(),
+                        context: { scheduled_for: scheduledDate }
+                    }
+                });
+            }
         }
         
         setShowScheduleModal(false);
@@ -870,6 +942,8 @@ const App: React.FC = () => {
       { id: 'analytics', label: 'Analytics & Insights' },
       { id: 'templates', label: 'Template Library' },
       { id: 'scheduling', label: 'Smart Scheduling' },
+      { id: 'contentbuilder', label: '🎨 Content Builder' },
+      { id: 'gamification', label: '🎮 Achievements' },
     ];
     
     if (!isAuthReady) {
@@ -2363,8 +2437,67 @@ const App: React.FC = () => {
                                 )}
                             </div>
                         )}
+
+                        {/* Content Builder Tab */}
+                        {activeEnhancedTab === 'contentbuilder' && (
+                            <div className="space-y-6">
+                                <DragDropContentBuilder
+                                    initialBlocks={contentBuilderBlocks}
+                                    onContentChange={(blocks) => setContentBuilderBlocks(blocks)}
+                                    onSave={(content) => {
+                                        setBlogPost(content);
+                                        setShowEnhancedFeatures(false);
+                                        setSuccessMessage('Content imported from builder! ✨');
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        {/* Gamification Tab */}
+                        {activeEnhancedTab === 'gamification' && (
+                            <div className="space-y-6">
+                                <GamificationSystem
+                                    userId={user?.id || 'anonymous'}
+                                    onAchievementUnlocked={(achievement) => {
+                                        setSuccessMessage(`🎉 Achievement Unlocked: ${achievement.title}! +${achievement.points} points ✨`);
+                                    }}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
+            )}
+
+            {/* Voice Commands - Always Available */}
+            {user && (
+                <VoiceCommands
+                    onCreatePost={(topic) => {
+                        setCurrentBlogTopic(topic);
+                        if (topic) {
+                            handleGenerateIdeas();
+                        }
+                        // Track for gamification
+                        aiLearningService.recordInteraction({
+                            userId: user.id,
+                            type: 'content_generated',
+                            data: { topic, timestamp: new Date() }
+                        });
+                    }}
+                    onGenerateIdeas={(topic) => {
+                        setCurrentBlogTopic(topic);
+                        handleGenerateIdeas();
+                    }}
+                    onOpenSettings={() => setShowEnhancedFeatures(true)}
+                    onNavigate={(page) => {
+                        if (page === 'analytics') setActiveEnhancedTab('analytics');
+                        if (page === 'calendar') setViewMode('calendar');
+                        setShowEnhancedFeatures(true);
+                    }}
+                    onToggleTheme={() => {
+                        // This would integrate with your theme system
+                        setSuccessMessage('Theme toggled! ✨');
+                    }}
+                />
             )}
         </div>
     );
