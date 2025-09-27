@@ -4,6 +4,8 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { NotificationProvider } from './NotificationSystem';
 import { OnboardingFlow, useOnboarding } from './OnboardingFlow';
 import { HelpSystem, HelpButton, useHelpSystem } from './HelpSystem';
+import { HolographicThemeProvider, SparkleEffect, FloatingSkull, ThemeSettings } from './HolographicTheme';
+import '../styles/holographic-theme.css';
 
 /**
  * Enhanced App wrapper that provides all the new features and integrations
@@ -33,36 +35,67 @@ const EnhancedApp: React.FC = () => {
     hasUsedTemplate: false
   };
 
+  const [showThemeSettings, setShowThemeSettings] = React.useState(false);
+
   return (
     <ErrorBoundary>
-      <NotificationProvider>
-        <div className="min-h-screen bg-gray-50">
-          {/* Main App */}
-          <App />
+      <HolographicThemeProvider>
+        <NotificationProvider>
+          <div className="min-h-screen relative overflow-hidden">
+            {/* Background Sparkles */}
+            <div className="fixed inset-0 pointer-events-none">
+              <SparkleEffect count={20} size="small" />
+              <SparkleEffect count={10} size="medium" />
+              <SparkleEffect count={5} size="large" />
+            </div>
 
-          {/* Onboarding Flow */}
-          <OnboardingFlow
-            isOpen={showOnboarding}
-            onClose={() => setShowOnboarding(false)}
-            onComplete={completeOnboarding}
-            userProgress={userProgress}
-          />
+            {/* Floating Skulls */}
+            <FloatingSkull className="fixed top-10 right-20" size="small" />
+            <FloatingSkull className="fixed bottom-20 left-10" size="medium" />
+            <FloatingSkull className="fixed top-1/3 left-1/4" size="small" />
 
-          {/* Help System */}
-          <HelpSystem
-            isOpen={isHelpOpen}
-            onClose={closeHelp}
-            initialCategory={initialCategory}
-            initialArticle={initialArticle}
-          />
+            {/* Main App */}
+            <App />
 
-          {/* Floating Help Button */}
-          <HelpButton onClick={() => openHelp()} />
+            {/* Onboarding Flow */}
+            <OnboardingFlow
+              isOpen={showOnboarding}
+              onClose={() => setShowOnboarding(false)}
+              onComplete={completeOnboarding}
+              userProgress={userProgress}
+            />
 
-          {/* Feature Discovery Hints */}
-          {hasCompletedOnboarding && <FeatureDiscoveryHints />}
-        </div>
-      </NotificationProvider>
+            {/* Help System */}
+            <HelpSystem
+              isOpen={isHelpOpen}
+              onClose={closeHelp}
+              initialCategory={initialCategory}
+              initialArticle={initialArticle}
+            />
+
+            {/* Theme Settings */}
+            <ThemeSettings
+              isOpen={showThemeSettings}
+              onClose={() => setShowThemeSettings(false)}
+            />
+
+            {/* Floating Action Buttons */}
+            <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
+              <button
+                onClick={() => setShowThemeSettings(true)}
+                className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center sparkles neon-glow"
+                title="Theme Settings"
+              >
+                ⚙️
+              </button>
+              <HelpButton onClick={() => openHelp()} />
+            </div>
+
+            {/* Feature Discovery Hints */}
+            {hasCompletedOnboarding && <FeatureDiscoveryHints />}
+          </div>
+        </NotificationProvider>
+      </HolographicThemeProvider>
     </ErrorBoundary>
   );
 };

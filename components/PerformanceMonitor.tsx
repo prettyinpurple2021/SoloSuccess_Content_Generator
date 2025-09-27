@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, Clock, Database, Zap, AlertTriangle, CheckCircle } from 'lucide-react';
 import { contentCache } from '../services/cachingService';
+import { HoloCard, HoloButton, HoloText, SparkleEffect, FloatingSkull } from './HolographicTheme';
 
 interface PerformanceMetrics {
   pageLoadTime: number;
@@ -141,31 +142,36 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     return (
       <button
         onClick={onToggle}
-        className={`fixed bottom-20 right-6 w-12 h-12 ${performanceStatus.bgColor} ${performanceStatus.color} rounded-full shadow-lg hover:shadow-xl transition-all z-30 flex items-center justify-center`}
+        className={`fixed bottom-20 right-6 w-12 h-12 glass-card ${performanceStatus.color} rounded-full shadow-lg hover:shadow-xl transition-all z-30 flex items-center justify-center sparkles neon-glow`}
         title="Performance Monitor"
       >
         <Activity className="w-5 h-5" />
+        <SparkleEffect count={2} size="small" />
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-20 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-30">
+    <HoloCard className="fixed bottom-6 right-20 w-80 z-30">
+      <SparkleEffect count={6} size="small" />
+      <FloatingSkull className="absolute top-2 right-12" size="small" />
+      
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-white/20">
         <div className="flex items-center gap-2">
-          <Activity className="w-5 h-5 text-gray-600" />
-          <h3 className="font-medium text-gray-900">Performance</h3>
+          <Activity className="w-5 h-5 text-cyan-400" />
+          <HoloText variant="subtitle" glow>Performance ⚡</HoloText>
           <div className={`w-2 h-2 rounded-full ${
-            performanceStatus.status === 'good' ? 'bg-green-500' :
-            performanceStatus.status === 'fair' ? 'bg-yellow-500' : 'bg-red-500'
+            performanceStatus.status === 'good' ? 'bg-green-400 shadow-lg shadow-green-400/50' :
+            performanceStatus.status === 'fair' ? 'bg-yellow-400 shadow-lg shadow-yellow-400/50' : 
+            'bg-red-400 shadow-lg shadow-red-400/50'
           }`} />
         </div>
         <button
           onClick={onToggle}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
+          className="text-white/60 hover:text-white transition-colors"
         >
-          ×
+          ✕
         </button>
       </div>
 
@@ -174,23 +180,23 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         {/* Page Load Time */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-blue-500" />
-            <span className="text-sm text-gray-600">Page Load</span>
+            <Clock className="w-4 h-4 text-blue-400" />
+            <HoloText className="text-sm">Page Load ⏱️</HoloText>
           </div>
-          <span className="text-sm font-medium">
+          <HoloText className="text-sm font-medium">
             {metrics.pageLoadTime > 0 ? `${Math.round(metrics.pageLoadTime)}ms` : 'N/A'}
-          </span>
+          </HoloText>
         </div>
 
         {/* Cache Hit Rate */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-green-500" />
-            <span className="text-sm text-gray-600">Cache Hit Rate</span>
+            <Database className="w-4 h-4 text-green-400" />
+            <HoloText className="text-sm">Cache Hit Rate 💾</HoloText>
           </div>
-          <span className="text-sm font-medium">
-            {metrics.cacheHitRate.toFixed(1)}%
-          </span>
+          <HoloText className="text-sm font-medium">
+            {metrics.cacheHitRate.toFixed(1)}% ✨
+          </HoloText>
         </div>
 
         {/* Memory Usage */}
@@ -238,43 +244,45 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         )}
 
         {/* Overall Status */}
-        <div className={`p-3 rounded-lg ${performanceStatus.bgColor}`}>
+        <div className={`p-3 rounded-lg bg-glass-cyan border border-white/20`}>
           <div className="flex items-center gap-2">
             {performanceStatus.status === 'good' ? (
-              <CheckCircle className="w-4 h-4 text-green-600" />
+              <CheckCircle className="w-4 h-4 text-green-400" />
             ) : (
-              <AlertTriangle className="w-4 h-4 text-yellow-600" />
+              <AlertTriangle className="w-4 h-4 text-yellow-400" />
             )}
-            <span className={`text-sm font-medium ${performanceStatus.color}`}>
-              Performance: {performanceStatus.status.charAt(0).toUpperCase() + performanceStatus.status.slice(1)}
-            </span>
+            <HoloText className="text-sm font-medium" glow>
+              Performance: {performanceStatus.status.charAt(0).toUpperCase() + performanceStatus.status.slice(1)} 
+              {performanceStatus.status === 'good' ? ' 🌟' : performanceStatus.status === 'fair' ? ' ⚡' : ' 💀'}
+            </HoloText>
           </div>
         </div>
 
         {/* Last Updated */}
-        <div className="text-xs text-gray-400 text-center">
-          Last updated: {metrics.lastUpdated.toLocaleTimeString()}
+        <div className="text-xs text-white/60 text-center">
+          Last updated: {metrics.lastUpdated.toLocaleTimeString()} ⏰
         </div>
       </div>
 
       {/* Actions */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+      <div className="p-4 border-t border-white/20 bg-glass-purple rounded-b-lg">
         <div className="flex gap-2">
-          <button
+          <HoloButton
             onClick={() => {
               contentCache.clear();
               setMetrics(prev => ({ ...prev, errorCount: 0 }));
             }}
-            className="flex-1 px-3 py-2 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="flex-1 text-xs sparkles"
           >
-            Clear Cache
-          </button>
-          <button
+            Clear Cache 🗑️
+          </HoloButton>
+          <HoloButton
             onClick={() => window.location.reload()}
-            className="flex-1 px-3 py-2 text-xs border border-gray-300 text-gray-700 rounded hover:bg-gray-100 transition-colors"
+            variant="secondary"
+            className="flex-1 text-xs"
           >
-            Reload Page
-          </button>
+            Reload 🔄
+          </HoloButton>
         </div>
       </div>
     </div>

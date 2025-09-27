@@ -146,27 +146,49 @@ Please describe what you were doing when this error occurred:
         return this.props.fallback;
       }
 
-      // Default error UI
+      // Default error UI with holographic theme
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+        <div className="min-h-screen flex items-center justify-center p-4 relative">
+          {/* Background effects */}
+          <div className="fixed inset-0 pointer-events-none">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-purple-900/20 to-pink-900/20" />
+          </div>
+          
+          <div className="max-w-md w-full glass-card p-6 relative sparkles neon-glow">
+            {/* Sparkle effects */}
+            <div className="absolute inset-0 pointer-events-none">
+              {Array.from({ length: 8 }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute text-red-400 animate-pulse"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 2}s`
+                  }}
+                >
+                  💀
+                </div>
+              ))}
+            </div>
+            
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                <AlertTriangle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  Something went wrong
+                <h1 className="text-lg font-semibold holo-text">
+                  Something went wrong 💀
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-white/70">
                   Error ID: {this.state.errorId}
                 </p>
               </div>
             </div>
 
             <div className="mb-6">
-              <p className="text-gray-600 mb-4">
-                We're sorry, but something unexpected happened. This error has been logged and we'll look into it.
+              <p className="text-white/80 mb-4">
+                We're sorry, but something unexpected happened. This error has been logged and we'll look into it. 💫
               </p>
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
@@ -189,34 +211,34 @@ Please describe what you were doing when this error occurred:
             <div className="space-y-3">
               <button
                 onClick={this.handleRetry}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full holo-button flex items-center justify-center gap-2 sparkles"
               >
                 <RefreshCw className="w-4 h-4" />
-                Try Again
+                Try Again ✨
               </button>
 
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={this.handleReload}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-glass-purple border border-white/20 text-white rounded-lg hover:bg-white/10 transition-colors"
                 >
                   <Home className="w-4 h-4" />
-                  Reload Page
+                  Reload 🏠
                 </button>
 
                 <button
                   onClick={this.handleReportError}
-                  className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2 border border-pink-400/50 text-pink-300 rounded-lg hover:bg-pink-500/10 transition-colors"
                 >
                   <Bug className="w-4 h-4" />
-                  Report Error
+                  Report 🐛
                 </button>
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500 text-center">
-                If this problem persists, please contact support with the error ID above.
+            <div className="mt-6 pt-4 border-t border-white/20">
+              <p className="text-xs text-white/60 text-center">
+                If this problem persists, please contact support with the error ID above. 💌
               </p>
             </div>
           </div>

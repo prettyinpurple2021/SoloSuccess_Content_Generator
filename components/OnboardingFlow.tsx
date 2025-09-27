@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Check, Lightbulb, Target, BarChart3, Palette, Calendar, Users } from 'lucide-react';
+import { HoloCard, HoloButton, HoloText, SparkleEffect, FloatingSkull } from './HolographicTheme';
 
 interface OnboardingStep {
   id: string;
@@ -327,39 +328,42 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+      <HoloCard className="max-w-4xl w-full max-h-[90vh] overflow-hidden relative">
+        <SparkleEffect count={15} size="medium" />
+        <FloatingSkull className="absolute top-4 right-16" size="small" />
+        
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-white/20">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              {currentStepData.icon}
-              <h2 className="text-xl font-semibold text-gray-900">
+              <div className="text-2xl">{currentStepData.icon}</div>
+              <HoloText variant="title" glow>
                 {currentStepData.title}
-              </h2>
+              </HoloText>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Progress indicator */}
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className="px-6 py-4 bg-glass-pink border-b border-white/20">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Step {currentStep + 1} of {steps.length}
-            </span>
-            <span className="text-sm text-gray-500">
-              {Math.round(((currentStep + 1) / steps.length) * 100)}% complete
-            </span>
+            <HoloText className="text-sm font-medium">
+              ✨ Step {currentStep + 1} of {steps.length}
+            </HoloText>
+            <HoloText className="text-sm">
+              {Math.round(((currentStep + 1) / steps.length) * 100)}% complete 🌟
+            </HoloText>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-800/50 rounded-full h-3 overflow-hidden">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="rainbow-progress h-full transition-all duration-500"
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             />
           </div>
@@ -370,20 +374,20 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <button
                 key={step.id}
                 onClick={() => handleStepClick(index)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-300 sparkles ${
                   index === currentStep
-                    ? 'bg-blue-100 text-blue-600'
+                    ? 'bg-glass-pink text-pink-300 neon-glow'
                     : index < currentStep || completedSteps.has(step.id)
-                    ? 'text-green-600 hover:bg-green-50'
-                    : 'text-gray-400 hover:bg-gray-100'
+                    ? 'text-green-400 hover:bg-glass-cyan'
+                    : 'text-white/60 hover:bg-white/10'
                 }`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ${
                   index === currentStep
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
                     : index < currentStep || completedSteps.has(step.id)
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-200 text-gray-500'
+                    ? 'bg-gradient-to-r from-green-400 to-cyan-400 text-white shadow-lg'
+                    : 'bg-gray-700 text-gray-300'
                 }`}>
                   {index < currentStep || completedSteps.has(step.id) ? (
                     <Check className="w-4 h-4" />
@@ -391,9 +395,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     index + 1
                   )}
                 </div>
-                <span className="text-xs font-medium hidden sm:block">
+                <HoloText className="text-xs font-medium hidden sm:block">
                   {step.title.split(' ')[0]}
-                </span>
+                </HoloText>
               </button>
             ))}
           </div>
@@ -401,38 +405,44 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-96">
-          <p className="text-gray-600 mb-6">{currentStepData.description}</p>
-          {currentStepData.content}
+          <HoloText className="mb-6 text-white/80">
+            {currentStepData.description}
+          </HoloText>
+          <div className="text-white/90">
+            {currentStepData.content}
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-          <button
+        <div className="flex items-center justify-between p-6 border-t border-white/20 bg-glass-purple">
+          <HoloButton
             onClick={handlePrevious}
+            variant="secondary"
             disabled={currentStep === 0}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" />
             Previous
-          </button>
+          </HoloButton>
 
           <div className="flex items-center gap-3">
             {currentStepData.action && (
-              <button
+              <HoloButton
                 onClick={currentStepData.action.onClick}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                variant="skull"
+                className="sparkles"
               >
-                {currentStepData.action.label}
-              </button>
+                {currentStepData.action.label} ✨
+              </HoloButton>
             )}
             
-            <button
+            <HoloButton
               onClick={handleNext}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 sparkles neon-glow"
             >
-              {isLastStep ? 'Get Started' : 'Next'}
+              {isLastStep ? '🚀 Get Started!' : 'Next ✨'}
               {!isLastStep && <ChevronRight className="w-4 h-4" />}
-            </button>
+            </HoloButton>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info, Loader } from 'lucide-react';
+import { SparkleEffect, FloatingSkull } from './HolographicTheme';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
@@ -145,17 +146,17 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({ notificati
   const getBackgroundColor = () => {
     switch (notification.type) {
       case 'success':
-        return 'bg-green-50 border-green-200';
+        return 'notification-glass border-green-400/30 bg-glass-cyan';
       case 'error':
-        return 'bg-red-50 border-red-200';
+        return 'notification-glass border-red-400/30 bg-glass-pink';
       case 'warning':
-        return 'bg-yellow-50 border-yellow-200';
+        return 'notification-glass border-yellow-400/30 bg-glass-purple';
       case 'info':
-        return 'bg-blue-50 border-blue-200';
+        return 'notification-glass border-blue-400/30 bg-glass-cyan';
       case 'loading':
-        return 'bg-blue-50 border-blue-200';
+        return 'notification-glass border-purple-400/30 bg-glass-purple';
       default:
-        return 'bg-gray-50 border-gray-200';
+        return 'notification-glass border-white/20';
     }
   };
 
@@ -165,21 +166,24 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({ notificati
         transform transition-all duration-300 ease-in-out
         ${isVisible && !isExiting ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
         ${getBackgroundColor()}
-        border rounded-lg shadow-lg p-4 relative
+        rounded-lg p-4 relative sparkles neon-glow
       `}
     >
+      <SparkleEffect count={3} size="small" />
+      {notification.type === 'success' && <FloatingSkull className="absolute -top-2 -right-2" size="small" />}
+      
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">
           {getIcon()}
         </div>
         
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-gray-900 mb-1">
+          <h4 className="text-sm font-medium text-white mb-1 holo-text">
             {notification.title}
           </h4>
           
           {notification.message && (
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-white/80 mb-2">
               {notification.message}
             </p>
           )}
@@ -187,9 +191,9 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({ notificati
           {notification.action && (
             <button
               onClick={notification.action.onClick}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+              className="text-sm font-medium text-pink-300 hover:text-pink-200 transition-colors sparkles"
             >
-              {notification.action.label}
+              {notification.action.label} ✨
             </button>
           )}
         </div>
@@ -197,18 +201,18 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({ notificati
         {notification.type !== 'loading' && (
           <button
             onClick={handleClose}
-            className="flex-shrink-0 p-1 hover:bg-gray-200 rounded-lg transition-colors"
+            className="flex-shrink-0 p-1 hover:bg-white/10 rounded-lg transition-colors text-white/60 hover:text-white"
           >
-            <X className="w-4 h-4 text-gray-500" />
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
       
-      {/* Progress bar for timed notifications */}
+      {/* Rainbow progress bar for timed notifications */}
       {notification.duration && notification.duration > 0 && notification.type !== 'loading' && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-b-lg overflow-hidden">
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800/50 rounded-b-lg overflow-hidden">
           <div
-            className="h-full bg-blue-500 transition-all ease-linear"
+            className="h-full rainbow-progress transition-all ease-linear"
             style={{
               animation: `shrink ${notification.duration}ms linear forwards`
             }}

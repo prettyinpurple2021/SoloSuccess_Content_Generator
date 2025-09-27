@@ -16,6 +16,7 @@ import {
   Users,
   Zap
 } from 'lucide-react';
+import { HoloCard, HoloButton, HoloText, HoloInput, SparkleEffect, FloatingSkull } from './HolographicTheme';
 
 interface HelpArticle {
   id: string;
@@ -307,35 +308,36 @@ export const HelpSystem: React.FC<HelpSystemProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+      <HoloCard className="max-w-6xl w-full max-h-[90vh] overflow-hidden flex">
+        <SparkleEffect count={12} size="medium" />
+        <FloatingSkull className="absolute top-4 right-4" size="small" />
+        
         {/* Sidebar */}
-        <div className="w-80 border-r border-gray-200 flex flex-col">
+        <div className="w-80 border-r border-white/20 flex flex-col bg-glass-purple">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-white/20">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <HoloText variant="subtitle" glow className="flex items-center gap-2">
                 <HelpCircle className="w-5 h-5" />
-                Help & Guides
-              </h2>
+                Help & Guides ✨
+              </HoloText>
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search help articles..."
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
+              <HoloInput
+                placeholder="Search help articles... 🔍"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setShowSearch(true)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10"
               />
             </div>
           </div>
