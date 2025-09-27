@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 // FIX: Import Timestamp type and rename Timestamp value to avoid name collision.
-import { Post, ViewMode, LoadingState, SocialMediaPosts, GeneratedImages, ImageStyle } from './types';
+import { 
+  Post, 
+  ViewMode, 
+  LoadingState, 
+  SocialMediaPosts, 
+  GeneratedImages, 
+  ImageStyle,
+  BrandVoice,
+  AudienceProfile,
+  Campaign,
+  ContentSeries,
+  ContentTemplate,
+  AnalyticsData,
+  PerformanceReport,
+  OptimizationSuggestion,
+  SchedulingSuggestion
+} from './types';
 import { auth, db, transformPostToDatabasePost, User } from './services/supabaseService';
 import * as geminiService from './services/geminiService';
 import * as schedulerService from './services/schedulerService';
@@ -11,6 +27,8 @@ import CalendarView from './components/CalendarView';
 import IntegrationManager from './components/IntegrationManager';
 import RepurposingWorkflow from './components/RepurposingWorkflow';
 import ImageStyleManager from './components/ImageStyleManager';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { PerformanceInsights } from './components/PerformanceInsights';
 import { marked } from 'marked';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -72,6 +90,48 @@ const App: React.FC = () => {
     const [selectedImageStyle, setSelectedImageStyle] = useState<ImageStyle | null>(null);
     const [selectedPlatformForImage, setSelectedPlatformForImage] = useState<string>('general');
 
+    // Enhanced Features State Management
+    
+    // Brand Voice and Personalization State
+    const [brandVoices, setBrandVoices] = useState<BrandVoice[]>([]);
+    const [selectedBrandVoice, setSelectedBrandVoice] = useState<BrandVoice | null>(null);
+    const [showBrandVoiceManager, setShowBrandVoiceManager] = useState(false);
+    
+    // Audience Profile State
+    const [audienceProfiles, setAudienceProfiles] = useState<AudienceProfile[]>([]);
+    const [selectedAudienceProfile, setSelectedAudienceProfile] = useState<AudienceProfile | null>(null);
+    const [showAudienceProfileManager, setShowAudienceProfileManager] = useState(false);
+    
+    // Campaign Management State
+    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+    const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+    const [showCampaignManager, setShowCampaignManager] = useState(false);
+    
+    // Content Series State
+    const [contentSeries, setContentSeries] = useState<ContentSeries[]>([]);
+    const [selectedContentSeries, setSelectedContentSeries] = useState<ContentSeries | null>(null);
+    const [showContentSeriesManager, setShowContentSeriesManager] = useState(false);
+    
+    // Template Library State
+    const [contentTemplates, setContentTemplates] = useState<ContentTemplate[]>([]);
+    const [selectedTemplate, setSelectedTemplate] = useState<ContentTemplate | null>(null);
+    const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
+    
+    // Analytics and Performance State
+    const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
+    const [performanceReport, setPerformanceReport] = useState<PerformanceReport | null>(null);
+    const [showAnalyticsDashboard, setShowAnalyticsDashboard] = useState(false);
+    const [showPerformanceInsights, setShowPerformanceInsights] = useState(false);
+    const [optimizationSuggestions, setOptimizationSuggestions] = useState<OptimizationSuggestion[]>([]);
+    
+    // Smart Scheduling State
+    const [schedulingSuggestions, setSchedulingSuggestions] = useState<SchedulingSuggestion[]>([]);
+    const [showSmartScheduler, setShowSmartScheduler] = useState(false);
+    
+    // Enhanced UI State
+    const [activeEnhancedTab, setActiveEnhancedTab] = useState('personalization');
+    const [showEnhancedFeatures, setShowEnhancedFeatures] = useState(false);
+
     const withLoading = <T extends any[]>(key: string, fn: (...args: T) => Promise<void>) => {
         return async (...args: T) => {
             setIsLoading(prev => ({ ...prev, [key]: true }));
@@ -85,6 +145,34 @@ const App: React.FC = () => {
                 setIsLoading(prev => ({ ...prev, [key]: false }));
             }
         };
+    };
+
+    // Enhanced error handling for new features
+    const handleEnhancedFeatureError = (error: any, feature: string) => {
+        console.error(`Enhanced feature error in ${feature}:`, error);
+        const userFriendlyMessage = getEnhancedFeatureErrorMessage(error, feature);
+        setErrorMessage(userFriendlyMessage);
+    };
+
+    const getEnhancedFeatureErrorMessage = (error: any, feature: string): string => {
+        const baseMessage = error.message || 'An unexpected error occurred';
+        
+        switch (feature) {
+            case 'brandVoice':
+                return `Brand voice error: ${baseMessage}. Please check your brand voice settings.`;
+            case 'audienceProfile':
+                return `Audience profile error: ${baseMessage}. Please verify your audience profile data.`;
+            case 'campaign':
+                return `Campaign error: ${baseMessage}. Please check your campaign configuration.`;
+            case 'analytics':
+                return `Analytics error: ${baseMessage}. Analytics data may be temporarily unavailable.`;
+            case 'template':
+                return `Template error: ${baseMessage}. Please try selecting a different template.`;
+            case 'scheduling':
+                return `Smart scheduling error: ${baseMessage}. Falling back to manual scheduling.`;
+            default:
+                return `${feature} error: ${baseMessage}`;
+        }
     };
 
     useEffect(() => {
@@ -135,15 +223,42 @@ const App: React.FC = () => {
             return;
         }
 
-        // Initial load of posts and image styles
+        // Initial load of posts and enhanced features data
         const loadData = async () => {
             try {
-                const [posts, styles] = await Promise.all([
+                const [
+                    posts, 
+                    styles, 
+                    voices, 
+                    profiles, 
+                    campaignsList, 
+                    seriesList, 
+                    templates
+                ] = await Promise.all([
                     db.getPosts(),
-                    db.getImageStyles()
+                    db.getImageStyles(),
+                    db.getBrandVoices().catch(() => []), // Graceful fallback for new features
+                    db.getAudienceProfiles().catch(() => []),
+                    db.getCampaigns().catch(() => []),
+                    db.getContentSeries().catch(() => []),
+                    db.getContentTemplates().catch(() => [])
                 ]);
+                
                 setAllScheduledPosts(posts);
                 setImageStyles(styles);
+                setBrandVoices(voices);
+                setAudienceProfiles(profiles);
+                setCampaigns(campaignsList);
+                setContentSeries(seriesList);
+                setContentTemplates(templates);
+                
+                // Set default selections if available
+                if (voices.length > 0 && !selectedBrandVoice) {
+                    setSelectedBrandVoice(voices[0]);
+                }
+                if (profiles.length > 0 && !selectedAudienceProfile) {
+                    setSelectedAudienceProfile(profiles[0]);
+                }
             } catch (error: any) {
                 setErrorMessage(`Failed to load data: ${error.message}`);
             }
@@ -210,6 +325,11 @@ const App: React.FC = () => {
         setSelectedImageForPost(null);
         setEditingPostId(null);
         setPostViewMode('preview');
+        
+        // Note: We don't clear enhanced feature selections (brand voice, audience, etc.)
+        // as users typically want to keep these selections across multiple posts
+        // Only clear template selection as it's more post-specific
+        setSelectedTemplate(null);
     };
 
     const handleGenerateTopic = withLoading('topic', async () => {
@@ -229,7 +349,15 @@ const App: React.FC = () => {
 
     const handleGeneratePost = withLoading('post', async (idea: string) => {
         setSelectedIdea(idea);
-        const postContent = await geminiService.generateBlogPost(idea);
+        
+        // Enhanced content generation with personalization
+        const generationOptions = {
+            brandVoice: selectedBrandVoice,
+            audienceProfile: selectedAudienceProfile,
+            template: selectedTemplate
+        };
+        
+        const postContent = await geminiService.generateBlogPost(idea, generationOptions);
         setBlogPost(postContent);
         setPostViewMode('preview');
         handleGenerateTags(postContent); // Auto-generate tags
@@ -259,7 +387,22 @@ const App: React.FC = () => {
         try {
             const tone = socialMediaTones[platform] || TONES[0];
             const audience = socialMediaAudiences[platform] || AUDIENCES[0];
-            const post = await geminiService.generateSocialMediaPost(blogPost, platform, tone, audience);
+            
+            // Enhanced social media generation with personalization
+            const generationOptions = {
+                brandVoice: selectedBrandVoice,
+                audienceProfile: selectedAudienceProfile,
+                campaign: selectedCampaign,
+                contentSeries: selectedContentSeries
+            };
+            
+            const post = await geminiService.generateSocialMediaPost(
+                blogPost, 
+                platform, 
+                tone, 
+                audience, 
+                generationOptions
+            );
             setSocialMediaPosts(prev => ({ ...prev, [platform]: post }));
         } catch (error: any) {
             console.error(`Error generating social post for ${platform}:`, error);
@@ -270,10 +413,23 @@ const App: React.FC = () => {
     };
 
     const handleGenerateAllSocialPosts = withLoading('socialAll', async () => {
+        const generationOptions = {
+            brandVoice: selectedBrandVoice,
+            audienceProfile: selectedAudienceProfile,
+            campaign: selectedCampaign,
+            contentSeries: selectedContentSeries
+        };
+        
         const promises = PLATFORMS.map(platform => {
             const tone = socialMediaTones[platform] || TONES[0];
             const audience = socialMediaAudiences[platform] || AUDIENCES[0];
-            return geminiService.generateSocialMediaPost(blogPost, platform, tone, audience)
+            return geminiService.generateSocialMediaPost(
+                blogPost, 
+                platform, 
+                tone, 
+                audience, 
+                generationOptions
+            )
                 .then(post => ({ platform, post }))
                 .catch(error => {
                     console.error(`Error generating for ${platform} in 'All' mode:`, error);
@@ -295,6 +451,140 @@ const App: React.FC = () => {
     const loadImageStyles = withLoading('imageStyles', async () => {
         const styles = await db.getImageStyles();
         setImageStyles(styles);
+    });
+
+    // Enhanced Features Handlers
+    
+    // Brand Voice Management
+    const loadBrandVoices = withLoading('brandVoices', async () => {
+        try {
+            const voices = await db.getBrandVoices();
+            setBrandVoices(voices);
+        } catch (error: any) {
+            handleEnhancedFeatureError(error, 'brandVoice');
+        }
+    });
+
+    const handleBrandVoiceSelect = (voice: BrandVoice | null) => {
+        setSelectedBrandVoice(voice);
+        if (voice) {
+            setSuccessMessage(`Brand voice "${voice.name}" selected for content generation.`);
+        }
+    };
+
+    // Audience Profile Management
+    const loadAudienceProfiles = withLoading('audienceProfiles', async () => {
+        try {
+            const profiles = await db.getAudienceProfiles();
+            setAudienceProfiles(profiles);
+        } catch (error: any) {
+            handleEnhancedFeatureError(error, 'audienceProfile');
+        }
+    });
+
+    const handleAudienceProfileSelect = (profile: AudienceProfile | null) => {
+        setSelectedAudienceProfile(profile);
+        if (profile) {
+            setSuccessMessage(`Audience profile "${profile.name}" selected for content targeting.`);
+        }
+    };
+
+    // Campaign Management
+    const loadCampaigns = withLoading('campaigns', async () => {
+        try {
+            const campaignsList = await db.getCampaigns();
+            setCampaigns(campaignsList);
+        } catch (error: any) {
+            handleEnhancedFeatureError(error, 'campaign');
+        }
+    });
+
+    const handleCampaignSelect = (campaign: Campaign | null) => {
+        setSelectedCampaign(campaign);
+        if (campaign) {
+            setSuccessMessage(`Campaign "${campaign.name}" selected.`);
+        }
+    };
+
+    // Content Series Management
+    const loadContentSeries = withLoading('contentSeries', async () => {
+        try {
+            const seriesList = await db.getContentSeries();
+            setContentSeries(seriesList);
+        } catch (error: any) {
+            handleEnhancedFeatureError(error, 'contentSeries');
+        }
+    });
+
+    const handleContentSeriesSelect = (series: ContentSeries | null) => {
+        setSelectedContentSeries(series);
+        if (series) {
+            setSuccessMessage(`Content series "${series.name}" selected.`);
+        }
+    };
+
+    // Template Management
+    const loadContentTemplates = withLoading('templates', async () => {
+        try {
+            const templates = await db.getContentTemplates();
+            setContentTemplates(templates);
+        } catch (error: any) {
+            handleEnhancedFeatureError(error, 'template');
+        }
+    });
+
+    const handleTemplateSelect = (template: ContentTemplate | null) => {
+        setSelectedTemplate(template);
+        if (template) {
+            setSuccessMessage(`Template "${template.name}" selected for content generation.`);
+        }
+    };
+
+    // Analytics and Performance
+    const loadAnalyticsData = withLoading('analytics', async () => {
+        try {
+            // Get analytics data for the last 30 days
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - 30);
+            
+            const analytics = await db.getAnalyticsByTimeframe(startDate, endDate);
+            setAnalyticsData(analytics);
+        } catch (error: any) {
+            handleEnhancedFeatureError(error, 'analytics');
+        }
+    });
+
+    const generatePerformanceReport = withLoading('performanceReport', async (timeframe: string = '30d') => {
+        try {
+            // This would typically call an analytics service
+            // For now, we'll create a placeholder implementation
+            const report: PerformanceReport = {
+                timeframe,
+                totalPosts: allScheduledPosts.length,
+                totalEngagement: 0,
+                avgEngagementRate: 0,
+                topContent: [],
+                platformBreakdown: {},
+                trends: [],
+                recommendations: []
+            };
+            setPerformanceReport(report);
+        } catch (error: any) {
+            handleEnhancedFeatureError(error, 'analytics');
+        }
+    });
+
+    // Smart Scheduling
+    const generateSchedulingSuggestions = withLoading('schedulingSuggestions', async () => {
+        try {
+            // This would typically call the scheduling service
+            // For now, we'll create placeholder suggestions
+            const suggestions: SchedulingSuggestion[] = [];
+            setSchedulingSuggestions(suggestions);
+        } catch (error: any) {
+            handleEnhancedFeatureError(error, 'scheduling');
+        }
     });
 
     const handleGenerateImagePrompts = withLoading('prompts', async () => {
@@ -373,6 +663,13 @@ const App: React.FC = () => {
             socialMediaAudiences,
             createdAt: new Date(),
             selectedImage: selectedImageForPost || undefined,
+            // Enhanced features
+            brandVoiceId: selectedBrandVoice?.id,
+            audienceProfileId: selectedAudienceProfile?.id,
+            campaignId: selectedCampaign?.id,
+            seriesId: selectedContentSeries?.id,
+            templateId: selectedTemplate?.id,
+            imageStyleId: selectedImageStyle?.id,
         };
         
         if (editingPostId) {
@@ -412,6 +709,13 @@ const App: React.FC = () => {
             socialMediaAudiences: postData?.socialMediaAudiences ?? socialMediaAudiences,
             selectedImage: postData?.selectedImage ?? selectedImageForPost ?? undefined,
             createdAt: postData?.createdAt ?? new Date(),
+            // Enhanced features
+            brandVoiceId: postData?.brandVoiceId ?? selectedBrandVoice?.id,
+            audienceProfileId: postData?.audienceProfileId ?? selectedAudienceProfile?.id,
+            campaignId: postData?.campaignId ?? selectedCampaign?.id,
+            seriesId: postData?.seriesId ?? selectedContentSeries?.id,
+            templateId: postData?.templateId ?? selectedTemplate?.id,
+            imageStyleId: postData?.imageStyleId ?? selectedImageStyle?.id,
         };
         
         if (editingPostId) {
@@ -454,6 +758,33 @@ const App: React.FC = () => {
         setSocialMediaTones(post.socialMediaTones || {});
         setSocialMediaAudiences(post.socialMediaAudiences || {});
         setSelectedImageForPost(post.selectedImage || null);
+        
+        // Restore enhanced features selections
+        if (post.brandVoiceId) {
+            const brandVoice = brandVoices.find(v => v.id === post.brandVoiceId);
+            setSelectedBrandVoice(brandVoice || null);
+        }
+        if (post.audienceProfileId) {
+            const audienceProfile = audienceProfiles.find(p => p.id === post.audienceProfileId);
+            setSelectedAudienceProfile(audienceProfile || null);
+        }
+        if (post.campaignId) {
+            const campaign = campaigns.find(c => c.id === post.campaignId);
+            setSelectedCampaign(campaign || null);
+        }
+        if (post.seriesId) {
+            const series = contentSeries.find(s => s.id === post.seriesId);
+            setSelectedContentSeries(series || null);
+        }
+        if (post.templateId) {
+            const template = contentTemplates.find(t => t.id === post.templateId);
+            setSelectedTemplate(template || null);
+        }
+        if (post.imageStyleId) {
+            const imageStyle = imageStyles.find(s => s.id === post.imageStyleId);
+            setSelectedImageStyle(imageStyle || null);
+        }
+        
         setEditingPostId(post.id);
         setShowPostDetailsModal(false);
         setSelectedPostForDetails(null);
@@ -525,10 +856,20 @@ const App: React.FC = () => {
     
     const creativeTabs = [
       { id: 'content', label: 'Content Tools' },
+      { id: 'personalization', label: 'Personalization' },
       { id: 'tags', label: 'SEO & Tags' },
       { id: 'social', label: 'Social Media' },
       { id: 'image', label: 'Image Generation' },
+      { id: 'campaign', label: 'Campaign & Series' },
       { id: 'publish', label: 'Publishing' },
+    ];
+
+    const enhancedFeatureTabs = [
+      { id: 'personalization', label: 'Brand & Audience' },
+      { id: 'campaigns', label: 'Campaigns & Series' },
+      { id: 'analytics', label: 'Analytics & Insights' },
+      { id: 'templates', label: 'Template Library' },
+      { id: 'scheduling', label: 'Smart Scheduling' },
     ];
     
     if (!isAuthReady) {
@@ -575,6 +916,12 @@ const App: React.FC = () => {
                             className="bg-gradient-to-br from-secondary to-accent hover:shadow-neon-accent transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg text-sm"
                         >
                             🔗 Integrations
+                        </button>
+                        <button
+                            onClick={() => setShowEnhancedFeatures(true)}
+                            className="bg-gradient-to-br from-purple-500 to-pink-500 hover:shadow-neon-accent transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg text-sm"
+                        >
+                            ⚡ Enhanced Features
                         </button>
                     </div>
                 )}
@@ -716,6 +1063,129 @@ const App: React.FC = () => {
                                     </button>
                                 ))}
                             </div>
+
+                            {/* Personalization Tab */}
+                            {activeCreativeTab === 'personalization' && (
+                                <div className="space-y-6">
+                                    {/* Brand Voice Selection */}
+                                    <div className="glass-card p-4">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-semibold text-primary-foreground">Brand Voice</h4>
+                                            <button
+                                                onClick={() => setShowBrandVoiceManager(true)}
+                                                className="bg-secondary/80 hover:bg-secondary text-white text-sm py-1 px-3 rounded"
+                                            >
+                                                Manage Voices
+                                            </button>
+                                        </div>
+                                        <select
+                                            value={selectedBrandVoice?.id || ''}
+                                            onChange={(e) => {
+                                                const voice = brandVoices.find(v => v.id === e.target.value);
+                                                handleBrandVoiceSelect(voice || null);
+                                            }}
+                                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
+                                        >
+                                            <option value="">No specific brand voice</option>
+                                            {brandVoices.map(voice => (
+                                                <option key={voice.id} value={voice.id}>
+                                                    {voice.name} ({voice.tone})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {selectedBrandVoice && (
+                                            <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                                                <p className="text-sm text-muted-foreground">
+                                                    <strong>Tone:</strong> {selectedBrandVoice.tone} | 
+                                                    <strong> Style:</strong> {selectedBrandVoice.writingStyle}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Target: {selectedBrandVoice.targetAudience}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Audience Profile Selection */}
+                                    <div className="glass-card p-4">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-semibold text-primary-foreground">Target Audience</h4>
+                                            <button
+                                                onClick={() => setShowAudienceProfileManager(true)}
+                                                className="bg-secondary/80 hover:bg-secondary text-white text-sm py-1 px-3 rounded"
+                                            >
+                                                Manage Profiles
+                                            </button>
+                                        </div>
+                                        <select
+                                            value={selectedAudienceProfile?.id || ''}
+                                            onChange={(e) => {
+                                                const profile = audienceProfiles.find(p => p.id === e.target.value);
+                                                handleAudienceProfileSelect(profile || null);
+                                            }}
+                                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
+                                        >
+                                            <option value="">No specific audience</option>
+                                            {audienceProfiles.map(profile => (
+                                                <option key={profile.id} value={profile.id}>
+                                                    {profile.name} ({profile.industry})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {selectedAudienceProfile && (
+                                            <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                                                <p className="text-sm text-muted-foreground">
+                                                    <strong>Age:</strong> {selectedAudienceProfile.ageRange} | 
+                                                    <strong> Industry:</strong> {selectedAudienceProfile.industry}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Interests: {selectedAudienceProfile.interests.slice(0, 3).join(', ')}
+                                                    {selectedAudienceProfile.interests.length > 3 && '...'}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Template Selection */}
+                                    <div className="glass-card p-4">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-semibold text-primary-foreground">Content Template</h4>
+                                            <button
+                                                onClick={() => setShowTemplateLibrary(true)}
+                                                className="bg-secondary/80 hover:bg-secondary text-white text-sm py-1 px-3 rounded"
+                                            >
+                                                Browse Library
+                                            </button>
+                                        </div>
+                                        <select
+                                            value={selectedTemplate?.id || ''}
+                                            onChange={(e) => {
+                                                const template = contentTemplates.find(t => t.id === e.target.value);
+                                                handleTemplateSelect(template || null);
+                                            }}
+                                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
+                                        >
+                                            <option value="">No template (free-form)</option>
+                                            {contentTemplates.map(template => (
+                                                <option key={template.id} value={template.id}>
+                                                    {template.name} ({template.category})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {selectedTemplate && (
+                                            <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                                                <p className="text-sm text-muted-foreground">
+                                                    <strong>Type:</strong> {selectedTemplate.contentType} | 
+                                                    <strong> Category:</strong> {selectedTemplate.category}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Used {selectedTemplate.usageCount} times | Rating: {selectedTemplate.rating}/5
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Content Tools Tab */}
                             {activeCreativeTab === 'content' && (
@@ -1056,6 +1526,152 @@ const App: React.FC = () => {
                                 </div>
                             )}
 
+                            {/* Campaign & Series Tab */}
+                            {activeCreativeTab === 'campaign' && (
+                                <div className="space-y-6">
+                                    {/* Campaign Selection */}
+                                    <div className="glass-card p-4">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-semibold text-primary-foreground">Campaign</h4>
+                                            <button
+                                                onClick={() => setShowCampaignManager(true)}
+                                                className="bg-secondary/80 hover:bg-secondary text-white text-sm py-1 px-3 rounded"
+                                            >
+                                                Manage Campaigns
+                                            </button>
+                                        </div>
+                                        <select
+                                            value={selectedCampaign?.id || ''}
+                                            onChange={(e) => {
+                                                const campaign = campaigns.find(c => c.id === e.target.value);
+                                                handleCampaignSelect(campaign || null);
+                                            }}
+                                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
+                                        >
+                                            <option value="">No campaign (standalone post)</option>
+                                            {campaigns.map(campaign => (
+                                                <option key={campaign.id} value={campaign.id}>
+                                                    {campaign.name} ({campaign.status})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {selectedCampaign && (
+                                            <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                                                <p className="text-sm text-muted-foreground">
+                                                    <strong>Theme:</strong> {selectedCampaign.theme}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {selectedCampaign.description}
+                                                </p>
+                                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                                    <span>Posts: {selectedCampaign.posts.length}</span>
+                                                    <span>Platforms: {selectedCampaign.platforms.join(', ')}</span>
+                                                    <span className={`px-2 py-1 rounded ${
+                                                        selectedCampaign.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                                                        selectedCampaign.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                        'bg-gray-500/20 text-gray-400'
+                                                    }`}>
+                                                        {selectedCampaign.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Content Series Selection */}
+                                    <div className="glass-card p-4">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-semibold text-primary-foreground">Content Series</h4>
+                                            <button
+                                                onClick={() => setShowContentSeriesManager(true)}
+                                                className="bg-secondary/80 hover:bg-secondary text-white text-sm py-1 px-3 rounded"
+                                            >
+                                                Manage Series
+                                            </button>
+                                        </div>
+                                        <select
+                                            value={selectedContentSeries?.id || ''}
+                                            onChange={(e) => {
+                                                const series = contentSeries.find(s => s.id === e.target.value);
+                                                handleContentSeriesSelect(series || null);
+                                            }}
+                                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
+                                        >
+                                            <option value="">No series (standalone post)</option>
+                                            {contentSeries.map(series => (
+                                                <option key={series.id} value={series.id}>
+                                                    {series.name} ({series.currentPost}/{series.totalPosts})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {selectedContentSeries && (
+                                            <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                                                <p className="text-sm text-muted-foreground">
+                                                    <strong>Theme:</strong> {selectedContentSeries.theme}
+                                                </p>
+                                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                                    <span>Progress: {selectedContentSeries.currentPost}/{selectedContentSeries.totalPosts}</span>
+                                                    <span>Frequency: {selectedContentSeries.frequency}</span>
+                                                    {selectedContentSeries.campaignId && (
+                                                        <span>Part of campaign</span>
+                                                    )}
+                                                </div>
+                                                <div className="w-full bg-muted/50 rounded-full h-2 mt-2">
+                                                    <div 
+                                                        className="bg-secondary h-2 rounded-full transition-all duration-300"
+                                                        style={{ 
+                                                            width: `${(selectedContentSeries.currentPost / selectedContentSeries.totalPosts) * 100}%` 
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Smart Scheduling Suggestions */}
+                                    <div className="glass-card p-4">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-semibold text-primary-foreground">Smart Scheduling</h4>
+                                            <button
+                                                onClick={generateSchedulingSuggestions}
+                                                disabled={isLoading.schedulingSuggestions}
+                                                className="bg-secondary/80 hover:bg-secondary text-white text-sm py-1 px-3 rounded disabled:opacity-50"
+                                            >
+                                                {isLoading.schedulingSuggestions ? <Spinner className="h-4 w-4" /> : 'Get Suggestions'}
+                                            </button>
+                                        </div>
+                                        {schedulingSuggestions.length > 0 ? (
+                                            <div className="space-y-2">
+                                                {schedulingSuggestions.slice(0, 3).map((suggestion, index) => (
+                                                    <div key={index} className="p-3 bg-muted/30 rounded-lg">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <p className="text-sm font-medium text-primary-foreground">
+                                                                    {suggestion.platform}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {suggestion.suggestedTime.toLocaleDateString()} at {suggestion.suggestedTime.toLocaleTimeString()}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {suggestion.reason}
+                                                                </p>
+                                                            </div>
+                                                            <span className="text-xs bg-secondary/20 text-secondary px-2 py-1 rounded">
+                                                                {Math.round(suggestion.confidence * 100)}% confidence
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">
+                                                Click "Get Suggestions" to see optimal posting times based on your audience engagement patterns.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Publishing Tab */}
                             {activeCreativeTab === 'publish' && (
                                 <div className="space-y-4">
@@ -1265,6 +1881,490 @@ const App: React.FC = () => {
                     onSuccess={setSuccessMessage}
                     onError={setErrorMessage}
                 />
+            )}
+
+            {/* Brand Voice Manager Modal */}
+            {showBrandVoiceManager && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl p-6 w-full max-w-2xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-bold text-white">Brand Voice Manager</h2>
+                            <button
+                                onClick={() => setShowBrandVoiceManager(false)}
+                                className="text-white/60 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p className="text-white/60 text-center py-8">
+                            Brand Voice Manager component will be implemented in a future task.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Audience Profile Manager Modal */}
+            {showAudienceProfileManager && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl p-6 w-full max-w-2xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-bold text-white">Audience Profile Manager</h2>
+                            <button
+                                onClick={() => setShowAudienceProfileManager(false)}
+                                className="text-white/60 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p className="text-white/60 text-center py-8">
+                            Audience Profile Manager component will be implemented in a future task.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Campaign Manager Modal */}
+            {showCampaignManager && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl p-6 w-full max-w-4xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-bold text-white">Campaign Manager</h2>
+                            <button
+                                onClick={() => setShowCampaignManager(false)}
+                                className="text-white/60 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p className="text-white/60 text-center py-8">
+                            Campaign Manager component will be implemented in a future task.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Content Series Manager Modal */}
+            {showContentSeriesManager && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl p-6 w-full max-w-4xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-bold text-white">Content Series Manager</h2>
+                            <button
+                                onClick={() => setShowContentSeriesManager(false)}
+                                className="text-white/60 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p className="text-white/60 text-center py-8">
+                            Content Series Manager component will be implemented in a future task.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Template Library Modal */}
+            {showTemplateLibrary && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl p-6 w-full max-w-4xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-bold text-white">Template Library</h2>
+                            <button
+                                onClick={() => setShowTemplateLibrary(false)}
+                                className="text-white/60 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p className="text-white/60 text-center py-8">
+                            Template Library component will be implemented in a future task.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Analytics Dashboard Modal */}
+            <AnalyticsDashboard
+                isOpen={showAnalyticsDashboard}
+                onClose={() => setShowAnalyticsDashboard(false)}
+                loading={isLoading}
+                setLoading={setIsLoading}
+            />
+
+            {/* Performance Insights Modal */}
+            <PerformanceInsights
+                isOpen={showPerformanceInsights}
+                onClose={() => setShowPerformanceInsights(false)}
+                posts={allScheduledPosts}
+                loading={isLoading}
+                setLoading={setIsLoading}
+            />
+
+            {/* Enhanced Features Dashboard Modal */}
+            {showEnhancedFeatures && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-3xl font-display font-black text-white">⚡ Enhanced Features Dashboard</h2>
+                            <button
+                                onClick={() => setShowEnhancedFeatures(false)}
+                                className="text-white/60 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Enhanced Features Tabs */}
+                        <div className="flex flex-wrap border-b border-white/20 mb-6 -mx-2">
+                            {enhancedFeatureTabs.map(tab => (
+                                <button 
+                                    key={tab.id} 
+                                    onClick={() => setActiveEnhancedTab(tab.id)} 
+                                    className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                                        activeEnhancedTab === tab.id 
+                                            ? 'text-secondary border-secondary' 
+                                            : 'text-white/60 border-transparent hover:text-white'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Brand & Audience Tab */}
+                        {activeEnhancedTab === 'personalization' && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Brand Voices */}
+                                <div className="glass-card p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-xl font-bold text-white">Brand Voices</h3>
+                                        <button
+                                            onClick={() => setShowBrandVoiceManager(true)}
+                                            className="bg-secondary/80 hover:bg-secondary text-white py-2 px-4 rounded-lg"
+                                        >
+                                            Manage
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {brandVoices.slice(0, 3).map(voice => (
+                                            <div key={voice.id} className="p-3 bg-white/5 rounded-lg">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="font-semibold text-white">{voice.name}</h4>
+                                                        <p className="text-sm text-white/60">{voice.tone} • {voice.writingStyle}</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleBrandVoiceSelect(voice)}
+                                                        className={`text-xs px-2 py-1 rounded ${
+                                                            selectedBrandVoice?.id === voice.id
+                                                                ? 'bg-secondary text-white'
+                                                                : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                        }`}
+                                                    >
+                                                        {selectedBrandVoice?.id === voice.id ? 'Selected' : 'Select'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {brandVoices.length === 0 && (
+                                            <p className="text-white/60 text-center py-4">
+                                                No brand voices created yet. Click "Manage" to create your first one.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Audience Profiles */}
+                                <div className="glass-card p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-xl font-bold text-white">Audience Profiles</h3>
+                                        <button
+                                            onClick={() => setShowAudienceProfileManager(true)}
+                                            className="bg-secondary/80 hover:bg-secondary text-white py-2 px-4 rounded-lg"
+                                        >
+                                            Manage
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {audienceProfiles.slice(0, 3).map(profile => (
+                                            <div key={profile.id} className="p-3 bg-white/5 rounded-lg">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="font-semibold text-white">{profile.name}</h4>
+                                                        <p className="text-sm text-white/60">{profile.industry} • {profile.ageRange}</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleAudienceProfileSelect(profile)}
+                                                        className={`text-xs px-2 py-1 rounded ${
+                                                            selectedAudienceProfile?.id === profile.id
+                                                                ? 'bg-secondary text-white'
+                                                                : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                        }`}
+                                                    >
+                                                        {selectedAudienceProfile?.id === profile.id ? 'Selected' : 'Select'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {audienceProfiles.length === 0 && (
+                                            <p className="text-white/60 text-center py-4">
+                                                No audience profiles created yet. Click "Manage" to create your first one.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Campaigns & Series Tab */}
+                        {activeEnhancedTab === 'campaigns' && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Campaigns */}
+                                <div className="glass-card p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-xl font-bold text-white">Campaigns</h3>
+                                        <button
+                                            onClick={() => setShowCampaignManager(true)}
+                                            className="bg-secondary/80 hover:bg-secondary text-white py-2 px-4 rounded-lg"
+                                        >
+                                            Manage
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {campaigns.slice(0, 3).map(campaign => (
+                                            <div key={campaign.id} className="p-3 bg-white/5 rounded-lg">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="font-semibold text-white">{campaign.name}</h4>
+                                                        <p className="text-sm text-white/60">{campaign.theme}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className={`text-xs px-2 py-1 rounded ${
+                                                                campaign.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                                                                campaign.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                'bg-gray-500/20 text-gray-400'
+                                                            }`}>
+                                                                {campaign.status}
+                                                            </span>
+                                                            <span className="text-xs text-white/60">{campaign.posts.length} posts</span>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleCampaignSelect(campaign)}
+                                                        className={`text-xs px-2 py-1 rounded ${
+                                                            selectedCampaign?.id === campaign.id
+                                                                ? 'bg-secondary text-white'
+                                                                : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                        }`}
+                                                    >
+                                                        {selectedCampaign?.id === campaign.id ? 'Selected' : 'Select'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {campaigns.length === 0 && (
+                                            <p className="text-white/60 text-center py-4">
+                                                No campaigns created yet. Click "Manage" to create your first one.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Content Series */}
+                                <div className="glass-card p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-xl font-bold text-white">Content Series</h3>
+                                        <button
+                                            onClick={() => setShowContentSeriesManager(true)}
+                                            className="bg-secondary/80 hover:bg-secondary text-white py-2 px-4 rounded-lg"
+                                        >
+                                            Manage
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {contentSeries.slice(0, 3).map(series => (
+                                            <div key={series.id} className="p-3 bg-white/5 rounded-lg">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1">
+                                                        <h4 className="font-semibold text-white">{series.name}</h4>
+                                                        <p className="text-sm text-white/60">{series.theme}</p>
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <span className="text-xs text-white/60">
+                                                                {series.currentPost}/{series.totalPosts} • {series.frequency}
+                                                            </span>
+                                                        </div>
+                                                        <div className="w-full bg-white/10 rounded-full h-1 mt-2">
+                                                            <div 
+                                                                className="bg-secondary h-1 rounded-full transition-all duration-300"
+                                                                style={{ 
+                                                                    width: `${(series.currentPost / series.totalPosts) * 100}%` 
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleContentSeriesSelect(series)}
+                                                        className={`text-xs px-2 py-1 rounded ml-2 ${
+                                                            selectedContentSeries?.id === series.id
+                                                                ? 'bg-secondary text-white'
+                                                                : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                        }`}
+                                                    >
+                                                        {selectedContentSeries?.id === series.id ? 'Selected' : 'Select'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {contentSeries.length === 0 && (
+                                            <p className="text-white/60 text-center py-4">
+                                                No content series created yet. Click "Manage" to create your first one.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Analytics & Insights Tab */}
+                        {activeEnhancedTab === 'analytics' && (
+                            <div className="space-y-6">
+                                <div className="glass-card p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-xl font-bold text-white">Performance Analytics</h3>
+                                        <div className="flex space-x-2">
+                                            <button
+                                                onClick={() => setShowAnalyticsDashboard(true)}
+                                                className="bg-blue-600/80 hover:bg-blue-600 text-white py-2 px-4 rounded-lg"
+                                            >
+                                                📊 Dashboard
+                                            </button>
+                                            <button
+                                                onClick={() => setShowPerformanceInsights(true)}
+                                                className="bg-purple-600/80 hover:bg-purple-600 text-white py-2 px-4 rounded-lg"
+                                            >
+                                                💡 Insights
+                                            </button>
+                                            <button
+                                                onClick={() => generatePerformanceReport('30d')}
+                                                disabled={isLoading.performanceReport}
+                                                className="bg-secondary/80 hover:bg-secondary text-white py-2 px-4 rounded-lg disabled:opacity-50"
+                                            >
+                                                {isLoading.performanceReport ? <Spinner className="h-4 w-4" /> : 'Generate Report'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {performanceReport ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="bg-white/5 p-4 rounded-lg text-center">
+                                                <div className="text-2xl font-bold text-secondary">{performanceReport.totalPosts}</div>
+                                                <div className="text-sm text-white/60">Total Posts</div>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-lg text-center">
+                                                <div className="text-2xl font-bold text-secondary">{performanceReport.totalEngagement}</div>
+                                                <div className="text-sm text-white/60">Total Engagement</div>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-lg text-center">
+                                                <div className="text-2xl font-bold text-secondary">{performanceReport.avgEngagementRate.toFixed(1)}%</div>
+                                                <div className="text-sm text-white/60">Avg Engagement Rate</div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-white/60 text-center py-8">
+                                            Click "Generate Report" to see your content performance analytics.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Template Library Tab */}
+                        {activeEnhancedTab === 'templates' && (
+                            <div className="glass-card p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xl font-bold text-white">Template Library</h3>
+                                    <button
+                                        onClick={() => setShowTemplateLibrary(true)}
+                                        className="bg-secondary/80 hover:bg-secondary text-white py-2 px-4 rounded-lg"
+                                    >
+                                        Browse Library
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {contentTemplates.slice(0, 6).map(template => (
+                                        <div key={template.id} className="p-4 bg-white/5 rounded-lg">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-semibold text-white">{template.name}</h4>
+                                                <span className="text-xs bg-secondary/20 text-secondary px-2 py-1 rounded">
+                                                    {template.contentType}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-white/60 mb-3">{template.category}</p>
+                                            <div className="flex justify-between items-center">
+                                                <div className="text-xs text-white/60">
+                                                    Used {template.usageCount} times
+                                                </div>
+                                                <button
+                                                    onClick={() => handleTemplateSelect(template)}
+                                                    className={`text-xs px-2 py-1 rounded ${
+                                                        selectedTemplate?.id === template.id
+                                                            ? 'bg-secondary text-white'
+                                                            : 'bg-white/10 text-white/60 hover:bg-white/20'
+                                                    }`}
+                                                >
+                                                    {selectedTemplate?.id === template.id ? 'Selected' : 'Select'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {contentTemplates.length === 0 && (
+                                        <div className="col-span-full text-white/60 text-center py-8">
+                                            No templates available yet. Click "Browse Library" to explore templates.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Smart Scheduling Tab */}
+                        {activeEnhancedTab === 'scheduling' && (
+                            <div className="glass-card p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xl font-bold text-white">Smart Scheduling</h3>
+                                    <button
+                                        onClick={generateSchedulingSuggestions}
+                                        disabled={isLoading.schedulingSuggestions}
+                                        className="bg-secondary/80 hover:bg-secondary text-white py-2 px-4 rounded-lg disabled:opacity-50"
+                                    >
+                                        {isLoading.schedulingSuggestions ? <Spinner className="h-4 w-4" /> : 'Get Suggestions'}
+                                    </button>
+                                </div>
+                                {schedulingSuggestions.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {schedulingSuggestions.map((suggestion, index) => (
+                                            <div key={index} className="p-4 bg-white/5 rounded-lg">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="font-semibold text-white">{suggestion.platform}</h4>
+                                                        <p className="text-sm text-white/60">
+                                                            {suggestion.suggestedTime.toLocaleDateString()} at {suggestion.suggestedTime.toLocaleTimeString()}
+                                                        </p>
+                                                        <p className="text-xs text-white/60 mt-1">{suggestion.reason}</p>
+                                                    </div>
+                                                    <span className="text-xs bg-secondary/20 text-secondary px-2 py-1 rounded">
+                                                        {Math.round(suggestion.confidence * 100)}% confidence
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-white/60 text-center py-8">
+                                        Click "Get Suggestions" to see optimal posting times based on your audience engagement patterns.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     );

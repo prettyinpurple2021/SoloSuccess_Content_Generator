@@ -19,6 +19,7 @@ import {
   PerformanceReport,
   EngagementData
 } from '../types';
+import { contentCache, paginationCache } from './cachingService';
 
 // Supabase configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -60,16 +61,88 @@ export const auth = {
 
 // Database functions
 export const db = {
-  // Get all posts for current user
+  // Get all posts for current user with caching
   getPosts: async (): Promise<Post[]> => {
-    const { data, error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    return await contentCache.cacheUserPosts(user.id, async () => {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(transformDatabasePostToPost);
+    });
+  },
+
+  // Get paginated posts for better performance with large datasets
+  getPostsPaginated: async (page: number = 1, pageSize: number = 20, filters?: {
+    status?: string;
+    campaignId?: string;
+    seriesId?: string;
+  }): Promise<{ posts: Post[]; totalCount: number; hasMore: boolean }> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const cacheKey = paginationCache.generateKey(`posts:${user.id}`, filters);
+    
+    // Try to get from pagination cache first
+    const cached = paginationCache.get(cacheKey, page, pageSize);
+    if (cached) {
+      return {
+        posts: cached.data,
+        totalCount: cached.totalCount,
+        hasMore: page * pageSize < cached.totalCount
+      };
+    }
+
+    // Build query with filters
+    let query = supabase
       .from('posts')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
+
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters?.campaignId) {
+      query = query.eq('campaign_id', filters.campaignId);
+    }
+    if (filters?.seriesId) {
+      query = query.eq('series_id', filters.seriesId);
+    }
+
+    const { data, error, count } = await query
+      .range((page - 1) * pageSize, page * pageSize - 1);
 
     if (error) throw error;
 
-    return (data || []).map(transformDatabasePostToPost);
+    const posts = (data || []).map(transformDatabasePostToPost);
+    const totalCount = count || 0;
+
+    // Cache the full result set for this filter combination
+    if (page === 1) {
+      // For first page, fetch more data to cache
+      const { data: fullData } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(Math.min(1000, totalCount)); // Cache up to 1000 posts
+
+      if (fullData) {
+        const fullPosts = fullData.map(transformDatabasePostToPost);
+        paginationCache.set(cacheKey, fullPosts, totalCount);
+      }
+    }
+
+    return {
+      posts,
+      totalCount,
+      hasMore: page * pageSize < totalCount
+    };
   },
 
   // Subscribe to posts changes
@@ -107,11 +180,18 @@ export const db = {
       .single();
 
     if (error) throw error;
+
+    // Invalidate user cache after adding post
+    contentCache.invalidateUserCache(user.id);
+    
     return transformDatabasePostToPost(data);
   },
 
   // Update post
   updatePost: async (id: string, updates: Partial<Omit<DatabasePost, 'id' | 'user_id'>>): Promise<Post> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { data, error } = await supabase
       .from('posts')
       .update(updates)
@@ -120,29 +200,46 @@ export const db = {
       .single();
 
     if (error) throw error;
+
+    // Invalidate related caches
+    contentCache.invalidateUserCache(user.id);
+    contentCache.invalidatePostCache(id);
+    
     return transformDatabasePostToPost(data);
   },
 
   // Delete post
   deletePost: async (id: string): Promise<void> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { error } = await supabase
       .from('posts')
       .delete()
       .eq('id', id);
 
     if (error) throw error;
+
+    // Invalidate related caches
+    contentCache.invalidateUserCache(user.id);
+    contentCache.invalidatePostCache(id);
   },
 
-  // Brand Voices CRUD operations
+  // Brand Voices CRUD operations with caching
   getBrandVoices: async (): Promise<BrandVoice[]> => {
-    const { data, error } = await supabase
-      .from('brand_voices')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
 
-    if (error) throw error;
+    return await contentCache.cacheBrandVoices(user.id, async () => {
+      const { data, error } = await supabase
+        .from('brand_voices')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    return (data || []).map(transformDatabaseBrandVoiceToBrandVoice);
+      if (error) throw error;
+
+      return (data || []).map(transformDatabaseBrandVoiceToBrandVoice);
+    });
   },
 
   addBrandVoice: async (brandVoice: Omit<DatabaseBrandVoice, 'id' | 'user_id' | 'created_at'>): Promise<BrandVoice> => {
