@@ -169,7 +169,47 @@ CREATE INDEX IF NOT EXISTS integration_alerts_is_resolved_idx ON integration_ale
 CREATE INDEX IF NOT EXISTS integration_alerts_created_at_idx ON integration_alerts(created_at DESC);
 
 -- ============================================================================
--- 5. INTEGRATION METRICS TABLE
+-- 5. WEBHOOK DELIVERIES TABLE
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  webhook_id UUID REFERENCES integration_webhooks(id) ON DELETE CASCADE,
+  event TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  status TEXT CHECK (status IN ('pending', 'delivering', 'delivered', 'failed')) DEFAULT 'pending',
+  attempts INTEGER DEFAULT 0,
+  max_attempts INTEGER DEFAULT 3,
+  next_retry_at TIMESTAMPTZ,
+  delivered_at TIMESTAMPTZ,
+  response_status INTEGER,
+  response_headers JSONB DEFAULT '{}',
+  error TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for webhook_deliveries
+ALTER TABLE webhook_deliveries ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for webhook_deliveries
+CREATE POLICY "Users can access own webhook deliveries" ON webhook_deliveries
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM integration_webhooks iw
+      JOIN integrations i ON i.id = iw.integration_id
+      WHERE iw.id = webhook_deliveries.webhook_id 
+      AND i.user_id = auth.uid()
+    )
+  );
+
+-- Indexes for webhook_deliveries
+CREATE INDEX IF NOT EXISTS webhook_deliveries_webhook_id_idx ON webhook_deliveries(webhook_id);
+CREATE INDEX IF NOT EXISTS webhook_deliveries_status_idx ON webhook_deliveries(status);
+CREATE INDEX IF NOT EXISTS webhook_deliveries_next_retry_at_idx ON webhook_deliveries(next_retry_at);
+CREATE INDEX IF NOT EXISTS webhook_deliveries_created_at_idx ON webhook_deliveries(created_at DESC);
+
+-- ============================================================================
+-- 6. INTEGRATION METRICS TABLE
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS integration_metrics (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -206,7 +246,7 @@ CREATE INDEX IF NOT EXISTS integration_metrics_recorded_at_idx ON integration_me
 CREATE INDEX IF NOT EXISTS integration_metrics_error_rate_idx ON integration_metrics(error_rate DESC);
 
 -- ============================================================================
--- 6. CREATE UPDATED_AT TRIGGERS FOR ALL NEW TABLES
+-- 7. CREATE UPDATED_AT TRIGGERS FOR ALL NEW TABLES
 -- ============================================================================
 -- Integrations trigger
 CREATE TRIGGER update_integrations_updated_at 
@@ -218,8 +258,13 @@ CREATE TRIGGER update_integration_webhooks_updated_at
   BEFORE UPDATE ON integration_webhooks
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Webhook deliveries trigger
+CREATE TRIGGER update_webhook_deliveries_updated_at 
+  BEFORE UPDATE ON webhook_deliveries
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ============================================================================
--- 7. ENABLE REALTIME FOR NEW TABLES
+-- 8. ENABLE REALTIME FOR NEW TABLES
 -- ============================================================================
 -- Enable realtime subscriptions for all new tables
 ALTER PUBLICATION supabase_realtime ADD TABLE integrations;
@@ -227,9 +272,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE integration_webhooks;
 ALTER PUBLICATION supabase_realtime ADD TABLE integration_logs;
 ALTER PUBLICATION supabase_realtime ADD TABLE integration_alerts;
 ALTER PUBLICATION supabase_realtime ADD TABLE integration_metrics;
+ALTER PUBLICATION supabase_realtime ADD TABLE webhook_deliveries;
 
 -- ============================================================================
--- 8. CREATE HELPER FUNCTIONS
+-- 9. CREATE HELPER FUNCTIONS
 -- ============================================================================
 
 -- Function to calculate integration health score
@@ -394,7 +440,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================================
--- 9. CREATE TRIGGERS FOR AUTOMATIC UPDATES
+-- 10. CREATE TRIGGERS FOR AUTOMATIC UPDATES
 -- ============================================================================
 
 -- Trigger to update integration status when logs are inserted
@@ -447,7 +493,7 @@ CREATE TRIGGER integration_metrics_trigger
   FOR EACH ROW EXECUTE FUNCTION trigger_update_integration_metrics();
 
 -- ============================================================================
--- 10. SAMPLE DATA INSERTION (OPTIONAL - FOR DEVELOPMENT)
+-- 11. SAMPLE DATA INSERTION (OPTIONAL - FOR DEVELOPMENT)
 -- ============================================================================
 
 -- Insert sample integration configurations (only if no data exists)

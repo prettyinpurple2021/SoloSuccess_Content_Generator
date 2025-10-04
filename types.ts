@@ -706,3 +706,44 @@ export interface IntegrationLoadingState {
   healthCheck?: boolean;
   webhooks?: boolean;
 }
+
+// Additional types for integration services
+export interface PostResult {
+  success: boolean;
+  postId?: string;
+  url?: string;
+  error?: string;
+  timestamp: Date;
+  platform: string;
+}
+
+export interface IntegrationWebhook {
+  id: string;
+  integrationId: string;
+  url: string;
+  secret: string;
+  events: WebhookEvent[];
+  isActive: boolean;
+  retryPolicy: RetryPolicy;
+  headers?: { [key: string]: string };
+  timeout?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WebhookDelivery {
+  id: string;
+  webhookId: string;
+  event: WebhookEvent;
+  payload: any;
+  status: 'pending' | 'delivering' | 'delivered' | 'failed';
+  attempts: number;
+  maxAttempts: number;
+  nextRetryAt: Date;
+  deliveredAt?: Date;
+  responseStatus?: number;
+  responseHeaders?: { [key: string]: string };
+  error?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
