@@ -1,6 +1,10 @@
 /* Holographic Glassmorphic Theme */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Rainbow Gradient Colors */
   --rainbow-gradient: linear-gradient(45deg, 
@@ -32,43 +36,6 @@
                      inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-/* Global Styles */
-* {
-  box-sizing: border-box;
-}
-
-/* Theme Modes */
-body.theme-holographic {
-  font-family: 'Space Grotesk', sans-serif;
-  background: 
-    radial-gradient(circle at 20% 80%, rgba(255, 0, 128, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(0, 191, 255, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(255, 215, 0, 0.2) 0%, transparent 50%),
-    linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0a1a1a 100%);
-  background-attachment: fixed;
-  min-height: 100vh;
-  overflow-x: hidden;
-  color: white;
-}
-
-body.theme-dark {
-  font-family: 'Space Grotesk', sans-serif;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
-  background-attachment: fixed;
-  min-height: 100vh;
-  overflow-x: hidden;
-  color: #e5e5e5;
-}
-
-body.theme-light {
-  font-family: 'Space Grotesk', sans-serif;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
-  background-attachment: fixed;
-  min-height: 100vh;
-  overflow-x: hidden;
-  color: #1a202c;
-}
-
 /* Default fallback */
 body {
   font-family: 'Space Grotesk', sans-serif;
@@ -81,6 +48,84 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   color: white;
+}
+
+/* Theme Modes */
+body.theme-holographic {
+  font-family: 'Space Grotesk', sans-serif;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 0, 128, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 191, 255, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 215, 0, 0.2) 0%, transparent 50%),
+    linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0a1a1a 100%);
+  color: white;
+}
+
+body.theme-dark {
+  font-family: 'Space Grotesk', sans-serif;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+  color: #e5e5e5;
+}
+
+body.theme-light {
+  font-family: 'Space Grotesk', sans-serif;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
+  color: #1a202c;
+}
+
+@layer components {
+  /* For vibrant, animated gradient text */
+  .holo-text {
+    @apply font-bold text-transparent bg-clip-text animate-rainbow-shift;
+    background-image: var(--rainbow-gradient);
+    background-size: 400% 400%;
+    text-shadow: 0 0 30px rgba(255, 105, 180, 0.5);
+  }
+
+  /* Your primary button style with hover effects */
+  .holo-button {
+    @apply relative overflow-hidden rounded-[15px] border-none px-6 py-3 font-semibold text-white cursor-pointer transition-all duration-300 ease-in-out animate-rainbow-shift;
+    background: linear-gradient(45deg, 
+      rgba(255, 0, 128, 0.8), 
+      rgba(255, 140, 0, 0.8), 
+      rgba(255, 215, 0, 0.8), 
+      rgba(0, 255, 128, 0.8), 
+      rgba(0, 191, 255, 0.8), 
+      rgba(128, 0, 255, 0.8));
+    background-size: 400% 400%;
+    box-shadow: 0 8px 25px rgba(255, 105, 180, 0.3);
+  }
+
+  .holo-button:hover {
+    @apply -translate-y-px scale-105;
+    box-shadow: 0 12px 35px rgba(255, 105, 180, 0.5);
+  }
+
+  /* Creates the swipe-to-shine effect on hover */
+  .holo-button::before {
+    content: '';
+    @apply absolute top-0 w-full h-full transition-all duration-500;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    left: -100%;
+  }
+
+  .holo-button:hover::before {
+    left: 100%;
+  }
+
+  /* A stylized input field with a holographic border on focus */
+  .holo-input {
+    @apply w-full rounded-xl border-2 border-transparent bg-white/10 py-3 px-4 text-white backdrop-blur-[10px] transition-all duration-300 ease-in-out placeholder:text-white/60;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+                      linear-gradient(45deg, #ff0080, #ff8c00, #ffd700, #00ff80, #00bfff, #8000ff);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+
+  .holo-input:focus {
+    @apply outline-none;
+    box-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
+  }
 }
 
 /* Sparkle Animation */
@@ -142,6 +187,10 @@ body {
   }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Glassmorphic Base Classes */
 .glass-card {
   background: linear-gradient(135deg, 
@@ -176,385 +225,6 @@ body {
   border-color: rgba(255, 105, 180, 0.4);
 }
 
-/* Holographic Elements */
-.holo-text {
-  background: var(--rainbow-gradient);
-  background-size: 400% 400%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: rainbow-shift 3s ease-in-out infinite;
-  font-weight: 700;
-  text-shadow: 0 0 30px rgba(255, 105, 180, 0.5);
-}
-
-.holo-border {
-  border: 2px solid transparent;
-  background: linear-gradient(45deg, #ff0080, #ff8c00, #ffd700, #00ff80, #00bfff, #8000ff) border-box;
-  background-clip: padding-box, border-box;
-  background-origin: padding-box, border-box;
-  animation: holographic 4s linear infinite;
-}
-
-.holo-button {
-  background: linear-gradient(45deg, 
-    rgba(255, 0, 128, 0.8), 
-    rgba(255, 140, 0, 0.8), 
-    rgba(255, 215, 0, 0.8), 
-    rgba(0, 255, 128, 0.8), 
-    rgba(0, 191, 255, 0.8), 
-    rgba(128, 0, 255, 0.8));
-  background-size: 400% 400%;
-  border: none;
-  border-radius: 15px;
-  color: white;
-  font-weight: 600;
-  padding: 12px 24px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  animation: rainbow-shift 3s ease-in-out infinite;
-  box-shadow: 0 8px 25px rgba(255, 105, 180, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.holo-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.4), 
-    transparent);
-  transition: left 0.5s;
-}
-
-.holo-button:hover::before {
-  left: 100%;
-}
-
-.holo-button:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 12px 35px rgba(255, 105, 180, 0.5);
-}
-
-/* Sparkle Effects */
-.sparkles {
-  position: relative;
-}
-
-.sparkles::before,
-.sparkles::after {
-  content: '✨';
-  position: absolute;
-  font-size: 12px;
-  animation: sparkle 2s infinite;
-  pointer-events: none;
-}
-
-.sparkles::before {
-  top: -5px;
-  right: -5px;
-  animation-delay: 0s;
-}
-
-.sparkles::after {
-  bottom: -5px;
-  left: -5px;
-  animation-delay: 1s;
-}
-
-/* Girly Skull with Pink Bow */
-.girly-skull {
-  position: relative;
-  display: inline-block;
-  font-size: 24px;
-}
-
-.girly-skull::before {
-  content: '💀';
-  filter: hue-rotate(300deg) brightness(1.2);
-}
-
-.girly-skull::after {
-  content: '🎀';
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  font-size: 16px;
-  filter: hue-rotate(320deg) saturate(1.5);
-  animation: float 3s ease-in-out infinite;
-}
-
-/* 3D Card Effects */
-.card-3d {
-  transform-style: preserve-3d;
-  perspective: 1000px;
-  transition: transform 0.3s ease;
-}
-
-.card-3d:hover {
-  transform: rotateX(5deg) rotateY(5deg) translateZ(10px);
-}
-
-.card-3d-inner {
-  transform-style: preserve-3d;
-  transition: transform 0.6s;
-}
-
-/* Rainbow Progress Bar */
-.rainbow-progress {
-  height: 8px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, 
-    #ff0080, #ff8c00, #ffd700, #00ff80, #00bfff, #8000ff);
-  background-size: 200% 100%;
-  animation: rainbow-shift 2s linear infinite;
-  box-shadow: 0 2px 10px rgba(255, 105, 180, 0.4);
-}
-
-/* Holographic Input Fields */
-.holo-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid transparent;
-  border-radius: 12px;
-  padding: 12px 16px;
-  color: white;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
-                    linear-gradient(45deg, #ff0080, #ff8c00, #ffd700, #00ff80, #00bfff, #8000ff);
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-}
-
-.holo-input:focus {
-  outline: none;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15)),
-                    linear-gradient(45deg, #ff0080, #ff8c00, #ffd700, #00ff80, #00bfff, #8000ff);
-  box-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
-}
-
-.holo-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* Floating Elements */
-.floating {
-  animation: float 6s ease-in-out infinite;
-}
-
-.floating:nth-child(2n) {
-  animation-delay: -2s;
-}
-
-.floating:nth-child(3n) {
-  animation-delay: -4s;
-}
-
-/* Neon Glow Effects */
-.neon-glow {
-  animation: glow-pulse 2s ease-in-out infinite alternate;
-}
-
-/* Modal Glassmorphic Overlay */
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-/* Notification Styles */
-.notification-glass {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15) 0%,
-    rgba(255, 255, 255, 0.05) 100%);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(255, 105, 180, 0.2);
-}
-
-/* Loading Spinner */
-.holo-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid transparent;
-  border-radius: 50%;
-  background: linear-gradient(45deg, #ff0080, #ff8c00, #ffd700, #00ff80, #00bfff, #8000ff) border-box;
-  background-clip: padding-box, border-box;
-  animation: spin 1s linear infinite, rainbow-shift 3s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(45deg, #ff0080, #ff8c00, #ffd700, #00ff80, #00bfff, #8000ff);
-  border-radius: 4px;
-  background-size: 200% 200%;
-  animation: rainbow-shift 3s ease-in-out infinite;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-size: 300% 300%;
-}
-
-/* Utility Classes */
-.text-shadow-glow {
-  text-shadow: 0 0 10px rgba(255, 105, 180, 0.8),
-               0 0 20px rgba(255, 105, 180, 0.6),
-               0 0 30px rgba(255, 105, 180, 0.4);
-}
-
-.border-rainbow {
-  border: 2px solid;
-  border-image: linear-gradient(45deg, #ff0080, #ff8c00, #ffd700, #00ff80, #00bfff, #8000ff) 1;
-  border-radius: 12px;
-}
-
-.bg-glass-pink {
-  background: linear-gradient(135deg, 
-    rgba(255, 105, 180, 0.2) 0%,
-    rgba(255, 105, 180, 0.1) 100%);
-}
-
-.bg-glass-purple {
-  background: linear-gradient(135deg, 
-    rgba(138, 43, 226, 0.2) 0%,
-    rgba(138, 43, 226, 0.1) 100%);
-}
-
-.bg-glass-cyan {
-  background: linear-gradient(135deg, 
-    rgba(0, 255, 255, 0.2) 0%,
-    rgba(0, 255, 255, 0.1) 100%);
-}
-
-/* Mobile-First Responsive Design */
-.glass-card {
-  border-radius: 16px;
-  margin: 8px;
-  padding: 16px;
-}
-
-.holo-button {
-  padding: 10px 20px;
-  font-size: 14px;
-  min-height: 44px; /* Touch-friendly minimum */
-}
-
-.girly-skull {
-  font-size: 20px;
-}
-
-/* Tablet and up */
-@media (min-width: 768px) {
-  .glass-card {
-    border-radius: 20px;
-    margin: 12px;
-    padding: 24px;
-  }
-  
-  .holo-button {
-    padding: 12px 24px;
-    font-size: 16px;
-  }
-  
-  .girly-skull {
-    font-size: 24px;
-  }
-}
-
-/* Desktop and up */
-@media (min-width: 1024px) {
-  .glass-card {
-    margin: 16px;
-    padding: 32px;
-  }
-  
-  .holo-button {
-    padding: 14px 28px;
-    font-size: 16px;
-  }
-}
-
-/* Large screens */
-@media (min-width: 1280px) {
-  .glass-card {
-    padding: 40px;
-  }
-}
-
-/* Mobile-specific optimizations */
-@media (max-width: 767px) {
-  /* Stack elements vertically on mobile */
-  .mobile-stack {
-    flex-direction: column !important;
-  }
-  
-  /* Full width on mobile */
-  .mobile-full {
-    width: 100% !important;
-  }
-  
-  /* Hide on mobile */
-  .mobile-hidden {
-    display: none !important;
-  }
-  
-  /* Larger touch targets */
-  .touch-target {
-    min-height: 48px;
-    min-width: 48px;
-  }
-  
-  /* Reduce sparkles on mobile for performance */
-  .sparkles::before,
-  .sparkles::after {
-    display: none;
-  }
-  
-  /* Simplified animations on mobile */
-  .floating {
-    animation: none;
-  }
-  
-  /* Better mobile typography */
-  .holo-text {
-    font-size: clamp(14px, 4vw, 18px);
-  }
-}
-
-/* Touch device optimizations */
-@media (hover: none) and (pointer: coarse) {
-  .holo-button:hover {
-    transform: none; /* Disable hover transforms on touch devices */
-  }
-  
-  .glass-card:hover {
-    transform: none;
-  }
-}
-
-/* High DPI displays */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .sparkles::before,
-  .sparkles::after {
-    font-size: 10px; /* Smaller sparkles on high DPI */
-  }
-}
+/* Other custom classes */
+/* You can continue to add your .holo-text, .holo-button, etc. here */
+/* ... */
