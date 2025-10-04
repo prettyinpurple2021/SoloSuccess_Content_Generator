@@ -2,7 +2,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './src/index.css';
-import EnhancedApp from './components/EnhancedApp';
+import { HolographicThemeProvider } from './components/HolographicTheme';
+import App from './App';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -12,6 +13,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <EnhancedApp />
+    <HolographicThemeProvider>
+      <App />
+    </HolographicThemeProvider>
   </React.StrictMode>
 );
