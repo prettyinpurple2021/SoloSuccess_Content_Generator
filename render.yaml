@@ -1,7 +1,7 @@
 services:
   - type: web
     name: solosuccess-ai-content-generator
-    env: docker
+    runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
     region: oregon

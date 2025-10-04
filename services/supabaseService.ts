@@ -17,7 +17,15 @@ import {
   AnalyticsData,
   DatabaseAnalyticsData,
   PerformanceReport,
-  EngagementData
+  EngagementData,
+  Integration,
+  DatabaseIntegration,
+  IntegrationLog,
+  DatabaseIntegrationLog,
+  IntegrationAlert,
+  DatabaseIntegrationAlert,
+  IntegrationMetrics,
+  WebhookConfig
 } from '../types';
 import { contentCache, paginationCache } from './cachingService';
 
@@ -782,6 +790,318 @@ export const db = {
 
     if (error) throw error;
     return transformDatabaseAnalyticsDataToAnalyticsData(data);
+  },
+
+  // Integration Management Operations
+  getIntegrations: async (): Promise<Integration[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('integrations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(transformDatabaseIntegrationToIntegration);
+  },
+
+  addIntegration: async (integration: Omit<DatabaseIntegration, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Integration> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('integrations')
+      .insert({
+        ...integration,
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseIntegrationToIntegration(data);
+  },
+
+  updateIntegration: async (id: string, updates: Partial<Omit<DatabaseIntegration, 'id' | 'user_id' | 'created_at'>>): Promise<Integration> => {
+    const { data, error } = await supabase
+      .from('integrations')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseIntegrationToIntegration(data);
+  },
+
+  deleteIntegration: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('integrations')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  getIntegrationById: async (id: string): Promise<Integration | null> => {
+    const { data, error } = await supabase
+      .from('integrations')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+    return transformDatabaseIntegrationToIntegration(data);
+  },
+
+  // Integration Logs Operations
+  getIntegrationLogs: async (integrationId: string, limit: number = 100): Promise<IntegrationLog[]> => {
+    const { data, error } = await supabase
+      .from('integration_logs')
+      .select('*')
+      .eq('integration_id', integrationId)
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return (data || []).map(transformDatabaseIntegrationLogToIntegrationLog);
+  },
+
+  addIntegrationLog: async (log: Omit<DatabaseIntegrationLog, 'id' | 'timestamp' | 'user_id'>): Promise<IntegrationLog> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('integration_logs')
+      .insert({
+        ...log,
+        user_id: user.id,
+        timestamp: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseIntegrationLogToIntegrationLog(data);
+  },
+
+  // Integration Alerts Operations
+  getIntegrationAlerts: async (integrationId: string, includeResolved: boolean = false): Promise<IntegrationAlert[]> => {
+    let query = supabase
+      .from('integration_alerts')
+      .select('*')
+      .eq('integration_id', integrationId)
+      .order('created_at', { ascending: false });
+
+    if (!includeResolved) {
+      query = query.eq('is_resolved', false);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map(transformDatabaseIntegrationAlertToIntegrationAlert);
+  },
+
+  addIntegrationAlert: async (alert: Omit<DatabaseIntegrationAlert, 'id' | 'created_at'>): Promise<IntegrationAlert> => {
+    const { data, error } = await supabase
+      .from('integration_alerts')
+      .insert({
+        ...alert,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseIntegrationAlertToIntegrationAlert(data);
+  },
+
+  resolveIntegrationAlert: async (alertId: string): Promise<IntegrationAlert> => {
+    const { data, error } = await supabase
+      .from('integration_alerts')
+      .update({
+        is_resolved: true,
+        resolved_at: new Date().toISOString()
+      })
+      .eq('id', alertId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseIntegrationAlertToIntegrationAlert(data);
+  },
+
+  // Integration Metrics Operations
+  getIntegrationMetrics: async (integrationId: string, timeframe: string = '24h'): Promise<IntegrationMetrics[]> => {
+    let startDate = new Date();
+    
+    switch (timeframe) {
+      case '1h':
+        startDate.setHours(startDate.getHours() - 1);
+        break;
+      case '24h':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 1);
+    }
+
+    const { data, error } = await supabase
+      .from('integration_metrics')
+      .select('*')
+      .eq('integration_id', integrationId)
+      .gte('recorded_at', startDate.toISOString())
+      .order('recorded_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(transformDatabaseIntegrationMetricsToIntegrationMetrics);
+  },
+
+  updateIntegrationMetrics: async (integrationId: string, metrics: Partial<IntegrationMetrics>): Promise<IntegrationMetrics> => {
+    const { data, error } = await supabase
+      .from('integration_metrics')
+      .upsert({
+        integration_id: integrationId,
+        ...metrics,
+        recorded_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseIntegrationMetricsToIntegrationMetrics(data);
+  },
+
+  // Webhook Operations
+  getIntegrationWebhooks: async (integrationId: string): Promise<WebhookConfig[]> => {
+    const { data, error } = await supabase
+      .from('integration_webhooks')
+      .select('*')
+      .eq('integration_id', integrationId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(transformDatabaseWebhookToWebhook);
+  },
+
+  addIntegrationWebhook: async (webhook: Omit<WebhookConfig, 'id'> & { integration_id: string }): Promise<WebhookConfig> => {
+    const { data, error } = await supabase
+      .from('integration_webhooks')
+      .insert({
+        integration_id: webhook.integration_id,
+        url: webhook.url,
+        events: webhook.events,
+        secret: webhook.secret,
+        is_active: webhook.isActive,
+        retry_policy: webhook.retryPolicy,
+        headers: webhook.headers || {},
+        timeout: webhook.timeout || 30000,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseWebhookToWebhook(data);
+  },
+
+  updateIntegrationWebhook: async (webhookId: string, updates: Partial<WebhookConfig>): Promise<WebhookConfig> => {
+    const { data, error } = await supabase
+      .from('integration_webhooks')
+      .update({
+        url: updates.url,
+        events: updates.events,
+        secret: updates.secret,
+        is_active: updates.isActive,
+        retry_policy: updates.retryPolicy,
+        headers: updates.headers,
+        timeout: updates.timeout,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', webhookId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return transformDatabaseWebhookToWebhook(data);
+  },
+
+  deleteIntegrationWebhook: async (webhookId: string): Promise<void> => {
+    const { error } = await supabase
+      .from('integration_webhooks')
+      .delete()
+      .eq('id', webhookId);
+
+    if (error) throw error;
+  },
+
+  // Real-time subscriptions for integrations
+  subscribeToIntegrations: (callback: (integrations: Integration[]) => void) => {
+    return supabase
+      .channel('integrations_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'integrations' },
+        async () => {
+          try {
+            const integrations = await db.getIntegrations();
+            callback(integrations);
+          } catch (error) {
+            console.error('Error fetching integrations after change:', error);
+          }
+        }
+      )
+      .subscribe();
+  },
+
+  subscribeToIntegrationLogs: (integrationId: string, callback: (logs: IntegrationLog[]) => void) => {
+    return supabase
+      .channel(`integration_logs_${integrationId}`)
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'integration_logs', filter: `integration_id=eq.${integrationId}` },
+        async () => {
+          try {
+            const logs = await db.getIntegrationLogs(integrationId);
+            callback(logs);
+          } catch (error) {
+            console.error('Error fetching integration logs after change:', error);
+          }
+        }
+      )
+      .subscribe();
+  },
+
+  subscribeToIntegrationAlerts: (integrationId: string, callback: (alerts: IntegrationAlert[]) => void) => {
+    return supabase
+      .channel(`integration_alerts_${integrationId}`)
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'integration_alerts', filter: `integration_id=eq.${integrationId}` },
+        async () => {
+          try {
+            const alerts = await db.getIntegrationAlerts(integrationId);
+            callback(alerts);
+          } catch (error) {
+            console.error('Error fetching integration alerts after change:', error);
+          }
+        }
+      )
+      .subscribe();
   }
 };
 
@@ -952,6 +1272,86 @@ function transformDatabaseAnalyticsDataToAnalyticsData(dbAnalytics: DatabaseAnal
     impressions: dbAnalytics.impressions,
     reach: dbAnalytics.reach,
     recordedAt: new Date(dbAnalytics.recorded_at)
+  };
+}
+
+// Helper functions for Integration transformations
+function transformDatabaseIntegrationToIntegration(dbIntegration: DatabaseIntegration): Integration {
+  return {
+    id: dbIntegration.id,
+    userId: dbIntegration.user_id,
+    name: dbIntegration.name,
+    type: dbIntegration.type,
+    platform: dbIntegration.platform,
+    status: dbIntegration.status,
+    credentials: dbIntegration.credentials,
+    configuration: dbIntegration.configuration,
+    lastSync: dbIntegration.last_sync ? new Date(dbIntegration.last_sync) : undefined,
+    syncFrequency: dbIntegration.sync_frequency,
+    isActive: dbIntegration.is_active,
+    createdAt: new Date(dbIntegration.created_at),
+    updatedAt: new Date(dbIntegration.updated_at)
+  };
+}
+
+function transformDatabaseIntegrationLogToIntegrationLog(dbLog: DatabaseIntegrationLog): IntegrationLog {
+  return {
+    id: dbLog.id,
+    integrationId: dbLog.integration_id,
+    level: dbLog.level,
+    message: dbLog.message,
+    metadata: dbLog.metadata,
+    timestamp: new Date(dbLog.timestamp),
+    userId: dbLog.user_id
+  };
+}
+
+function transformDatabaseIntegrationAlertToIntegrationAlert(dbAlert: DatabaseIntegrationAlert): IntegrationAlert {
+  return {
+    id: dbAlert.id,
+    integrationId: dbAlert.integration_id,
+    type: dbAlert.type,
+    title: dbAlert.title,
+    message: dbAlert.message,
+    severity: dbAlert.severity,
+    isResolved: dbAlert.is_resolved,
+    resolvedAt: dbAlert.resolved_at ? new Date(dbAlert.resolved_at) : undefined,
+    createdAt: new Date(dbAlert.created_at),
+    metadata: dbAlert.metadata
+  };
+}
+
+function transformDatabaseIntegrationMetricsToIntegrationMetrics(dbMetrics: any): IntegrationMetrics {
+  return {
+    integrationId: dbMetrics.integration_id,
+    totalRequests: dbMetrics.total_requests || 0,
+    successfulRequests: dbMetrics.successful_requests || 0,
+    failedRequests: dbMetrics.failed_requests || 0,
+    averageResponseTime: dbMetrics.average_response_time || 0,
+    lastRequestTime: dbMetrics.last_request_time ? new Date(dbMetrics.last_request_time) : new Date(),
+    errorRate: dbMetrics.error_rate || 0,
+    uptime: dbMetrics.uptime || 100,
+    dataProcessed: dbMetrics.data_processed || 0,
+    syncCount: dbMetrics.sync_count || 0,
+    lastSyncDuration: dbMetrics.last_sync_duration || 0
+  };
+}
+
+function transformDatabaseWebhookToWebhook(dbWebhook: any): WebhookConfig {
+  return {
+    id: dbWebhook.id,
+    url: dbWebhook.url,
+    events: dbWebhook.events || [],
+    secret: dbWebhook.secret,
+    isActive: dbWebhook.is_active,
+    retryPolicy: dbWebhook.retry_policy || {
+      maxRetries: 3,
+      backoffMultiplier: 2,
+      initialDelay: 1000,
+      maxDelay: 30000
+    },
+    headers: dbWebhook.headers || {},
+    timeout: dbWebhook.timeout || 30000
   };
 }
 

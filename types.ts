@@ -80,6 +80,12 @@ export interface LoadingState {
   performanceReport?: boolean;
   optimizationSuggestions?: boolean;
   schedulingSuggestions?: boolean;
+  // Integration Manager loading states
+  integrations?: boolean;
+  integrationConnectionTest?: boolean;
+  integrationSync?: boolean;
+  integrationHealthCheck?: boolean;
+  integrationWebhooks?: boolean;
 }
 
 // Enhanced Content Features Types
@@ -393,4 +399,310 @@ export interface ContentConflict {
   conflictType: 'timing' | 'topic' | 'audience';
   severity: 'high' | 'medium' | 'low';
   resolution: string;
+}
+
+// Integration Manager Types
+export type IntegrationType = 'social_media' | 'analytics' | 'crm' | 'email' | 'storage' | 'ai_service';
+export type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'syncing' | 'maintenance';
+export type SyncFrequency = 'realtime' | 'hourly' | 'daily' | 'weekly' | 'manual';
+export type WebhookEvent = 'post_created' | 'post_updated' | 'post_published' | 'analytics_updated' | 'error_occurred';
+
+export interface Integration {
+  id: string;
+  userId: string;
+  name: string;
+  type: IntegrationType;
+  platform: string;
+  status: IntegrationStatus;
+  credentials: EncryptedCredentials;
+  configuration: IntegrationConfig;
+  lastSync?: Date;
+  syncFrequency: SyncFrequency;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DatabaseIntegration {
+  id: string;
+  user_id: string;
+  name: string;
+  type: IntegrationType;
+  platform: string;
+  status: IntegrationStatus;
+  credentials: EncryptedCredentials;
+  configuration: IntegrationConfig;
+  last_sync?: string;
+  sync_frequency: SyncFrequency;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EncryptedCredentials {
+  encrypted: string;
+  iv: string;
+  authTag: string;
+  algorithm: string;
+  salt?: string; // Optional for backward compatibility
+}
+
+export interface IntegrationConfig {
+  webhooks?: WebhookConfig[];
+  syncSettings?: SyncSettings;
+  rateLimits?: RateLimitConfig;
+  errorHandling?: ErrorHandlingConfig;
+  notifications?: NotificationConfig;
+  customFields?: { [key: string]: any };
+}
+
+export interface WebhookConfig {
+  id: string;
+  url: string;
+  events: WebhookEvent[];
+  secret: string;
+  isActive: boolean;
+  retryPolicy: RetryPolicy;
+  headers?: { [key: string]: string };
+  timeout?: number;
+}
+
+export interface RetryPolicy {
+  maxRetries: number;
+  backoffMultiplier: number;
+  initialDelay: number;
+  maxDelay: number;
+}
+
+export interface SyncSettings {
+  autoSync: boolean;
+  syncInterval: number; // minutes
+  batchSize: number;
+  retryAttempts: number;
+  timeoutMs: number;
+  syncOnStartup: boolean;
+  syncOnSchedule: boolean;
+}
+
+export interface RateLimitConfig {
+  requestsPerMinute: number;
+  requestsPerHour: number;
+  requestsPerDay: number;
+  burstLimit: number;
+}
+
+export interface ErrorHandlingConfig {
+  maxRetries: number;
+  retryDelay: number;
+  exponentialBackoff: boolean;
+  deadLetterQueue: boolean;
+  alertOnFailure: boolean;
+}
+
+export interface NotificationConfig {
+  emailNotifications: boolean;
+  webhookNotifications: boolean;
+  slackNotifications: boolean;
+  notificationLevels: ('info' | 'warn' | 'error')[];
+}
+
+export interface IntegrationMetrics {
+  integrationId: string;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageResponseTime: number;
+  lastRequestTime: Date;
+  errorRate: number;
+  uptime: number;
+  dataProcessed: number;
+  syncCount: number;
+  lastSyncDuration: number;
+}
+
+export interface IntegrationLog {
+  id: string;
+  integrationId: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  message: string;
+  metadata: { [key: string]: any };
+  timestamp: Date;
+  userId: string;
+}
+
+export interface DatabaseIntegrationLog {
+  id: string;
+  integration_id: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  message: string;
+  metadata: { [key: string]: any };
+  timestamp: string;
+  user_id: string;
+}
+
+export interface IntegrationAlert {
+  id: string;
+  integrationId: string;
+  type: 'error' | 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  isResolved: boolean;
+  resolvedAt?: Date;
+  createdAt: Date;
+  metadata?: { [key: string]: any };
+}
+
+export interface DatabaseIntegrationAlert {
+  id: string;
+  integration_id: string;
+  type: 'error' | 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  is_resolved: boolean;
+  resolved_at?: string;
+  created_at: string;
+  metadata?: { [key: string]: any };
+}
+
+export interface ConnectionTestResult {
+  success: boolean;
+  error?: string;
+  responseTime: number;
+  details?: { [key: string]: any };
+  timestamp: Date;
+}
+
+export interface SyncResult {
+  integrationId: string;
+  success: boolean;
+  recordsProcessed: number;
+  recordsCreated: number;
+  recordsUpdated: number;
+  recordsDeleted: number;
+  errors: string[];
+  duration: number;
+  timestamp: Date;
+}
+
+export interface HealthCheckResult {
+  integrationId: string;
+  healthScore: number; // 0-100
+  checks: HealthCheck[];
+  timestamp: Date;
+  recommendations: string[];
+}
+
+export interface HealthCheck {
+  check: string;
+  success: boolean;
+  error?: string;
+  responseTime?: number;
+  details?: { [key: string]: any };
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  suggestions: string[];
+  warnings?: string[];
+}
+
+export interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetTime: number;
+  retryAfter: number;
+}
+
+// Platform-specific credential types
+export interface TwitterCredentials {
+  apiKey: string;
+  apiSecret: string;
+  accessToken: string;
+  accessTokenSecret: string;
+  bearerToken?: string;
+}
+
+export interface LinkedInCredentials {
+  clientId: string;
+  clientSecret: string;
+  accessToken: string;
+  refreshToken?: string;
+}
+
+export interface FacebookCredentials {
+  appId: string;
+  appSecret: string;
+  accessToken: string;
+  pageId?: string;
+}
+
+export interface InstagramCredentials {
+  accessToken: string;
+  userId: string;
+  clientId: string;
+  clientSecret: string;
+}
+
+export interface GoogleAnalyticsCredentials {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  viewId: string;
+}
+
+export interface OpenAICredentials {
+  apiKey: string;
+  organizationId?: string;
+}
+
+export interface ClaudeCredentials {
+  apiKey: string;
+  organizationId?: string;
+}
+
+// Integration creation and update types
+export interface CreateIntegrationData {
+  name: string;
+  type: IntegrationType;
+  platform: string;
+  credentials: any; // Will be encrypted
+  configuration?: Partial<IntegrationConfig>;
+  syncFrequency?: SyncFrequency;
+}
+
+export interface UpdateIntegrationData {
+  name?: string;
+  configuration?: Partial<IntegrationConfig>;
+  syncFrequency?: SyncFrequency;
+  isActive?: boolean;
+}
+
+// Webhook event types
+export interface WebhookEventData {
+  event: WebhookEvent;
+  integrationId: string;
+  data: { [key: string]: any };
+  timestamp: Date;
+  signature?: string;
+}
+
+// Integration status types
+export interface IntegrationStatusUpdate {
+  integrationId: string;
+  status: IntegrationStatus;
+  message?: string;
+  error?: string;
+  timestamp: Date;
+}
+
+// Loading states for integrations
+export interface IntegrationLoadingState {
+  integrations?: boolean;
+  connectionTest?: boolean;
+  sync?: boolean;
+  healthCheck?: boolean;
+  webhooks?: boolean;
 }

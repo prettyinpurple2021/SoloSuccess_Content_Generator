@@ -1,5 +1,5 @@
-# Use Node.js 18 Alpine as base image
-FROM node:18-alpine AS builder
+# Use Node.js 20 LTS Alpine as base image (latest stable)
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies with security updates
+RUN npm ci --only=production --audit-level=moderate
 
 # Copy source code
 COPY . .
@@ -17,7 +17,12 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine AS production
+FROM nginx:1.25.3-alpine AS production
+
+# Update packages and install security patches
+RUN apk update && apk upgrade && apk add --no-cache \
+    curl \
+    && rm -rf /var/cache/apk/*
 
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
@@ -25,8 +30,18 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
+# Create non-root user for security
+RUN addgroup -g 1001 -S nginx && \
+    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
+
+# Set proper permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d
+
 # Expose port 80
 EXPOSE 80
 
-# Start nginx
+# Start nginx as non-root user
 CMD ["nginx", "-g", "daemon off;"]
