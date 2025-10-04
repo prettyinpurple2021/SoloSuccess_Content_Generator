@@ -1,5 +1,5 @@
 import { WebhookConfig, IntegrationWebhook, WebhookEvent, WebhookDelivery } from '../types';
-import { supabaseService } from './supabaseService';
+import { db } from './supabaseService';
 import crypto from 'crypto';
 
 export class WebhookService {
@@ -38,7 +38,7 @@ export class WebhookService {
       };
 
       // Save to database
-      await supabaseService.addIntegrationWebhook(webhook);
+      await db.addIntegrationWebhook(webhook);
 
       // Store in memory for quick access
       this.webhooks.set(webhook.id, webhook);
@@ -74,7 +74,7 @@ export class WebhookService {
       };
 
       // Update in database
-      await supabaseService.updateIntegrationWebhook(webhookId, updatedWebhook);
+      await db.updateIntegrationWebhook(webhookId, updatedWebhook);
 
       // Update in memory
       this.webhooks.set(webhookId, updatedWebhook);
@@ -92,7 +92,7 @@ export class WebhookService {
   async deleteWebhook(webhookId: string): Promise<void> {
     try {
       // Remove from database
-      await supabaseService.deleteIntegrationWebhook(webhookId);
+      await db.deleteIntegrationWebhook(webhookId);
 
       // Remove from memory
       this.webhooks.delete(webhookId);
@@ -107,7 +107,7 @@ export class WebhookService {
    */
   async getWebhooksForIntegration(integrationId: string): Promise<IntegrationWebhook[]> {
     try {
-      const webhooks = await supabaseService.getIntegrationWebhooks(integrationId);
+      const webhooks = await db.getIntegrationWebhooks(integrationId);
       
       // Update memory cache
       webhooks.forEach(webhook => {
@@ -295,7 +295,7 @@ export class WebhookService {
   private async getPendingDeliveries(): Promise<WebhookDelivery[]> {
     try {
       // Query database for pending deliveries
-      const { data, error } = await supabaseService.supabase
+      const { data, error } = await db.supabase
         .from('webhook_deliveries')
         .select('*')
         .eq('status', 'pending')
@@ -336,7 +336,7 @@ export class WebhookService {
         updated_at: delivery.updatedAt.toISOString()
       };
 
-      const { error } = await supabaseService.supabase
+      const { error } = await db.supabase
         .from('webhook_deliveries')
         .upsert(deliveryData);
 

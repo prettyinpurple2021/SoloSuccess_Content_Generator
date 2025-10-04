@@ -68,6 +68,7 @@ export const auth = {
 };
 
 // Database functions
+// Export both db and supabaseService for compatibility
 export const db = {
   // Get all posts for current user with caching
   getPosts: async (): Promise<Post[]> => {
@@ -1393,3 +1394,6 @@ function transformDatabaseWebhookToWebhook(dbWebhook: any): WebhookConfig {
 }
 
 export type { User };
+
+// Export supabaseService for compatibility with new integration services
+export const supabaseService = db;

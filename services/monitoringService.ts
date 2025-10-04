@@ -1,5 +1,5 @@
 import { IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
-import { supabaseService } from './supabaseService';
+import { db } from './supabaseService';
 
 export class MonitoringService {
   private metricsCache: Map<string, IntegrationMetrics[]> = new Map();
@@ -39,7 +39,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const metrics = await supabaseService.getIntegrationMetrics(integrationId, startTime, endTime);
+      const metrics = await db.getIntegrationMetrics(integrationId, startTime, endTime);
       
       // Cache results
       this.metricsCache.set(cacheKey, metrics);
@@ -90,7 +90,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const logs = await supabaseService.getIntegrationLogs(integrationId, startTime, endTime, level);
+      const logs = await db.getIntegrationLogs(integrationId, startTime, endTime, level);
       
       // Cache results
       this.logsCache.set(cacheKey, logs);
@@ -122,7 +122,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const alerts = await supabaseService.getIntegrationAlerts(integrationId, status);
+      const alerts = await db.getIntegrationAlerts(integrationId, status);
       
       // Cache results
       this.alertsCache.set(cacheKey, alerts);
@@ -163,7 +163,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const metrics = await supabaseService.getIntegrationMetrics(null, startTime, endTime);
+      const metrics = await db.getIntegrationMetrics(null, startTime, endTime);
       return metrics;
     } catch (error) {
       console.error('Error fetching all metrics:', error);
@@ -198,7 +198,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const logs = await supabaseService.getIntegrationLogs(null, startTime, endTime, level);
+      const logs = await db.getIntegrationLogs(null, startTime, endTime, level);
       return logs;
     } catch (error) {
       console.error('Error fetching all logs:', error);
@@ -212,7 +212,7 @@ export class MonitoringService {
   async getAllAlerts(status?: 'active' | 'resolved' | 'dismissed'): Promise<IntegrationAlert[]> {
     try {
       // Fetch from database
-      const alerts = await supabaseService.getIntegrationAlerts(null, status);
+      const alerts = await db.getIntegrationAlerts(null, status);
       return alerts;
     } catch (error) {
       console.error('Error fetching all alerts:', error);
@@ -225,7 +225,7 @@ export class MonitoringService {
    */
   async resolveAlert(alertId: string): Promise<void> {
     try {
-      await supabaseService.resolveIntegrationAlert(alertId);
+      await db.resolveIntegrationAlert(alertId);
       
       // Clear cache for this integration
       this.alertsCache.clear();
@@ -240,7 +240,7 @@ export class MonitoringService {
    */
   async createAlert(alert: Omit<IntegrationAlert, 'id' | 'createdAt' | 'updatedAt'>): Promise<IntegrationAlert> {
     try {
-      const newAlert = await supabaseService.addIntegrationAlert({
+      const newAlert = await db.addIntegrationAlert({
         ...alert,
         id: crypto.randomUUID(),
         createdAt: new Date(),
@@ -276,7 +276,7 @@ export class MonitoringService {
         timestamp: new Date()
       };
 
-      await supabaseService.addIntegrationLog(log);
+      await db.addIntegrationLog(log);
       
       // Clear cache
       this.logsCache.clear();
@@ -294,7 +294,7 @@ export class MonitoringService {
     metrics: Partial<IntegrationMetrics>
   ): Promise<void> {
     try {
-      const existingMetrics = await supabaseService.getIntegrationMetrics(integrationId);
+      const existingMetrics = await db.getIntegrationMetrics(integrationId);
       const latestMetrics = existingMetrics[existingMetrics.length - 1];
       
       if (latestMetrics) {
@@ -304,7 +304,7 @@ export class MonitoringService {
           ...metrics,
           timestamp: new Date()
         };
-        await supabaseService.updateIntegrationMetrics(latestMetrics.id, updatedMetrics);
+        await db.updateIntegrationMetrics(latestMetrics.id, updatedMetrics);
       } else {
         // Create new metrics record
         const newMetrics: IntegrationMetrics = {
@@ -318,7 +318,7 @@ export class MonitoringService {
           errorRate: metrics.errorRate || 0,
           timestamp: new Date()
         };
-        await supabaseService.updateIntegrationMetrics(newMetrics.id, newMetrics);
+        await db.updateIntegrationMetrics(newMetrics.id, newMetrics);
       }
       
       // Clear cache
