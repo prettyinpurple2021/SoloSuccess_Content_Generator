@@ -14,8 +14,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with security updates
-RUN npm ci --only=production --audit-level=moderate
+# Install all dependencies (including devDependencies for build tools like Vite)
+RUN npm ci
 
 # Copy source code
 COPY . .
