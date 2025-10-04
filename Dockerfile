@@ -1,5 +1,12 @@
 # Use Node.js 20 LTS Alpine as base image (latest stable)
-FROM node:20-alpine AS builder
+FROM node:20.11.1-alpine AS builder
+
+# Update packages and install security patches
+RUN apk update && apk upgrade && apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/cache/apk/*
 
 # Set working directory
 WORKDIR /app
