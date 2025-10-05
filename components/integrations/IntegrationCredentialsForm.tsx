@@ -191,13 +191,13 @@ const IntegrationCredentialsForm: React.FC<IntegrationCredentialsFormProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm"
+      className="glass-card p-8"
     >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="text-2xl font-bold text-white">
           Configure {platform.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
         </h3>
-        <div className="text-sm text-gray-500">
+        <div className="text-lg text-white/70">
           {credentialFields.filter(f => f.required).length} required field{credentialFields.filter(f => f.required).length !== 1 ? 's' : ''}
         </div>
       </div>
@@ -211,9 +211,9 @@ const IntegrationCredentialsForm: React.FC<IntegrationCredentialsFormProps> = ({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-lg font-medium text-white mb-3">
               {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
+              {field.required && <span className="text-red-400 ml-1">*</span>}
             </label>
             <div className="relative">
               <input
@@ -221,43 +221,43 @@ const IntegrationCredentialsForm: React.FC<IntegrationCredentialsFormProps> = ({
                 value={localCredentials[field.key] || ''}
                 onChange={(e) => handleInputChange(field.key, e.target.value)}
                 placeholder={field.placeholder}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                  validationErrors[field.key] ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                className={`w-full px-4 py-4 border border-white/20 bg-white/10 backdrop-blur-sm rounded-lg text-white text-lg placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 ${
+                  validationErrors[field.key] ? 'border-red-400 bg-red-500/20' : ''
                 }`}
               />
               {field.type === 'password' && (
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility(field.key)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white text-xl"
                 >
                   {showSecrets[field.key] ? '👁️' : '👁️‍🗨️'}
                 </button>
               )}
             </div>
             {validationErrors[field.key] && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors[field.key]}</p>
+              <p className="mt-2 text-lg text-red-300">{validationErrors[field.key]}</p>
             )}
           </motion.div>
         ))}
       </div>
 
       {/* Help Text */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="mt-8 p-6 bg-blue-500/20 border border-blue-500/50 rounded-lg">
         <div className="flex items-start">
-          <div className="text-blue-500 mr-3 mt-0.5">💡</div>
+          <div className="text-blue-300 mr-4 mt-1 text-2xl">💡</div>
           <div>
-            <h4 className="text-sm font-medium text-blue-900 mb-1">How to get your credentials:</h4>
-            <p className="text-sm text-blue-800">{getHelpText(platform)}</p>
+            <h4 className="text-lg font-medium text-blue-300 mb-2">How to get your credentials:</h4>
+            <p className="text-lg text-blue-200">{getHelpText(platform)}</p>
           </div>
         </div>
       </div>
 
       {/* Security Notice */}
-      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+      <div className="mt-6 p-5 bg-green-500/20 border border-green-500/50 rounded-lg">
         <div className="flex items-center">
-          <div className="text-green-500 mr-2">🔒</div>
-          <p className="text-sm text-green-800">
+          <div className="text-green-300 mr-3 text-2xl">🔒</div>
+          <p className="text-lg text-green-200">
             <strong>Secure:</strong> Your credentials are encrypted with AES-256-GCM encryption and stored securely. 
             We never store credentials in plain text.
           </p>
@@ -265,20 +265,20 @@ const IntegrationCredentialsForm: React.FC<IntegrationCredentialsFormProps> = ({
       </div>
 
       {/* Connect Button */}
-      <div className="mt-6 flex justify-end">
+      <div className="mt-8 flex justify-end">
         <button
           onClick={handleConnect}
           disabled={isConnecting || Object.keys(localCredentials).length === 0}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-lg text-lg font-bold hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center shadow-lg hover:shadow-xl"
         >
           {isConnecting ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
               Connecting...
             </>
           ) : (
             <>
-              <span className="mr-2">🔗</span>
+              <span className="mr-3 text-xl">🔗</span>
               Connect Integration
             </>
           )}

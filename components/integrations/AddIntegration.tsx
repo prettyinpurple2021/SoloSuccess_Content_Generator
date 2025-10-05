@@ -192,8 +192,8 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Add New Integration</h2>
-        <p className="text-gray-600">Connect your favorite platforms to streamline your workflow</p>
+        <h2 className="text-4xl font-bold text-white mb-4">Add New Integration</h2>
+        <p className="text-xl text-white/80">Connect your favorite platforms to streamline your workflow</p>
       </div>
 
       {/* Integration Type Selection */}
@@ -202,7 +202,7 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <label className="block text-sm font-medium text-gray-700 mb-4">
+        <label className="block text-xl font-medium text-white mb-6">
           Choose Integration Type
         </label>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -216,17 +216,17 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`p-4 border-2 rounded-lg text-left transition-all duration-200 ${
+              className={`p-6 border-2 rounded-xl text-left transition-all duration-300 ${
                 integrationType === type
-                  ? 'border-blue-500 bg-blue-50 shadow-md'
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                  ? 'border-purple-400 bg-white/20 shadow-lg'
+                  : 'border-white/20 hover:border-white/40 hover:bg-white/10'
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-medium capitalize text-gray-900">
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-bold capitalize text-white text-lg">
                   {type.replace('_', ' ')}
                 </div>
-                <div className="text-2xl">
+                <div className="text-3xl">
                   {type === 'social_media' && '📱'}
                   {type === 'analytics' && '📊'}
                   {type === 'crm' && '👥'}
@@ -235,7 +235,7 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({
                   {type === 'ai_service' && '🤖'}
                 </div>
               </div>
-              <div className="text-sm text-gray-600">{platforms.length} integrations available</div>
+              <div className="text-lg text-white/70">{platforms.length} integrations available</div>
             </motion.button>
           ))}
         </div>
@@ -247,7 +247,7 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <label className="block text-sm font-medium text-gray-700 mb-4">
+        <label className="block text-xl font-medium text-white mb-6">
           Select Platform
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -260,17 +260,17 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+              className={`p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
                 selectedPlatform === platform.id
-                  ? 'border-blue-500 bg-blue-50 shadow-md'
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                  ? 'border-purple-400 bg-white/20 shadow-lg'
+                  : 'border-white/20 hover:border-white/40 hover:bg-white/10'
               }`}
             >
-              <div className="flex items-center mb-3">
-                <div className="text-3xl mr-3">{platform.icon}</div>
+              <div className="flex items-center mb-4">
+                <div className="text-4xl mr-4">{platform.icon}</div>
                 <div>
-                  <div className="font-semibold text-gray-900">{platform.name}</div>
-                  <div className="text-sm text-gray-600">{platform.description}</div>
+                  <div className="font-bold text-white text-lg">{platform.name}</div>
+                  <div className="text-lg text-white/70">{platform.description}</div>
                 </div>
               </div>
               <div className={`h-1 rounded-full bg-gradient-to-r ${platform.color} ${

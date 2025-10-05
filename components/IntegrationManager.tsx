@@ -360,18 +360,18 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[90vh] overflow-hidden"
+          className="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden border border-white/20 backdrop-blur-sm"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex items-center justify-between p-8 border-b border-white/20 bg-white/10 backdrop-blur-sm">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Integration Manager</h2>
-              <p className="text-sm text-gray-600 mt-1">Manage your external platform integrations</p>
+              <h2 className="text-4xl font-bold gradient-text">Integration Manager</h2>
+              <p className="text-lg text-white/80 mt-2">Manage your external platform integrations</p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+              className="text-white/60 hover:text-white text-3xl font-bold w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/20 transition-all duration-300"
             >
               ×
             </button>
@@ -379,16 +379,16 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
           {/* Alert Messages */}
           {(error || success) && (
-            <div className="px-6 py-3">
+            <div className="px-8 py-4">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
-                  <span className="text-red-500 mr-2">⚠️</span>
+                <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-6 py-4 rounded-lg flex items-center text-lg">
+                  <span className="text-red-400 mr-3 text-xl">⚠️</span>
                   {error}
                 </div>
               )}
               {success && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
-                  <span className="text-green-500 mr-2">✅</span>
+                <div className="bg-green-500/20 border border-green-500/50 text-green-300 px-6 py-4 rounded-lg flex items-center text-lg">
+                  <span className="text-green-400 mr-3 text-xl">✅</span>
                   {success}
                 </div>
               )}
@@ -396,18 +396,18 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
           )}
 
           {/* Tab Navigation */}
-          <div className="flex border-b bg-gray-50">
+          <div className="flex border-b border-white/20 bg-white/5 backdrop-blur-sm">
             {tabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-6 py-3 font-medium text-sm border-b-2 transition-all duration-200 flex items-center ${
+                className={`px-8 py-6 font-medium text-lg border-b-2 transition-all duration-300 flex items-center ${
                   activeTab === tab.key
-                    ? 'border-blue-500 text-blue-600 bg-white'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    ? 'border-purple-400 text-white bg-white/10'
+                    : 'border-transparent text-white/70 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <span className="mr-2 text-lg">{tab.icon}</span>
+                <span className="mr-3 text-2xl">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
@@ -415,16 +415,16 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
           {/* Loading Overlay */}
           {isLoading && (
-            <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
-              <div className="flex items-center space-x-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="text-gray-600">Processing...</span>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="flex items-center space-x-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+                <span className="text-white text-xl font-medium">Processing...</span>
               </div>
             </div>
           )}
 
           {/* Tab Content */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <div className="p-8 overflow-y-auto max-h-[calc(95vh-300px)] scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
