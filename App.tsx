@@ -186,17 +186,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
         const { data: { subscription } } = auth.onAuthStateChange(async (user) => {
-            if (user) {
-                setUser(user);
-            } else {
-                try {
-                    const { user: anonUser, error } = await auth.signInAnonymously();
-                    if (error) throw error;
-                    setUser(anonUser);
-                } catch (error: any) {
-                    setErrorMessage(`Authentication failed: ${error.message}.`);
-                }
-            }
+            setUser(user);
             setIsAuthReady(true);
         });
 
@@ -985,6 +975,11 @@ const App: React.FC = () => {
                                 Scheduler {postScheduler.getStatus().isRunning ? 'Active' : 'Inactive'}
                             </span>
                         </div>
+                        <div className="flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm">
+                            <span className="text-white/80">
+                                👤 {user.email}
+                            </span>
+                        </div>
                         <button
                             onClick={() => setShowIntegrationManager(true)}
                             className="bg-gradient-to-br from-secondary to-accent hover:shadow-neon-accent transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg text-sm"
@@ -996,6 +991,18 @@ const App: React.FC = () => {
                             className="bg-gradient-to-br from-purple-500 to-pink-500 hover:shadow-neon-accent transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg text-sm"
                         >
                             ⚡ Enhanced Features
+                        </button>
+                        <button
+                            onClick={() => window.location.href = '/profile'}
+                            className="bg-gradient-to-br from-purple-500 to-pink-500 hover:shadow-neon-accent transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg text-sm"
+                        >
+                            👤 Profile
+                        </button>
+                        <button
+                            onClick={() => auth.signOut()}
+                            className="bg-gradient-to-br from-red-500 to-red-600 hover:shadow-neon-red transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg text-sm"
+                        >
+                            🚪 Sign Out
                         </button>
                     </div>
                 )}

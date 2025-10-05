@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './src/index.css';
 import { HolographicThemeProvider } from './components/HolographicTheme';
-import App from './App';
+import AppRouter from './AppRouter';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -17,7 +17,7 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <HolographicThemeProvider>
-      <App />
+      <AppRouter />
     </HolographicThemeProvider>
   </React.StrictMode>
 );
