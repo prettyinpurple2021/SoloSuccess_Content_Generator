@@ -646,6 +646,31 @@ export interface InstagramCredentials {
   clientSecret: string;
 }
 
+export interface BlueSkyCredentials {
+  identifier: string;
+  password: string;
+  serviceUrl?: string; // Default: https://bsky.social
+  accessToken?: string;
+  refreshToken?: string;
+}
+
+export interface RedditCredentials {
+  clientId: string;
+  clientSecret: string;
+  username: string;
+  password: string;
+  userAgent: string;
+  accessToken?: string;
+  refreshToken?: string;
+}
+
+export interface PinterestCredentials {
+  accessToken: string;
+  appId?: string;
+  appSecret?: string;
+  boardId?: string;
+}
+
 export interface GoogleAnalyticsCredentials {
   clientId: string;
   clientSecret: string;
@@ -715,6 +740,8 @@ export interface PostResult {
   error?: string;
   timestamp: Date;
   platform: string;
+  adaptations?: string[];
+  warnings?: string[];
 }
 
 export interface IntegrationWebhook {

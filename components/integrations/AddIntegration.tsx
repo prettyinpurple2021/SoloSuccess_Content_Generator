@@ -48,11 +48,25 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({
         color: 'from-pink-400 to-pink-600'
       },
       { 
-        id: 'tiktok', 
-        name: 'TikTok', 
-        icon: '🎵', 
-        description: 'Create and share short videos',
-        color: 'from-black to-gray-800'
+        id: 'bluesky', 
+        name: 'BlueSky', 
+        icon: '☁️', 
+        description: 'Decentralized social networking',
+        color: 'from-sky-400 to-sky-600'
+      },
+      { 
+        id: 'reddit', 
+        name: 'Reddit', 
+        icon: '🤖', 
+        description: 'Share posts and engage with communities',
+        color: 'from-orange-500 to-orange-700'
+      },
+      { 
+        id: 'pinterest', 
+        name: 'Pinterest', 
+        icon: '📌', 
+        description: 'Share and discover visual content',
+        color: 'from-red-500 to-red-700'
       },
       { 
         id: 'youtube', 

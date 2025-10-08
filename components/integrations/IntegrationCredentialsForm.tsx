@@ -57,10 +57,23 @@ const IntegrationCredentialsForm: React.FC<IntegrationCredentialsFormProps> = ({
         { key: 'clientId', label: 'Client ID', type: 'text', required: true, placeholder: 'Enter your Instagram Client ID' },
         { key: 'clientSecret', label: 'Client Secret', type: 'password', required: true, placeholder: 'Enter your Instagram Client Secret' }
       ],
-      tiktok: [
-        { key: 'clientKey', label: 'Client Key', type: 'text', required: true, placeholder: 'Enter your TikTok Client Key' },
-        { key: 'clientSecret', label: 'Client Secret', type: 'password', required: true, placeholder: 'Enter your TikTok Client Secret' },
-        { key: 'accessToken', label: 'Access Token', type: 'password', required: true, placeholder: 'Enter your Access Token' }
+      bluesky: [
+        { key: 'identifier', label: 'Handle/Email', type: 'text', required: true, placeholder: 'Enter your BlueSky handle or email' },
+        { key: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter your BlueSky password' },
+        { key: 'serviceUrl', label: 'Service URL', type: 'text', required: false, placeholder: 'Enter custom service URL (optional)' }
+      ],
+      reddit: [
+        { key: 'clientId', label: 'Client ID', type: 'text', required: true, placeholder: 'Enter your Reddit Client ID' },
+        { key: 'clientSecret', label: 'Client Secret', type: 'password', required: true, placeholder: 'Enter your Reddit Client Secret' },
+        { key: 'username', label: 'Username', type: 'text', required: true, placeholder: 'Enter your Reddit username' },
+        { key: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter your Reddit password' },
+        { key: 'userAgent', label: 'User Agent', type: 'text', required: true, placeholder: 'Enter your User Agent string' }
+      ],
+      pinterest: [
+        { key: 'accessToken', label: 'Access Token', type: 'password', required: true, placeholder: 'Enter your Pinterest Access Token' },
+        { key: 'appId', label: 'App ID', type: 'text', required: false, placeholder: 'Enter your Pinterest App ID (optional)' },
+        { key: 'appSecret', label: 'App Secret', type: 'password', required: false, placeholder: 'Enter your Pinterest App Secret (optional)' },
+        { key: 'boardId', label: 'Board ID', type: 'text', required: false, placeholder: 'Enter your default Board ID (optional)' }
       ],
       youtube: [
         { key: 'clientId', label: 'Client ID', type: 'text', required: true, placeholder: 'Enter your YouTube Client ID' },
