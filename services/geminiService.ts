@@ -362,6 +362,23 @@ export const generateGenericContent = async (prompt: string): Promise<string> =>
     return response.text;
 };
 
+// Rewrite to fit within a strict character limit while keeping meaning.
+export const rewriteToLength = async (
+  text: string,
+  maxChars: number,
+  guidance?: string
+): Promise<string> => {
+  const prompt = `Rewrite the text below to be no more than ${maxChars} characters, preserving meaning and clarity. ${guidance || ''}
+
+Text:
+${text}`;
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+  return response.text.slice(0, maxChars).trim();
+};
+
 export const repurposeContent = async (
     blogPost: string, 
     format: string,

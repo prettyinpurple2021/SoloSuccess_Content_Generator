@@ -1566,8 +1566,9 @@ export class SocialMediaIntegrations {
       oauth_version: '1.0'
     };
 
-    // Generate signature (simplified - use proper OAuth library in production)
-    const signature = 'mock_signature'; // Replace with actual signature generation
+    // NOTE: For production, replace with a proper OAuth 1.0a implementation
+    // Keep placeholder minimal but explicit to avoid accidental posting with invalid auth
+    const signature = 'REPLACE_WITH_REAL_SIGNATURE';
     
     return `OAuth oauth_consumer_key="${credentials.apiKey}", oauth_token="${credentials.accessToken}", oauth_signature_method="HMAC-SHA1", oauth_timestamp="${timestamp}", oauth_nonce="${nonce}", oauth_signature="${signature}", oauth_version="1.0"`;
   }

@@ -1,45 +1,67 @@
 
-export interface SchedulePayload {
-  userId: string;
-  content: string;
-  platform: string;
-  scheduleDate: string; // ISO 8601 format
-  imageUrl?: string;
-}
+import { z } from 'zod';
+import { supabase } from './supabaseService';
+import { contentAdaptationService } from './contentAdaptationService';
+
+export const schedulePayloadSchema = z.object({
+  userId: z.string().uuid().optional(),
+  postId: z.string().uuid().optional(),
+  content: z.string().min(1),
+  platforms: z.array(z.enum(['twitter','linkedin','facebook','instagram','bluesky','reddit','pinterest','blogger'])).min(1),
+  scheduleDate: z.string(), // ISO 8601
+  mediaUrls: z.array(z.string().url()).optional(),
+  options: z.object({
+    tone: z.enum(['professional','casual','friendly','authoritative']).optional(),
+    includeCallToAction: z.boolean().optional(),
+    targetAudience: z.string().optional(),
+  }).optional(),
+});
+
+export type SchedulePayload = z.infer<typeof schedulePayloadSchema>;
 
 /**
- * Sends a post to your custom scheduling service API.
- * This function is a placeholder and assumes your backend API is running and accessible.
- * @param payload - The data for the post to be scheduled.
+ * Create one job per platform, content adapted strictly to platform limits.
  */
 export const schedulePost = async (payload: SchedulePayload): Promise<void> => {
-  // In a real application, this URL would point to your deployed backend service.
-  // For local development, it might be 'http://localhost:3001/api/v1/schedule'.
-  const SCHEDULER_API_ENDPOINT = '/api/v1/schedule'; // This is a placeholder endpoint.
+  const parsed = schedulePayloadSchema.parse(payload);
 
-  // NOTE: This is a mocked success response. To make this real, you would
-  // build the Express.js backend we discussed previously and have it listen
-  // on the endpoint above. The fetch call would then be enabled.
-  if (true) { // MOCK: Remove this 'if' block when your backend is live
-    console.log('Mocked schedule success:', payload);
-    return Promise.resolve();
+  // Resolve user id if not provided
+  let userId = parsed.userId || '';
+  if (!userId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    userId = user.id;
   }
 
-  const response = await fetch(SCHEDULER_API_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // If your scheduler API is protected, you would include an auth token here.
-      // e.g., 'Authorization': `Bearer ${user_auth_token}`
-    },
-    body: JSON.stringify(payload),
-  });
+  // Adapt content per platform
+  const adaptations = await contentAdaptationService.adaptContentForMultiplePlatforms(
+    parsed.content,
+    parsed.platforms,
+    {
+      tone: parsed.options?.tone,
+      includeCallToAction: parsed.options?.includeCallToAction,
+      targetAudience: parsed.options?.targetAudience,
+    }
+  );
 
-  if (!response.ok) {
-    // Try to parse a JSON error message from the backend, otherwise use a generic message.
-    const errorData = await response.json().catch(() => ({ message: 'Failed to schedule post with the external service.' }));
-    throw new Error(errorData.message || 'An unknown error occurred while scheduling.');
+  const idempotencyBase = `${userId}:${parsed.postId || 'ad-hoc'}:${parsed.scheduleDate}`;
+
+  const jobs = parsed.platforms.map((platform) => ({
+    user_id: userId,
+    post_id: parsed.postId || null,
+    platform,
+    run_at: parsed.scheduleDate,
+    status: 'pending',
+    attempts: 0,
+    max_attempts: 5,
+    idempotency_key: `${idempotencyBase}:${platform}`,
+    content: adaptations[platform]?.content || parsed.content,
+    media_urls: parsed.mediaUrls || [],
+    payload: {},
+  }));
+
+  const { error } = await supabase.from('post_jobs').insert(jobs);
+  if (error) {
+    throw new Error(error.message);
   }
-
-  console.log(`Successfully scheduled post for ${payload.platform}`);
 };

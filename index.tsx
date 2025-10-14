@@ -1,7 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './src/index.css';
+import './styles/holographic-theme.css';
 import { HolographicThemeProvider } from './components/HolographicTheme';
 import AppRouter from './AppRouter';
 

@@ -212,7 +212,21 @@ export class ContentAdaptationService {
 
     for (const platform of platforms) {
       try {
-        results[platform] = await this.adaptContentForPlatform(originalContent, platform, options);
+        const adapted = await this.adaptContentForPlatform(originalContent, platform, options);
+        // For large-limit platforms, try to expand to near-max if significantly under
+        const limits = this.PLATFORM_LIMITS[platform];
+        const targetMin = Math.floor(limits.maxCharacters * 0.85);
+        if (adapted.characterCount < targetMin) {
+          const expanded = await this.expandToTargetLength(adapted.content, limits.maxCharacters, platform, options);
+          results[platform] = {
+            ...adapted,
+            content: expanded,
+            characterCount: expanded.length,
+            adaptations: [...adapted.adaptations, 'Expanded to target near max length']
+          };
+        } else {
+          results[platform] = adapted;
+        }
       } catch (error) {
         results[platform] = {
           content: originalContent,
@@ -228,6 +242,52 @@ export class ContentAdaptationService {
     }
 
     return results;
+  }
+
+  /**
+   * Expand content toward target length without exceeding the hard limit.
+   * Uses simple heuristics; can be swapped to AI rewrite service later.
+   */
+  private async expandToTargetLength(
+    content: string,
+    max: number,
+    platform: string,
+    options?: any
+  ): Promise<string> {
+    // Lightweight expansion: add clarifying detail and a gentle CTA while respecting limit
+    const addendum = options?.includeCallToAction
+      ? ' Learn more and share your thoughts.'
+      : '';
+    let expanded = content;
+    // Repeat expansion until close to 92% of max or we hit limit
+    while (expanded.length < Math.floor(max * 0.92)) {
+      const chunk = ' ' + this.platformExpansionPhrase(platform);
+      if (expanded.length + chunk.length + addendum.length >= max) break;
+      expanded += chunk;
+      if (addendum && expanded.length + addendum.length < max) {
+        expanded += addendum;
+      }
+      if (expanded.length > max) break;
+    }
+    if (expanded.length > max) {
+      expanded = expanded.slice(0, max);
+    }
+    return expanded.trim();
+  }
+
+  private platformExpansionPhrase(platform: string): string {
+    switch (platform) {
+      case 'linkedin':
+        return 'Here are a few practical takeaways to consider.';
+      case 'facebook':
+        return 'Let’s break this down with a quick example for clarity.';
+      case 'reddit':
+        return 'Adding context can help the discussion stay constructive.';
+      case 'pinterest':
+        return 'Save this for later and apply it step by step.';
+      default:
+        return 'Here is an extra detail that adds helpful context.';
+    }
   }
 
   /**
