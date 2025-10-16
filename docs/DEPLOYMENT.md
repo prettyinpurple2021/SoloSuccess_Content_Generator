@@ -28,3 +28,36 @@
 ## Troubleshooting
 - Check Render logs; verify `/healthz` returns 200.
 - Ensure env vars exist; Vite build fails if missing.
+
+---
+
+# Deno Deploy (Primary)
+
+## Steps
+1. Connect this repo in Deno Deploy dashboard.
+2. Build command: `npm ci && npm run build`.
+3. Entrypoint: `server.ts`.
+4. Set project variables (Settings → Environment): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, optional `VITE_SENTRY_DSN`.
+5. Add custom domain; TLS is auto-managed.
+
+## GitHub Actions (optional)
+- Add repository secrets: `DENO_DEPLOY_TOKEN`, `DENO_PROJECT`.
+- Workflow `.github/workflows/deploy-deno.yml` deploys on push to `main`.
+
+## Notes
+- SPA fallback and security headers are handled in `server.ts`.
+- Long-lived cache for assets; `index.html` is no-store.
+
+---
+
+# Fly.io (Fallback via Docker/Nginx)
+
+## Steps
+1. Install `flyctl` and run `flyctl launch` (use existing `Dockerfile`).
+2. Set secrets: `fly secrets set VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... VITE_SENTRY_DSN=...`.
+3. Deploy: `flyctl deploy`. Keep autoscale min=1, max=1.
+4. Map your domain and certificates.
+
+## Config
+- `fly.toml` defines HTTP service on port 80.
+- `nginx.conf` enforces SPA fallback, caching, and security headers.
