@@ -13,7 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentAdaptationService } from '../../services/contentAdaptationService';
-import { socialMediaIntegrations } from '../../services/integrations/socialMediaIntegrations';
+import { schedulePost } from '../../services/schedulerService';
 import ContentPreview from './ContentPreview';
 
 interface SmartPostingProps {
@@ -93,7 +93,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
     return { validations, allValid };
   };
 
-  // Post to selected platforms
+  // Post to selected platforms (now or schedule)
   const handlePost = async () => {
     if (!content.trim() || selectedPlatforms.length === 0) {
       onPostError?.('Please enter content and select at least one platform');
@@ -113,45 +113,28 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
         return;
       }
 
-      // Prepare platforms for posting
-      const platformsToPost = selectedPlatforms.map(platform => {
-        const integration = connectedIntegrations.find(int => int.platform === platform);
-        return {
-          platform,
-          credentials: integration?.credentials,
-          options: {
-            ...postingOptions,
-            includeCallToAction: postingOptions.includeCallToAction,
-            tone: postingOptions.tone
-          }
-        };
-      }).filter(p => p.credentials); // Only include platforms with credentials
+      // Create scheduling jobs
+      const scheduleDate = postingOptions.scheduleForLater && postingOptions.scheduledTime
+        ? new Date(postingOptions.scheduledTime).toISOString()
+        : new Date().toISOString();
 
-      if (platformsToPost.length === 0) {
-        onPostError?.('No valid integrations found for selected platforms');
-        setIsPosting(false);
-        return;
-      }
-
-      // Post to multiple platforms
-      const results = await socialMediaIntegrations.postToMultiplePlatforms(
+      await schedulePost({
         content,
-        platformsToPost
+        platforms: selectedPlatforms,
+        scheduleDate,
+        mediaUrls: postingOptions.includeMedia ? postingOptions.mediaUrls : [],
+        options: {
+          tone: postingOptions.tone,
+          includeCallToAction: postingOptions.includeCallToAction,
+        }
+      });
+
+      setPostResults(
+        Object.fromEntries(
+          selectedPlatforms.map(p => [p, { success: true, queued: true }])
+        )
       );
-
-      setPostResults(results);
-      
-      // Check if all posts were successful
-      const successCount = Object.values(results).filter((result: any) => result.success).length;
-      const totalCount = Object.keys(results).length;
-
-      if (successCount === totalCount) {
-        onPostSuccess?.(results);
-      } else if (successCount > 0) {
-        onPostError?.(`Partial success: ${successCount}/${totalCount} posts successful`);
-      } else {
-        onPostError?.('All posts failed. Please check your integrations and try again.');
-      }
+      onPostSuccess?.({ queued: true });
 
     } catch (error) {
       onPostError?.(error instanceof Error ? error.message : 'Unknown error occurred');
