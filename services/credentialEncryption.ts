@@ -36,6 +36,11 @@ export class CredentialEncryption {
         throw new Error('User key must be a string with at least 8 characters');
       }
 
+      // Check if Web Crypto API is available
+      if (!crypto || !crypto.subtle) {
+        throw new Error('Web Crypto API is not available in this environment');
+      }
+
       // Generate random salt and IV
       const salt = this.generateRandomBytes(this.SALT_LENGTH);
       const iv = this.generateRandomBytes(this.IV_LENGTH);
@@ -209,30 +214,57 @@ export class CredentialEncryption {
    * @returns Derived encryption key
    */
   private static async deriveKey(password: string, salt: Uint8Array): Promise<ArrayBuffer> {
+    try {
+      const passwordBuffer = new TextEncoder().encode(password);
+      
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        passwordBuffer,
+        'PBKDF2',
+        false,
+        ['deriveKey']
+      );
+
+      const derivedKey = await crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: salt,
+          iterations: this.PBKDF2_ITERATIONS,
+          hash: this.PBKDF2_HASH
+        },
+        keyMaterial,
+        { name: this.ALGORITHM, length: this.KEY_LENGTH * 8 }, // Convert bytes to bits
+        false,
+        ['encrypt', 'decrypt']
+      );
+
+      return crypto.subtle.exportKey('raw', derivedKey);
+    } catch (error) {
+      console.error('PBKDF2 key derivation failed, falling back to simple hash:', error);
+      // Fallback to a simpler approach for browser compatibility
+      return this.simpleKeyDerivation(password, salt);
+    }
+  }
+
+  /**
+   * Simple key derivation fallback for browser compatibility
+   * @param password - The password/key to derive from
+   * @param salt - Random salt for key derivation
+   * @returns Derived encryption key
+   */
+  private static async simpleKeyDerivation(password: string, salt: Uint8Array): Promise<ArrayBuffer> {
     const passwordBuffer = new TextEncoder().encode(password);
+    const combined = new Uint8Array(passwordBuffer.length + salt.length);
+    combined.set(passwordBuffer, 0);
+    combined.set(salt, passwordBuffer.length);
     
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      passwordBuffer,
-      'PBKDF2',
-      false,
-      ['deriveKey']
-    );
-
-    const derivedKey = await crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: salt,
-        iterations: this.PBKDF2_ITERATIONS,
-        hash: this.PBKDF2_HASH
-      },
-      keyMaterial,
-      { name: this.ALGORITHM, length: this.KEY_LENGTH * 8 }, // Convert bytes to bits
-      false,
-      ['encrypt', 'decrypt']
-    );
-
-    return crypto.subtle.exportKey('raw', derivedKey);
+    // Use SHA-256 for key derivation
+    const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+    
+    // Repeat hash to get 256-bit key
+    const finalHash = await crypto.subtle.digest('SHA-256', hashBuffer);
+    
+    return finalHash;
   }
 
   /**

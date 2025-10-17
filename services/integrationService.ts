@@ -17,7 +17,7 @@ import {
   WebhookEvent
 } from '../types';
 import { db } from './supabaseService';
-import { CredentialEncryption } from './credentialEncryption';
+import { SimpleCredentialEncryption } from './simpleCredentialEncryption';
 
 /**
  * IntegrationService - Production-quality integration management service
@@ -63,8 +63,8 @@ export class IntegrationService {
       this.validateCreateIntegrationData(data);
 
       // Encrypt credentials
-      const userKey = CredentialEncryption.generateUserKey(data.name, this.appSecret);
-      const encryptedCredentials = await CredentialEncryption.encrypt(data.credentials, userKey);
+      const userKey = SimpleCredentialEncryption.generateUserKey(data.name, this.appSecret);
+      const encryptedCredentials = await SimpleCredentialEncryption.encrypt(data.credentials, userKey);
 
       // Create integration record
       const integration = await db.addIntegration({
@@ -214,8 +214,8 @@ export class IntegrationService {
       }
 
       // Decrypt credentials
-      const userKey = CredentialEncryption.generateUserKey(integration.name, this.appSecret);
-      const credentials = await CredentialEncryption.decrypt(integration.credentials, userKey);
+      const userKey = SimpleCredentialEncryption.generateUserKey(integration.name, this.appSecret);
+      const credentials = await SimpleCredentialEncryption.decrypt(integration.credentials, userKey);
 
       // Test connection based on platform
       const testResult = await this.performConnectionTest(integration.platform, credentials);
