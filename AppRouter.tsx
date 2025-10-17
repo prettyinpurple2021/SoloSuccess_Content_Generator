@@ -13,8 +13,8 @@ import DashboardPage from './components/pages/DashboardPage';
 import ProfilePage from './components/pages/ProfilePage';
 
 const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
+  import.meta.env.VITE_SUPABASE_URL || 'https://uwqavioyiqwjkvazlsrl.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3cWF2aW95aXF3amt2YXpsc3JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MDk5ODUsImV4cCI6MjA3NDQ4NTk4NX0.hOZZTMp920REf_FRqsP4EocU8vcO5uM-JY1uSkyCnX8'
 );
 
 // Protected Route Component

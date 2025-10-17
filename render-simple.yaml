@@ -1,12 +1,13 @@
 services:
   - type: web
     name: solosuccess-ai-content-generator
-    runtime: docker
-    dockerfilePath: ./Dockerfile
+    runtime: node
     plan: free
     region: oregon
     branch: main
-    healthCheckPath: /healthz
+    buildCommand: npm ci && npm run build
+    startCommand: npx serve -s dist -l 10000
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
@@ -20,5 +21,4 @@ services:
         sync: false
       - key: GOOGLE_API_KEY
         sync: false
-    buildCommand: ""
-    startCommand: ""
+

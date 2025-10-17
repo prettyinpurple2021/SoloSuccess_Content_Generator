@@ -1,21 +1,17 @@
-# Use Node.js 20 LTS Alpine as base image (latest stable)
-FROM node:20.11.1-alpine AS builder
+# Use Node.js 20 LTS Alpine as base image
+FROM node:20-alpine AS builder
 
-# Update packages and install security patches
-RUN apk update && apk upgrade && apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/cache/apk/*
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better caching
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies for build tools like Vite)
-RUN npm ci
+# Install dependencies
+RUN npm ci --only=production=false
 
 # Copy source code
 COPY . .
@@ -23,32 +19,17 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production stage
-FROM nginx:1.25.3-alpine AS production
+# Production stage with nginx
+FROM nginx:alpine AS production
 
-# Update packages and install security patches
-RUN apk update && apk upgrade && apk add --no-cache \
-    curl \
-    && rm -rf /var/cache/apk/*
-
-# Copy built assets from builder stage
+# Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Create non-root user for security (nginx user already exists in alpine image)
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G appgroup -g appgroup appuser
-
-# Set proper permissions
-RUN chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /var/cache/nginx && \
-    chown -R nginx:nginx /var/log/nginx && \
-    chown -R nginx:nginx /etc/nginx/conf.d
-
 # Expose port 80
 EXPOSE 80
 
-# Start nginx as root (master binds to 80; workers drop to nginx user)
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
