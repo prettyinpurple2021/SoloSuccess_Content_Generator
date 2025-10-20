@@ -3,6 +3,8 @@ import { Activity, Clock, Database, Zap, AlertTriangle, CheckCircle } from 'luci
 import { contentCache } from '../services/cachingService';
 import { HoloCard, HoloButton, HoloText, SparkleEffect, FloatingSkull } from './HolographicTheme';
 
+export const PERF_EVENT_NAME = 'ss_perf_api_call';
+
 interface PerformanceMetrics {
   pageLoadTime: number;
   apiResponseTimes: { [key: string]: number };
@@ -34,28 +36,33 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
 
   // Performance observer for measuring page load times
   useEffect(() => {
-    if ('performance' in window && 'PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        entries.forEach((entry) => {
-          if (entry.entryType === 'navigation') {
-            const navEntry = entry as PerformanceNavigationTiming;
-            setMetrics(prev => ({
-              ...prev,
-              pageLoadTime: navEntry.loadEventEnd - navEntry.navigationStart,
-              lastUpdated: new Date()
-            }));
-          }
+    if (typeof window !== 'undefined' && 'performance' in window && 'PerformanceObserver' in window) {
+      try {
+        const observer = new PerformanceObserver((list) => {
+          const entries = list.getEntries();
+          entries.forEach((entry) => {
+            if (entry.entryType === 'navigation') {
+              const navEntry = entry as PerformanceNavigationTiming;
+              setMetrics(prev => ({
+                ...prev,
+                pageLoadTime: Math.max(0, navEntry.loadEventEnd - navEntry.navigationStart),
+                lastUpdated: new Date()
+              }));
+            }
+          });
         });
-      });
 
-      observer.observe({ entryTypes: ['navigation'] });
+        observer.observe({ entryTypes: ['navigation'] });
 
-      return () => observer.disconnect();
+        return () => observer.disconnect();
+      } catch {
+        // Not critical — ignore if PerformanceObserver fails in some envs
+        return;
+      }
     }
   }, []);
 
-  // Monitor API response times
+  // Monitor API response times (internal recorder)
   const recordApiCall = useCallback((endpoint: string, duration: number) => {
     setMetrics(prev => ({
       ...prev,
@@ -67,15 +74,36 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     }));
   }, []);
 
+  // Listen for global perf events dispatched by usePerformanceMonitor or other producers
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (detail && detail.endpoint && typeof detail.duration === 'number') {
+        recordApiCall(detail.endpoint, detail.duration);
+      }
+    };
+    window.addEventListener(PERF_EVENT_NAME, handler as EventListener);
+    return () => window.removeEventListener(PERF_EVENT_NAME, handler as EventListener);
+  }, [recordApiCall]);
+
   // Update cache metrics
   useEffect(() => {
     const updateCacheMetrics = () => {
-      const cacheStats = contentCache.getStats();
-      setMetrics(prev => ({
-        ...prev,
-        cacheHitRate: cacheStats.hitRate,
-        lastUpdated: new Date()
-      }));
+      try {
+        const cacheStats = contentCache.getStats();
+        let hitRate = typeof cacheStats.hitRate === 'number' ? cacheStats.hitRate : 0;
+        // If hitRate seems to be fractional (0..1), convert to percent
+        if (hitRate > 0 && hitRate <= 1) {
+          hitRate = hitRate * 100;
+        }
+        setMetrics(prev => ({
+          ...prev,
+          cacheHitRate: hitRate,
+          lastUpdated: new Date()
+        }));
+      } catch {
+        // ignore errors from cache introspection
+      }
     };
 
     const interval = setInterval(updateCacheMetrics, 5000); // Update every 5 seconds
@@ -87,20 +115,23 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   // Monitor memory usage (if available)
   useEffect(() => {
     const updateMemoryUsage = () => {
-      if ('memory' in performance) {
-        const memInfo = (performance as any).memory;
-        const usagePercent = (memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit) * 100;
-        setMetrics(prev => ({
-          ...prev,
-          memoryUsage: usagePercent,
-          lastUpdated: new Date()
-        }));
+      try {
+        const mem = (performance as any).memory;
+        if (mem && typeof mem.usedJSHeapSize === 'number' && typeof mem.jsHeapSizeLimit === 'number') {
+          const usagePercent = (mem.usedJSHeapSize / mem.jsHeapSizeLimit) * 100;
+          setMetrics(prev => ({
+            ...prev,
+            memoryUsage: usagePercent,
+            lastUpdated: new Date()
+          }));
+        }
+      } catch {
+        // ignore in unsupported environments
       }
     };
 
     const interval = setInterval(updateMemoryUsage, 10000); // Update every 10 seconds
     updateMemoryUsage(); // Initial update
-
     return () => clearInterval(interval);
   }, []);
 
@@ -124,8 +155,8 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   }, []);
 
   const getPerformanceStatus = () => {
-    const avgApiTime = Object.values(metrics.apiResponseTimes).reduce((sum, time) => sum + time, 0) / 
-                      Object.values(metrics.apiResponseTimes).length || 0;
+    const apiTimes = Object.values(metrics.apiResponseTimes);
+    const avgApiTime = apiTimes.length ? apiTimes.reduce((sum, time) => sum + time, 0) / apiTimes.length : 0;
 
     if (avgApiTime > 2000 || metrics.memoryUsage > 80 || metrics.errorCount > 5) {
       return { status: 'poor', color: 'text-red-600', bgColor: 'bg-red-100' };
@@ -142,7 +173,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     return (
       <button
         onClick={onToggle}
-        className={`fixed bottom-20 right-6 w-12 h-12 glass-card ${performanceStatus.color} rounded-full shadow-lg hover:shadow-xl transition-all z-30 flex items-center justify-center sparkles neon-glow`}
+        className={`fixed bottom-20 right-6 w-12 h-12 glass-card text-white rounded-full shadow-lg hover:shadow-xl transition-all z-30 flex items-center justify-center sparkles neon-glow`}
         title="Performance Monitor"
       >
         <Activity className="w-5 h-5" />
@@ -285,12 +316,15 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           </HoloButton>
         </div>
       </div>
-    </div>
+    </HoloCard>
   );
 };
 
 /**
  * Hook for performance monitoring
+ *
+ * Use recordApiCall(endpoint, startTime) — it will dispatch a global event that
+ * the PerformanceMonitor component listens for and records.
  */
 export const usePerformanceMonitor = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -301,8 +335,14 @@ export const usePerformanceMonitor = () => {
 
   const recordApiCall = useCallback((endpoint: string, startTime: number) => {
     const duration = Date.now() - startTime;
-    // This would be used to record API call performance
-    console.log(`API Call: ${endpoint} took ${duration}ms`);
+    // Broadcast to any PerformanceMonitor instances
+    try {
+      const event = new CustomEvent(PERF_EVENT_NAME, { detail: { endpoint, duration } });
+      window.dispatchEvent(event);
+    } catch {
+      // CustomEvent might fail in some environments — fallback to console
+      console.log(`API Call: ${endpoint} took ${duration}ms`);
+    }
   }, []);
 
   return {
