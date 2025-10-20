@@ -1,4 +1,3 @@
-/* eslint-disable no-undef, @typescript-eslint/no-explicit-any */
 // Supabase Edge Function: process-due-posts
 // Picks due jobs from post_jobs, posts to providers, updates status with retries/backoff.
 // Note: This function runs on Supabase Edge Runtime (Deno) and requires Deno globals
@@ -30,7 +29,7 @@ type Integration = {
 };
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { persistSession: false }
 });
