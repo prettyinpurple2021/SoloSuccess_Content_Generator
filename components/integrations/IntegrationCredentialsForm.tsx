@@ -216,7 +216,7 @@ const IntegrationCredentialsForm: React.FC<IntegrationCredentialsFormProps> = ({
       </div>
 
       {/* Credential Fields */}
-      <div className="space-y-4">
+      <form onSubmit={(e) => { e.preventDefault(); handleConnect(); }} className="space-y-4">
         {credentialFields.map((field, index) => (
           <motion.div
             key={field.key}
@@ -253,7 +253,7 @@ const IntegrationCredentialsForm: React.FC<IntegrationCredentialsFormProps> = ({
             )}
           </motion.div>
         ))}
-      </div>
+      </form>
 
       {/* Help Text */}
       <div className="mt-8 p-6 bg-blue-500/20 border border-blue-500/50 rounded-lg">
