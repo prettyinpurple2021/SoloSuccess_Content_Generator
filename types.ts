@@ -68,7 +68,7 @@ export interface DatabasePost {
 }
 
 export interface LoadingState {
-  [key: string]: boolean;
+  [key: string]: boolean | undefined;
   // Enhanced features loading states
   brandVoices?: boolean;
   audienceProfiles?: boolean;
@@ -402,10 +402,21 @@ export interface ContentConflict {
 }
 
 // Integration Manager Types
-export type IntegrationType = 'social_media' | 'analytics' | 'crm' | 'email' | 'storage' | 'ai_service';
+export type IntegrationType =
+  | 'social_media'
+  | 'analytics'
+  | 'crm'
+  | 'email'
+  | 'storage'
+  | 'ai_service';
 export type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'syncing' | 'maintenance';
 export type SyncFrequency = 'realtime' | 'hourly' | 'daily' | 'weekly' | 'manual';
-export type WebhookEvent = 'post_created' | 'post_updated' | 'post_published' | 'analytics_updated' | 'error_occurred';
+export type WebhookEvent =
+  | 'post_created'
+  | 'post_updated'
+  | 'post_published'
+  | 'analytics_updated'
+  | 'error_occurred';
 
 export interface Integration {
   id: string;
@@ -453,7 +464,7 @@ export interface IntegrationConfig {
   rateLimits?: RateLimitConfig;
   errorHandling?: ErrorHandlingConfig;
   notifications?: NotificationConfig;
-  customFields?: { [key: string]: any };
+  customFields?: { [key: string]: unknown };
 }
 
 export interface WebhookConfig {
@@ -472,6 +483,7 @@ export interface RetryPolicy {
   backoffMultiplier: number;
   initialDelay: number;
   maxDelay: number;
+  retryDelay?: number; // Optional retry delay in milliseconds
 }
 
 export interface SyncSettings {
@@ -489,6 +501,9 @@ export interface RateLimitConfig {
   requestsPerHour: number;
   requestsPerDay: number;
   burstLimit: number;
+  windowSize?: number; // Time window in milliseconds
+  maxRequests?: number; // Max requests per window
+  strategy?: 'fixed' | 'sliding' | 'token-bucket'; // Rate limiting strategy
 }
 
 export interface ErrorHandlingConfig {
@@ -512,6 +527,8 @@ export interface IntegrationMetrics {
   successfulRequests: number;
   failedRequests: number;
   averageResponseTime: number;
+  avgResponseTime: number; // Alias for averageResponseTime
+  successRate: number; // Success rate percentage
   lastRequestTime: Date;
   errorRate: number;
   uptime: number;
@@ -525,7 +542,7 @@ export interface IntegrationLog {
   integrationId: string;
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;
-  metadata: { [key: string]: any };
+  metadata: { [key: string]: unknown };
   timestamp: Date;
   userId: string;
 }
@@ -535,7 +552,7 @@ export interface DatabaseIntegrationLog {
   integration_id: string;
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;
-  metadata: { [key: string]: any };
+  metadata: { [key: string]: unknown };
   timestamp: string;
   user_id: string;
 }
@@ -550,7 +567,7 @@ export interface IntegrationAlert {
   isResolved: boolean;
   resolvedAt?: Date;
   createdAt: Date;
-  metadata?: { [key: string]: any };
+  metadata?: { [key: string]: unknown };
 }
 
 export interface DatabaseIntegrationAlert {
@@ -563,14 +580,14 @@ export interface DatabaseIntegrationAlert {
   is_resolved: boolean;
   resolved_at?: string;
   created_at: string;
-  metadata?: { [key: string]: any };
+  metadata?: { [key: string]: unknown };
 }
 
 export interface ConnectionTestResult {
   success: boolean;
   error?: string;
   responseTime: number;
-  details?: { [key: string]: any };
+  details?: { [key: string]: unknown };
   timestamp: Date;
 }
 
@@ -599,7 +616,7 @@ export interface HealthCheck {
   success: boolean;
   error?: string;
   responseTime?: number;
-  details?: { [key: string]: any };
+  details?: { [key: string]: unknown };
 }
 
 export interface ValidationResult {
@@ -614,6 +631,7 @@ export interface RateLimitResult {
   remaining: number;
   resetTime: number;
   retryAfter: number;
+  reason?: string; // Optional reason for rate limiting
 }
 
 // Platform-specific credential types
@@ -693,7 +711,7 @@ export interface CreateIntegrationData {
   name: string;
   type: IntegrationType;
   platform: string;
-  credentials: any; // Will be encrypted
+  credentials: unknown; // Will be encrypted
   configuration?: Partial<IntegrationConfig>;
   syncFrequency?: SyncFrequency;
 }
@@ -709,7 +727,7 @@ export interface UpdateIntegrationData {
 export interface WebhookEventData {
   event: WebhookEvent;
   integrationId: string;
-  data: { [key: string]: any };
+  data: { [key: string]: unknown };
   timestamp: Date;
   signature?: string;
 }
@@ -762,7 +780,7 @@ export interface WebhookDelivery {
   id: string;
   webhookId: string;
   event: WebhookEvent;
-  payload: any;
+  payload: unknown;
   status: 'pending' | 'delivering' | 'delivered' | 'failed';
   attempts: number;
   maxAttempts: number;

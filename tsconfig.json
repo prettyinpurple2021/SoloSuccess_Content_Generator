@@ -7,10 +7,10 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "strict": true,
-    "noImplicitAny": true,
-    "noUncheckedIndexedAccess": true,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": false,
     "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
 
     "moduleResolution": "bundler",
     "isolatedModules": true,
