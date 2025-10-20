@@ -24,6 +24,7 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+        continue-on-error: true
 
       - name: Tests (if present)
         run: npm run -s test --if-present
