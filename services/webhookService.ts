@@ -28,8 +28,10 @@ export class WebhookService {
         isActive: webhookConfig.isActive !== false,
         retryPolicy: {
           maxRetries: webhookConfig.retryPolicy?.maxRetries || 3,
-          retryDelay: webhookConfig.retryPolicy?.retryDelay || 1000,
-          backoffMultiplier: webhookConfig.retryPolicy?.backoffMultiplier || 2
+          retryDelay: webhookConfig.retryPolicy?.retryDelay,
+          backoffMultiplier: webhookConfig.retryPolicy?.backoffMultiplier || 2,
+          initialDelay: webhookConfig.retryPolicy?.initialDelay || 1000,
+          maxDelay: webhookConfig.retryPolicy?.maxDelay || 30000
         },
         headers: webhookConfig.headers || {},
         timeout: webhookConfig.timeout || 30000,
@@ -205,7 +207,7 @@ export class WebhookService {
 
     // Schedule retry if needed
     if (delivery.status === 'failed' && delivery.attempts < delivery.maxAttempts) {
-      const retryDelay = webhook.retryPolicy.retryDelay * 
+      const retryDelay = (webhook.retryPolicy.retryDelay ?? webhook.retryPolicy.initialDelay) * 
         Math.pow(webhook.retryPolicy.backoffMultiplier, delivery.attempts - 1);
       delivery.nextRetryAt = new Date(Date.now() + retryDelay);
       delivery.status = 'pending';

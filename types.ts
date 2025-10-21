@@ -504,6 +504,8 @@ export interface RateLimitConfig {
   windowSize?: number; // Time window in milliseconds
   maxRequests?: number; // Max requests per window
   strategy?: 'fixed' | 'sliding' | 'token-bucket'; // Rate limiting strategy
+  refillRate?: number; // Tokens per second for token bucket
+  tokensPerRequest?: number; // Tokens consumed per request
 }
 
 export interface ErrorHandlingConfig {

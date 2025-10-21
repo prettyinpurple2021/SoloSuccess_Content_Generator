@@ -940,8 +940,8 @@ export class SocialMediaIntegrations {
       const response = await this.makeRedditRequest(
         'https://oauth.reddit.com/api/v1/me',
         'GET',
-        tokenResponse.accessToken,
-        credentials.userAgent
+        tokenResponse.accessToken ?? '',
+        credentials.userAgent ?? 'SoloSuccess Content Generator'
       );
 
       if (response.ok) {
@@ -1006,14 +1006,14 @@ export class SocialMediaIntegrations {
       }
 
       // Sync user posts
-      const postsResult = await this.syncRedditPosts(credentials, tokenResponse.accessToken);
+      const postsResult = await this.syncRedditPosts(credentials, tokenResponse.accessToken ?? '');
       recordsProcessed += postsResult.processed;
       recordsCreated += postsResult.created;
       recordsUpdated += postsResult.updated;
       errors.push(...postsResult.errors);
 
       // Sync user profile data
-      const profileResult = await this.syncRedditProfile(credentials, tokenResponse.accessToken);
+      const profileResult = await this.syncRedditProfile(credentials, tokenResponse.accessToken ?? '');
       recordsProcessed += profileResult.processed;
       recordsCreated += profileResult.created;
       recordsUpdated += profileResult.updated;
@@ -1082,8 +1082,8 @@ export class SocialMediaIntegrations {
       const response = await this.makeRedditRequest(
         'https://oauth.reddit.com/api/submit',
         'POST',
-        tokenResponse.accessToken,
-        credentials.userAgent,
+        tokenResponse.accessToken ?? '',
+        credentials.userAgent ?? 'SoloSuccess Content Generator',
         postData
       );
 
@@ -1314,7 +1314,7 @@ export class SocialMediaIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(SocialMediaIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -1342,7 +1342,7 @@ export class SocialMediaIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(SocialMediaIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -1369,7 +1369,7 @@ export class SocialMediaIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(SocialMediaIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -1396,7 +1396,7 @@ export class SocialMediaIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(SocialMediaIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -1426,7 +1426,7 @@ export class SocialMediaIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(SocialMediaIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -1455,7 +1455,7 @@ export class SocialMediaIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(SocialMediaIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -1486,7 +1486,7 @@ export class SocialMediaIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(SocialMediaIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -1519,7 +1519,7 @@ export class SocialMediaIntegrations {
           username: credentials.username,
           password: credentials.password
         }),
-        signal: AbortSignal.timeout(this.API_TIMEOUT)
+        signal: AbortSignal.timeout(SocialMediaIntegrations.API_TIMEOUT)
       });
 
       if (response.ok) {

@@ -72,25 +72,24 @@ export class RateLimitingService {
         return {
           allowed: false,
           remaining: 0,
-          resetTime: circuitBreakerResult.resetTime,
-          retryAfter: circuitBreakerResult.retryAfter,
-          reason: 'Circuit breaker is open',
-          strategy: 'circuit_breaker'
+          resetTime: circuitBreakerResult.resetTime ?? Date.now() + 60000,
+          retryAfter: circuitBreakerResult.retryAfter ?? 60000,
+          reason: 'Circuit breaker is open'
         };
       }
 
       // Apply rate limiting strategy
-      const strategy = config?.strategy || 'sliding_window';
+      const strategy = config?.strategy || 'sliding';
       let rateLimitResult: RateLimitResult;
 
       switch (strategy) {
-        case 'sliding_window':
+        case 'sliding':
           rateLimitResult = this.checkSlidingWindowRateLimit(entry, config, now);
           break;
-        case 'token_bucket':
+        case 'token-bucket':
           rateLimitResult = this.checkTokenBucketRateLimit(entry, config, now);
           break;
-        case 'fixed_window':
+        case 'fixed':
           rateLimitResult = this.checkFixedWindowRateLimit(entry, config, now);
           break;
         default:
@@ -114,8 +113,7 @@ export class RateLimitingService {
         remaining: 100,
         resetTime: Date.now() + 60000,
         retryAfter: 0,
-        reason: 'Rate limiting service error - failing open',
-        strategy: 'error_fallback'
+        reason: 'Rate limiting service error - failing open'
       };
     }
   }
@@ -144,10 +142,9 @@ export class RateLimitingService {
       return {
         allowed: false,
         remaining: 0,
-        resetTime: new Date(resetTime),
+        resetTime: resetTime,
         retryAfter: Math.max(0, retryAfter),
-        reason: 'Rate limit exceeded',
-        strategy: 'sliding_window'
+        reason: 'Rate limit exceeded'
       };
     }
 
@@ -158,10 +155,9 @@ export class RateLimitingService {
     return {
       allowed: true,
       remaining,
-      resetTime: new Date(now + windowSize),
+      resetTime: now + windowSize,
       retryAfter: 0,
-      reason: 'Request allowed',
-      strategy: 'sliding_window'
+      reason: 'Request allowed'
     };
   }
 
@@ -192,10 +188,9 @@ export class RateLimitingService {
       return {
         allowed: false,
         remaining: Math.floor(entry.tokens),
-        resetTime: new Date(resetTime),
+        resetTime: resetTime,
         retryAfter: Math.max(0, timeToWait * 1000),
-        reason: 'Insufficient tokens',
-        strategy: 'token_bucket'
+        reason: 'Insufficient tokens'
       };
     }
 
@@ -205,10 +200,9 @@ export class RateLimitingService {
     return {
       allowed: true,
       remaining: Math.floor(entry.tokens),
-      resetTime: new Date(now + 60000), // 1 minute window
+      resetTime: now + 60000, // 1 minute window
       retryAfter: 0,
-      reason: 'Request allowed',
-      strategy: 'token_bucket'
+      reason: 'Request allowed'
     };
   }
 
@@ -240,10 +234,9 @@ export class RateLimitingService {
       return {
         allowed: false,
         remaining: 0,
-        resetTime: new Date(resetTime),
+        resetTime: resetTime,
         retryAfter: resetTime - now,
-        reason: 'Rate limit exceeded',
-        strategy: 'fixed_window'
+        reason: 'Rate limit exceeded'
       };
     }
 
@@ -254,10 +247,9 @@ export class RateLimitingService {
     return {
       allowed: true,
       remaining,
-      resetTime: new Date(windowEnd),
+      resetTime: windowEnd,
       retryAfter: 0,
-      reason: 'Request allowed',
-      strategy: 'fixed_window'
+      reason: 'Request allowed'
     };
   }
 

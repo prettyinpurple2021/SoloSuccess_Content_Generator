@@ -636,7 +636,7 @@ export class AIServiceIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(AIServiceIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -668,7 +668,7 @@ export class AIServiceIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(AIServiceIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -699,7 +699,7 @@ export class AIServiceIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(AIServiceIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
