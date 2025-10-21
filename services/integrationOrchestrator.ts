@@ -138,7 +138,7 @@ export class IntegrationOrchestrator {
         {
           maxRequests: 100,
           windowSize: 60000,
-          strategy: 'sliding_window'
+          strategy: 'sliding'
         }
       );
 

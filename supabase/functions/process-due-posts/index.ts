@@ -1,6 +1,6 @@
-// deno-lint-ignore-file no-explicit-any
 // Supabase Edge Function: process-due-posts
 // Picks due jobs from post_jobs, posts to providers, updates status with retries/backoff.
+// Note: This function runs on Supabase Edge Runtime (Deno) and requires Deno globals
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 

@@ -574,7 +574,7 @@ export class AnalyticsIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(AnalyticsIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -601,7 +601,7 @@ export class AnalyticsIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(AnalyticsIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {
@@ -628,7 +628,7 @@ export class AnalyticsIntegrations {
     const requestOptions: RequestInit = {
       method,
       headers,
-      signal: AbortSignal.timeout(this.API_TIMEOUT)
+      signal: AbortSignal.timeout(AnalyticsIntegrations.API_TIMEOUT)
     };
 
     if (data && method === 'POST') {

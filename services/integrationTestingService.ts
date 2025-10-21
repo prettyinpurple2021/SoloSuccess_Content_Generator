@@ -495,13 +495,13 @@ export class IntegrationTestingService {
       const isEncrypted = credentials.encrypted && credentials.iv && credentials.authTag;
       
       // Check for common security issues
-      const securityIssues = [];
+      const securityIssues: string[] = [];
       
       if (!isEncrypted) {
         securityIssues.push('Credentials not properly encrypted');
       }
       
-      if (integration.configuration.rateLimits?.requestsPerMinute > 1000) {
+      if (integration.configuration.rateLimits?.requestsPerMinute && integration.configuration.rateLimits.requestsPerMinute > 1000) {
         securityIssues.push('Rate limits too high, potential security risk');
       }
       
