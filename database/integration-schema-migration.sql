@@ -1,5 +1,5 @@
 -- Integration Manager Database Schema Migration
--- This script adds comprehensive integration management tables to the existing schema
+-- This script creates all tables and functions needed for the Integration Manager
 -- Run this in your Supabase SQL Editor after the base schema
 
 -- ============================================================================
@@ -11,38 +11,9 @@ CREATE TABLE IF NOT EXISTS integrations (
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('social_media', 'analytics', 'crm', 'email', 'storage', 'ai_service')),
   platform TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('connected', 'disconnected', 'error', 'syncing', 'maintenance')) DEFAULT 'disconnected',
-  credentials JSONB NOT NULL, -- Encrypted credentials
-  configuration JSONB DEFAULT '{
-    "syncSettings": {
-      "autoSync": true,
-      "syncInterval": 60,
-      "batchSize": 100,
-      "retryAttempts": 3,
-      "timeoutMs": 30000,
-      "syncOnStartup": true,
-      "syncOnSchedule": true
-    },
-    "rateLimits": {
-      "requestsPerMinute": 100,
-      "requestsPerHour": 1000,
-      "requestsPerDay": 10000,
-      "burstLimit": 20
-    },
-    "errorHandling": {
-      "maxRetries": 3,
-      "retryDelay": 1000,
-      "exponentialBackoff": true,
-      "deadLetterQueue": true,
-      "alertOnFailure": true
-    },
-    "notifications": {
-      "emailNotifications": true,
-      "webhookNotifications": false,
-      "slackNotifications": false,
-      "notificationLevels": ["error", "warn"]
-    }
-  }',
+  status JSONB DEFAULT '{"connected": false, "syncInProgress": false, "errorCount": 0, "healthScore": 0}',
+  credentials JSONB NOT NULL, -- Encrypted
+  configuration JSONB DEFAULT '{}',
   last_sync TIMESTAMPTZ,
   sync_frequency TEXT CHECK (sync_frequency IN ('realtime', 'hourly', 'daily', 'weekly', 'manual')) DEFAULT 'hourly',
   is_active BOOLEAN DEFAULT true,
@@ -61,10 +32,9 @@ CREATE POLICY "Users can access own integrations" ON integrations
 CREATE INDEX IF NOT EXISTS integrations_user_id_idx ON integrations(user_id);
 CREATE INDEX IF NOT EXISTS integrations_platform_idx ON integrations(platform);
 CREATE INDEX IF NOT EXISTS integrations_type_idx ON integrations(type);
-CREATE INDEX IF NOT EXISTS integrations_status_idx ON integrations(status);
+CREATE INDEX IF NOT EXISTS integrations_status_idx ON integrations USING GIN (status);
 CREATE INDEX IF NOT EXISTS integrations_is_active_idx ON integrations(is_active);
 CREATE INDEX IF NOT EXISTS integrations_last_sync_idx ON integrations(last_sync DESC);
-CREATE INDEX IF NOT EXISTS integrations_created_at_idx ON integrations(created_at DESC);
 
 -- ============================================================================
 -- 2. INTEGRATION WEBHOOKS TABLE
@@ -76,12 +46,7 @@ CREATE TABLE IF NOT EXISTS integration_webhooks (
   events TEXT[] DEFAULT '{}',
   secret TEXT NOT NULL,
   is_active BOOLEAN DEFAULT true,
-  retry_policy JSONB DEFAULT '{
-    "maxRetries": 3,
-    "backoffMultiplier": 2,
-    "initialDelay": 1000,
-    "maxDelay": 30000
-  }',
+  retry_policy JSONB DEFAULT '{"maxRetries": 3, "backoffMultiplier": 2, "initialDelay": 1000, "maxDelay": 30000}',
   headers JSONB DEFAULT '{}',
   timeout INTEGER DEFAULT 30000,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -94,17 +59,13 @@ ALTER TABLE integration_webhooks ENABLE ROW LEVEL SECURITY;
 -- RLS policies for integration_webhooks
 CREATE POLICY "Users can access own webhooks" ON integration_webhooks
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM integrations 
-      WHERE id = integration_webhooks.integration_id 
-      AND user_id = auth.uid()
-    )
+    EXISTS (SELECT 1 FROM integrations WHERE id = integration_webhooks.integration_id AND user_id = auth.uid())
   );
 
 -- Indexes for integration_webhooks
 CREATE INDEX IF NOT EXISTS integration_webhooks_integration_id_idx ON integration_webhooks(integration_id);
 CREATE INDEX IF NOT EXISTS integration_webhooks_is_active_idx ON integration_webhooks(is_active);
-CREATE INDEX IF NOT EXISTS integration_webhooks_created_at_idx ON integration_webhooks(created_at DESC);
+CREATE INDEX IF NOT EXISTS integration_webhooks_events_idx ON integration_webhooks USING GIN (events);
 
 -- ============================================================================
 -- 3. INTEGRATION LOGS TABLE
@@ -115,8 +76,7 @@ CREATE TABLE IF NOT EXISTS integration_logs (
   level TEXT CHECK (level IN ('info', 'warn', 'error', 'debug')) NOT NULL,
   message TEXT NOT NULL,
   metadata JSONB DEFAULT '{}',
-  timestamp TIMESTAMPTZ DEFAULT NOW(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Enable RLS for integration_logs
@@ -124,13 +84,15 @@ ALTER TABLE integration_logs ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies for integration_logs
 CREATE POLICY "Users can access own integration logs" ON integration_logs
-  FOR ALL USING (auth.uid() = user_id);
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM integrations WHERE id = integration_logs.integration_id AND user_id = auth.uid())
+  );
 
 -- Indexes for integration_logs
 CREATE INDEX IF NOT EXISTS integration_logs_integration_id_idx ON integration_logs(integration_id);
 CREATE INDEX IF NOT EXISTS integration_logs_level_idx ON integration_logs(level);
-CREATE INDEX IF NOT EXISTS integration_logs_timestamp_idx ON integration_logs(timestamp DESC);
-CREATE INDEX IF NOT EXISTS integration_logs_user_id_idx ON integration_logs(user_id);
+CREATE INDEX IF NOT EXISTS integration_logs_created_at_idx ON integration_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS integration_logs_metadata_idx ON integration_logs USING GIN (metadata);
 
 -- ============================================================================
 -- 4. INTEGRATION ALERTS TABLE
@@ -144,8 +106,9 @@ CREATE TABLE IF NOT EXISTS integration_alerts (
   severity TEXT CHECK (severity IN ('low', 'medium', 'high', 'critical')) NOT NULL,
   is_resolved BOOLEAN DEFAULT false,
   resolved_at TIMESTAMPTZ,
+  metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  metadata JSONB DEFAULT '{}'
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Enable RLS for integration_alerts
@@ -154,11 +117,7 @@ ALTER TABLE integration_alerts ENABLE ROW LEVEL SECURITY;
 -- RLS policies for integration_alerts
 CREATE POLICY "Users can access own integration alerts" ON integration_alerts
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM integrations 
-      WHERE id = integration_alerts.integration_id 
-      AND user_id = auth.uid()
-    )
+    EXISTS (SELECT 1 FROM integrations WHERE id = integration_alerts.integration_id AND user_id = auth.uid())
   );
 
 -- Indexes for integration_alerts
@@ -169,7 +128,41 @@ CREATE INDEX IF NOT EXISTS integration_alerts_is_resolved_idx ON integration_ale
 CREATE INDEX IF NOT EXISTS integration_alerts_created_at_idx ON integration_alerts(created_at DESC);
 
 -- ============================================================================
--- 5. WEBHOOK DELIVERIES TABLE
+-- 5. INTEGRATION METRICS TABLE
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS integration_metrics (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  integration_id UUID REFERENCES integrations(id) ON DELETE CASCADE,
+  total_requests INTEGER DEFAULT 0,
+  successful_requests INTEGER DEFAULT 0,
+  failed_requests INTEGER DEFAULT 0,
+  average_response_time DECIMAL(10,2) DEFAULT 0,
+  success_rate DECIMAL(5,2) DEFAULT 0,
+  error_rate DECIMAL(5,2) DEFAULT 0,
+  uptime DECIMAL(5,2) DEFAULT 0,
+  data_processed BIGINT DEFAULT 0,
+  sync_count INTEGER DEFAULT 0,
+  last_request_time TIMESTAMPTZ,
+  last_sync_duration INTEGER DEFAULT 0,
+  recorded_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for integration_metrics
+ALTER TABLE integration_metrics ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for integration_metrics
+CREATE POLICY "Users can access own integration metrics" ON integration_metrics
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM integrations WHERE id = integration_metrics.integration_id AND user_id = auth.uid())
+  );
+
+-- Indexes for integration_metrics
+CREATE INDEX IF NOT EXISTS integration_metrics_integration_id_idx ON integration_metrics(integration_id);
+CREATE INDEX IF NOT EXISTS integration_metrics_recorded_at_idx ON integration_metrics(recorded_at DESC);
+CREATE INDEX IF NOT EXISTS integration_metrics_success_rate_idx ON integration_metrics(success_rate DESC);
+
+-- ============================================================================
+-- 6. WEBHOOK DELIVERIES TABLE
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -197,56 +190,19 @@ CREATE POLICY "Users can access own webhook deliveries" ON webhook_deliveries
     EXISTS (
       SELECT 1 FROM integration_webhooks iw
       JOIN integrations i ON i.id = iw.integration_id
-      WHERE iw.id = webhook_deliveries.webhook_id 
-      AND i.user_id = auth.uid()
+      WHERE iw.id = webhook_deliveries.webhook_id AND i.user_id = auth.uid()
     )
   );
 
 -- Indexes for webhook_deliveries
 CREATE INDEX IF NOT EXISTS webhook_deliveries_webhook_id_idx ON webhook_deliveries(webhook_id);
 CREATE INDEX IF NOT EXISTS webhook_deliveries_status_idx ON webhook_deliveries(status);
-CREATE INDEX IF NOT EXISTS webhook_deliveries_next_retry_at_idx ON webhook_deliveries(next_retry_at);
+CREATE INDEX IF NOT EXISTS webhook_deliveries_event_idx ON webhook_deliveries(event);
 CREATE INDEX IF NOT EXISTS webhook_deliveries_created_at_idx ON webhook_deliveries(created_at DESC);
+CREATE INDEX IF NOT EXISTS webhook_deliveries_next_retry_at_idx ON webhook_deliveries(next_retry_at);
 
 -- ============================================================================
--- 6. INTEGRATION METRICS TABLE
--- ============================================================================
-CREATE TABLE IF NOT EXISTS integration_metrics (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  integration_id UUID REFERENCES integrations(id) ON DELETE CASCADE,
-  total_requests INTEGER DEFAULT 0,
-  successful_requests INTEGER DEFAULT 0,
-  failed_requests INTEGER DEFAULT 0,
-  average_response_time DECIMAL(10,2) DEFAULT 0,
-  last_request_time TIMESTAMPTZ,
-  error_rate DECIMAL(5,4) DEFAULT 0,
-  uptime DECIMAL(5,2) DEFAULT 100.00,
-  data_processed BIGINT DEFAULT 0,
-  sync_count INTEGER DEFAULT 0,
-  last_sync_duration INTEGER DEFAULT 0,
-  recorded_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS for integration_metrics
-ALTER TABLE integration_metrics ENABLE ROW LEVEL SECURITY;
-
--- RLS policies for integration_metrics
-CREATE POLICY "Users can access own integration metrics" ON integration_metrics
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM integrations 
-      WHERE id = integration_metrics.integration_id 
-      AND user_id = auth.uid()
-    )
-  );
-
--- Indexes for integration_metrics
-CREATE INDEX IF NOT EXISTS integration_metrics_integration_id_idx ON integration_metrics(integration_id);
-CREATE INDEX IF NOT EXISTS integration_metrics_recorded_at_idx ON integration_metrics(recorded_at DESC);
-CREATE INDEX IF NOT EXISTS integration_metrics_error_rate_idx ON integration_metrics(error_rate DESC);
-
--- ============================================================================
--- 7. CREATE UPDATED_AT TRIGGERS FOR ALL NEW TABLES
+-- 7. CREATE UPDATED_AT TRIGGERS
 -- ============================================================================
 -- Integrations trigger
 CREATE TRIGGER update_integrations_updated_at 
@@ -258,15 +214,20 @@ CREATE TRIGGER update_integration_webhooks_updated_at
   BEFORE UPDATE ON integration_webhooks
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Integration alerts trigger
+CREATE TRIGGER update_integration_alerts_updated_at 
+  BEFORE UPDATE ON integration_alerts
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Webhook deliveries trigger
 CREATE TRIGGER update_webhook_deliveries_updated_at 
   BEFORE UPDATE ON webhook_deliveries
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
--- 8. ENABLE REALTIME FOR NEW TABLES
+-- 8. ENABLE REALTIME FOR INTEGRATION TABLES
 -- ============================================================================
--- Enable realtime subscriptions for all new tables
+-- Enable realtime subscriptions for integration tables
 ALTER PUBLICATION supabase_realtime ADD TABLE integrations;
 ALTER PUBLICATION supabase_realtime ADD TABLE integration_webhooks;
 ALTER PUBLICATION supabase_realtime ADD TABLE integration_logs;
@@ -275,134 +236,105 @@ ALTER PUBLICATION supabase_realtime ADD TABLE integration_metrics;
 ALTER PUBLICATION supabase_realtime ADD TABLE webhook_deliveries;
 
 -- ============================================================================
--- 9. CREATE HELPER FUNCTIONS
+-- 9. CREATE INTEGRATION HELPER FUNCTIONS
 -- ============================================================================
 
 -- Function to calculate integration health score
 CREATE OR REPLACE FUNCTION calculate_integration_health_score(p_integration_id UUID)
-RETURNS DECIMAL(5,2) AS $$
+RETURNS INTEGER AS $$
 DECLARE
-  health_score DECIMAL(5,2) := 100.00;
-  error_count INTEGER;
+  health_score INTEGER := 0;
+  connection_status BOOLEAN;
   recent_errors INTEGER;
-  avg_response_time DECIMAL(10,2);
-  error_rate DECIMAL(5,4);
+  last_sync_age INTERVAL;
+  sync_frequency TEXT;
 BEGIN
-  -- Get recent error count (last 24 hours)
-  SELECT COUNT(*) INTO recent_errors
-  FROM integration_logs 
-  WHERE integration_id = p_integration_id 
-    AND level = 'error' 
-    AND timestamp > NOW() - INTERVAL '24 hours';
+  -- Get integration details
+  SELECT 
+    (status->>'connected')::BOOLEAN,
+    (status->>'errorCount')::INTEGER,
+    last_sync,
+    sync_frequency
+  INTO connection_status, recent_errors, last_sync_age, sync_frequency
+  FROM integrations 
+  WHERE id = p_integration_id;
   
-  -- Get average response time (last 24 hours)
-  SELECT COALESCE(AVG(average_response_time), 0) INTO avg_response_time
-  FROM integration_metrics 
-  WHERE integration_id = p_integration_id 
-    AND recorded_at > NOW() - INTERVAL '24 hours';
-  
-  -- Get error rate (last 24 hours)
-  SELECT COALESCE(AVG(error_rate), 0) INTO error_rate
-  FROM integration_metrics 
-  WHERE integration_id = p_integration_id 
-    AND recorded_at > NOW() - INTERVAL '24 hours';
-  
-  -- Calculate health score based on various factors
-  -- Deduct points for errors (5 points per error, max 50 points)
-  health_score := health_score - LEAST(recent_errors * 5, 50);
-  
-  -- Deduct points for high response time (1 point per 100ms over 1000ms, max 20 points)
-  IF avg_response_time > 1000 THEN
-    health_score := health_score - LEAST((avg_response_time - 1000) / 100, 20);
+  -- Base score for connection
+  IF connection_status THEN
+    health_score := health_score + 40;
   END IF;
   
-  -- Deduct points for high error rate (10 points per 1% error rate, max 30 points)
-  health_score := health_score - LEAST(error_rate * 1000, 30);
+  -- Score for error count (lower is better)
+  IF recent_errors = 0 THEN
+    health_score := health_score + 30;
+  ELSIF recent_errors < 5 THEN
+    health_score := health_score + 20;
+  ELSIF recent_errors < 10 THEN
+    health_score := health_score + 10;
+  END IF;
   
-  -- Ensure health score is between 0 and 100
-  health_score := GREATEST(LEAST(health_score, 100.00), 0.00);
+  -- Score for sync recency
+  IF last_sync IS NOT NULL THEN
+    CASE sync_frequency
+      WHEN 'realtime' THEN
+        IF last_sync > NOW() - INTERVAL '5 minutes' THEN
+          health_score := health_score + 30;
+        ELSIF last_sync > NOW() - INTERVAL '15 minutes' THEN
+          health_score := health_score + 20;
+        ELSIF last_sync > NOW() - INTERVAL '1 hour' THEN
+          health_score := health_score + 10;
+        END IF;
+      WHEN 'hourly' THEN
+        IF last_sync > NOW() - INTERVAL '2 hours' THEN
+          health_score := health_score + 30;
+        ELSIF last_sync > NOW() - INTERVAL '6 hours' THEN
+          health_score := health_score + 20;
+        ELSIF last_sync > NOW() - INTERVAL '24 hours' THEN
+          health_score := health_score + 10;
+        END IF;
+      WHEN 'daily' THEN
+        IF last_sync > NOW() - INTERVAL '2 days' THEN
+          health_score := health_score + 30;
+        ELSIF last_sync > NOW() - INTERVAL '7 days' THEN
+          health_score := health_score + 20;
+        ELSIF last_sync > NOW() - INTERVAL '14 days' THEN
+          health_score := health_score + 10;
+        END IF;
+      WHEN 'weekly' THEN
+        IF last_sync > NOW() - INTERVAL '2 weeks' THEN
+          health_score := health_score + 30;
+        ELSIF last_sync > NOW() - INTERVAL '1 month' THEN
+          health_score := health_score + 20;
+        ELSIF last_sync > NOW() - INTERVAL '2 months' THEN
+          health_score := health_score + 10;
+        END IF;
+    END CASE;
+  END IF;
+  
+  -- Ensure score is between 0 and 100
+  health_score := GREATEST(0, LEAST(100, health_score));
   
   RETURN health_score;
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to update integration status based on recent activity
-CREATE OR REPLACE FUNCTION update_integration_status(p_integration_id UUID)
+-- Function to update integration health score
+CREATE OR REPLACE FUNCTION update_integration_health_score(p_integration_id UUID)
 RETURNS VOID AS $$
 DECLARE
-  last_sync_time TIMESTAMPTZ;
-  recent_errors INTEGER;
-  health_score DECIMAL(5,2);
-  new_status TEXT;
+  new_health_score INTEGER;
 BEGIN
-  -- Get last sync time
-  SELECT last_sync INTO last_sync_time
-  FROM integrations 
-  WHERE id = p_integration_id;
+  new_health_score := calculate_integration_health_score(p_integration_id);
   
-  -- Get recent errors (last hour)
-  SELECT COUNT(*) INTO recent_errors
-  FROM integration_logs 
-  WHERE integration_id = p_integration_id 
-    AND level = 'error' 
-    AND timestamp > NOW() - INTERVAL '1 hour';
-  
-  -- Calculate health score
-  health_score := calculate_integration_health_score(p_integration_id);
-  
-  -- Determine new status based on conditions
-  IF recent_errors > 5 THEN
-    new_status := 'error';
-  ELSIF health_score < 50 THEN
-    new_status := 'error';
-  ELSIF last_sync_time IS NULL OR last_sync_time < NOW() - INTERVAL '2 hours' THEN
-    new_status := 'disconnected';
-  ELSE
-    new_status := 'connected';
-  END IF;
-  
-  -- Update integration status
   UPDATE integrations 
-  SET status = new_status, updated_at = NOW()
+  SET 
+    status = jsonb_set(
+      status, 
+      '{healthScore}', 
+      to_jsonb(new_health_score)
+    ),
+    updated_at = NOW()
   WHERE id = p_integration_id;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to log integration activity
-CREATE OR REPLACE FUNCTION log_integration_activity(
-  p_integration_id UUID,
-  p_level TEXT,
-  p_message TEXT,
-  p_metadata JSONB DEFAULT '{}'
-)
-RETURNS VOID AS $$
-DECLARE
-  p_user_id UUID;
-BEGIN
-  -- Get user_id from integration
-  SELECT user_id INTO p_user_id
-  FROM integrations 
-  WHERE id = p_integration_id;
-  
-  -- Insert log entry
-  INSERT INTO integration_logs (
-    integration_id,
-    level,
-    message,
-    metadata,
-    user_id
-  ) VALUES (
-    p_integration_id,
-    p_level,
-    p_message,
-    p_metadata,
-    p_user_id
-  );
-  
-  -- Update integration status if error
-  IF p_level = 'error' THEN
-    PERFORM update_integration_status(p_integration_id);
-  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -412,7 +344,7 @@ CREATE OR REPLACE FUNCTION create_integration_alert(
   p_type TEXT,
   p_title TEXT,
   p_message TEXT,
-  p_severity TEXT,
+  p_severity TEXT DEFAULT 'medium',
   p_metadata JSONB DEFAULT '{}'
 )
 RETURNS UUID AS $$
@@ -439,115 +371,183 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to log integration activity
+CREATE OR REPLACE FUNCTION log_integration_activity(
+  p_integration_id UUID,
+  p_level TEXT,
+  p_message TEXT,
+  p_metadata JSONB DEFAULT '{}'
+)
+RETURNS UUID AS $$
+DECLARE
+  log_id UUID;
+BEGIN
+  INSERT INTO integration_logs (
+    integration_id,
+    level,
+    message,
+    metadata
+  ) VALUES (
+    p_integration_id,
+    p_level,
+    p_message,
+    p_metadata
+  ) RETURNING id INTO log_id;
+  
+  RETURN log_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to record integration metrics
+CREATE OR REPLACE FUNCTION record_integration_metrics(
+  p_integration_id UUID,
+  p_total_requests INTEGER DEFAULT 0,
+  p_successful_requests INTEGER DEFAULT 0,
+  p_failed_requests INTEGER DEFAULT 0,
+  p_average_response_time DECIMAL DEFAULT 0,
+  p_data_processed BIGINT DEFAULT 0,
+  p_sync_count INTEGER DEFAULT 0,
+  p_last_sync_duration INTEGER DEFAULT 0
+)
+RETURNS UUID AS $$
+DECLARE
+  metrics_id UUID;
+  success_rate DECIMAL(5,2);
+  error_rate DECIMAL(5,2);
+BEGIN
+  -- Calculate rates
+  IF p_total_requests > 0 THEN
+    success_rate := (p_successful_requests::DECIMAL / p_total_requests::DECIMAL) * 100;
+    error_rate := (p_failed_requests::DECIMAL / p_total_requests::DECIMAL) * 100;
+  ELSE
+    success_rate := 0;
+    error_rate := 0;
+  END IF;
+  
+  INSERT INTO integration_metrics (
+    integration_id,
+    total_requests,
+    successful_requests,
+    failed_requests,
+    average_response_time,
+    success_rate,
+    error_rate,
+    data_processed,
+    sync_count,
+    last_sync_duration,
+    last_request_time
+  ) VALUES (
+    p_integration_id,
+    p_total_requests,
+    p_successful_requests,
+    p_failed_requests,
+    p_average_response_time,
+    success_rate,
+    error_rate,
+    p_data_processed,
+    p_sync_count,
+    p_last_sync_duration,
+    NOW()
+  ) RETURNING id INTO metrics_id;
+  
+  -- Update integration health score
+  PERFORM update_integration_health_score(p_integration_id);
+  
+  RETURN metrics_id;
+END;
+$$ LANGUAGE plpgsql;
+
 -- ============================================================================
--- 10. CREATE TRIGGERS FOR AUTOMATIC UPDATES
+-- 10. CREATE TRIGGERS FOR AUTOMATIC HEALTH SCORE UPDATES
 -- ============================================================================
 
--- Trigger to update integration status when logs are inserted
-CREATE OR REPLACE FUNCTION trigger_update_integration_status()
+-- Trigger to update health score when integration status changes
+CREATE OR REPLACE FUNCTION trigger_update_integration_health()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Update integration status based on new log entry
-  PERFORM update_integration_status(NEW.integration_id);
+  -- Update health score when status changes
+  IF OLD.status IS DISTINCT FROM NEW.status THEN
+    PERFORM update_integration_health_score(NEW.id);
+  END IF;
   
-  -- Create alert for error logs
-  IF NEW.level = 'error' THEN
-    PERFORM create_integration_alert(
-      NEW.integration_id,
-      'error',
-      'Integration Error',
-      NEW.message,
-      'high',
-      NEW.metadata
-    );
+  -- Update health score when last_sync changes
+  IF OLD.last_sync IS DISTINCT FROM NEW.last_sync THEN
+    PERFORM update_integration_health_score(NEW.id);
   END IF;
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER integration_logs_status_trigger
-  AFTER INSERT ON integration_logs
-  FOR EACH ROW EXECUTE FUNCTION trigger_update_integration_status();
-
--- Trigger to update metrics when integration is updated
-CREATE OR REPLACE FUNCTION trigger_update_integration_metrics()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Update metrics table with latest integration data
-  INSERT INTO integration_metrics (
-    integration_id,
-    recorded_at
-  ) VALUES (
-    NEW.id,
-    NOW()
-  ) ON CONFLICT (integration_id) DO UPDATE SET
-    recorded_at = NOW();
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER integration_metrics_trigger
+CREATE TRIGGER integration_health_update_trigger
   AFTER UPDATE ON integrations
-  FOR EACH ROW EXECUTE FUNCTION trigger_update_integration_metrics();
+  FOR EACH ROW EXECUTE FUNCTION trigger_update_integration_health();
 
 -- ============================================================================
--- 11. SAMPLE DATA INSERTION (OPTIONAL - FOR DEVELOPMENT)
+-- 11. CREATE VIEWS FOR COMMON QUERIES
 -- ============================================================================
 
--- Insert sample integration configurations (only if no data exists)
+-- View for integration status overview
+CREATE OR REPLACE VIEW integration_status_overview AS
+SELECT 
+  i.id,
+  i.name,
+  i.type,
+  i.platform,
+  i.status,
+  i.is_active,
+  i.last_sync,
+  i.sync_frequency,
+  i.created_at,
+  i.updated_at,
+  COALESCE(im.success_rate, 0) as success_rate,
+  COALESCE(im.error_rate, 0) as error_rate,
+  COALESCE(im.average_response_time, 0) as average_response_time,
+  COALESCE(im.uptime, 0) as uptime
+FROM integrations i
+LEFT JOIN LATERAL (
+  SELECT 
+    success_rate,
+    error_rate,
+    average_response_time,
+    uptime
+  FROM integration_metrics 
+  WHERE integration_id = i.id 
+  ORDER BY recorded_at DESC 
+  LIMIT 1
+) im ON true;
+
+-- View for recent integration activity
+CREATE OR REPLACE VIEW recent_integration_activity AS
+SELECT 
+  i.id as integration_id,
+  i.name as integration_name,
+  i.platform,
+  il.level,
+  il.message,
+  il.metadata,
+  il.created_at
+FROM integrations i
+JOIN integration_logs il ON i.id = il.integration_id
+WHERE il.created_at > NOW() - INTERVAL '24 hours'
+ORDER BY il.created_at DESC;
+
+-- ============================================================================
+-- 12. SAMPLE DATA INSERTION (OPTIONAL - FOR DEVELOPMENT)
+-- ============================================================================
+
+-- Insert sample integrations (only if no data exists)
 INSERT INTO integrations (user_id, name, type, platform, status, credentials, configuration)
 SELECT 
   auth.uid(),
-  'Twitter Integration',
+  'Twitter API',
   'social_media',
   'twitter',
-  'disconnected',
-  '{"encrypted": "sample", "iv": "sample", "authTag": "sample", "algorithm": "AES-256-GCM"}',
-  '{
-    "syncSettings": {
-      "autoSync": true,
-      "syncInterval": 30,
-      "batchSize": 50,
-      "retryAttempts": 3,
-      "timeoutMs": 30000
-    },
-    "rateLimits": {
-      "requestsPerMinute": 300,
-      "requestsPerHour": 3000,
-      "requestsPerDay": 30000,
-      "burstLimit": 15
-    }
-  }'
+  '{"connected": false, "syncInProgress": false, "errorCount": 0, "healthScore": 0}',
+  '{"encrypted": "sample_encrypted_credentials", "iv": "sample_iv", "authTag": "sample_auth_tag", "algorithm": "AES-256-GCM"}',
+  '{"syncSettings": {"autoSync": true, "syncInterval": 60, "batchSize": 100, "retryAttempts": 3, "timeoutMs": 30000, "syncOnStartup": true, "syncOnSchedule": true}, "rateLimits": {"requestsPerMinute": 100, "requestsPerHour": 1000, "requestsPerDay": 10000, "burstLimit": 20}, "errorHandling": {"maxRetries": 3, "retryDelay": 1000, "exponentialBackoff": true, "deadLetterQueue": true, "alertOnFailure": true}, "notifications": {"emailNotifications": true, "webhookNotifications": false, "slackNotifications": false, "notificationLevels": ["error", "warn"]}}'
 WHERE NOT EXISTS (SELECT 1 FROM integrations WHERE user_id = auth.uid())
 AND auth.uid() IS NOT NULL;
 
-INSERT INTO integrations (user_id, name, type, platform, status, credentials, configuration)
-SELECT 
-  auth.uid(),
-  'LinkedIn Integration',
-  'social_media',
-  'linkedin',
-  'disconnected',
-  '{"encrypted": "sample", "iv": "sample", "authTag": "sample", "algorithm": "AES-256-GCM"}',
-  '{
-    "syncSettings": {
-      "autoSync": true,
-      "syncInterval": 60,
-      "batchSize": 25,
-      "retryAttempts": 3,
-      "timeoutMs": 45000
-    },
-    "rateLimits": {
-      "requestsPerMinute": 100,
-      "requestsPerHour": 1000,
-      "requestsPerDay": 10000,
-      "burstLimit": 10
-    }
-  }'
-WHERE NOT EXISTS (SELECT 1 FROM integrations WHERE user_id = auth.uid() AND platform = 'linkedin')
-AND auth.uid() IS NOT NULL;
-
 -- Migration completed successfully
--- All tables created with proper RLS policies, indexes, triggers, and helper functions
+-- All integration tables created with proper RLS policies, indexes, triggers, and functions

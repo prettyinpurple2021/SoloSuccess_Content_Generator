@@ -456,6 +456,8 @@ export interface EncryptedCredentials {
   authTag: string;
   algorithm: string;
   salt?: string; // Optional for backward compatibility
+  iterations?: number; // PBKDF2 iterations
+  version?: string; // Encryption version for key rotation
 }
 
 export interface IntegrationConfig {
