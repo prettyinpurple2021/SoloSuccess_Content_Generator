@@ -43,10 +43,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const newNotification: Notification = {
       ...notification,
       id,
-      duration: notification.duration ?? (notification.type === 'loading' ? 0 : 5000)
+      duration: notification.duration ?? (notification.type === 'loading' ? 0 : 5000),
     };
 
-    setNotifications(prev => [...prev, newNotification]);
+    setNotifications((prev) => [...prev, newNotification]);
 
     // Auto-remove after duration (if not persistent)
     if (newNotification.duration && newNotification.duration > 0) {
@@ -59,12 +59,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => {
-      const notification = prev.find(n => n.id === id);
+    setNotifications((prev) => {
+      const notification = prev.find((n) => n.id === id);
       if (notification?.onClose) {
         notification.onClose();
       }
-      return prev.filter(n => n.id !== id);
+      return prev.filter((n) => n.id !== id);
     });
   }, []);
 
@@ -73,23 +73,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   const updateNotification = useCallback((id: string, updates: Partial<Notification>) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, ...updates }
-          : notification
+    setNotifications((prev) =>
+      prev.map((notification) =>
+        notification.id === id ? { ...notification, ...updates } : notification
       )
     );
   }, []);
 
   return (
-    <NotificationContext.Provider value={{
-      notifications,
-      addNotification,
-      removeNotification,
-      clearAll,
-      updateNotification
-    }}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        addNotification,
+        removeNotification,
+        clearAll,
+        updateNotification,
+      }}
+    >
       {children}
       <NotificationContainer />
     </NotificationContext.Provider>
@@ -101,7 +101,7 @@ const NotificationContainer: React.FC = () => {
 
   return (
     <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full">
-      {notifications.map(notification => (
+      {notifications.map((notification) => (
         <NotificationItem key={notification.id} notification={notification} />
       ))}
     </div>
@@ -170,24 +170,20 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({ notificati
       `}
     >
       <SparkleEffect count={3} size="small" />
-      {notification.type === 'success' && <FloatingSkull className="absolute -top-2 -right-2" size="small" />}
-      
+      {notification.type === 'success' && (
+        <FloatingSkull className="absolute -top-2 -right-2" size="small" />
+      )}
+
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0">
-          {getIcon()}
-        </div>
-        
+        <div className="flex-shrink-0">{getIcon()}</div>
+
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-white mb-1 holo-text">
-            {notification.title}
-          </h4>
-          
+          <h4 className="text-sm font-medium text-white mb-1 holo-text">{notification.title}</h4>
+
           {notification.message && (
-            <p className="text-sm text-white/80 mb-2">
-              {notification.message}
-            </p>
+            <p className="text-sm text-white/80 mb-2">{notification.message}</p>
           )}
-          
+
           {notification.action && (
             <button
               onClick={notification.action.onClick}
@@ -197,7 +193,7 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({ notificati
             </button>
           )}
         </div>
-        
+
         {notification.type !== 'loading' && (
           <button
             onClick={handleClose}
@@ -207,20 +203,20 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({ notificati
           </button>
         )}
       </div>
-      
+
       {/* Rainbow progress bar for timed notifications */}
       {notification.duration && notification.duration > 0 && notification.type !== 'loading' && (
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800/50 rounded-b-lg overflow-hidden">
           <div
             className="h-full rainbow-progress transition-all ease-linear"
             style={{
-              animation: `shrink ${notification.duration}ms linear forwards`
+              animation: `shrink ${notification.duration}ms linear forwards`,
             }}
           />
         </div>
       )}
-      
-      <style jsx>{`
+
+      <style>{`
         @keyframes shrink {
           from { width: 100%; }
           to { width: 0%; }
@@ -236,82 +232,107 @@ const NotificationItem: React.FC<{ notification: Notification }> = ({ notificati
 export const useNotificationHelpers = () => {
   const { addNotification, updateNotification, removeNotification } = useNotifications();
 
-  const showSuccess = useCallback((title: string, message?: string, options?: Partial<Notification>) => {
-    return addNotification({
-      type: 'success',
-      title,
-      message,
-      ...options
-    });
-  }, [addNotification]);
+  const showSuccess = useCallback(
+    (title: string, message?: string, options?: Partial<Notification>) => {
+      return addNotification({
+        type: 'success',
+        title,
+        message,
+        ...options,
+      });
+    },
+    [addNotification]
+  );
 
-  const showError = useCallback((title: string, message?: string, options?: Partial<Notification>) => {
-    return addNotification({
-      type: 'error',
-      title,
-      message,
-      duration: 0, // Errors persist by default
-      ...options
-    });
-  }, [addNotification]);
+  const showError = useCallback(
+    (title: string, message?: string, options?: Partial<Notification>) => {
+      return addNotification({
+        type: 'error',
+        title,
+        message,
+        duration: 0, // Errors persist by default
+        ...options,
+      });
+    },
+    [addNotification]
+  );
 
-  const showWarning = useCallback((title: string, message?: string, options?: Partial<Notification>) => {
-    return addNotification({
-      type: 'warning',
-      title,
-      message,
-      ...options
-    });
-  }, [addNotification]);
+  const showWarning = useCallback(
+    (title: string, message?: string, options?: Partial<Notification>) => {
+      return addNotification({
+        type: 'warning',
+        title,
+        message,
+        ...options,
+      });
+    },
+    [addNotification]
+  );
 
-  const showInfo = useCallback((title: string, message?: string, options?: Partial<Notification>) => {
-    return addNotification({
-      type: 'info',
-      title,
-      message,
-      ...options
-    });
-  }, [addNotification]);
+  const showInfo = useCallback(
+    (title: string, message?: string, options?: Partial<Notification>) => {
+      return addNotification({
+        type: 'info',
+        title,
+        message,
+        ...options,
+      });
+    },
+    [addNotification]
+  );
 
-  const showLoading = useCallback((title: string, message?: string) => {
-    return addNotification({
-      type: 'loading',
-      title,
-      message,
-      duration: 0 // Loading notifications persist until manually removed
-    });
-  }, [addNotification]);
+  const showLoading = useCallback(
+    (title: string, message?: string) => {
+      return addNotification({
+        type: 'loading',
+        title,
+        message,
+        duration: 0, // Loading notifications persist until manually removed
+      });
+    },
+    [addNotification]
+  );
 
-  const hideLoading = useCallback((id: string) => {
-    removeNotification(id);
-  }, [removeNotification]);
+  const hideLoading = useCallback(
+    (id: string) => {
+      removeNotification(id);
+    },
+    [removeNotification]
+  );
 
-  const updateLoading = useCallback((id: string, title: string, message?: string) => {
-    updateNotification(id, { title, message });
-  }, [updateNotification]);
+  const updateLoading = useCallback(
+    (id: string, title: string, message?: string) => {
+      updateNotification(id, { title, message });
+    },
+    [updateNotification]
+  );
 
-  const showAsyncOperation = useCallback(async <T,>(
-    operation: () => Promise<T>,
-    messages: {
-      loading: { title: string; message?: string };
-      success: { title: string; message?: string };
-      error: { title: string; message?: string };
-    }
-  ): Promise<T> => {
-    const loadingId = showLoading(messages.loading.title, messages.loading.message);
-    
-    try {
-      const result = await operation();
-      hideLoading(loadingId);
-      showSuccess(messages.success.title, messages.success.message);
-      return result;
-    } catch (error) {
-      hideLoading(loadingId);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      showError(messages.error.title, messages.error.message || errorMessage);
-      throw error;
-    }
-  }, [showLoading, hideLoading, showSuccess, showError]);
+  const showAsyncOperation = useCallback(
+    async <T,>(
+      operation: () => Promise<T>,
+      messages: {
+        loading: { title: string; message?: string };
+        success: { title: string; message?: string };
+        error: { title: string; message?: string };
+      }
+    ): Promise<T> => {
+      const loadingId = showLoading(messages.loading.title, messages.loading.message);
+
+      try {
+        const result = await operation();
+        hideLoading(loadingId);
+        showSuccess(messages.success.title, messages.success.message);
+        return result;
+      } catch (error) {
+        hideLoading(loadingId);
+        const errorMessage =
+          error instanceof Error ? error.message : 'An unexpected error occurred';
+        showError(messages.error.title, messages.error.message || errorMessage);
+        throw error;
+      }
+    },
+    [showLoading, hideLoading, showSuccess, showError]
+  );
 
   return {
     showSuccess,
@@ -321,7 +342,7 @@ export const useNotificationHelpers = () => {
     showLoading,
     hideLoading,
     updateLoading,
-    showAsyncOperation
+    showAsyncOperation,
   };
 };
 
@@ -390,17 +411,15 @@ export const ProgressNotification: React.FC<{
           </button>
         )}
       </div>
-      
+
       <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
         <div
           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
           style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
         />
       </div>
-      
-      <div className="text-xs text-gray-500 text-right">
-        {Math.round(progress)}%
-      </div>
+
+      <div className="text-xs text-gray-500 text-right">{Math.round(progress)}%</div>
     </div>
   );
 };
