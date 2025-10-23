@@ -7,7 +7,10 @@ interface AddIntegrationProps {
   isLoading: boolean;
 }
 
-const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, isLoading }) => {
+const AddIntegration: React.FC<AddIntegrationProps> = ({
+  onCreateIntegration,
+  isLoading
+}) => {
   const [selectedType, setSelectedType] = useState<IntegrationType>('social_media');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [integrationName, setIntegrationName] = useState('');
@@ -16,73 +19,33 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
 
   const availableIntegrations = {
     social_media: [
-      {
-        id: 'twitter',
-        name: 'Twitter/X',
-        icon: '🐦',
-        description: 'Post tweets and sync engagement data',
-      },
-      {
-        id: 'linkedin',
-        name: 'LinkedIn',
-        icon: '💼',
-        description: 'Share professional content and network',
-      },
+      { id: 'twitter', name: 'Twitter/X', icon: '🐦', description: 'Post tweets and sync engagement data' },
+      { id: 'linkedin', name: 'LinkedIn', icon: '💼', description: 'Share professional content and network' },
       { id: 'facebook', name: 'Facebook', icon: '📘', description: 'Post to pages and groups' },
       { id: 'instagram', name: 'Instagram', icon: '📷', description: 'Share photos and stories' },
-      { id: 'tiktok', name: 'TikTok', icon: '🎵', description: 'Create and share short videos' },
+      { id: 'tiktok', name: 'TikTok', icon: '🎵', description: 'Create and share short videos' }
     ],
     analytics: [
-      {
-        id: 'google_analytics',
-        name: 'Google Analytics',
-        icon: '📊',
-        description: 'Track website and content performance',
-      },
-      {
-        id: 'facebook_analytics',
-        name: 'Facebook Analytics',
-        icon: '📈',
-        description: 'Monitor social media performance',
-      },
-      {
-        id: 'twitter_analytics',
-        name: 'Twitter Analytics',
-        icon: '📊',
-        description: 'Track tweet performance and engagement',
-      },
+      { id: 'google_analytics', name: 'Google Analytics', icon: '📊', description: 'Track website and content performance' },
+      { id: 'facebook_analytics', name: 'Facebook Analytics', icon: '📈', description: 'Monitor social media performance' },
+      { id: 'twitter_analytics', name: 'Twitter Analytics', icon: '📊', description: 'Track tweet performance and engagement' }
     ],
     ai_service: [
       { id: 'openai', name: 'OpenAI', icon: '🤖', description: 'Advanced AI content generation' },
-      { id: 'claude', name: 'Claude', icon: '🧠', description: 'Anthropic AI assistant' },
+      { id: 'claude', name: 'Claude', icon: '🧠', description: 'Anthropic AI assistant' }
     ],
     crm: [
-      {
-        id: 'salesforce',
-        name: 'Salesforce',
-        icon: '☁️',
-        description: 'Customer relationship management',
-      },
-      {
-        id: 'hubspot',
-        name: 'HubSpot',
-        icon: '🟠',
-        description: 'Inbound marketing and sales platform',
-      },
+      { id: 'salesforce', name: 'Salesforce', icon: '☁️', description: 'Customer relationship management' },
+      { id: 'hubspot', name: 'HubSpot', icon: '🟠', description: 'Inbound marketing and sales platform' }
     ],
     email: [
       { id: 'mailchimp', name: 'Mailchimp', icon: '🐵', description: 'Email marketing automation' },
-      { id: 'sendgrid', name: 'SendGrid', icon: '📧', description: 'Email delivery service' },
+      { id: 'sendgrid', name: 'SendGrid', icon: '📧', description: 'Email delivery service' }
     ],
     storage: [
-      {
-        id: 'google_drive',
-        name: 'Google Drive',
-        icon: '📁',
-        description: 'Cloud storage and file sharing',
-      },
-      { id: 'dropbox', name: 'Dropbox', icon: '📦', description: 'File storage and collaboration' },
-    ],
+      { id: 'google_drive', name: 'Google Drive', icon: '📁', description: 'Cloud storage and file sharing' },
+      { id: 'dropbox', name: 'Dropbox', icon: '📦', description: 'File storage and collaboration' }
+    ]
   };
 
   const getCredentialFields = (platform: string) => {
@@ -91,77 +54,41 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
         { label: 'API Key', type: 'password', placeholder: 'Enter your Twitter API key' },
         { label: 'API Secret', type: 'password', placeholder: 'Enter your Twitter API secret' },
         { label: 'Access Token', type: 'password', placeholder: 'Enter your access token' },
-        {
-          label: 'Access Token Secret',
-          type: 'password',
-          placeholder: 'Enter your access token secret',
-        },
-        {
-          label: 'Bearer Token',
-          type: 'password',
-          placeholder: 'Enter your bearer token (optional)',
-        },
+        { label: 'Access Token Secret', type: 'password', placeholder: 'Enter your access token secret' },
+        { label: 'Bearer Token', type: 'password', placeholder: 'Enter your bearer token (optional)' }
       ],
       linkedin: [
         { label: 'Client ID', type: 'text', placeholder: 'Enter your LinkedIn client ID' },
-        {
-          label: 'Client Secret',
-          type: 'password',
-          placeholder: 'Enter your LinkedIn client secret',
-        },
+        { label: 'Client Secret', type: 'password', placeholder: 'Enter your LinkedIn client secret' },
         { label: 'Access Token', type: 'password', placeholder: 'Enter your access token' },
-        {
-          label: 'Refresh Token',
-          type: 'password',
-          placeholder: 'Enter your refresh token (optional)',
-        },
+        { label: 'Refresh Token', type: 'password', placeholder: 'Enter your refresh token (optional)' }
       ],
       facebook: [
         { label: 'App ID', type: 'text', placeholder: 'Enter your Facebook app ID' },
         { label: 'App Secret', type: 'password', placeholder: 'Enter your Facebook app secret' },
         { label: 'Access Token', type: 'password', placeholder: 'Enter your access token' },
-        { label: 'Page ID', type: 'text', placeholder: 'Enter your page ID (optional)' },
+        { label: 'Page ID', type: 'text', placeholder: 'Enter your page ID (optional)' }
       ],
       instagram: [
-        {
-          label: 'Access Token',
-          type: 'password',
-          placeholder: 'Enter your Instagram access token',
-        },
+        { label: 'Access Token', type: 'password', placeholder: 'Enter your Instagram access token' },
         { label: 'User ID', type: 'text', placeholder: 'Enter your Instagram user ID' },
         { label: 'Client ID', type: 'text', placeholder: 'Enter your Instagram client ID' },
-        {
-          label: 'Client Secret',
-          type: 'password',
-          placeholder: 'Enter your Instagram client secret',
-        },
+        { label: 'Client Secret', type: 'password', placeholder: 'Enter your Instagram client secret' }
       ],
       google_analytics: [
         { label: 'Client ID', type: 'text', placeholder: 'Enter your Google Analytics client ID' },
-        {
-          label: 'Client Secret',
-          type: 'password',
-          placeholder: 'Enter your Google Analytics client secret',
-        },
+        { label: 'Client Secret', type: 'password', placeholder: 'Enter your Google Analytics client secret' },
         { label: 'Refresh Token', type: 'password', placeholder: 'Enter your refresh token' },
-        { label: 'View ID', type: 'text', placeholder: 'Enter your view ID' },
+        { label: 'View ID', type: 'text', placeholder: 'Enter your view ID' }
       ],
       openai: [
         { label: 'API Key', type: 'password', placeholder: 'Enter your OpenAI API key' },
-        {
-          label: 'Organization ID',
-          type: 'text',
-          placeholder: 'Enter your organization ID (optional)',
-        },
+        { label: 'Organization ID', type: 'text', placeholder: 'Enter your organization ID (optional)' }
       ],
       claude: [
         { label: 'API Key', type: 'password', placeholder: 'Enter your Claude API key' },
-        {
-          label: 'Organization ID',
-          type: 'text',
-          placeholder: 'Enter your organization ID (optional)',
-        },
-      ],
+        { label: 'Organization ID', type: 'text', placeholder: 'Enter your organization ID (optional)' }
+      ]
     };
     return fields[platform] || [];
   };
@@ -173,10 +100,8 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
     }
 
     const credentialFields = getCredentialFields(selectedPlatform);
-    const requiredFields = credentialFields.filter(
-      (field) => field.type === 'password' || field.label.includes('ID')
-    );
-
+    const requiredFields = credentialFields.filter(field => field.type === 'password' || field.label.includes('ID'));
+    
     for (const field of requiredFields) {
       if (!credentials[field.label]) {
         alert(`Please enter ${field.label}`);
@@ -190,9 +115,9 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
         name: integrationName,
         type: selectedType,
         platform: selectedPlatform,
-        credentials: credentials,
+        credentials: credentials
       });
-
+      
       // Reset form
       setSelectedPlatform('');
       setIntegrationName('');
@@ -205,9 +130,9 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
   };
 
   const handleCredentialChange = (field: string, value: string) => {
-    setCredentials((prev) => ({
+    setCredentials(prev => ({
       ...prev,
-      [field]: value,
+      [field]: value
     }));
   };
 
@@ -234,17 +159,11 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
             >
               <div className="flex items-center space-x-3 mb-2">
                 <span className="text-2xl">
-                  {type === 'social_media'
-                    ? '📱'
-                    : type === 'analytics'
-                      ? '📊'
-                      : type === 'ai_service'
-                        ? '🤖'
-                        : type === 'crm'
-                          ? '👥'
-                          : type === 'email'
-                            ? '📧'
-                            : '💾'}
+                  {type === 'social_media' ? '📱' : 
+                   type === 'analytics' ? '📊' : 
+                   type === 'ai_service' ? '🤖' : 
+                   type === 'crm' ? '👥' : 
+                   type === 'email' ? '📧' : '💾'}
                 </span>
                 <div>
                   <div className="font-medium capitalize">{type.replace('_', ' ')}</div>
@@ -265,7 +184,7 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
         >
           <h3 className="text-xl font-semibold text-white mb-4">Select Platform</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availableIntegrations[selectedType].map((platform) => (
+            {availableIntegrations[selectedType].map(platform => (
               <motion.div
                 key={platform.id}
                 onClick={() => setSelectedPlatform(platform.id)}
@@ -376,7 +295,7 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
       <div className="bg-blue-500/20 border border-blue-500/50 rounded-xl p-6">
         <h4 className="text-lg font-semibold text-blue-300 mb-2">💡 Need Help?</h4>
         <p className="text-blue-200/80 mb-2">
-          To get started with {selectedPlatform || 'your integration'}, you&apos;ll need to:
+          To get started with {selectedPlatform || 'your integration'}, you'll need to:
         </p>
         <ol className="list-decimal list-inside text-blue-200/80 space-y-1">
           <li>Create a developer account with the platform</li>

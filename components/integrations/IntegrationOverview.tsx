@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Integration, ConnectionTestResult, SyncResult } from '../../types';
+import { Integration, ConnectionTestResult, SyncResult, HealthCheckResult } from '../../types';
 
 interface IntegrationOverviewProps {
   integrations: Integration[];
@@ -27,7 +27,7 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
   onSyncAll,
   onCheckAllHealth,
   onExportData,
-  isLoading,
+  isLoading
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -63,7 +63,7 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
       facebook_analytics: '📈',
       twitter_analytics: '📊',
       openai: '🤖',
-      claude: '🧠',
+      claude: '🧠'
     };
     return icons[platform] || '🔗';
   };
@@ -75,7 +75,7 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
       crm: '👥',
       email: '📧',
       storage: '💾',
-      ai_service: '🤖',
+      ai_service: '🤖'
     };
     return icons[type] || '🔗';
   };
@@ -98,14 +98,10 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
                 <span className="text-3xl">{getPlatformIcon(integration.platform)}</span>
                 <div>
                   <h3 className="text-lg font-semibold text-white">{integration.name}</h3>
-                  <p className="text-sm text-white/70 capitalize">
-                    {integration.type.replace('_', ' ')}
-                  </p>
+                  <p className="text-sm text-white/70 capitalize">{integration.type.replace('_', ' ')}</p>
                 </div>
               </div>
-              <div
-                className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(integration.status)}`}
-              >
+              <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(integration.status)}`}>
                 {integration.status}
               </div>
             </div>
@@ -120,9 +116,7 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-white/70">Health Score</span>
-                <span
-                  className={`text-lg font-bold ${getHealthScoreColor(integration.status?.healthScore || 0)}`}
-                >
+                <span className={`text-lg font-bold ${getHealthScoreColor(integration.status?.healthScore || 0)}`}>
                   {integration.status?.healthScore || 0}%
                 </span>
               </div>
@@ -255,41 +249,40 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
               </div>
             </div>
           </div>
-
+          
           <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
             <div className="flex items-center space-x-3">
               <span className="text-3xl">✅</span>
               <div>
                 <p className="text-2xl font-bold text-white">
-                  {integrations.filter((i) => i.status === 'connected').length}
+                  {integrations.filter(i => i.status === 'connected').length}
                 </p>
                 <p className="text-sm text-white/70">Connected</p>
               </div>
             </div>
           </div>
-
+          
           <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
             <div className="flex items-center space-x-3">
               <span className="text-3xl">❌</span>
               <div>
                 <p className="text-2xl font-bold text-white">
-                  {integrations.filter((i) => i.status === 'error').length}
+                  {integrations.filter(i => i.status === 'error').length}
                 </p>
                 <p className="text-sm text-white/70">Errors</p>
               </div>
             </div>
           </div>
-
+          
           <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
             <div className="flex items-center space-x-3">
               <span className="text-3xl">🏥</span>
               <div>
                 <p className="text-2xl font-bold text-white">
                   {Math.round(
-                    integrations.reduce((sum, i) => sum + (i.status?.healthScore || 0), 0) /
-                      integrations.length
-                  )}
-                  %
+                    integrations.reduce((sum, i) => sum + (i.status?.healthScore || 0), 0) / 
+                    integrations.length
+                  )}%
                 </p>
                 <p className="text-sm text-white/70">Avg Health</p>
               </div>

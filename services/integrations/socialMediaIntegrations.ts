@@ -1,16 +1,17 @@
-import {
-  TwitterCredentials,
-  LinkedInCredentials,
-  FacebookCredentials,
+import { 
+  Integration, 
+  TwitterCredentials, 
+  LinkedInCredentials, 
+  FacebookCredentials, 
   InstagramCredentials,
   ConnectionTestResult,
   SyncResult,
-  PostResult,
+  PostResult
 } from '../../types';
 
 /**
  * SocialMediaIntegrations - Production-quality social media platform integrations
- *
+ * 
  * Features:
  * - Twitter/X API v2 integration
  * - LinkedIn API v2 integration
@@ -33,11 +34,9 @@ export class SocialMediaIntegrations {
   /**
    * Tests Twitter API connection
    */
-  static async testTwitterConnection(
-    credentials: TwitterCredentials
-  ): Promise<ConnectionTestResult> {
+  static async testTwitterConnection(credentials: TwitterCredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeTwitterRequest(
         'GET',
@@ -51,16 +50,16 @@ export class SocialMediaIntegrations {
         details: {
           userId: response.data?.id,
           username: response.data?.username,
-          apiVersion: '2.0',
+          apiVersion: '2.0'
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -68,10 +67,7 @@ export class SocialMediaIntegrations {
   /**
    * Syncs Twitter data
    */
-  static async syncTwitterData(
-    integrationId: string,
-    credentials: TwitterCredentials
-  ): Promise<SyncResult> {
+  static async syncTwitterData(integrationId: string, credentials: TwitterCredentials): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
     let recordsCreated = 0;
@@ -109,7 +105,7 @@ export class SocialMediaIntegrations {
         recordsDeleted: 0,
         errors,
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
@@ -121,7 +117,7 @@ export class SocialMediaIntegrations {
         recordsDeleted: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -129,25 +125,21 @@ export class SocialMediaIntegrations {
   /**
    * Posts to Twitter
    */
-  static async postToTwitter(
-    credentials: TwitterCredentials,
-    content: string,
-    options?: TwitterPostOptions
-  ): Promise<PostResult> {
+  static async postToTwitter(credentials: TwitterCredentials, content: string, options?: TwitterPostOptions): Promise<PostResult> {
     try {
       const tweetData: any = {
-        text: content,
+        text: content
       };
 
       if (options?.replyToTweetId) {
         tweetData.reply = {
-          in_reply_to_tweet_id: options.replyToTweetId,
+          in_reply_to_tweet_id: options.replyToTweetId
         };
       }
 
       if (options?.mediaIds && options.mediaIds.length > 0) {
         tweetData.media = {
-          media_ids: options.mediaIds,
+          media_ids: options.mediaIds
         };
       }
 
@@ -163,14 +155,14 @@ export class SocialMediaIntegrations {
         postId: response.data?.id,
         url: `https://twitter.com/user/status/${response.data?.id}`,
         timestamp: new Date(),
-        platform: 'twitter',
+        platform: 'twitter'
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date(),
-        platform: 'twitter',
+        platform: 'twitter'
       };
     }
   }
@@ -182,11 +174,9 @@ export class SocialMediaIntegrations {
   /**
    * Tests LinkedIn API connection
    */
-  static async testLinkedInConnection(
-    credentials: LinkedInCredentials
-  ): Promise<ConnectionTestResult> {
+  static async testLinkedInConnection(credentials: LinkedInCredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeLinkedInRequest(
         'GET',
@@ -201,16 +191,16 @@ export class SocialMediaIntegrations {
           userId: response.id,
           firstName: response.firstName?.localized?.en_US,
           lastName: response.lastName?.localized?.en_US,
-          apiVersion: '2.0',
+          apiVersion: '2.0'
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -218,10 +208,7 @@ export class SocialMediaIntegrations {
   /**
    * Syncs LinkedIn data
    */
-  static async syncLinkedInData(
-    integrationId: string,
-    credentials: LinkedInCredentials
-  ): Promise<SyncResult> {
+  static async syncLinkedInData(integrationId: string, credentials: LinkedInCredentials): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
     let recordsCreated = 0;
@@ -252,7 +239,7 @@ export class SocialMediaIntegrations {
         recordsDeleted: 0,
         errors,
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
@@ -264,7 +251,7 @@ export class SocialMediaIntegrations {
         recordsDeleted: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -272,11 +259,7 @@ export class SocialMediaIntegrations {
   /**
    * Posts to LinkedIn
    */
-  static async postToLinkedIn(
-    credentials: LinkedInCredentials,
-    content: string,
-    options?: LinkedInPostOptions
-  ): Promise<PostResult> {
+  static async postToLinkedIn(credentials: LinkedInCredentials, content: string, options?: LinkedInPostOptions): Promise<PostResult> {
     try {
       const postData = {
         author: `urn:li:person:${credentials.userId || 'me'}`,
@@ -284,14 +267,14 @@ export class SocialMediaIntegrations {
         specificContent: {
           'com.linkedin.ugc.ShareContent': {
             shareCommentary: {
-              text: content,
+              text: content
             },
-            shareMediaCategory: 'NONE',
-          },
+            shareMediaCategory: 'NONE'
+          }
         },
         visibility: {
-          'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
-        },
+          'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC'
+        }
       };
 
       const response = await this.makeLinkedInRequest(
@@ -306,14 +289,14 @@ export class SocialMediaIntegrations {
         postId: response.id,
         url: `https://www.linkedin.com/feed/update/${response.id}`,
         timestamp: new Date(),
-        platform: 'linkedin',
+        platform: 'linkedin'
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date(),
-        platform: 'linkedin',
+        platform: 'linkedin'
       };
     }
   }
@@ -325,11 +308,9 @@ export class SocialMediaIntegrations {
   /**
    * Tests Facebook API connection
    */
-  static async testFacebookConnection(
-    credentials: FacebookCredentials
-  ): Promise<ConnectionTestResult> {
+  static async testFacebookConnection(credentials: FacebookCredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeFacebookRequest(
         'GET',
@@ -343,16 +324,16 @@ export class SocialMediaIntegrations {
         details: {
           userId: response.id,
           name: response.name,
-          apiVersion: 'v18.0',
+          apiVersion: 'v18.0'
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -360,11 +341,7 @@ export class SocialMediaIntegrations {
   /**
    * Posts to Facebook
    */
-  static async postToFacebook(
-    credentials: FacebookCredentials,
-    content: string,
-    options?: FacebookPostOptions
-  ): Promise<PostResult> {
+  static async postToFacebook(credentials: FacebookCredentials, content: string, options?: FacebookPostOptions): Promise<PostResult> {
     try {
       const pageId = options?.pageId || credentials.pageId;
       if (!pageId) {
@@ -373,7 +350,7 @@ export class SocialMediaIntegrations {
 
       const postData = {
         message: content,
-        access_token: credentials.accessToken,
+        access_token: credentials.accessToken
       };
 
       const response = await this.makeFacebookRequest(
@@ -388,14 +365,14 @@ export class SocialMediaIntegrations {
         postId: response.id,
         url: `https://www.facebook.com/${pageId}/posts/${response.id}`,
         timestamp: new Date(),
-        platform: 'facebook',
+        platform: 'facebook'
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date(),
-        platform: 'facebook',
+        platform: 'facebook'
       };
     }
   }
@@ -407,11 +384,9 @@ export class SocialMediaIntegrations {
   /**
    * Tests Instagram API connection
    */
-  static async testInstagramConnection(
-    credentials: InstagramCredentials
-  ): Promise<ConnectionTestResult> {
+  static async testInstagramConnection(credentials: InstagramCredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeInstagramRequest(
         'GET',
@@ -425,16 +400,16 @@ export class SocialMediaIntegrations {
         details: {
           userId: response.id,
           username: response.username,
-          apiVersion: 'v18.0',
+          apiVersion: 'v18.0'
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -453,8 +428,8 @@ export class SocialMediaIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${credentials.bearerToken || credentials.accessToken}`,
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${credentials.bearerToken || credentials.accessToken}`,
+      'Content-Type': 'application/json'
     };
 
     const response = await this.makeHttpRequest(method, url, headers, data);
@@ -471,9 +446,9 @@ export class SocialMediaIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${credentials.accessToken}`,
+      'Authorization': `Bearer ${credentials.accessToken}`,
       'Content-Type': 'application/json',
-      'X-Restli-Protocol-Version': '2.0.0',
+      'X-Restli-Protocol-Version': '2.0.0'
     };
 
     const response = await this.makeHttpRequest(method, url, headers, data);
@@ -490,7 +465,7 @@ export class SocialMediaIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     };
 
     const response = await this.makeHttpRequest(method, url, headers, data);
@@ -507,7 +482,7 @@ export class SocialMediaIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     };
 
     const response = await this.makeHttpRequest(method, url, headers, data);
@@ -530,7 +505,7 @@ export class SocialMediaIntegrations {
         const options: RequestInit = {
           method,
           headers,
-          signal: AbortSignal.timeout(this.API_TIMEOUT),
+          signal: AbortSignal.timeout(this.API_TIMEOUT)
         };
 
         if (data && method !== 'GET') {
@@ -547,7 +522,7 @@ export class SocialMediaIntegrations {
         return await response.json();
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-
+        
         if (attempt < this.MAX_RETRIES) {
           await this.delay(this.RETRY_DELAY * attempt);
         }
@@ -571,7 +546,7 @@ export class SocialMediaIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -589,7 +564,7 @@ export class SocialMediaIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -607,7 +582,7 @@ export class SocialMediaIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -625,7 +600,7 @@ export class SocialMediaIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -643,7 +618,7 @@ export class SocialMediaIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -651,7 +626,7 @@ export class SocialMediaIntegrations {
    * Delays execution for retry logic
    */
   private static delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 

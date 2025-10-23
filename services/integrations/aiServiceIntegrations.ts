@@ -1,13 +1,13 @@
-import {
+import { 
   OpenAICredentials,
   ClaudeCredentials,
   ConnectionTestResult,
-  SyncResult,
+  SyncResult
 } from '../../types';
 
 /**
  * AIServiceIntegrations - Production-quality AI service integrations
- *
+ * 
  * Features:
  * - OpenAI API integration
  * - Claude API integration
@@ -31,7 +31,7 @@ export class AIServiceIntegrations {
    */
   static async testOpenAIConnection(credentials: OpenAICredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeOpenAIRequest(
         'POST',
@@ -45,16 +45,16 @@ export class AIServiceIntegrations {
         details: {
           modelsAvailable: response.data?.length || 0,
           apiVersion: 'v1',
-          organizationId: credentials.organizationId,
+          organizationId: credentials.organizationId
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -63,8 +63,8 @@ export class AIServiceIntegrations {
    * Generates content using OpenAI
    */
   static async generateContentWithOpenAI(
-    credentials: OpenAICredentials,
-    prompt: string,
+    credentials: OpenAICredentials, 
+    prompt: string, 
     options?: OpenAIGenerationOptions
   ): Promise<OpenAIGenerationResult> {
     try {
@@ -73,14 +73,14 @@ export class AIServiceIntegrations {
         messages: [
           {
             role: 'user',
-            content: prompt,
-          },
+            content: prompt
+          }
         ],
         max_tokens: options?.maxTokens || 1000,
         temperature: options?.temperature || 0.7,
         top_p: options?.topP || 1,
         frequency_penalty: options?.frequencyPenalty || 0,
-        presence_penalty: options?.presencePenalty || 0,
+        presence_penalty: options?.presencePenalty || 0
       };
 
       const response = await this.makeOpenAIRequest(
@@ -96,14 +96,14 @@ export class AIServiceIntegrations {
         usage: response.usage,
         model: response.model,
         finishReason: response.choices?.[0]?.finish_reason,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         content: '',
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -111,10 +111,7 @@ export class AIServiceIntegrations {
   /**
    * Syncs OpenAI usage data
    */
-  static async syncOpenAIData(
-    integrationId: string,
-    credentials: OpenAICredentials
-  ): Promise<SyncResult> {
+  static async syncOpenAIData(integrationId: string, credentials: OpenAICredentials): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
     let recordsCreated = 0;
@@ -145,7 +142,7 @@ export class AIServiceIntegrations {
         recordsDeleted: 0,
         errors,
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
@@ -157,7 +154,7 @@ export class AIServiceIntegrations {
         recordsDeleted: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -171,7 +168,7 @@ export class AIServiceIntegrations {
    */
   static async testClaudeConnection(credentials: ClaudeCredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeClaudeRequest(
         'GET',
@@ -180,7 +177,7 @@ export class AIServiceIntegrations {
         {
           model: 'claude-3-sonnet-20240229',
           max_tokens: 10,
-          messages: [{ role: 'user', content: 'test' }],
+          messages: [{ role: 'user', content: 'test' }]
         }
       );
 
@@ -189,16 +186,16 @@ export class AIServiceIntegrations {
         responseTime: Date.now() - startTime,
         details: {
           apiVersion: 'v1',
-          organizationId: credentials.organizationId,
+          organizationId: credentials.organizationId
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -207,8 +204,8 @@ export class AIServiceIntegrations {
    * Generates content using Claude
    */
   static async generateContentWithClaude(
-    credentials: ClaudeCredentials,
-    prompt: string,
+    credentials: ClaudeCredentials, 
+    prompt: string, 
     options?: ClaudeGenerationOptions
   ): Promise<ClaudeGenerationResult> {
     try {
@@ -220,9 +217,9 @@ export class AIServiceIntegrations {
         messages: [
           {
             role: 'user',
-            content: prompt,
-          },
-        ],
+            content: prompt
+          }
+        ]
       };
 
       const response = await this.makeClaudeRequest(
@@ -238,14 +235,14 @@ export class AIServiceIntegrations {
         usage: response.usage,
         model: response.model,
         stopReason: response.stop_reason,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         content: '',
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -253,10 +250,7 @@ export class AIServiceIntegrations {
   /**
    * Syncs Claude usage data
    */
-  static async syncClaudeData(
-    integrationId: string,
-    credentials: ClaudeCredentials
-  ): Promise<SyncResult> {
+  static async syncClaudeData(integrationId: string, credentials: ClaudeCredentials): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
     let recordsCreated = 0;
@@ -280,7 +274,7 @@ export class AIServiceIntegrations {
         recordsDeleted: 0,
         errors,
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
@@ -292,7 +286,7 @@ export class AIServiceIntegrations {
         recordsDeleted: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -304,11 +298,9 @@ export class AIServiceIntegrations {
   /**
    * Tests custom AI model connection
    */
-  static async testCustomAIConnection(
-    credentials: CustomAICredentials
-  ): Promise<ConnectionTestResult> {
+  static async testCustomAIConnection(credentials: CustomAICredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeCustomAIRequest(
         'GET',
@@ -322,16 +314,16 @@ export class AIServiceIntegrations {
         details: {
           modelName: credentials.modelName,
           baseUrl: credentials.baseUrl,
-          version: response.version || 'unknown',
+          version: response.version || 'unknown'
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -340,8 +332,8 @@ export class AIServiceIntegrations {
    * Generates content using custom AI model
    */
   static async generateContentWithCustomAI(
-    credentials: CustomAICredentials,
-    prompt: string,
+    credentials: CustomAICredentials, 
+    prompt: string, 
     options?: CustomAIGenerationOptions
   ): Promise<CustomAIGenerationResult> {
     try {
@@ -349,7 +341,7 @@ export class AIServiceIntegrations {
         prompt,
         max_tokens: options?.maxTokens || 1000,
         temperature: options?.temperature || 0.7,
-        ...options?.customParameters,
+        ...options?.customParameters
       };
 
       const response = await this.makeCustomAIRequest(
@@ -364,14 +356,14 @@ export class AIServiceIntegrations {
         content: response.content || response.text || '',
         model: credentials.modelName,
         usage: response.usage,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         content: '',
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -390,8 +382,8 @@ export class AIServiceIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${credentials.apiKey}`,
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${credentials.apiKey}`,
+      'Content-Type': 'application/json'
     };
 
     if (credentials.organizationId) {
@@ -414,7 +406,7 @@ export class AIServiceIntegrations {
     const headers: Record<string, string> = {
       'x-api-key': credentials.apiKey,
       'Content-Type': 'application/json',
-      'anthropic-version': '2023-06-01',
+      'anthropic-version': '2023-06-01'
     };
 
     if (credentials.organizationId) {
@@ -435,8 +427,8 @@ export class AIServiceIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${credentials.apiKey}`,
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${credentials.apiKey}`,
+      'Content-Type': 'application/json'
     };
 
     const response = await this.makeHttpRequest(method, url, headers, data);
@@ -459,7 +451,7 @@ export class AIServiceIntegrations {
         const options: RequestInit = {
           method,
           headers,
-          signal: AbortSignal.timeout(this.API_TIMEOUT),
+          signal: AbortSignal.timeout(this.API_TIMEOUT)
         };
 
         if (data && method !== 'GET') {
@@ -476,7 +468,7 @@ export class AIServiceIntegrations {
         return await response.json();
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-
+        
         if (attempt < this.MAX_RETRIES) {
           await this.delay(this.RETRY_DELAY * attempt);
         }
@@ -501,7 +493,7 @@ export class AIServiceIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -516,7 +508,7 @@ export class AIServiceIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -531,7 +523,7 @@ export class AIServiceIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -539,7 +531,7 @@ export class AIServiceIntegrations {
    * Delays execution for retry logic
    */
   private static delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 

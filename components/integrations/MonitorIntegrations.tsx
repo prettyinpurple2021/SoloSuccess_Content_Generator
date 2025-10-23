@@ -11,11 +11,9 @@ interface MonitorIntegrationsProps {
 const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
   integrations,
   onRefresh,
-  isLoading,
+  isLoading
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'alerts' | 'logs'>(
-    'overview'
-  );
+  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'alerts' | 'logs'>('overview');
   const [metrics, setMetrics] = useState<IntegrationMetrics[]>([]);
   const [alerts, setAlerts] = useState<IntegrationAlert[]>([]);
   const [logs, setLogs] = useState<IntegrationLog[]>([]);
@@ -25,11 +23,11 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
     loadMetrics();
     loadAlerts();
     loadLogs();
-  }, [integrations, loadMetrics, loadAlerts, loadLogs]);
+  }, [integrations]);
 
   const loadMetrics = async () => {
     // Mock data - in production, this would fetch from the API
-    const mockMetrics: IntegrationMetrics[] = integrations.map((integration) => ({
+    const mockMetrics: IntegrationMetrics[] = integrations.map(integration => ({
       integrationId: integration.id,
       totalRequests: Math.floor(Math.random() * 1000) + 100,
       successfulRequests: Math.floor(Math.random() * 800) + 80,
@@ -42,7 +40,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
       dataProcessed: Math.floor(Math.random() * 10000) + 1000,
       syncCount: Math.floor(Math.random() * 100) + 10,
       lastRequestTime: new Date(Date.now() - Math.random() * 3600000),
-      lastSyncDuration: Math.floor(Math.random() * 5000) + 1000,
+      lastSyncDuration: Math.floor(Math.random() * 5000) + 1000
     }));
     setMetrics(mockMetrics);
   };
@@ -59,7 +57,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         severity: 'high',
         isResolved: false,
         createdAt: new Date(Date.now() - 3600000),
-        metadata: { errorCode: '401', platform: 'twitter' },
+        metadata: { errorCode: '401', platform: 'twitter' }
       },
       {
         id: '2',
@@ -70,8 +68,8 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         severity: 'medium',
         isResolved: false,
         createdAt: new Date(Date.now() - 1800000),
-        metadata: { errorRate: 12.5, threshold: 10 },
-      },
+        metadata: { errorRate: 12.5, threshold: 10 }
+      }
     ];
     setAlerts(mockAlerts);
   };
@@ -86,7 +84,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         message: 'Sync completed successfully',
         metadata: { recordsProcessed: 150, duration: 2500 },
         timestamp: new Date(Date.now() - 300000),
-        userId: 'user-1',
+        userId: 'user-1'
       },
       {
         id: '2',
@@ -95,7 +93,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         message: 'API rate limit exceeded',
         metadata: { retryAfter: 900, endpoint: '/tweets' },
         timestamp: new Date(Date.now() - 600000),
-        userId: 'user-1',
+        userId: 'user-1'
       },
       {
         id: '3',
@@ -104,8 +102,8 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         message: 'Slow response time detected',
         metadata: { responseTime: 5000, threshold: 3000 },
         timestamp: new Date(Date.now() - 900000),
-        userId: 'user-1',
-      },
+        userId: 'user-1'
+      }
     ];
     setLogs(mockLogs);
   };
@@ -151,7 +149,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
       facebook_analytics: '📈',
       twitter_analytics: '📊',
       openai: '🤖',
-      claude: '🧠',
+      claude: '🧠'
     };
     return icons[platform] || '🔗';
   };
@@ -180,11 +178,11 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
           { key: 'overview', label: 'Overview', icon: '📊' },
           { key: 'metrics', label: 'Metrics', icon: '📈' },
           { key: 'alerts', label: 'Alerts', icon: '🚨' },
-          { key: 'logs', label: 'Logs', icon: '📝' },
-        ].map((tab) => (
+          { key: 'logs', label: 'Logs', icon: '📝' }
+        ].map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key as 'overview' | 'metrics' | 'alerts' | 'logs')}
+            onClick={() => setActiveTab(tab.key as any)}
             className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors flex items-center space-x-2 ${
               activeTab === tab.key
                 ? 'border-purple-400 text-white bg-white/10'
@@ -216,37 +214,37 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
                   </div>
                 </div>
               </div>
-
+              
               <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
                 <div className="flex items-center space-x-3">
                   <span className="text-3xl">✅</span>
                   <div>
                     <p className="text-2xl font-bold text-white">
-                      {integrations.filter((i) => i.status === 'connected').length}
+                      {integrations.filter(i => i.status === 'connected').length}
                     </p>
                     <p className="text-sm text-white/70">Connected</p>
                   </div>
                 </div>
               </div>
-
+              
               <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
                 <div className="flex items-center space-x-3">
                   <span className="text-3xl">❌</span>
                   <div>
                     <p className="text-2xl font-bold text-white">
-                      {integrations.filter((i) => i.status === 'error').length}
+                      {integrations.filter(i => i.status === 'error').length}
                     </p>
                     <p className="text-sm text-white/70">Errors</p>
                   </div>
                 </div>
               </div>
-
+              
               <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
                 <div className="flex items-center space-x-3">
                   <span className="text-3xl">🚨</span>
                   <div>
                     <p className="text-2xl font-bold text-white">
-                      {alerts.filter((a) => !a.isResolved).length}
+                      {alerts.filter(a => !a.isResolved).length}
                     </p>
                     <p className="text-sm text-white/70">Active Alerts</p>
                   </div>
@@ -258,11 +256,8 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
             <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Integration Status</h3>
               <div className="space-y-3">
-                {integrations.map((integration) => (
-                  <div
-                    key={integration.id}
-                    className="flex items-center justify-between p-4 bg-white/5 rounded-lg"
-                  >
+                {integrations.map(integration => (
+                  <div key={integration.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl">{getPlatformIcon(integration.platform)}</span>
                       <div>
@@ -273,19 +268,15 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <p className="text-sm text-white/70">Health Score</p>
-                        <p className="font-bold text-white">
-                          {integration.status?.healthScore || 0}%
-                        </p>
+                        <p className="font-bold text-white">{integration.status?.healthScore || 0}%</p>
                       </div>
-                      <div
-                        className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                          integration.status === 'connected'
-                            ? 'text-green-400 bg-green-400/20 border-green-400/50'
-                            : integration.status === 'error'
-                              ? 'text-red-400 bg-red-400/20 border-red-400/50'
-                              : 'text-gray-400 bg-gray-400/20 border-gray-400/50'
-                        }`}
-                      >
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                        integration.status === 'connected' 
+                          ? 'text-green-400 bg-green-400/20 border-green-400/50'
+                          : integration.status === 'error'
+                          ? 'text-red-400 bg-red-400/20 border-red-400/50'
+                          : 'text-gray-400 bg-gray-400/20 border-gray-400/50'
+                      }`}>
                         {integration.status}
                       </div>
                     </div>
@@ -303,23 +294,18 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
             className="space-y-6"
           >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {metrics.map((metric) => {
-                const integration = integrations.find((i) => i.id === metric.integrationId);
+              {metrics.map(metric => {
+                const integration = integrations.find(i => i.id === metric.integrationId);
                 return (
-                  <div
-                    key={metric.integrationId}
-                    className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6"
-                  >
+                  <div key={metric.integrationId} className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
                     <div className="flex items-center space-x-3 mb-4">
-                      <span className="text-2xl">
-                        {getPlatformIcon(integration?.platform || '')}
-                      </span>
+                      <span className="text-2xl">{getPlatformIcon(integration?.platform || '')}</span>
                       <div>
                         <h3 className="font-semibold text-white">{integration?.name}</h3>
                         <p className="text-sm text-white/70 capitalize">{integration?.platform}</p>
                       </div>
                     </div>
-
+                    
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-white/70">Success Rate</p>
@@ -327,9 +313,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
                       </div>
                       <div>
                         <p className="text-sm text-white/70">Avg Response Time</p>
-                        <p className="text-2xl font-bold text-blue-400">
-                          {metric.averageResponseTime}ms
-                        </p>
+                        <p className="text-2xl font-bold text-blue-400">{metric.averageResponseTime}ms</p>
                       </div>
                       <div>
                         <p className="text-sm text-white/70">Total Requests</p>
@@ -337,9 +321,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
                       </div>
                       <div>
                         <p className="text-sm text-white/70">Data Processed</p>
-                        <p className="text-2xl font-bold text-purple-400">
-                          {metric.dataProcessed.toLocaleString()}
-                        </p>
+                        <p className="text-2xl font-bold text-purple-400">{metric.dataProcessed.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
@@ -356,18 +338,13 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
             className="space-y-6"
           >
             <div className="space-y-4">
-              {alerts.map((alert) => {
-                const integration = integrations.find((i) => i.id === alert.integrationId);
+              {alerts.map(alert => {
+                const integration = integrations.find(i => i.id === alert.integrationId);
                 return (
-                  <div
-                    key={alert.id}
-                    className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6"
-                  >
+                  <div key={alert.id} className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3">
-                        <span className="text-2xl">
-                          {getPlatformIcon(integration?.platform || '')}
-                        </span>
+                        <span className="text-2xl">{getPlatformIcon(integration?.platform || '')}</span>
                         <div>
                           <h3 className="font-semibold text-white">{alert.title}</h3>
                           <p className="text-sm text-white/70 mb-2">{alert.message}</p>
@@ -376,9 +353,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
                           </p>
                         </div>
                       </div>
-                      <div
-                        className={`px-3 py-1 rounded-full text-xs font-medium border ${getSeverityColor(alert.severity)}`}
-                      >
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getSeverityColor(alert.severity)}`}>
                         {alert.severity}
                       </div>
                     </div>
@@ -398,16 +373,11 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
             <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Recent Logs</h3>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {logs.map((log) => {
-                  const integration = integrations.find((i) => i.id === log.integrationId);
+                {logs.map(log => {
+                  const integration = integrations.find(i => i.id === log.integrationId);
                   return (
-                    <div
-                      key={log.id}
-                      className="flex items-start space-x-3 p-3 bg-white/5 rounded-lg"
-                    >
-                      <div
-                        className={`px-2 py-1 rounded text-xs font-medium border ${getLevelColor(log.level)}`}
-                      >
+                    <div key={log.id} className="flex items-start space-x-3 p-3 bg-white/5 rounded-lg">
+                      <div className={`px-2 py-1 rounded text-xs font-medium border ${getLevelColor(log.level)}`}>
                         {log.level.toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -417,9 +387,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
                         </p>
                         {log.metadata && Object.keys(log.metadata).length > 0 && (
                           <details className="mt-2">
-                            <summary className="text-xs text-white/60 cursor-pointer">
-                              Details
-                            </summary>
+                            <summary className="text-xs text-white/60 cursor-pointer">Details</summary>
                             <pre className="text-xs text-white/60 mt-1 bg-black/20 p-2 rounded">
                               {JSON.stringify(log.metadata, null, 2)}
                             </pre>

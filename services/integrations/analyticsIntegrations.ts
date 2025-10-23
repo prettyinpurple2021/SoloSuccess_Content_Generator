@@ -1,14 +1,14 @@
-import {
+import { 
   GoogleAnalyticsCredentials,
   FacebookAnalyticsCredentials,
   TwitterAnalyticsCredentials,
   ConnectionTestResult,
-  SyncResult,
+  SyncResult
 } from '../../types';
 
 /**
  * AnalyticsIntegrations - Production-quality analytics platform integrations
- *
+ * 
  * Features:
  * - Google Analytics 4 integration
  * - Facebook Analytics integration
@@ -30,11 +30,9 @@ export class AnalyticsIntegrations {
   /**
    * Tests Google Analytics connection
    */
-  static async testGoogleAnalyticsConnection(
-    credentials: GoogleAnalyticsCredentials
-  ): Promise<ConnectionTestResult> {
+  static async testGoogleAnalyticsConnection(credentials: GoogleAnalyticsCredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       // Test connection by fetching account summary
       const response = await this.makeGoogleAnalyticsRequest(
@@ -42,22 +40,16 @@ export class AnalyticsIntegrations {
         `https://analyticsreporting.googleapis.com/v4/reports:batchGet`,
         credentials,
         {
-          reportRequests: [
-            {
-              viewId: credentials.viewId,
-              dateRanges: [
-                {
-                  startDate: '7daysAgo',
-                  endDate: 'today',
-                },
-              ],
-              metrics: [
-                {
-                  expression: 'ga:sessions',
-                },
-              ],
-            },
-          ],
+          reportRequests: [{
+            viewId: credentials.viewId,
+            dateRanges: [{
+              startDate: '7daysAgo',
+              endDate: 'today'
+            }],
+            metrics: [{
+              expression: 'ga:sessions'
+            }]
+          }]
         }
       );
 
@@ -67,16 +59,16 @@ export class AnalyticsIntegrations {
         details: {
           viewId: credentials.viewId,
           apiVersion: 'v4',
-          hasData: response.reports && response.reports.length > 0,
+          hasData: response.reports && response.reports.length > 0
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -84,10 +76,7 @@ export class AnalyticsIntegrations {
   /**
    * Syncs Google Analytics data
    */
-  static async syncGoogleAnalyticsData(
-    integrationId: string,
-    credentials: GoogleAnalyticsCredentials
-  ): Promise<SyncResult> {
+  static async syncGoogleAnalyticsData(integrationId: string, credentials: GoogleAnalyticsCredentials): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
     let recordsCreated = 0;
@@ -125,7 +114,7 @@ export class AnalyticsIntegrations {
         recordsDeleted: 0,
         errors,
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
@@ -137,7 +126,7 @@ export class AnalyticsIntegrations {
         recordsDeleted: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -149,11 +138,9 @@ export class AnalyticsIntegrations {
   /**
    * Tests Facebook Analytics connection
    */
-  static async testFacebookAnalyticsConnection(
-    credentials: FacebookAnalyticsCredentials
-  ): Promise<ConnectionTestResult> {
+  static async testFacebookAnalyticsConnection(credentials: FacebookAnalyticsCredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeFacebookAnalyticsRequest(
         'GET',
@@ -167,16 +154,16 @@ export class AnalyticsIntegrations {
         details: {
           pageId: credentials.pageId,
           apiVersion: 'v18.0',
-          hasData: response.data && response.data.length > 0,
+          hasData: response.data && response.data.length > 0
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -184,10 +171,7 @@ export class AnalyticsIntegrations {
   /**
    * Syncs Facebook Analytics data
    */
-  static async syncFacebookAnalyticsData(
-    integrationId: string,
-    credentials: FacebookAnalyticsCredentials
-  ): Promise<SyncResult> {
+  static async syncFacebookAnalyticsData(integrationId: string, credentials: FacebookAnalyticsCredentials): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
     let recordsCreated = 0;
@@ -218,7 +202,7 @@ export class AnalyticsIntegrations {
         recordsDeleted: 0,
         errors,
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
@@ -230,7 +214,7 @@ export class AnalyticsIntegrations {
         recordsDeleted: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -242,11 +226,9 @@ export class AnalyticsIntegrations {
   /**
    * Tests Twitter Analytics connection
    */
-  static async testTwitterAnalyticsConnection(
-    credentials: TwitterAnalyticsCredentials
-  ): Promise<ConnectionTestResult> {
+  static async testTwitterAnalyticsConnection(credentials: TwitterAnalyticsCredentials): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-
+    
     try {
       const response = await this.makeTwitterAnalyticsRequest(
         'GET',
@@ -260,16 +242,16 @@ export class AnalyticsIntegrations {
         details: {
           userId: response.data?.id,
           username: response.data?.username,
-          apiVersion: '2.0',
+          apiVersion: '2.0'
         },
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -277,10 +259,7 @@ export class AnalyticsIntegrations {
   /**
    * Syncs Twitter Analytics data
    */
-  static async syncTwitterAnalyticsData(
-    integrationId: string,
-    credentials: TwitterAnalyticsCredentials
-  ): Promise<SyncResult> {
+  static async syncTwitterAnalyticsData(integrationId: string, credentials: TwitterAnalyticsCredentials): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
     let recordsCreated = 0;
@@ -311,7 +290,7 @@ export class AnalyticsIntegrations {
         recordsDeleted: 0,
         errors,
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     } catch (error) {
       return {
@@ -323,7 +302,7 @@ export class AnalyticsIntegrations {
         recordsDeleted: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         duration: Date.now() - startTime,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
     }
   }
@@ -342,8 +321,8 @@ export class AnalyticsIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${credentials.accessToken}`,
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${credentials.accessToken}`,
+      'Content-Type': 'application/json'
     };
 
     const response = await this.makeHttpRequest(method, url, headers, data);
@@ -360,7 +339,7 @@ export class AnalyticsIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     };
 
     const response = await this.makeHttpRequest(method, url, headers, data);
@@ -377,8 +356,8 @@ export class AnalyticsIntegrations {
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${credentials.bearerToken}`,
-      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${credentials.bearerToken}`,
+      'Content-Type': 'application/json'
     };
 
     const response = await this.makeHttpRequest(method, url, headers, data);
@@ -401,7 +380,7 @@ export class AnalyticsIntegrations {
         const options: RequestInit = {
           method,
           headers,
-          signal: AbortSignal.timeout(this.API_TIMEOUT),
+          signal: AbortSignal.timeout(this.API_TIMEOUT)
         };
 
         if (data && method !== 'GET') {
@@ -418,7 +397,7 @@ export class AnalyticsIntegrations {
         return await response.json();
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-
+        
         if (attempt < this.MAX_RETRIES) {
           await this.delay(this.RETRY_DELAY * attempt);
         }
@@ -432,9 +411,7 @@ export class AnalyticsIntegrations {
   // GOOGLE ANALYTICS SYNC METHODS
   // ============================================================================
 
-  private static async syncGoogleAnalyticsAudience(
-    credentials: GoogleAnalyticsCredentials
-  ): Promise<SyncResult> {
+  private static async syncGoogleAnalyticsAudience(credentials: GoogleAnalyticsCredentials): Promise<SyncResult> {
     // Implementation would sync audience data to local database
     return {
       integrationId: '',
@@ -445,13 +422,11 @@ export class AnalyticsIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
-  private static async syncGoogleAnalyticsPageViews(
-    credentials: GoogleAnalyticsCredentials
-  ): Promise<SyncResult> {
+  private static async syncGoogleAnalyticsPageViews(credentials: GoogleAnalyticsCredentials): Promise<SyncResult> {
     // Implementation would sync page view data to local database
     return {
       integrationId: '',
@@ -462,13 +437,11 @@ export class AnalyticsIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
-  private static async syncGoogleAnalyticsTrafficSources(
-    credentials: GoogleAnalyticsCredentials
-  ): Promise<SyncResult> {
+  private static async syncGoogleAnalyticsTrafficSources(credentials: GoogleAnalyticsCredentials): Promise<SyncResult> {
     // Implementation would sync traffic source data to local database
     return {
       integrationId: '',
@@ -479,7 +452,7 @@ export class AnalyticsIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -487,9 +460,7 @@ export class AnalyticsIntegrations {
   // FACEBOOK ANALYTICS SYNC METHODS
   // ============================================================================
 
-  private static async syncFacebookPageInsights(
-    credentials: FacebookAnalyticsCredentials
-  ): Promise<SyncResult> {
+  private static async syncFacebookPageInsights(credentials: FacebookAnalyticsCredentials): Promise<SyncResult> {
     // Implementation would sync page insights to local database
     return {
       integrationId: '',
@@ -500,13 +471,11 @@ export class AnalyticsIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
-  private static async syncFacebookPostInsights(
-    credentials: FacebookAnalyticsCredentials
-  ): Promise<SyncResult> {
+  private static async syncFacebookPostInsights(credentials: FacebookAnalyticsCredentials): Promise<SyncResult> {
     // Implementation would sync post insights to local database
     return {
       integrationId: '',
@@ -517,7 +486,7 @@ export class AnalyticsIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -525,9 +494,7 @@ export class AnalyticsIntegrations {
   // TWITTER ANALYTICS SYNC METHODS
   // ============================================================================
 
-  private static async syncTwitterTweetMetrics(
-    credentials: TwitterAnalyticsCredentials
-  ): Promise<SyncResult> {
+  private static async syncTwitterTweetMetrics(credentials: TwitterAnalyticsCredentials): Promise<SyncResult> {
     // Implementation would sync tweet metrics to local database
     return {
       integrationId: '',
@@ -538,13 +505,11 @@ export class AnalyticsIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
-  private static async syncTwitterFollowerMetrics(
-    credentials: TwitterAnalyticsCredentials
-  ): Promise<SyncResult> {
+  private static async syncTwitterFollowerMetrics(credentials: TwitterAnalyticsCredentials): Promise<SyncResult> {
     // Implementation would sync follower metrics to local database
     return {
       integrationId: '',
@@ -555,7 +520,7 @@ export class AnalyticsIntegrations {
       recordsDeleted: 0,
       errors: [],
       duration: 0,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
   }
 
@@ -563,6 +528,6 @@ export class AnalyticsIntegrations {
    * Delays execution for retry logic
    */
   private static delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }

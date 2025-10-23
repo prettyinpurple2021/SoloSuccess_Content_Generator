@@ -27,6 +27,8 @@ export default defineConfig(({ mode }) => {
       'process.env.GOOGLE_API_KEY': JSON.stringify(env.GOOGLE_API_KEY || ''),
       'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || ''),
       'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || ''),
+      'process.env.VITE_NEON_DATABASE_URL': JSON.stringify(env.VITE_NEON_DATABASE_URL || ''),
+      'process.env.DATABASE_URL': JSON.stringify(env.DATABASE_URL || ''),
       'process.env.VITE_STACK_PROJECT_ID': JSON.stringify(env.VITE_STACK_PROJECT_ID || ''),
       'process.env.VITE_STACK_PUBLISHABLE_CLIENT_KEY': JSON.stringify(
         env.VITE_STACK_PUBLISHABLE_CLIENT_KEY || ''
