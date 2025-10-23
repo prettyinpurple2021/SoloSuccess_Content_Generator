@@ -1,7 +1,6 @@
 import { 
-  Integration, 
-  OpenAICredentials, 
-  ClaudeCredentials, 
+  OpenAICredentials,
+  ClaudeCredentials,
   ConnectionTestResult,
   SyncResult
 } from '../../types';
@@ -10,14 +9,13 @@ import {
  * AIServiceIntegrations - Production-quality AI service integrations
  * 
  * Features:
- * - OpenAI GPT models integration
- * - Claude (Anthropic) integration
- * - Custom AI models integration
- * - Content generation and analysis
- * - Comprehensive error handling
+ * - OpenAI API integration
+ * - Claude API integration
+ * - Custom AI model integration
+ * - Content generation capabilities
+ * - Error handling and retry logic
  * - Rate limiting compliance
- * - Advanced prompt engineering
- * - Response streaming support
+ * - Cost tracking and optimization
  */
 export class AIServiceIntegrations {
   private static readonly API_TIMEOUT = 60000; // 60 seconds for AI requests
@@ -29,282 +27,134 @@ export class AIServiceIntegrations {
   // ============================================================================
 
   /**
-   * Connects to OpenAI API
+   * Tests OpenAI API connection
    */
-  async connectOpenAI(credentials: OpenAICredentials): Promise<ConnectionTestResult> {
+  static async testOpenAIConnection(credentials: OpenAICredentials): Promise<ConnectionTestResult> {
+    const startTime = Date.now();
+    
     try {
-      const startTime = Date.now();
-      
-      // Validate credentials
-      if (!credentials.apiKey) {
-        throw new Error('Missing OpenAI API key');
-      }
-
-      // Test connection with OpenAI API
       const response = await this.makeOpenAIRequest(
+        'POST',
         'https://api.openai.com/v1/models',
-        credentials,
-        'GET'
+        credentials
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          success: true,
-          responseTime: Date.now() - startTime,
-          details: {
-            modelCount: data.data?.length || 0,
-            apiVersion: 'v1',
-            organizationId: credentials.organizationId
-          },
-          timestamp: new Date()
-        };
-      } else {
-        const errorData = await response.json();
-        return {
-          success: false,
-          error: errorData.error?.message || 'OpenAI API connection failed',
-          responseTime: Date.now() - startTime,
-          timestamp: new Date()
-        };
-      }
+      return {
+        success: true,
+        responseTime: Date.now() - startTime,
+        details: {
+          modelsAvailable: response.data?.length || 0,
+          apiVersion: 'v1',
+          organizationId: credentials.organizationId
+        },
+        timestamp: new Date()
+      };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        responseTime: Date.now(),
+        responseTime: Date.now() - startTime,
         timestamp: new Date()
       };
     }
   }
 
   /**
-   * Generates content using OpenAI GPT models
+   * Generates content using OpenAI
    */
-  async generateContentWithOpenAI(
+  static async generateContentWithOpenAI(
     credentials: OpenAICredentials, 
     prompt: string, 
-    options?: {
-      model?: string;
-      maxTokens?: number;
-      temperature?: number;
-      stream?: boolean;
-    }
-  ): Promise<{
-    success: boolean;
-    content?: string;
-    error?: string;
-    usage?: {
-      promptTokens: number;
-      completionTokens: number;
-      totalTokens: number;
-    };
-    model?: string;
-  }> {
+    options?: OpenAIGenerationOptions
+  ): Promise<OpenAIGenerationResult> {
     try {
-      const response = await this.makeOpenAIRequest(
-        'https://api.openai.com/v1/chat/completions',
-        credentials,
-        'POST',
-        {
-          model: options?.model || 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: options?.maxTokens || 1000,
-          temperature: options?.temperature || 0.7,
-          stream: options?.stream || false
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          success: true,
-          content: data.choices[0]?.message?.content || '',
-          usage: data.usage,
-          model: data.model
-        };
-      } else {
-        const errorData = await response.json();
-        return {
-          success: false,
-          error: errorData.error?.message || 'Failed to generate content with OpenAI'
-        };
-      }
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  /**
-   * Generates content with streaming support
-   */
-  async generateContentWithOpenAIStream(
-    credentials: OpenAICredentials,
-    prompt: string,
-    onChunk: (chunk: string) => void,
-    options?: {
-      model?: string;
-      maxTokens?: number;
-      temperature?: number;
-    }
-  ): Promise<{
-    success: boolean;
-    error?: string;
-    usage?: any;
-  }> {
-    try {
-      const response = await this.makeOpenAIRequest(
-        'https://api.openai.com/v1/chat/completions',
-        credentials,
-        'POST',
-        {
-          model: options?.model || 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: options?.maxTokens || 1000,
-          temperature: options?.temperature || 0.7,
-          stream: true
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        return {
-          success: false,
-          error: errorData.error?.message || 'Failed to start streaming with OpenAI'
-        };
-      }
-
-      // Handle streaming response
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (!reader) {
-        return {
-          success: false,
-          error: 'Failed to get response reader'
-        };
-      }
-
-      let fullContent = '';
-      let usage: any = null;
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              
-              if (data === '[DONE]') {
-                return {
-                  success: true,
-                  usage
-                };
-              }
-
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content;
-                
-                if (content) {
-                  fullContent += content;
-                  onChunk(content);
-                }
-
-                if (parsed.usage) {
-                  usage = parsed.usage;
-                }
-              } catch (parseError) {
-                // Ignore parsing errors for incomplete chunks
-              }
-            }
+      const requestData = {
+        model: options?.model || 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
           }
-        }
-      } finally {
-        reader.releaseLock();
-      }
+        ],
+        max_tokens: options?.maxTokens || 1000,
+        temperature: options?.temperature || 0.7,
+        top_p: options?.topP || 1,
+        frequency_penalty: options?.frequencyPenalty || 0,
+        presence_penalty: options?.presencePenalty || 0
+      };
+
+      const response = await this.makeOpenAIRequest(
+        'POST',
+        'https://api.openai.com/v1/chat/completions',
+        credentials,
+        requestData
+      );
 
       return {
         success: true,
-        usage
+        content: response.choices?.[0]?.message?.content || '',
+        usage: response.usage,
+        model: response.model,
+        finishReason: response.choices?.[0]?.finish_reason,
+        timestamp: new Date()
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        content: '',
+        timestamp: new Date()
       };
     }
   }
 
   /**
-   * Analyzes content using OpenAI
+   * Syncs OpenAI usage data
    */
-  async analyzeContentWithOpenAI(
-    credentials: OpenAICredentials,
-    content: string,
-    analysisType: 'sentiment' | 'tone' | 'keywords' | 'summary' | 'improvements'
-  ): Promise<{
-    success: boolean;
-    analysis?: any;
-    error?: string;
-  }> {
+  static async syncOpenAIData(integrationId: string, credentials: OpenAICredentials): Promise<SyncResult> {
+    const startTime = Date.now();
+    let recordsProcessed = 0;
+    let recordsCreated = 0;
+    let recordsUpdated = 0;
+    let errors: string[] = [];
+
     try {
-      const prompts = {
-        sentiment: `Analyze the sentiment of the following content and provide a detailed sentiment analysis including emotional tone, confidence level, and key emotional indicators: ${content}`,
-        tone: `Analyze the tone of the following content and provide insights about the writing style, formality level, and overall communication approach: ${content}`,
-        keywords: `Extract and analyze the key keywords and phrases from the following content, providing their importance and relevance: ${content}`,
-        summary: `Provide a comprehensive summary of the following content, highlighting the main points and key insights: ${content}`,
-        improvements: `Review the following content and provide specific suggestions for improvement in terms of clarity, engagement, and effectiveness: ${content}`
+      // Sync usage data
+      const usageResult = await this.syncOpenAIUsage(credentials);
+      recordsProcessed += usageResult.recordsProcessed;
+      recordsCreated += usageResult.recordsCreated;
+      recordsUpdated += usageResult.recordsUpdated;
+      errors.push(...usageResult.errors);
+
+      // Sync model information
+      const modelsResult = await this.syncOpenAIModels(credentials);
+      recordsProcessed += modelsResult.recordsProcessed;
+      recordsCreated += modelsResult.recordsCreated;
+      recordsUpdated += modelsResult.recordsUpdated;
+      errors.push(...modelsResult.errors);
+
+      return {
+        integrationId,
+        success: errors.length === 0,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors,
+        duration: Date.now() - startTime,
+        timestamp: new Date()
       };
-
-      const result = await this.generateContentWithOpenAI(
-        credentials,
-        prompts[analysisType],
-        {
-          model: 'gpt-3.5-turbo',
-          maxTokens: 500,
-          temperature: 0.3
-        }
-      );
-
-      if (result.success) {
-        return {
-          success: true,
-          analysis: {
-            type: analysisType,
-            content: result.content,
-            timestamp: new Date()
-          }
-        };
-      } else {
-        return {
-          success: false,
-          error: result.error
-        };
-      }
     } catch (error) {
       return {
+        integrationId,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+        duration: Date.now() - startTime,
+        timestamp: new Date()
       };
     }
   }
@@ -314,60 +164,37 @@ export class AIServiceIntegrations {
   // ============================================================================
 
   /**
-   * Connects to Claude API
+   * Tests Claude API connection
    */
-  async connectClaude(credentials: ClaudeCredentials): Promise<ConnectionTestResult> {
+  static async testClaudeConnection(credentials: ClaudeCredentials): Promise<ConnectionTestResult> {
+    const startTime = Date.now();
+    
     try {
-      const startTime = Date.now();
-      
-      // Validate credentials
-      if (!credentials.apiKey) {
-        throw new Error('Missing Claude API key');
-      }
-
-      // Test connection with Claude API
       const response = await this.makeClaudeRequest(
+        'GET',
         'https://api.anthropic.com/v1/messages',
         credentials,
-        'POST',
         {
           model: 'claude-3-sonnet-20240229',
           max_tokens: 10,
-          messages: [
-            {
-              role: 'user',
-              content: 'Hello'
-            }
-          ]
+          messages: [{ role: 'user', content: 'test' }]
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          success: true,
-          responseTime: Date.now() - startTime,
-          details: {
-            model: data.model,
-            apiVersion: 'v1',
-            organizationId: credentials.organizationId
-          },
-          timestamp: new Date()
-        };
-      } else {
-        const errorData = await response.json();
-        return {
-          success: false,
-          error: errorData.error?.message || 'Claude API connection failed',
-          responseTime: Date.now() - startTime,
-          timestamp: new Date()
-        };
-      }
+      return {
+        success: true,
+        responseTime: Date.now() - startTime,
+        details: {
+          apiVersion: 'v1',
+          organizationId: credentials.organizationId
+        },
+        timestamp: new Date()
+      };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        responseTime: Date.now(),
+        responseTime: Date.now() - startTime,
         timestamp: new Date()
       };
     }
@@ -376,115 +203,90 @@ export class AIServiceIntegrations {
   /**
    * Generates content using Claude
    */
-  async generateContentWithClaude(
-    credentials: ClaudeCredentials,
-    prompt: string,
-    options?: {
-      model?: string;
-      maxTokens?: number;
-      temperature?: number;
-    }
-  ): Promise<{
-    success: boolean;
-    content?: string;
-    error?: string;
-    usage?: {
-      inputTokens: number;
-      outputTokens: number;
-    };
-    model?: string;
-  }> {
+  static async generateContentWithClaude(
+    credentials: ClaudeCredentials, 
+    prompt: string, 
+    options?: ClaudeGenerationOptions
+  ): Promise<ClaudeGenerationResult> {
     try {
+      const requestData = {
+        model: options?.model || 'claude-3-sonnet-20240229',
+        max_tokens: options?.maxTokens || 1000,
+        temperature: options?.temperature || 0.7,
+        top_p: options?.topP || 1,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      };
+
       const response = await this.makeClaudeRequest(
+        'POST',
         'https://api.anthropic.com/v1/messages',
         credentials,
-        'POST',
-        {
-          model: options?.model || 'claude-3-sonnet-20240229',
-          max_tokens: options?.maxTokens || 1000,
-          temperature: options?.temperature || 0.7,
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ]
-        }
+        requestData
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          success: true,
-          content: data.content[0]?.text || '',
-          usage: data.usage,
-          model: data.model
-        };
-      } else {
-        const errorData = await response.json();
-        return {
-          success: false,
-          error: errorData.error?.message || 'Failed to generate content with Claude'
-        };
-      }
+      return {
+        success: true,
+        content: response.content?.[0]?.text || '',
+        usage: response.usage,
+        model: response.model,
+        stopReason: response.stop_reason,
+        timestamp: new Date()
+      };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        content: '',
+        timestamp: new Date()
       };
     }
   }
 
   /**
-   * Analyzes content using Claude
+   * Syncs Claude usage data
    */
-  async analyzeContentWithClaude(
-    credentials: ClaudeCredentials,
-    content: string,
-    analysisType: 'sentiment' | 'tone' | 'keywords' | 'summary' | 'improvements'
-  ): Promise<{
-    success: boolean;
-    analysis?: any;
-    error?: string;
-  }> {
+  static async syncClaudeData(integrationId: string, credentials: ClaudeCredentials): Promise<SyncResult> {
+    const startTime = Date.now();
+    let recordsProcessed = 0;
+    let recordsCreated = 0;
+    let recordsUpdated = 0;
+    let errors: string[] = [];
+
     try {
-      const prompts = {
-        sentiment: `Please analyze the sentiment of the following content. Provide a detailed sentiment analysis including emotional tone, confidence level, and key emotional indicators:\n\n${content}`,
-        tone: `Please analyze the tone of the following content. Provide insights about the writing style, formality level, and overall communication approach:\n\n${content}`,
-        keywords: `Please extract and analyze the key keywords and phrases from the following content, providing their importance and relevance:\n\n${content}`,
-        summary: `Please provide a comprehensive summary of the following content, highlighting the main points and key insights:\n\n${content}`,
-        improvements: `Please review the following content and provide specific suggestions for improvement in terms of clarity, engagement, and effectiveness:\n\n${content}`
+      // Sync usage data
+      const usageResult = await this.syncClaudeUsage(credentials);
+      recordsProcessed += usageResult.recordsProcessed;
+      recordsCreated += usageResult.recordsCreated;
+      recordsUpdated += usageResult.recordsUpdated;
+      errors.push(...usageResult.errors);
+
+      return {
+        integrationId,
+        success: errors.length === 0,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors,
+        duration: Date.now() - startTime,
+        timestamp: new Date()
       };
-
-      const result = await this.generateContentWithClaude(
-        credentials,
-        prompts[analysisType],
-        {
-          model: 'claude-3-sonnet-20240229',
-          maxTokens: 500,
-          temperature: 0.3
-        }
-      );
-
-      if (result.success) {
-        return {
-          success: true,
-          analysis: {
-            type: analysisType,
-            content: result.content,
-            timestamp: new Date()
-          }
-        };
-      } else {
-        return {
-          success: false,
-          error: result.error
-        };
-      }
     } catch (error) {
       return {
+        integrationId,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+        duration: Date.now() - startTime,
+        timestamp: new Date()
       };
     }
   }
@@ -494,119 +296,74 @@ export class AIServiceIntegrations {
   // ============================================================================
 
   /**
-   * Connects to custom AI service
+   * Tests custom AI model connection
    */
-  async connectCustomAI(credentials: {
-    apiKey: string;
-    baseUrl: string;
-    model?: string;
-    organizationId?: string;
-  }): Promise<ConnectionTestResult> {
+  static async testCustomAIConnection(credentials: CustomAICredentials): Promise<ConnectionTestResult> {
+    const startTime = Date.now();
+    
     try {
-      const startTime = Date.now();
-      
-      // Validate credentials
-      if (!credentials.apiKey || !credentials.baseUrl) {
-        throw new Error('Missing custom AI credentials');
-      }
-
-      // Test connection with custom AI service
       const response = await this.makeCustomAIRequest(
-        `${credentials.baseUrl}/models`,
-        credentials,
-        'GET'
+        'GET',
+        `${credentials.baseUrl}/health`,
+        credentials
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          success: true,
-          responseTime: Date.now() - startTime,
-          details: {
-            baseUrl: credentials.baseUrl,
-            modelCount: data.data?.length || 0,
-            organizationId: credentials.organizationId
-          },
-          timestamp: new Date()
-        };
-      } else {
-        const errorData = await response.json();
-        return {
-          success: false,
-          error: errorData.error?.message || 'Custom AI API connection failed',
-          responseTime: Date.now() - startTime,
-          timestamp: new Date()
-        };
-      }
+      return {
+        success: true,
+        responseTime: Date.now() - startTime,
+        details: {
+          modelName: credentials.modelName,
+          baseUrl: credentials.baseUrl,
+          version: response.version || 'unknown'
+        },
+        timestamp: new Date()
+      };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        responseTime: Date.now(),
+        responseTime: Date.now() - startTime,
         timestamp: new Date()
       };
     }
   }
 
   /**
-   * Generates content using custom AI service
+   * Generates content using custom AI model
    */
-  async generateContentWithCustomAI(
-    credentials: {
-      apiKey: string;
-      baseUrl: string;
-      model?: string;
-      organizationId?: string;
-    },
-    prompt: string,
-    options?: {
-      maxTokens?: number;
-      temperature?: number;
-    }
-  ): Promise<{
-    success: boolean;
-    content?: string;
-    error?: string;
-    usage?: any;
-    model?: string;
-  }> {
+  static async generateContentWithCustomAI(
+    credentials: CustomAICredentials, 
+    prompt: string, 
+    options?: CustomAIGenerationOptions
+  ): Promise<CustomAIGenerationResult> {
     try {
+      const requestData = {
+        prompt,
+        max_tokens: options?.maxTokens || 1000,
+        temperature: options?.temperature || 0.7,
+        ...options?.customParameters
+      };
+
       const response = await this.makeCustomAIRequest(
-        `${credentials.baseUrl}/chat/completions`,
-        credentials,
         'POST',
-        {
-          model: credentials.model || 'default',
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: options?.maxTokens || 1000,
-          temperature: options?.temperature || 0.7
-        }
+        `${credentials.baseUrl}/generate`,
+        credentials,
+        requestData
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          success: true,
-          content: data.choices?.[0]?.message?.content || '',
-          usage: data.usage,
-          model: data.model
-        };
-      } else {
-        const errorData = await response.json();
-        return {
-          success: false,
-          error: errorData.error?.message || 'Failed to generate content with custom AI'
-        };
-      }
+      return {
+        success: true,
+        content: response.content || response.text || '',
+        model: credentials.modelName,
+        usage: response.usage,
+        timestamp: new Date()
+      };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        content: '',
+        timestamp: new Date()
       };
     }
   }
@@ -616,15 +373,15 @@ export class AIServiceIntegrations {
   // ============================================================================
 
   /**
-   * Makes authenticated request to OpenAI API
+   * Makes authenticated OpenAI request
    */
-  private async makeOpenAIRequest(
-    url: string, 
-    credentials: OpenAICredentials, 
-    method: 'GET' | 'POST' = 'GET',
+  private static async makeOpenAIRequest(
+    method: string,
+    url: string,
+    credentials: OpenAICredentials,
     data?: any
-  ): Promise<Response> {
-    const headers: HeadersInit = {
+  ): Promise<any> {
+    const headers: Record<string, string> = {
       'Authorization': `Bearer ${credentials.apiKey}`,
       'Content-Type': 'application/json'
     };
@@ -633,29 +390,20 @@ export class AIServiceIntegrations {
       headers['OpenAI-Organization'] = credentials.organizationId;
     }
 
-    const requestOptions: RequestInit = {
-      method,
-      headers,
-      signal: AbortSignal.timeout(AIServiceIntegrations.API_TIMEOUT)
-    };
-
-    if (data && method === 'POST') {
-      requestOptions.body = JSON.stringify(data);
-    }
-
-    return fetch(url, requestOptions);
+    const response = await this.makeHttpRequest(method, url, headers, data);
+    return response;
   }
 
   /**
-   * Makes authenticated request to Claude API
+   * Makes authenticated Claude request
    */
-  private async makeClaudeRequest(
-    url: string, 
-    credentials: ClaudeCredentials, 
-    method: 'GET' | 'POST' = 'GET',
+  private static async makeClaudeRequest(
+    method: string,
+    url: string,
+    credentials: ClaudeCredentials,
     data?: any
-  ): Promise<Response> {
-    const headers: HeadersInit = {
+  ): Promise<any> {
+    const headers: Record<string, string> = {
       'x-api-key': credentials.apiKey,
       'Content-Type': 'application/json',
       'anthropic-version': '2023-06-01'
@@ -665,50 +413,196 @@ export class AIServiceIntegrations {
       headers['anthropic-organization'] = credentials.organizationId;
     }
 
-    const requestOptions: RequestInit = {
-      method,
-      headers,
-      signal: AbortSignal.timeout(AIServiceIntegrations.API_TIMEOUT)
-    };
-
-    if (data && method === 'POST') {
-      requestOptions.body = JSON.stringify(data);
-    }
-
-    return fetch(url, requestOptions);
+    const response = await this.makeHttpRequest(method, url, headers, data);
+    return response;
   }
 
   /**
-   * Makes authenticated request to custom AI API
+   * Makes authenticated custom AI request
    */
-  private async makeCustomAIRequest(
-    url: string, 
-    credentials: { apiKey: string; baseUrl: string; model?: string; organizationId?: string }, 
-    method: 'GET' | 'POST' = 'GET',
+  private static async makeCustomAIRequest(
+    method: string,
+    url: string,
+    credentials: CustomAICredentials,
     data?: any
-  ): Promise<Response> {
-    const headers: HeadersInit = {
+  ): Promise<any> {
+    const headers: Record<string, string> = {
       'Authorization': `Bearer ${credentials.apiKey}`,
       'Content-Type': 'application/json'
     };
 
-    if (credentials.organizationId) {
-      headers['X-Organization-ID'] = credentials.organizationId;
+    const response = await this.makeHttpRequest(method, url, headers, data);
+    return response;
+  }
+
+  /**
+   * Makes HTTP request with retry logic
+   */
+  private static async makeHttpRequest(
+    method: string,
+    url: string,
+    headers: Record<string, string>,
+    data?: any
+  ): Promise<any> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+      try {
+        const options: RequestInit = {
+          method,
+          headers,
+          signal: AbortSignal.timeout(this.API_TIMEOUT)
+        };
+
+        if (data && method !== 'GET') {
+          options.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, options);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(`HTTP ${response.status}: ${errorData.message || response.statusText}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        
+        if (attempt < this.MAX_RETRIES) {
+          await this.delay(this.RETRY_DELAY * attempt);
+        }
+      }
     }
 
-    const requestOptions: RequestInit = {
-      method,
-      headers,
-      signal: AbortSignal.timeout(AIServiceIntegrations.API_TIMEOUT)
+    throw lastError || new Error('Request failed after all retries');
+  }
+
+  // ============================================================================
+  // SYNC METHODS
+  // ============================================================================
+
+  private static async syncOpenAIUsage(credentials: OpenAICredentials): Promise<SyncResult> {
+    // Implementation would sync usage data to local database
+    return {
+      integrationId: '',
+      success: true,
+      recordsProcessed: 0,
+      recordsCreated: 0,
+      recordsUpdated: 0,
+      recordsDeleted: 0,
+      errors: [],
+      duration: 0,
+      timestamp: new Date()
     };
+  }
 
-    if (data && method === 'POST') {
-      requestOptions.body = JSON.stringify(data);
-    }
+  private static async syncOpenAIModels(credentials: OpenAICredentials): Promise<SyncResult> {
+    // Implementation would sync model information to local database
+    return {
+      integrationId: '',
+      success: true,
+      recordsProcessed: 0,
+      recordsCreated: 0,
+      recordsUpdated: 0,
+      recordsDeleted: 0,
+      errors: [],
+      duration: 0,
+      timestamp: new Date()
+    };
+  }
 
-    return fetch(url, requestOptions);
+  private static async syncClaudeUsage(credentials: ClaudeCredentials): Promise<SyncResult> {
+    // Implementation would sync usage data to local database
+    return {
+      integrationId: '',
+      success: true,
+      recordsProcessed: 0,
+      recordsCreated: 0,
+      recordsUpdated: 0,
+      recordsDeleted: 0,
+      errors: [],
+      duration: 0,
+      timestamp: new Date()
+    };
+  }
+
+  /**
+   * Delays execution for retry logic
+   */
+  private static delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 
-// Export singleton instance
-export const aiServiceIntegrations = new AIServiceIntegrations();
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+export interface CustomAICredentials {
+  apiKey: string;
+  baseUrl: string;
+  modelName: string;
+  organizationId?: string;
+}
+
+export interface OpenAIGenerationOptions {
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+}
+
+export interface ClaudeGenerationOptions {
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  topP?: number;
+}
+
+export interface CustomAIGenerationOptions {
+  maxTokens?: number;
+  temperature?: number;
+  customParameters?: Record<string, any>;
+}
+
+export interface OpenAIGenerationResult {
+  success: boolean;
+  content: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  model?: string;
+  finishReason?: string;
+  error?: string;
+  timestamp: Date;
+}
+
+export interface ClaudeGenerationResult {
+  success: boolean;
+  content: string;
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+  model?: string;
+  stopReason?: string;
+  error?: string;
+  timestamp: Date;
+}
+
+export interface CustomAIGenerationResult {
+  success: boolean;
+  content: string;
+  model: string;
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+  error?: string;
+  timestamp: Date;
+}

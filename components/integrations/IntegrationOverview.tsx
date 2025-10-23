@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Integration, ConnectionTestResult, SyncResult } from '../../types';
-import IntegrationCard from './IntegrationCard';
+import { Integration, ConnectionTestResult, SyncResult, HealthCheckResult } from '../../types';
 
 interface IntegrationOverviewProps {
   integrations: Integration[];
@@ -30,253 +29,267 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
   onExportData,
   isLoading
 }) => {
-  // Calculate summary statistics
-  const totalIntegrations = integrations.length;
-  const connectedIntegrations = integrations.filter(i => i.status === 'connected').length;
-  const errorIntegrations = integrations.filter(i => i.status === 'error').length;
-  const activeIntegrations = integrations.filter(i => i.isActive).length;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return 'text-green-400 bg-green-400/20 border-green-400/50';
+      case 'disconnected':
+        return 'text-gray-400 bg-gray-400/20 border-gray-400/50';
+      case 'error':
+        return 'text-red-400 bg-red-400/20 border-red-400/50';
+      case 'syncing':
+        return 'text-blue-400 bg-blue-400/20 border-blue-400/50';
+      case 'maintenance':
+        return 'text-yellow-400 bg-yellow-400/20 border-yellow-400/50';
+      default:
+        return 'text-gray-400 bg-gray-400/20 border-gray-400/50';
+    }
+  };
 
-  // Get integrations by type
-  const integrationsByType = integrations.reduce((acc, integration) => {
-    acc[integration.type] = (acc[integration.type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const getHealthScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-400';
+    if (score >= 60) return 'text-yellow-400';
+    return 'text-red-400';
+  };
 
-  // Get recent integrations (last 7 days)
-  const recentIntegrations = integrations.filter(integration => {
-    const createdAt = new Date(integration.createdAt);
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return createdAt > sevenDaysAgo;
-  });
+  const getPlatformIcon = (platform: string) => {
+    const icons: { [key: string]: string } = {
+      twitter: '🐦',
+      linkedin: '💼',
+      facebook: '📘',
+      instagram: '📷',
+      tiktok: '🎵',
+      google_analytics: '📊',
+      facebook_analytics: '📈',
+      twitter_analytics: '📊',
+      openai: '🤖',
+      claude: '🧠'
+    };
+    return icons[platform] || '🔗';
+  };
+
+  const getTypeIcon = (type: string) => {
+    const icons: { [key: string]: string } = {
+      social_media: '📱',
+      analytics: '📊',
+      crm: '👥',
+      email: '📧',
+      storage: '💾',
+      ai_service: '🤖'
+    };
+    return icons[type] || '🔗';
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Total Integrations</p>
-              <p className="text-3xl font-bold">{totalIntegrations}</p>
+    <div className="space-y-8">
+      {/* Integration Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {integrations.map((integration) => (
+          <motion.div
+            key={integration.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6 hover:bg-white/15 transition-all duration-300"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <span className="text-3xl">{getPlatformIcon(integration.platform)}</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">{integration.name}</h3>
+                  <p className="text-sm text-white/70 capitalize">{integration.type.replace('_', ' ')}</p>
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(integration.status)}`}>
+                {integration.status}
+              </div>
             </div>
-            <div className="text-blue-200 text-3xl">🔗</div>
-          </div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Connected</p>
-              <p className="text-3xl font-bold">{connectedIntegrations}</p>
+            {/* Platform Info */}
+            <div className="flex items-center space-x-2 mb-4">
+              <span className="text-2xl">{getTypeIcon(integration.type)}</span>
+              <span className="text-white/80 capitalize">{integration.platform}</span>
             </div>
-            <div className="text-green-200 text-3xl">✅</div>
-          </div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-lg shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-red-100 text-sm font-medium">Errors</p>
-              <p className="text-3xl font-bold">{errorIntegrations}</p>
+            {/* Health Score */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-white/70">Health Score</span>
+                <span className={`text-lg font-bold ${getHealthScoreColor(integration.status?.healthScore || 0)}`}>
+                  {integration.status?.healthScore || 0}%
+                </span>
+              </div>
+              <div className="w-full bg-white/20 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${integration.status?.healthScore || 0}%` }}
+                />
+              </div>
             </div>
-            <div className="text-red-200 text-3xl">⚠️</div>
-          </div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm font-medium">Active</p>
-              <p className="text-3xl font-bold">{activeIntegrations}</p>
+            {/* Last Sync */}
+            {integration.lastSync && (
+              <div className="mb-4">
+                <p className="text-xs text-white/60">Last Sync</p>
+                <p className="text-sm text-white/80">
+                  {new Date(integration.lastSync).toLocaleString()}
+                </p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => onTestConnection(integration.id)}
+                disabled={isLoading}
+                className="px-3 py-1.5 bg-blue-500/20 text-blue-300 text-xs rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50"
+              >
+                Test
+              </button>
+              <button
+                onClick={() => onSync(integration.id)}
+                disabled={isLoading}
+                className="px-3 py-1.5 bg-green-500/20 text-green-300 text-xs rounded-lg hover:bg-green-500/30 transition-colors disabled:opacity-50"
+              >
+                Sync
+              </button>
+              <button
+                onClick={() => onConfigure(integration)}
+                className="px-3 py-1.5 bg-purple-500/20 text-purple-300 text-xs rounded-lg hover:bg-purple-500/30 transition-colors"
+              >
+                Configure
+              </button>
+              {integration.status === 'connected' ? (
+                <button
+                  onClick={() => onDisconnect(integration.id)}
+                  disabled={isLoading}
+                  className="px-3 py-1.5 bg-red-500/20 text-red-300 text-xs rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                >
+                  Disconnect
+                </button>
+              ) : (
+                <button
+                  onClick={() => onConnect(integration.id)}
+                  disabled={isLoading}
+                  className="px-3 py-1.5 bg-green-500/20 text-green-300 text-xs rounded-lg hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                >
+                  Connect
+                </button>
+              )}
+              <button
+                onClick={() => onDelete(integration.id)}
+                disabled={isLoading}
+                className="px-3 py-1.5 bg-red-500/20 text-red-300 text-xs rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
+              >
+                Delete
+              </button>
             </div>
-            <div className="text-purple-200 text-3xl">⚡</div>
-          </div>
-        </motion.div>
+          </motion.div>
+        ))}
       </div>
 
+      {/* Empty State */}
+      {integrations.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-12"
+        >
+          <div className="text-6xl mb-4">🔗</div>
+          <h3 className="text-2xl font-semibold text-white mb-2">No Integrations Yet</h3>
+          <p className="text-white/70 mb-6">Connect your first platform to get started</p>
+          <button className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-600 hover:to-blue-600 transition-all duration-300">
+            Add Integration
+          </button>
+        </motion.div>
+      )}
+
       {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-gray-50 p-6 rounded-lg border"
-      >
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">Quick Actions</h3>
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={onSyncAll}
-            disabled={isLoading || integrations.length === 0}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-          >
-            <span className="mr-2">🔄</span>
-            Sync All Integrations
-          </button>
-          <button
-            onClick={onCheckAllHealth}
-            disabled={isLoading || integrations.length === 0}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-          >
-            <span className="mr-2">🏥</span>
-            Health Check All
-          </button>
-          <button
-            onClick={onExportData}
-            disabled={integrations.length === 0}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-          >
-            <span className="mr-2">📥</span>
-            Export Data
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Integration Type Breakdown */}
-      {Object.keys(integrationsByType).length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white p-6 rounded-lg border shadow-sm"
-        >
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">Integration Types</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {Object.entries(integrationsByType).map(([type, count]) => (
-              <div key={type} className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-2xl mb-2">
-                  {type === 'social_media' && '📱'}
-                  {type === 'analytics' && '📊'}
-                  {type === 'crm' && '👥'}
-                  {type === 'email' && '📧'}
-                  {type === 'storage' && '💾'}
-                  {type === 'ai_service' && '🤖'}
-                </div>
-                <div className="font-semibold text-gray-900">{count}</div>
-                <div className="text-sm text-gray-600 capitalize">
-                  {type.replace('_', ' ')}
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Recent Integrations */}
-      {recentIntegrations.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="bg-white p-6 rounded-lg border shadow-sm"
-        >
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">Recent Integrations</h3>
-          <div className="space-y-3">
-            {recentIntegrations.slice(0, 5).map(integration => (
-              <div key={integration.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="text-2xl mr-3">
-                    {integration.type === 'social_media' && '📱'}
-                    {integration.type === 'analytics' && '📊'}
-                    {integration.type === 'crm' && '👥'}
-                    {integration.type === 'email' && '📧'}
-                    {integration.type === 'storage' && '💾'}
-                    {integration.type === 'ai_service' && '🤖'}
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{integration.name}</div>
-                    <div className="text-sm text-gray-600">{integration.platform}</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    integration.status === 'connected' ? 'bg-green-100 text-green-800' :
-                    integration.status === 'error' ? 'bg-red-100 text-red-800' :
-                    integration.status === 'syncing' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {integration.status}
-                  </span>
-                  <button
-                    onClick={() => onConfigure(integration)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    Configure
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Integration Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">All Integrations</h3>
-          <div className="text-sm text-gray-600">
-            {integrations.length} integration{integrations.length !== 1 ? 's' : ''}
-          </div>
-        </div>
-
-        {integrations.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <div className="text-6xl mb-4">🔗</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No integrations yet</h3>
-            <p className="text-gray-600 mb-4">Get started by adding your first integration</p>
+      {integrations.length > 0 && (
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+          <h3 className="text-xl font-semibold text-white mb-4">Quick Actions</h3>
+          <div className="flex flex-wrap gap-4">
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('integration-tab-change', { detail: 'add' }))}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={onSyncAll}
+              disabled={isLoading}
+              className="bg-blue-500/20 text-blue-300 px-6 py-3 rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50 flex items-center space-x-2"
             >
-              Add Integration
+              <span>🔄</span>
+              <span>Sync All Integrations</span>
+            </button>
+            <button
+              onClick={onCheckAllHealth}
+              disabled={isLoading}
+              className="bg-green-500/20 text-green-300 px-6 py-3 rounded-lg hover:bg-green-500/30 transition-colors disabled:opacity-50 flex items-center space-x-2"
+            >
+              <span>🏥</span>
+              <span>Health Check All</span>
+            </button>
+            <button
+              onClick={onExportData}
+              className="bg-purple-500/20 text-purple-300 px-6 py-3 rounded-lg hover:bg-purple-500/30 transition-colors flex items-center space-x-2"
+            >
+              <span>📤</span>
+              <span>Export Data</span>
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {integrations.map((integration, index) => (
-              <motion.div
-                key={integration.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
-              >
-                <IntegrationCard
-                  integration={integration}
-                  onTestConnection={onTestConnection}
-                  onSync={onSync}
-                  onConnect={onConnect}
-                  onDisconnect={onDisconnect}
-                  onConfigure={onConfigure}
-                  onDelete={onDelete}
-                  isLoading={isLoading}
-                />
-              </motion.div>
-            ))}
+        </div>
+      )}
+
+      {/* Integration Metrics */}
+      {integrations.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+            <div className="flex items-center space-x-3">
+              <span className="text-3xl">📊</span>
+              <div>
+                <p className="text-2xl font-bold text-white">{integrations.length}</p>
+                <p className="text-sm text-white/70">Total Integrations</p>
+              </div>
+            </div>
           </div>
-        )}
-      </motion.div>
+          
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+            <div className="flex items-center space-x-3">
+              <span className="text-3xl">✅</span>
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {integrations.filter(i => i.status === 'connected').length}
+                </p>
+                <p className="text-sm text-white/70">Connected</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+            <div className="flex items-center space-x-3">
+              <span className="text-3xl">❌</span>
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {integrations.filter(i => i.status === 'error').length}
+                </p>
+                <p className="text-sm text-white/70">Errors</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+            <div className="flex items-center space-x-3">
+              <span className="text-3xl">🏥</span>
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {Math.round(
+                    integrations.reduce((sum, i) => sum + (i.status?.healthScore || 0), 0) / 
+                    integrations.length
+                  )}%
+                </p>
+                <p className="text-sm text-white/70">Avg Health</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -17,7 +17,7 @@ import {
   WebhookEvent
 } from '../types';
 import { db } from './supabaseService';
-import { SimpleCredentialEncryption } from './simpleCredentialEncryption';
+import { credentialEncryption } from './credentialEncryption';
 
 /**
  * IntegrationService - Production-quality integration management service
@@ -63,8 +63,8 @@ export class IntegrationService {
       this.validateCreateIntegrationData(data);
 
       // Encrypt credentials
-      const userKey = SimpleCredentialEncryption.generateUserKey(data.name, this.appSecret);
-      const encryptedCredentials = await SimpleCredentialEncryption.encrypt(data.credentials, userKey);
+      const userKey = credentialEncryption.generateUserKey(data.name, this.appSecret);
+      const encryptedCredentials = await credentialEncryption.encrypt(data.credentials, userKey);
 
       // Create integration record
       const integration = await db.addIntegration({
@@ -214,8 +214,8 @@ export class IntegrationService {
       }
 
       // Decrypt credentials
-      const userKey = SimpleCredentialEncryption.generateUserKey(integration.name, this.appSecret);
-      const credentials = await SimpleCredentialEncryption.decrypt(integration.credentials, userKey);
+      const userKey = credentialEncryption.generateUserKey(integration.name, this.appSecret);
+      const credentials = await credentialEncryption.decrypt(integration.credentials, userKey);
 
       // Test connection based on platform
       const testResult = await this.performConnectionTest(integration.platform, credentials);
@@ -583,20 +583,57 @@ export class IntegrationService {
   }
 
   private async performConnectionTest(platform: string, credentials: any): Promise<{ success: boolean; error?: string; details?: any }> {
-    // Mock implementation - in production, this would make actual API calls
-    switch (platform) {
-      case 'twitter':
-        return this.testTwitterConnection(credentials);
-      case 'linkedin':
-        return this.testLinkedInConnection(credentials);
-      case 'facebook':
-        return this.testFacebookConnection(credentials);
-      case 'instagram':
-        return this.testInstagramConnection(credentials);
-      case 'google_analytics':
-        return this.testGoogleAnalyticsConnection(credentials);
-      default:
-        return { success: false, error: 'Unsupported platform' };
+    try {
+      // Import platform-specific integrations
+      const { SocialMediaIntegrations } = await import('./integrations/socialMediaIntegrations');
+      const { AnalyticsIntegrations } = await import('./integrations/analyticsIntegrations');
+      const { AIServiceIntegrations } = await import('./integrations/aiServiceIntegrations');
+
+      switch (platform) {
+        case 'twitter':
+          const twitterResult = await SocialMediaIntegrations.testTwitterConnection(credentials);
+          return { success: twitterResult.success, error: twitterResult.error, details: twitterResult.details };
+        
+        case 'linkedin':
+          const linkedinResult = await SocialMediaIntegrations.testLinkedInConnection(credentials);
+          return { success: linkedinResult.success, error: linkedinResult.error, details: linkedinResult.details };
+        
+        case 'facebook':
+          const facebookResult = await SocialMediaIntegrations.testFacebookConnection(credentials);
+          return { success: facebookResult.success, error: facebookResult.error, details: facebookResult.details };
+        
+        case 'instagram':
+          const instagramResult = await SocialMediaIntegrations.testInstagramConnection(credentials);
+          return { success: instagramResult.success, error: instagramResult.error, details: instagramResult.details };
+        
+        case 'google_analytics':
+          const gaResult = await AnalyticsIntegrations.testGoogleAnalyticsConnection(credentials);
+          return { success: gaResult.success, error: gaResult.error, details: gaResult.details };
+        
+        case 'facebook_analytics':
+          const fbAnalyticsResult = await AnalyticsIntegrations.testFacebookAnalyticsConnection(credentials);
+          return { success: fbAnalyticsResult.success, error: fbAnalyticsResult.error, details: fbAnalyticsResult.details };
+        
+        case 'twitter_analytics':
+          const twitterAnalyticsResult = await AnalyticsIntegrations.testTwitterAnalyticsConnection(credentials);
+          return { success: twitterAnalyticsResult.success, error: twitterAnalyticsResult.error, details: twitterAnalyticsResult.details };
+        
+        case 'openai':
+          const openaiResult = await AIServiceIntegrations.testOpenAIConnection(credentials);
+          return { success: openaiResult.success, error: openaiResult.error, details: openaiResult.details };
+        
+        case 'claude':
+          const claudeResult = await AIServiceIntegrations.testClaudeConnection(credentials);
+          return { success: claudeResult.success, error: claudeResult.error, details: claudeResult.details };
+        
+        default:
+          return { success: false, error: 'Unsupported platform' };
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
     }
   }
 
@@ -698,17 +735,136 @@ export class IntegrationService {
   }
 
   private async performPlatformSync(integration: Integration): Promise<Omit<SyncResult, 'integrationId' | 'duration' | 'timestamp'>> {
-    // Mock implementation - in production, this would perform actual data sync
-    const mockRecords = Math.floor(Math.random() * 100) + 10;
-    
-    return {
-      success: true,
-      recordsProcessed: mockRecords,
-      recordsCreated: Math.floor(mockRecords * 0.3),
-      recordsUpdated: Math.floor(mockRecords * 0.5),
-      recordsDeleted: Math.floor(mockRecords * 0.2),
-      errors: []
-    };
+    try {
+      // Decrypt credentials
+      const userKey = credentialEncryption.generateUserKey(integration.name, this.appSecret);
+      const credentials = await credentialEncryption.decrypt(integration.credentials, userKey);
+
+      // Import platform-specific integrations
+      const { SocialMediaIntegrations } = await import('./integrations/socialMediaIntegrations');
+      const { AnalyticsIntegrations } = await import('./integrations/analyticsIntegrations');
+      const { AIServiceIntegrations } = await import('./integrations/aiServiceIntegrations');
+
+      switch (integration.platform) {
+        case 'twitter':
+          const twitterResult = await SocialMediaIntegrations.syncTwitterData(integration.id, credentials);
+          return {
+            success: twitterResult.success,
+            recordsProcessed: twitterResult.recordsProcessed,
+            recordsCreated: twitterResult.recordsCreated,
+            recordsUpdated: twitterResult.recordsUpdated,
+            recordsDeleted: twitterResult.recordsDeleted,
+            errors: twitterResult.errors
+          };
+        
+        case 'linkedin':
+          const linkedinResult = await SocialMediaIntegrations.syncLinkedInData(integration.id, credentials);
+          return {
+            success: linkedinResult.success,
+            recordsProcessed: linkedinResult.recordsProcessed,
+            recordsCreated: linkedinResult.recordsCreated,
+            recordsUpdated: linkedinResult.recordsUpdated,
+            recordsDeleted: linkedinResult.recordsDeleted,
+            errors: linkedinResult.errors
+          };
+        
+        case 'facebook':
+          const facebookResult = await SocialMediaIntegrations.syncFacebookData(integration.id, credentials);
+          return {
+            success: facebookResult.success,
+            recordsProcessed: facebookResult.recordsProcessed,
+            recordsCreated: facebookResult.recordsCreated,
+            recordsUpdated: facebookResult.recordsUpdated,
+            recordsDeleted: facebookResult.recordsDeleted,
+            errors: facebookResult.errors
+          };
+        
+        case 'instagram':
+          const instagramResult = await SocialMediaIntegrations.syncInstagramData(integration.id, credentials);
+          return {
+            success: instagramResult.success,
+            recordsProcessed: instagramResult.recordsProcessed,
+            recordsCreated: instagramResult.recordsCreated,
+            recordsUpdated: instagramResult.recordsUpdated,
+            recordsDeleted: instagramResult.recordsDeleted,
+            errors: instagramResult.errors
+          };
+        
+        case 'google_analytics':
+          const gaResult = await AnalyticsIntegrations.syncGoogleAnalyticsData(integration.id, credentials);
+          return {
+            success: gaResult.success,
+            recordsProcessed: gaResult.recordsProcessed,
+            recordsCreated: gaResult.recordsCreated,
+            recordsUpdated: gaResult.recordsUpdated,
+            recordsDeleted: gaResult.recordsDeleted,
+            errors: gaResult.errors
+          };
+        
+        case 'facebook_analytics':
+          const fbAnalyticsResult = await AnalyticsIntegrations.syncFacebookAnalyticsData(integration.id, credentials);
+          return {
+            success: fbAnalyticsResult.success,
+            recordsProcessed: fbAnalyticsResult.recordsProcessed,
+            recordsCreated: fbAnalyticsResult.recordsCreated,
+            recordsUpdated: fbAnalyticsResult.recordsUpdated,
+            recordsDeleted: fbAnalyticsResult.recordsDeleted,
+            errors: fbAnalyticsResult.errors
+          };
+        
+        case 'twitter_analytics':
+          const twitterAnalyticsResult = await AnalyticsIntegrations.syncTwitterAnalyticsData(integration.id, credentials);
+          return {
+            success: twitterAnalyticsResult.success,
+            recordsProcessed: twitterAnalyticsResult.recordsProcessed,
+            recordsCreated: twitterAnalyticsResult.recordsCreated,
+            recordsUpdated: twitterAnalyticsResult.recordsUpdated,
+            recordsDeleted: twitterAnalyticsResult.recordsDeleted,
+            errors: twitterAnalyticsResult.errors
+          };
+        
+        case 'openai':
+          const openaiResult = await AIServiceIntegrations.syncOpenAIData(integration.id, credentials);
+          return {
+            success: openaiResult.success,
+            recordsProcessed: openaiResult.recordsProcessed,
+            recordsCreated: openaiResult.recordsCreated,
+            recordsUpdated: openaiResult.recordsUpdated,
+            recordsDeleted: openaiResult.recordsDeleted,
+            errors: openaiResult.errors
+          };
+        
+        case 'claude':
+          const claudeResult = await AIServiceIntegrations.syncClaudeData(integration.id, credentials);
+          return {
+            success: claudeResult.success,
+            recordsProcessed: claudeResult.recordsProcessed,
+            recordsCreated: claudeResult.recordsCreated,
+            recordsUpdated: claudeResult.recordsUpdated,
+            recordsDeleted: claudeResult.recordsDeleted,
+            errors: claudeResult.errors
+          };
+        
+        default:
+          return {
+            success: false,
+            recordsProcessed: 0,
+            recordsCreated: 0,
+            recordsUpdated: 0,
+            recordsDeleted: 0,
+            errors: ['Unsupported platform']
+          };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        recordsProcessed: 0,
+        recordsCreated: 0,
+        recordsUpdated: 0,
+        recordsDeleted: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      };
+    }
   }
 
   private getSyncInterval(frequency: SyncFrequency): number {
