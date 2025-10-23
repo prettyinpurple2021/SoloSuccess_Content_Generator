@@ -44,26 +44,55 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
 export const auth = {
   // Sign in anonymously
   signInAnonymously: async (): Promise<{ user: User | null; error: any }> => {
-    const { data, error } = await supabase.auth.signInAnonymously();
-    return { user: data.user, error };
+    try {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        console.error('Anonymous sign-in error:', error);
+        return { user: null, error };
+      }
+      console.log('✅ Anonymous sign-in successful:', data.user?.id);
+      return { user: data.user, error: null };
+    } catch (err) {
+      console.error('Anonymous sign-in exception:', err);
+      return { user: null, error: err };
+    }
   },
 
   // Get current user
   getUser: async (): Promise<User | null> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Get user error:', error);
+        return null;
+      }
+      return user;
+    } catch (err) {
+      console.error('Get user exception:', err);
+      return null;
+    }
   },
 
   // Listen to auth state changes
   onAuthStateChange: (callback: (user: User | null) => void) => {
     return supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session?.user?.id);
       callback(session?.user || null);
     });
   },
 
   // Sign out
   signOut: async () => {
-    return await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+      }
+      return { error };
+    } catch (err) {
+      console.error('Sign out exception:', err);
+      return { error: err };
+    }
   }
 };
 
@@ -175,25 +204,48 @@ export const db = {
 
   // Add new post
   addPost: async (post: Omit<DatabasePost, 'id' | 'user_id' | 'created_at'>): Promise<Post> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    try {
+      console.log('🔄 Attempting to add post...');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('❌ User auth error:', userError);
+        throw new Error(`Authentication error: ${userError.message}`);
+      }
+      
+      if (!user) {
+        console.error('❌ No user authenticated');
+        throw new Error('User not authenticated. Please sign in.');
+      }
+      
+      console.log('✅ User authenticated:', user.id);
+      console.log('📝 Post data:', post);
 
-    const { data, error } = await supabase
-      .from('posts')
-      .insert({
-        ...post,
-        user_id: user.id,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('posts')
+        .insert({
+          ...post,
+          user_id: user.id,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-    if (error) throw error;
+      if (error) {
+        console.error('❌ Database insert error:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
 
-    // Invalidate user cache after adding post
-    contentCache.invalidateUserCache(user.id);
-    
-    return transformDatabasePostToPost(data);
+      console.log('✅ Post saved successfully:', data);
+      
+      // Invalidate user cache after adding post
+      contentCache.invalidateUserCache(user.id);
+      
+      return transformDatabasePostToPost(data);
+    } catch (err) {
+      console.error('❌ Add post exception:', err);
+      throw err;
+    }
   },
 
   // Update post

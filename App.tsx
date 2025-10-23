@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 // FIX: Import Timestamp type and rename Timestamp value to avoid name collision.
 import { 
   Post, 
@@ -19,7 +19,7 @@ import {
 } from './types';
 import { auth, db, transformPostToDatabasePost, User } from './services/supabaseService';
 import * as geminiService from './services/geminiService';
-import * as schedulerService from './services/schedulerService';
+// import * as schedulerService from './services/schedulerService';
 import * as bloggerService from './services/bloggerService';
 import { postScheduler } from './services/postScheduler';
 import { CalendarIcon, ListIcon, SparklesIcon, PLATFORMS, TONES, AUDIENCES, Spinner, PLATFORM_CONFIG, CopyIcon } from './constants';
@@ -34,7 +34,7 @@ import VoiceCommands from './components/VoiceCommands';
 import GamificationSystem from './components/GamificationSystem';
 import { aiLearningService } from './services/aiLearningService';
 import { marked } from 'marked';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 
 const App: React.FC = () => {
     // Core State
@@ -185,7 +185,38 @@ const App: React.FC = () => {
     };
 
     useEffect(() => {
+        // Ensure user is authenticated on app start
+        const initializeAuth = async () => {
+            try {
+                // Try to get existing user
+                const currentUser = await auth.getUser();
+                if (currentUser) {
+                    console.log('✅ Existing user found:', currentUser.id);
+                    setUser(currentUser);
+                    setIsAuthReady(true);
+                } else {
+                    // Sign in anonymously if no user
+                    console.log('🔄 No user found, signing in anonymously...');
+                    const { user: anonymousUser, error } = await auth.signInAnonymously();
+                    if (error) {
+                        console.error('❌ Anonymous sign-in failed:', error);
+                        setErrorMessage('Failed to authenticate. Please refresh the page.');
+                    } else {
+                        console.log('✅ Anonymous sign-in successful:', anonymousUser?.id);
+                        setUser(anonymousUser);
+                        setIsAuthReady(true);
+                    }
+                }
+            } catch (err) {
+                console.error('❌ Auth initialization error:', err);
+                setErrorMessage('Authentication error. Please refresh the page.');
+            }
+        };
+
+        initializeAuth();
+
         const { data: { subscription } } = auth.onAuthStateChange(async (user) => {
+            console.log('🔄 Auth state changed:', user?.id);
             setUser(user);
             setIsAuthReady(true);
         });
