@@ -14,7 +14,9 @@
     "prepare": "husky",
     "docker:build": "docker build -t solosuccess-ai .",
     "docker:run": "docker run -p 3000:80 solosuccess-ai",
-    "docker:compose": "docker-compose up --build"
+    "docker:compose": "docker-compose up --build",
+    "migrate:neon": "node scripts/apply-neon-migrations.js",
+    "test:neon": "node scripts/test-neon-integration.js"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

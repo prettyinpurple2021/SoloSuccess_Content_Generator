@@ -16,7 +16,7 @@ import {
   SyncFrequency,
   WebhookEvent
 } from '../types';
-import { db } from './supabaseService';
+import { db } from './neonService';
 import { credentialEncryption } from './credentialEncryption';
 
 /**
