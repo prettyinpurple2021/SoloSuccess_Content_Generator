@@ -1,4 +1,4 @@
-import { Pool } from 'postgres';
+import { Pool, PoolClient } from 'postgres';
 import {
   DatabasePost,
   Post,
@@ -27,9 +27,8 @@ import {
   IntegrationMetrics,
   WebhookConfig,
 } from '../types';
-import { contentCache, paginationCache, PaginationCache } from './cachingService';
 
-// Neon database configuration
+// Neon database connection
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -69,30 +68,28 @@ export const auth = {
 
 // Database functions
 export const db = {
-  // Get all posts for current user with caching
+  // Get all posts for current user
   getPosts: async (userId?: string): Promise<Post[]> => {
     if (!userId) throw new Error('User ID is required');
 
-    return await contentCache.cacheUserPosts(userId, async () => {
-      const client = await pool.connect();
-      try {
-        const result = await client.query(
-          `
-          SELECT * FROM posts 
-          WHERE user_id = $1 
-          ORDER BY created_at DESC
-        `,
-          [userId]
-        );
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        `
+        SELECT * FROM posts 
+        WHERE user_id = $1 
+        ORDER BY created_at DESC
+      `,
+        [userId]
+      );
 
-        return result.rows.map(transformDatabasePostToPost);
-      } finally {
-        client.release();
-      }
-    });
+      return result.rows.map(transformDatabasePostToPost);
+    } finally {
+      client.release();
+    }
   },
 
-  // Get paginated posts for better performance with large datasets
+  // Get paginated posts for better performance
   getPostsPaginated: async (
     userId: string,
     page: number = 1,
@@ -103,18 +100,6 @@ export const db = {
       seriesId?: string;
     }
   ): Promise<{ posts: Post[]; totalCount: number; hasMore: boolean }> => {
-    const cacheKey = PaginationCache.generateKey(`posts:${userId}`, filters);
-
-    // Try to get from pagination cache first
-    const cached = paginationCache.get(cacheKey, page, pageSize);
-    if (cached !== null) {
-      return {
-        posts: cached.data,
-        totalCount: cached.totalCount,
-        hasMore: page * pageSize < cached.totalCount,
-      };
-    }
-
     const client = await pool.connect();
     try {
       let whereClause = 'WHERE user_id = $1';
@@ -158,27 +143,8 @@ export const db = {
         [...params, pageSize, offset]
       );
 
-      const posts = result.rows.map(transformDatabasePostToPost);
-
-      // Cache the full result set for this filter combination
-      if (page === 1) {
-        // For first page, fetch more data to cache
-        const { rows: fullData } = await client.query(
-          `
-          SELECT * FROM posts 
-          ${whereClause}
-          ORDER BY created_at DESC
-          LIMIT $${paramIndex + 2}
-        `,
-          [...params, Math.min(1000, totalCount)]
-        );
-
-        const fullPosts = fullData.map(transformDatabasePostToPost);
-        paginationCache.set(cacheKey, fullPosts, totalCount);
-      }
-
       return {
-        posts,
+        posts: result.rows.map(transformDatabasePostToPost),
         totalCount,
         hasMore: page * pageSize < totalCount,
       };
@@ -231,9 +197,6 @@ export const db = {
         ]
       );
 
-      // Invalidate user cache after adding post
-      contentCache.invalidateUserCache(userId);
-
       return transformDatabasePostToPost(result.rows[0]);
     } finally {
       client.release();
@@ -254,13 +217,8 @@ export const db = {
 
       Object.entries(updates).forEach(([key, value]) => {
         if (value !== undefined) {
-          if (typeof value === 'object' && value !== null) {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(JSON.stringify(value));
-          } else {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(value);
-          }
+          setClause.push(`${key} = $${paramIndex}`);
+          values.push(value);
           paramIndex++;
         }
       });
@@ -284,10 +242,6 @@ export const db = {
         throw new Error('Post not found or access denied');
       }
 
-      // Invalidate related caches
-      contentCache.invalidateUserCache(userId);
-      contentCache.invalidatePostCache(id);
-
       return transformDatabasePostToPost(result.rows[0]);
     } finally {
       client.release();
@@ -309,10 +263,6 @@ export const db = {
       if (result.rowCount === 0) {
         throw new Error('Post not found or access denied');
       }
-
-      // Invalidate related caches
-      contentCache.invalidateUserCache(userId);
-      contentCache.invalidatePostCache(id);
     } finally {
       client.release();
     }
@@ -320,23 +270,21 @@ export const db = {
 
   // Brand Voices CRUD operations
   getBrandVoices: async (userId: string): Promise<BrandVoice[]> => {
-    return await contentCache.cacheBrandVoices(userId, async () => {
-      const client = await pool.connect();
-      try {
-        const result = await client.query(
-          `
-          SELECT * FROM brand_voices 
-          WHERE user_id = $1 
-          ORDER BY created_at DESC
-        `,
-          [userId]
-        );
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        `
+        SELECT * FROM brand_voices 
+        WHERE user_id = $1 
+        ORDER BY created_at DESC
+      `,
+        [userId]
+      );
 
-        return result.rows.map(transformDatabaseBrandVoiceToBrandVoice);
-      } finally {
-        client.release();
-      }
-    });
+      return result.rows.map(transformDatabaseBrandVoiceToBrandVoice);
+    } finally {
+      client.release();
+    }
   },
 
   addBrandVoice: async (
@@ -545,125 +493,6 @@ export const db = {
 
       if (result.rowCount === 0) {
         throw new Error('Audience profile not found or access denied');
-      }
-    } finally {
-      client.release();
-    }
-  },
-
-  // Campaigns CRUD operations
-  getCampaigns: async (userId: string): Promise<Campaign[]> => {
-    const client = await pool.connect();
-    try {
-      const result = await client.query(
-        `
-        SELECT * FROM campaigns 
-        WHERE user_id = $1 
-        ORDER BY created_at DESC
-      `,
-        [userId]
-      );
-
-      return result.rows.map(transformDatabaseCampaignToCampaign);
-    } finally {
-      client.release();
-    }
-  },
-
-  addCampaign: async (
-    campaign: Omit<DatabaseCampaign, 'id' | 'user_id' | 'created_at'>,
-    userId: string
-  ): Promise<Campaign> => {
-    const client = await pool.connect();
-    try {
-      const result = await client.query(
-        `
-        INSERT INTO campaigns (
-          user_id, name, description, theme, start_date, end_date, platforms, status, performance
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING *
-      `,
-        [
-          userId,
-          campaign.name,
-          campaign.description,
-          campaign.theme,
-          campaign.start_date,
-          campaign.end_date,
-          JSON.stringify(campaign.platforms),
-          campaign.status,
-          JSON.stringify(campaign.performance),
-        ]
-      );
-
-      return transformDatabaseCampaignToCampaign(result.rows[0]);
-    } finally {
-      client.release();
-    }
-  },
-
-  updateCampaign: async (
-    id: string,
-    updates: Partial<Omit<DatabaseCampaign, 'id' | 'user_id'>>,
-    userId: string
-  ): Promise<Campaign> => {
-    const client = await pool.connect();
-    try {
-      const setClause = [];
-      const values = [];
-      let paramIndex = 1;
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (typeof value === 'object' && value !== null) {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(JSON.stringify(value));
-          } else {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(value);
-          }
-          paramIndex++;
-        }
-      });
-
-      if (setClause.length === 0) {
-        throw new Error('No updates provided');
-      }
-
-      values.push(id, userId);
-      const result = await client.query(
-        `
-        UPDATE campaigns 
-        SET ${setClause.join(', ')}
-        WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}
-        RETURNING *
-      `,
-        values
-      );
-
-      if (result.rows.length === 0) {
-        throw new Error('Campaign not found or access denied');
-      }
-
-      return transformDatabaseCampaignToCampaign(result.rows[0]);
-    } finally {
-      client.release();
-    }
-  },
-
-  deleteCampaign: async (id: string, userId: string): Promise<void> => {
-    const client = await pool.connect();
-    try {
-      const result = await client.query(
-        `
-        DELETE FROM campaigns 
-        WHERE id = $1 AND user_id = $2
-      `,
-        [id, userId]
-      );
-
-      if (result.rowCount === 0) {
-        throw new Error('Campaign not found or access denied');
       }
     } finally {
       client.release();
@@ -914,24 +743,6 @@ function transformDatabaseAudienceProfileToAudienceProfile(
     preferredContentTypes: dbProfile.preferred_content_types,
     engagementPatterns: dbProfile.engagement_patterns,
     createdAt: new Date(dbProfile.created_at),
-  };
-}
-
-// Helper functions for Campaign transformations
-function transformDatabaseCampaignToCampaign(dbCampaign: DatabaseCampaign): Campaign {
-  return {
-    id: dbCampaign.id,
-    userId: dbCampaign.user_id,
-    name: dbCampaign.name,
-    description: dbCampaign.description,
-    theme: dbCampaign.theme,
-    startDate: new Date(dbCampaign.start_date),
-    endDate: new Date(dbCampaign.end_date),
-    posts: [], // Will be populated by joining with posts table
-    platforms: dbCampaign.platforms,
-    status: dbCampaign.status,
-    performance: dbCampaign.performance,
-    createdAt: new Date(dbCampaign.created_at),
   };
 }
 

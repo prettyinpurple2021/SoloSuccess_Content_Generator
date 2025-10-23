@@ -31,12 +31,12 @@ export class WebhookService {
           retryDelay: webhookConfig.retryPolicy?.retryDelay,
           backoffMultiplier: webhookConfig.retryPolicy?.backoffMultiplier || 2,
           initialDelay: webhookConfig.retryPolicy?.initialDelay || 1000,
-          maxDelay: webhookConfig.retryPolicy?.maxDelay || 30000
+          maxDelay: webhookConfig.retryPolicy?.maxDelay || 30000,
         },
         headers: webhookConfig.headers || {},
         timeout: webhookConfig.timeout || 30000,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       // Save to database
@@ -48,7 +48,9 @@ export class WebhookService {
       return webhook;
     } catch (error) {
       console.error('Error creating webhook:', error);
-      throw new Error(`Failed to create webhook: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create webhook: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -72,7 +74,7 @@ export class WebhookService {
       const updatedWebhook: IntegrationWebhook = {
         ...existingWebhook,
         ...updates,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       // Update in database
@@ -84,7 +86,9 @@ export class WebhookService {
       return updatedWebhook;
     } catch (error) {
       console.error('Error updating webhook:', error);
-      throw new Error(`Failed to update webhook: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to update webhook: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -100,7 +104,9 @@ export class WebhookService {
       this.webhooks.delete(webhookId);
     } catch (error) {
       console.error('Error deleting webhook:', error);
-      throw new Error(`Failed to delete webhook: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to delete webhook: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -110,16 +116,18 @@ export class WebhookService {
   async getWebhooksForIntegration(integrationId: string): Promise<IntegrationWebhook[]> {
     try {
       const webhooks = await db.getIntegrationWebhooks(integrationId);
-      
+
       // Update memory cache
-      webhooks.forEach(webhook => {
+      webhooks.forEach((webhook) => {
         this.webhooks.set(webhook.id, webhook);
       });
 
       return webhooks;
     } catch (error) {
       console.error('Error fetching webhooks:', error);
-      throw new Error(`Failed to fetch webhooks: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch webhooks: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -146,7 +154,7 @@ export class WebhookService {
       maxAttempts: webhook.retryPolicy.maxRetries,
       nextRetryAt: new Date(),
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // Attempt delivery
@@ -175,7 +183,7 @@ export class WebhookService {
         'X-Webhook-Signature': signature,
         'X-Webhook-Delivery-ID': delivery.id,
         'X-Webhook-Timestamp': delivery.createdAt.getTime().toString(),
-        ...webhook.headers
+        ...webhook.headers,
       };
 
       // Make HTTP request
@@ -183,7 +191,7 @@ export class WebhookService {
         method: 'POST',
         headers,
         body: JSON.stringify(delivery.payload),
-        signal: AbortSignal.timeout(webhook.timeout)
+        signal: AbortSignal.timeout(webhook.timeout),
       });
 
       if (response.ok) {
@@ -197,7 +205,6 @@ export class WebhookService {
         delivery.responseHeaders = Object.fromEntries(response.headers.entries());
         delivery.error = `HTTP ${response.status}: ${response.statusText}`;
       }
-
     } catch (error) {
       delivery.status = 'failed';
       delivery.error = error instanceof Error ? error.message : 'Unknown error';
@@ -207,7 +214,8 @@ export class WebhookService {
 
     // Schedule retry if needed
     if (delivery.status === 'failed' && delivery.attempts < delivery.maxAttempts) {
-      const retryDelay = (webhook.retryPolicy.retryDelay ?? webhook.retryPolicy.initialDelay) * 
+      const retryDelay =
+        (webhook.retryPolicy.retryDelay ?? webhook.retryPolicy.initialDelay) *
         Math.pow(webhook.retryPolicy.backoffMultiplier, delivery.attempts - 1);
       delivery.nextRetryAt = new Date(Date.now() + retryDelay);
       delivery.status = 'pending';
@@ -225,7 +233,7 @@ export class WebhookService {
   async processPendingDeliveries(): Promise<void> {
     try {
       const pendingDeliveries = await this.getPendingDeliveries();
-      
+
       for (const delivery of pendingDeliveries) {
         if (new Date() >= delivery.nextRetryAt) {
           const webhook = this.webhooks.get(delivery.webhookId);
@@ -244,10 +252,7 @@ export class WebhookService {
    */
   private createSignature(secret: string, payload: any): string {
     const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    return crypto
-      .createHmac('sha256', secret)
-      .update(payloadString)
-      .digest('hex');
+    return crypto.createHmac('sha256', secret).update(payloadString).digest('hex');
   }
 
   /**
@@ -335,12 +340,10 @@ export class WebhookService {
         response_headers: delivery.responseHeaders,
         error: delivery.error,
         created_at: delivery.createdAt.toISOString(),
-        updated_at: delivery.updatedAt.toISOString()
+        updated_at: delivery.updatedAt.toISOString(),
       };
 
-      const { error } = await db.supabase
-        .from('webhook_deliveries')
-        .upsert(deliveryData);
+      const { error } = await db.supabase.from('webhook_deliveries').upsert(deliveryData);
 
       if (error) {
         console.error('Error saving delivery attempt:', error);
@@ -368,7 +371,7 @@ export class WebhookService {
       responseHeaders: data.response_headers,
       error: data.error,
       createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at)
+      updatedAt: new Date(data.updated_at),
     };
   }
 
@@ -385,19 +388,19 @@ export class WebhookService {
       const testPayload = {
         event: 'test',
         timestamp: new Date().toISOString(),
-        message: 'This is a test webhook delivery'
+        message: 'This is a test webhook delivery',
       };
 
       const delivery = await this.deliverWebhook(webhookId, 'test', testPayload);
-      
+
       return {
         success: delivery.status === 'delivered',
-        error: delivery.error
+        error: delivery.error,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -405,22 +408,75 @@ export class WebhookService {
   /**
    * Get webhook delivery statistics
    */
-  async getWebhookStats(webhookId: string, timeRange: '1h' | '24h' | '7d' | '30d' = '24h'): Promise<{
+  async getWebhookStats(
+    webhookId: string,
+    timeRange: '1h' | '24h' | '7d' | '30d' = '24h'
+  ): Promise<{
     totalDeliveries: number;
     successfulDeliveries: number;
     failedDeliveries: number;
     averageResponseTime: number;
     successRate: number;
   }> {
-    // This would typically query the database for delivery statistics
-    // For now, return mock data
-    return {
-      totalDeliveries: 100,
-      successfulDeliveries: 95,
-      failedDeliveries: 5,
-      averageResponseTime: 250,
-      successRate: 95
-    };
+    try {
+      // Calculate time range in milliseconds
+      const timeRanges = {
+        '1h': 60 * 60 * 1000,
+        '24h': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000,
+      };
+
+      const startTime = new Date(Date.now() - timeRanges[timeRange]);
+
+      // Query actual webhook deliveries from database
+      const { data, error } = await db.supabase
+        .from('webhook_deliveries')
+        .select('*')
+        .eq('webhook_id', webhookId)
+        .gte('created_at', startTime.toISOString());
+
+      if (error) {
+        console.error('Error fetching webhook stats:', error);
+        throw new Error('Failed to fetch webhook statistics');
+      }
+
+      const deliveries = data || [];
+      const totalDeliveries = deliveries.length;
+      const successfulDeliveries = deliveries.filter((d) => d.status === 'delivered').length;
+      const failedDeliveries = deliveries.filter((d) => d.status === 'failed').length;
+
+      // Calculate average response time from successful deliveries
+      const responseTimes = deliveries
+        .filter((d) => d.status === 'delivered' && d.delivered_at && d.created_at)
+        .map((d) => new Date(d.delivered_at!).getTime() - new Date(d.created_at).getTime());
+
+      const averageResponseTime =
+        responseTimes.length > 0
+          ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+          : 0;
+
+      const successRate =
+        totalDeliveries > 0 ? Math.round((successfulDeliveries / totalDeliveries) * 100) : 0;
+
+      return {
+        totalDeliveries,
+        successfulDeliveries,
+        failedDeliveries,
+        averageResponseTime,
+        successRate,
+      };
+    } catch (error) {
+      console.error('Error calculating webhook stats:', error);
+      // Return zeros on error instead of mock data
+      return {
+        totalDeliveries: 0,
+        successfulDeliveries: 0,
+        failedDeliveries: 0,
+        averageResponseTime: 0,
+        successRate: 0,
+      };
+    }
   }
 }
 

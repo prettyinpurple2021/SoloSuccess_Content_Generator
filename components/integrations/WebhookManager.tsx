@@ -39,7 +39,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
       setIsLoading(true);
       setError('');
       const newWebhook = await integrationService.addWebhook(integrationId, webhookData);
-      setWebhooks(prev => [...prev, newWebhook]);
+      setWebhooks((prev) => [...prev, newWebhook]);
       setShowAddWebhook(false);
       setSuccess('Webhook added successfully');
       setTimeout(() => setSuccess(''), 3000);
@@ -56,7 +56,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
       setIsLoading(true);
       setError('');
       const updatedWebhook = await integrationService.updateWebhook(webhookId, updates);
-      setWebhooks(prev => prev.map(w => w.id === webhookId ? updatedWebhook : w));
+      setWebhooks((prev) => prev.map((w) => (w.id === webhookId ? updatedWebhook : w)));
       setSuccess('Webhook updated successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -76,7 +76,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
       setIsLoading(true);
       setError('');
       await integrationService.deleteWebhook(webhookId);
-      setWebhooks(prev => prev.filter(w => w.id !== webhookId));
+      setWebhooks((prev) => prev.filter((w) => w.id !== webhookId));
       setSuccess('Webhook deleted successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -91,9 +91,50 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
     try {
       setIsLoading(true);
       setError('');
-      // Mock webhook test - in production, this would make an actual HTTP request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setSuccess('Webhook test completed successfully');
+
+      const webhook = webhooks.find((w) => w.id === webhookId);
+      if (!webhook) {
+        throw new Error('Webhook not found');
+      }
+
+      // Create test payload
+      const testPayload = {
+        event: 'test',
+        timestamp: new Date().toISOString(),
+        message: 'This is a test webhook delivery from SoloBoss AI Content Planner',
+        test: true,
+      };
+
+      // Create signature for verification
+      const crypto = await import('crypto');
+      const signature = crypto
+        .createHmac('sha256', webhook.secret)
+        .update(JSON.stringify(testPayload))
+        .digest('hex');
+
+      // Prepare headers
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Webhook-Event': 'test',
+        'X-Webhook-Signature': signature,
+        'X-Webhook-Timestamp': Date.now().toString(),
+        ...webhook.headers,
+      };
+
+      // Make actual HTTP request to webhook URL
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(testPayload),
+        signal: AbortSignal.timeout(webhook.timeout || 30000),
+      });
+
+      if (response.ok) {
+        setSuccess(`Webhook test completed successfully (HTTP ${response.status})`);
+      } else {
+        throw new Error(`Webhook test failed: HTTP ${response.status} ${response.statusText}`);
+      }
+
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Webhook test failed');
@@ -108,7 +149,9 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Webhooks</h3>
-          <p className="text-sm text-gray-600">Configure webhooks to receive real-time notifications</p>
+          <p className="text-sm text-gray-600">
+            Configure webhooks to receive real-time notifications
+          </p>
         </div>
         <button
           onClick={() => setShowAddWebhook(true)}
@@ -169,11 +212,13 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <h4 className="font-medium text-gray-900">{webhook.url}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      webhook.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        webhook.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       {webhook.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
@@ -181,8 +226,8 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
                     Events: {webhook.events.join(', ')}
                   </div>
                   <div className="text-xs text-gray-500">
-                    Max Retries: {webhook.retryPolicy.maxRetries} • 
-                    Timeout: {webhook.timeout || 30000}ms
+                    Max Retries: {webhook.retryPolicy.maxRetries} • Timeout:{' '}
+                    {webhook.timeout || 30000}ms
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -249,10 +294,10 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
       maxRetries: 3,
       backoffMultiplier: 2,
       initialDelay: 1000,
-      maxDelay: 30000
+      maxDelay: 30000,
     },
     headers: {} as Record<string, string>,
-    timeout: 30000
+    timeout: 30000,
   });
 
   const availableEvents: WebhookEvent[] = [
@@ -260,32 +305,32 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
     'post_updated',
     'post_published',
     'analytics_updated',
-    'error_occurred'
+    'error_occurred',
   ];
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleRetryPolicyChange = (field: string, value: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       retryPolicy: {
         ...prev.retryPolicy,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   const handleEventToggle = (event: WebhookEvent) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       events: prev.events.includes(event)
-        ? prev.events.filter(e => e !== event)
-        : [...prev.events, event]
+        ? prev.events.filter((e) => e !== event)
+        : [...prev.events, event],
     }));
   };
 
@@ -314,19 +359,14 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Add Webhook</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
-            >
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
               ×
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Webhook URL *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Webhook URL *</label>
               <input
                 type="url"
                 value={formData.url}
@@ -338,11 +378,9 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Events *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Events *</label>
               <div className="space-y-2">
-                {availableEvents.map(event => (
+                {availableEvents.map((event) => (
                   <label key={event} className="flex items-center">
                     <input
                       type="checkbox"
@@ -359,9 +397,7 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Secret
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Secret</label>
               <input
                 type="password"
                 value={formData.secret}
@@ -373,9 +409,7 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Max Retries
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Retries</label>
                 <input
                   type="number"
                   value={formData.retryPolicy.maxRetries}
@@ -384,9 +418,7 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Timeout (ms)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Timeout (ms)</label>
                 <input
                   type="number"
                   value={formData.timeout}

@@ -1,0 +1,226 @@
+import { TwitterCredentials, PostResult } from '../../types';
+
+/**
+ * Twitter API v2 Client
+ * Implements real Twitter API v2 connections for posting and fetching engagement metrics
+ */
+export class TwitterClient {
+  private credentials: TwitterCredentials;
+  private baseUrl = 'https://api.twitter.com/2';
+
+  constructor(credentials: TwitterCredentials) {
+    this.credentials = credentials;
+  }
+
+  /**
+   * Test connection to Twitter API
+   */
+  async testConnection(): Promise<{ success: boolean; error?: string; details?: any }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/users/me`, {
+        headers: {
+          Authorization: `Bearer ${this.credentials.bearerToken || this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${errorData.detail || response.statusText}`,
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        details: {
+          userId: data.data?.id,
+          username: data.data?.username,
+          apiVersion: '2.0',
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Post a tweet to Twitter
+   */
+  async postTweet(content: string, mediaIds?: string[]): Promise<PostResult> {
+    try {
+      const payload: any = { text: content };
+
+      if (mediaIds && mediaIds.length > 0) {
+        payload.media = { media_ids: mediaIds };
+      }
+
+      const response = await fetch(`${this.baseUrl}/tweets`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.credentials.bearerToken || this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: `Failed to post tweet: ${errorData.detail || response.statusText}`,
+          timestamp: new Date(),
+          platform: 'twitter',
+        };
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        postId: data.data?.id,
+        url: `https://twitter.com/i/web/status/${data.data?.id}`,
+        timestamp: new Date(),
+        platform: 'twitter',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date(),
+        platform: 'twitter',
+      };
+    }
+  }
+
+  /**
+   * Fetch engagement metrics for a tweet
+   */
+  async getTweetMetrics(tweetId: string): Promise<{
+    likes: number;
+    retweets: number;
+    replies: number;
+    impressions: number;
+    engagementRate: number;
+  }> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/tweets/${tweetId}?tweet.fields=public_metrics,non_public_metrics,organic_metrics`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.credentials.bearerToken || this.credentials.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tweet metrics: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const metrics = data.data?.public_metrics || {};
+      const organicMetrics = data.data?.organic_metrics || {};
+
+      const likes = metrics.like_count || 0;
+      const retweets = metrics.retweet_count || 0;
+      const replies = metrics.reply_count || 0;
+      const impressions = organicMetrics.impression_count || metrics.impression_count || 0;
+
+      const totalEngagement = likes + retweets + replies;
+      const engagementRate = impressions > 0 ? totalEngagement / impressions : 0;
+
+      return {
+        likes,
+        retweets,
+        replies,
+        impressions,
+        engagementRate,
+      };
+    } catch (error) {
+      console.error('Error fetching tweet metrics:', error);
+      return {
+        likes: 0,
+        retweets: 0,
+        replies: 0,
+        impressions: 0,
+        engagementRate: 0,
+      };
+    }
+  }
+
+  /**
+   * Fetch multiple tweets' metrics
+   */
+  async getMultipleTweetMetrics(tweetIds: string[]): Promise<any[]> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/tweets?ids=${tweetIds.join(',')}&tweet.fields=public_metrics,non_public_metrics,organic_metrics`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.credentials.bearerToken || this.credentials.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tweets metrics: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.data || [];
+    } catch (error) {
+      console.error('Error fetching multiple tweet metrics:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Search for trending hashtags
+   */
+  async getTrendingHashtags(location?: string): Promise<string[]> {
+    // Note: Twitter API v2 doesn't have a direct trending endpoint in the free tier
+    // This would require elevated or premium access
+    // For now, return empty array - implement when credentials support it
+    console.warn('Trending hashtags require elevated Twitter API access');
+    return [];
+  }
+
+  /**
+   * Upload media to Twitter
+   */
+  async uploadMedia(mediaData: Blob, mediaType: 'image' | 'video' | 'gif'): Promise<string | null> {
+    try {
+      // Twitter media upload uses v1.1 API
+      const uploadUrl = 'https://upload.twitter.com/1.1/media/upload.json';
+
+      const formData = new FormData();
+      formData.append('media', mediaData);
+
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.credentials.bearerToken || this.credentials.accessToken}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Media upload failed: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.media_id_string || null;
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      return null;
+    }
+  }
+}
+
+export default TwitterClient;

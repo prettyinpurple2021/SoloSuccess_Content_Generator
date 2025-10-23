@@ -729,51 +729,77 @@ export class IntegrationService {
   private async testTwitterConnection(
     credentials: any
   ): Promise<{ success: boolean; error?: string; details?: any }> {
-    // Mock implementation
-    if (!credentials.apiKey || !credentials.apiSecret) {
-      return { success: false, error: 'Missing API credentials' };
+    try {
+      const { default: TwitterClient } = await import('./platforms/twitterClient');
+      const client = new TwitterClient(credentials);
+      const result = await client.testConnection();
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Failed to test Twitter connection' };
     }
-    return { success: true, details: { apiVersion: '2.0' } };
   }
 
   private async testLinkedInConnection(
     credentials: any
   ): Promise<{ success: boolean; error?: string; details?: any }> {
-    // Mock implementation
-    if (!credentials.clientId || !credentials.clientSecret) {
-      return { success: false, error: 'Missing client credentials' };
+    try {
+      const { default: LinkedInClient } = await import('./platforms/linkedInClient');
+      const client = new LinkedInClient(credentials);
+      const result = await client.testConnection();
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Failed to test LinkedIn connection' };
     }
-    return { success: true, details: { apiVersion: 'v2' } };
   }
 
   private async testFacebookConnection(
     credentials: any
   ): Promise<{ success: boolean; error?: string; details?: any }> {
-    // Mock implementation
-    if (!credentials.appId || !credentials.appSecret) {
-      return { success: false, error: 'Missing app credentials' };
+    try {
+      const { default: FacebookClient } = await import('./platforms/facebookClient');
+      const client = new FacebookClient(credentials);
+      const result = await client.testConnection();
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Failed to test Facebook connection' };
     }
-    return { success: true, details: { apiVersion: 'v18.0' } };
   }
 
   private async testInstagramConnection(
     credentials: any
   ): Promise<{ success: boolean; error?: string; details?: any }> {
-    // Mock implementation
-    if (!credentials.accessToken) {
-      return { success: false, error: 'Missing access token' };
+    try {
+      const { default: InstagramClient } = await import('./platforms/instagramClient');
+      const client = new InstagramClient(credentials);
+      const result = await client.testConnection();
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Failed to test Instagram connection' };
     }
-    return { success: true, details: { apiVersion: 'v18.0' } };
   }
 
   private async testGoogleAnalyticsConnection(
     credentials: any
   ): Promise<{ success: boolean; error?: string; details?: any }> {
-    // Mock implementation
-    if (!credentials.clientId || !credentials.clientSecret) {
-      return { success: false, error: 'Missing client credentials' };
+    try {
+      // For Google Analytics, we'll implement a basic validation
+      if (!credentials.clientId || !credentials.clientSecret) {
+        return { success: false, error: 'Missing client credentials' };
+      }
+
+      // In a real implementation, this would test the GA4 Data API
+      // For now, we'll validate the credentials format
+      if (credentials.clientId.length < 10 || credentials.clientSecret.length < 10) {
+        return { success: false, error: 'Invalid credential format' };
+      }
+
+      return { success: true, details: { apiVersion: 'v1', service: 'Google Analytics Data API' } };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to test Google Analytics connection',
+      };
     }
-    return { success: true, details: { apiVersion: 'v4' } };
   }
 
   private async performSync(id: string): Promise<SyncResult> {

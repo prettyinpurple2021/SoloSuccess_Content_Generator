@@ -21,93 +21,119 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
   const [logs, setLogs] = useState<IntegrationLog[]>([]);
 
   useEffect(() => {
-    // In a real implementation, this would fetch data from the API
+    // Fetch real data from Supabase
     loadMetrics();
     loadAlerts();
     loadLogs();
-  }, [integrations, loadMetrics, loadAlerts, loadLogs]);
+  }, [integrations]);
 
   const loadMetrics = async () => {
-    // Mock data - in production, this would fetch from the API
-    const mockMetrics: IntegrationMetrics[] = integrations.map((integration) => ({
-      integrationId: integration.id,
-      totalRequests: Math.floor(Math.random() * 1000) + 100,
-      successfulRequests: Math.floor(Math.random() * 800) + 80,
-      failedRequests: Math.floor(Math.random() * 50) + 5,
-      averageResponseTime: Math.floor(Math.random() * 500) + 100,
-      avgResponseTime: Math.floor(Math.random() * 500) + 100,
-      successRate: Math.floor(Math.random() * 20) + 80,
-      errorRate: Math.floor(Math.random() * 10) + 1,
-      uptime: Math.floor(Math.random() * 20) + 80,
-      dataProcessed: Math.floor(Math.random() * 10000) + 1000,
-      syncCount: Math.floor(Math.random() * 100) + 10,
-      lastRequestTime: new Date(Date.now() - Math.random() * 3600000),
-      lastSyncDuration: Math.floor(Math.random() * 5000) + 1000,
-    }));
-    setMetrics(mockMetrics);
+    try {
+      const { integrationService } = await import('../../services/integrationService');
+
+      const metricsPromises = integrations.map(async (integration) => {
+        try {
+          const metrics = await integrationService.getIntegrationMetrics(integration.id, '24h');
+          return metrics.length > 0 ? metrics[0] : null;
+        } catch (error) {
+          console.error(`Failed to load metrics for ${integration.id}:`, error);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(metricsPromises);
+      setMetrics(results.filter((m): m is IntegrationMetrics => m !== null));
+    } catch (error) {
+      console.error('Failed to load integration metrics:', error);
+      setMetrics([]);
+    }
   };
 
   const loadAlerts = async () => {
-    // Mock data - in production, this would fetch from the API
-    const mockAlerts: IntegrationAlert[] = [
-      {
-        id: '1',
-        integrationId: integrations[0]?.id || '',
-        type: 'error',
-        title: 'Connection Failed',
-        message: 'Unable to connect to Twitter API',
-        severity: 'high',
-        isResolved: false,
-        createdAt: new Date(Date.now() - 3600000),
-        metadata: { errorCode: '401', platform: 'twitter' },
-      },
-      {
-        id: '2',
-        integrationId: integrations[1]?.id || '',
-        type: 'warning',
-        title: 'High Error Rate',
-        message: 'Error rate has exceeded 10% in the last hour',
-        severity: 'medium',
-        isResolved: false,
-        createdAt: new Date(Date.now() - 1800000),
-        metadata: { errorRate: 12.5, threshold: 10 },
-      },
-    ];
-    setAlerts(mockAlerts);
+    try {
+      const { db } = await import('../../services/supabaseService');
+
+      // Fetch alerts for all integrations
+      const integrationIds = integrations.map((i) => i.id);
+
+      if (integrationIds.length === 0) {
+        setAlerts([]);
+        return;
+      }
+
+      const { data, error } = await db.supabase
+        .from('integration_alerts')
+        .select('*')
+        .in('integration_id', integrationIds)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Error fetching alerts:', error);
+        setAlerts([]);
+        return;
+      }
+
+      const parsedAlerts: IntegrationAlert[] = (data || []).map((alert) => ({
+        id: alert.id,
+        integrationId: alert.integration_id,
+        type: alert.type,
+        title: alert.title,
+        message: alert.message,
+        severity: alert.severity,
+        isResolved: alert.is_resolved,
+        resolvedAt: alert.resolved_at ? new Date(alert.resolved_at) : undefined,
+        createdAt: new Date(alert.created_at),
+        metadata: alert.metadata,
+      }));
+
+      setAlerts(parsedAlerts);
+    } catch (error) {
+      console.error('Failed to load integration alerts:', error);
+      setAlerts([]);
+    }
   };
 
   const loadLogs = async () => {
-    // Mock data - in production, this would fetch from the API
-    const mockLogs: IntegrationLog[] = [
-      {
-        id: '1',
-        integrationId: integrations[0]?.id || '',
-        level: 'info',
-        message: 'Sync completed successfully',
-        metadata: { recordsProcessed: 150, duration: 2500 },
-        timestamp: new Date(Date.now() - 300000),
-        userId: 'user-1',
-      },
-      {
-        id: '2',
-        integrationId: integrations[0]?.id || '',
-        level: 'error',
-        message: 'API rate limit exceeded',
-        metadata: { retryAfter: 900, endpoint: '/tweets' },
-        timestamp: new Date(Date.now() - 600000),
-        userId: 'user-1',
-      },
-      {
-        id: '3',
-        integrationId: integrations[1]?.id || '',
-        level: 'warn',
-        message: 'Slow response time detected',
-        metadata: { responseTime: 5000, threshold: 3000 },
-        timestamp: new Date(Date.now() - 900000),
-        userId: 'user-1',
-      },
-    ];
-    setLogs(mockLogs);
+    try {
+      const { db } = await import('../../services/supabaseService');
+
+      // Fetch logs for all integrations
+      const integrationIds = integrations.map((i) => i.id);
+
+      if (integrationIds.length === 0) {
+        setLogs([]);
+        return;
+      }
+
+      const { data, error } = await db.supabase
+        .from('integration_logs')
+        .select('*')
+        .in('integration_id', integrationIds)
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error('Error fetching logs:', error);
+        setLogs([]);
+        return;
+      }
+
+      const parsedLogs: IntegrationLog[] = (data || []).map((log) => ({
+        id: log.id,
+        integrationId: log.integration_id,
+        level: log.level,
+        message: log.message,
+        metadata: log.metadata,
+        timestamp: new Date(log.timestamp),
+        userId: log.user_id,
+      }));
+
+      setLogs(parsedLogs);
+    } catch (error) {
+      console.error('Failed to load integration logs:', error);
+      setLogs([]);
+    }
   };
 
   const getLevelColor = (level: string) => {

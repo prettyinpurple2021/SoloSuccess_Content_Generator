@@ -4,36 +4,77 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { NotificationProvider } from './NotificationSystem';
 import { OnboardingFlow, useOnboarding } from './OnboardingFlow';
 import { HelpSystem, HelpButton, useHelpSystem } from './HelpSystem';
-import { HolographicThemeProvider, SparkleEffect, FloatingSkull, ThemeSettings } from './HolographicTheme';
+import {
+  HolographicThemeProvider,
+  SparkleEffect,
+  FloatingSkull,
+  ThemeSettings,
+} from './HolographicTheme';
 import '../styles/holographic-theme.css';
 
 /**
  * Enhanced App wrapper that provides all the new features and integrations
  */
 const EnhancedApp: React.FC = () => {
-  const { 
-    showOnboarding, 
-    hasCompletedOnboarding, 
-    completeOnboarding, 
-    setShowOnboarding 
-  } = useOnboarding();
-  
-  const { 
-    isOpen: isHelpOpen, 
-    openHelp, 
-    closeHelp, 
-    initialCategory, 
-    initialArticle 
+  const { showOnboarding, hasCompletedOnboarding, completeOnboarding, setShowOnboarding } =
+    useOnboarding();
+
+  const {
+    isOpen: isHelpOpen,
+    openHelp,
+    closeHelp,
+    initialCategory,
+    initialArticle,
   } = useHelpSystem();
 
-  // Mock user progress - in real app, this would come from user data
-  const userProgress = {
+  // Fetch real user progress from Supabase
+  const [userProgress, setUserProgress] = React.useState({
     hasCreatedBrandVoice: false,
     hasCreatedAudienceProfile: false,
     hasCreatedCampaign: false,
     hasViewedAnalytics: false,
-    hasUsedTemplate: false
-  };
+    hasUsedTemplate: false,
+  });
+
+  React.useEffect(() => {
+    const fetchUserProgress = async () => {
+      try {
+        const { db } = await import('../services/supabaseService');
+
+        // For now, we'll use a placeholder user ID since Stack Auth integration is pending
+        const placeholderUserId = '00000000-0000-0000-0000-000000000000';
+
+        const [brandVoices, audienceProfiles, campaigns] = await Promise.all([
+          db.getBrandVoices(placeholderUserId).catch(() => []),
+          db.getAudienceProfiles(placeholderUserId).catch(() => []),
+          db.getCampaigns(placeholderUserId).catch(() => []),
+        ]);
+
+        // Check if user has viewed analytics by checking localStorage
+        const hasViewedAnalytics = localStorage.getItem('analytics-viewed') === 'true';
+
+        setUserProgress({
+          hasCreatedBrandVoice: brandVoices.length > 0,
+          hasCreatedAudienceProfile: audienceProfiles.length > 0,
+          hasCreatedCampaign: campaigns.length > 0,
+          hasViewedAnalytics,
+          hasUsedTemplate: false, // Templates not implemented yet
+        });
+      } catch (error) {
+        console.error('Failed to fetch user progress:', error);
+        // Set default progress on error
+        setUserProgress({
+          hasCreatedBrandVoice: false,
+          hasCreatedAudienceProfile: false,
+          hasCreatedCampaign: false,
+          hasViewedAnalytics: false,
+          hasUsedTemplate: false,
+        });
+      }
+    };
+
+    fetchUserProgress();
+  }, []);
 
   const [showThemeSettings, setShowThemeSettings] = React.useState(false);
 
@@ -74,10 +115,7 @@ const EnhancedApp: React.FC = () => {
             />
 
             {/* Theme Settings */}
-            <ThemeSettings
-              isOpen={showThemeSettings}
-              onClose={() => setShowThemeSettings(false)}
-            />
+            <ThemeSettings isOpen={showThemeSettings} onClose={() => setShowThemeSettings(false)} />
 
             {/* Floating Action Buttons */}
             <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
@@ -112,20 +150,20 @@ const FeatureDiscoveryHints: React.FC = () => {
       id: 'brand-voice',
       title: 'Try Brand Voices',
       description: 'Create consistent content with custom brand voices',
-      position: 'top-20 left-4'
+      position: 'top-20 left-4',
     },
     {
       id: 'analytics',
       title: 'Check Analytics',
       description: 'See how your content is performing',
-      position: 'top-20 right-4'
+      position: 'top-20 right-4',
     },
     {
       id: 'campaigns',
       title: 'Organize with Campaigns',
       description: 'Group related content for better coordination',
-      position: 'bottom-20 left-4'
-    }
+      position: 'bottom-20 left-4',
+    },
   ];
 
   React.useEffect(() => {
@@ -166,10 +204,10 @@ const FeatureDiscoveryHints: React.FC = () => {
         >
           ×
         </button>
-        
+
         <h4 className="font-medium mb-2">{hint.title}</h4>
         <p className="text-sm text-blue-100 mb-3">{hint.description}</p>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex space-x-1">
             {hints.map((_, index) => (
@@ -181,7 +219,7 @@ const FeatureDiscoveryHints: React.FC = () => {
               />
             ))}
           </div>
-          
+
           <button
             onClick={nextHint}
             className="text-sm bg-blue-500 hover:bg-blue-400 px-3 py-1 rounded transition-colors"
@@ -189,7 +227,7 @@ const FeatureDiscoveryHints: React.FC = () => {
             {currentHint < hints.length - 1 ? 'Next' : 'Got it'}
           </button>
         </div>
-        
+
         {/* Arrow pointer */}
         <div className="absolute -bottom-2 left-6 w-4 h-4 bg-blue-600 transform rotate-45"></div>
       </div>
