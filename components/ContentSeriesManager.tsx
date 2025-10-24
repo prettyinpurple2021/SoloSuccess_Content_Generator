@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ContentSeries, Campaign, Post, SeriesPost, OptimizationSuggestion, SchedulingSuggestion } from '../types';
+import {
+  ContentSeries,
+  Campaign,
+  Post,
+  SeriesPost,
+  OptimizationSuggestion,
+  SchedulingSuggestion,
+} from '../types';
 import { campaignService } from '../services/campaignService';
-import { db } from '../services/supabaseService';
+import { apiService } from '../services/apiService';
 import { Spinner } from '../constants';
 
 interface ContentSeriesManagerProps {
@@ -17,12 +24,14 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
   onClose,
   posts,
   campaigns,
-  onPostUpdate
+  onPostUpdate,
 }) => {
   // State management
   const [contentSeries, setContentSeries] = useState<ContentSeries[]>([]);
   const [selectedSeries, setSelectedSeries] = useState<ContentSeries | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'create' | 'edit' | 'progress' | 'schedule'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'create' | 'edit' | 'progress' | 'schedule'
+  >('overview');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -33,11 +42,13 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
     theme: '',
     totalPosts: 5,
     frequency: 'weekly' as 'daily' | 'weekly' | 'biweekly',
-    campaignId: ''
+    campaignId: '',
   });
 
   // Progress and scheduling data
-  const [optimizationSuggestions, setOptimizationSuggestions] = useState<OptimizationSuggestion[]>([]);
+  const [optimizationSuggestions, setOptimizationSuggestions] = useState<OptimizationSuggestion[]>(
+    []
+  );
   const [schedulingSuggestions, setSchedulingSuggestions] = useState<SchedulingSuggestion[]>([]);
 
   // Load content series on component mount
@@ -69,11 +80,11 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
   const loadSeriesSuggestions = async (seriesId: string) => {
     try {
       setIsLoading(true);
-      
+
       // Load optimization suggestions
       const suggestions = await campaignService.suggestSeriesAdjustments(seriesId);
       setOptimizationSuggestions(suggestions);
-      
+
       // Load scheduling suggestions
       const scheduleSuggestions = await campaignService.optimizeSeriesScheduling(seriesId);
       setSchedulingSuggestions(scheduleSuggestions);
@@ -102,10 +113,10 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
         theme: formData.theme,
         totalPosts: formData.totalPosts,
         frequency: formData.frequency,
-        campaignId: formData.campaignId || undefined
+        campaignId: formData.campaignId || undefined,
       });
 
-      setContentSeries(prev => [...prev, series]);
+      setContentSeries((prev) => [...prev, series]);
       setSuccess('Content series created successfully!');
       setActiveTab('overview');
       resetForm();
@@ -131,8 +142,8 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
       if (formData.campaignId) updates.campaignId = formData.campaignId;
 
       const updatedSeries = await campaignService.updateContentSeries(selectedSeries.id, updates);
-      
-      setContentSeries(prev => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
+
+      setContentSeries((prev) => prev.map((s) => (s.id === updatedSeries.id ? updatedSeries : s)));
       setSelectedSeries(updatedSeries);
       setSuccess('Content series updated successfully!');
       setActiveTab('overview');
@@ -144,14 +155,16 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
   };
 
   const handleDeleteSeries = async (seriesId: string) => {
-    if (!confirm('Are you sure you want to delete this content series? This action cannot be undone.')) {
+    if (
+      !confirm('Are you sure you want to delete this content series? This action cannot be undone.')
+    ) {
       return;
     }
 
     try {
       setIsLoading(true);
       await campaignService.deleteContentSeries(seriesId, false); // Don't delete associated posts
-      setContentSeries(prev => prev.filter(s => s.id !== seriesId));
+      setContentSeries((prev) => prev.filter((s) => s.id !== seriesId));
       if (selectedSeries?.id === seriesId) {
         setSelectedSeries(null);
       }
@@ -167,7 +180,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
     try {
       setIsLoading(true);
       const updatedSeries = await campaignService.advanceContentSeries(seriesId);
-      setContentSeries(prev => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
+      setContentSeries((prev) => prev.map((s) => (s.id === updatedSeries.id ? updatedSeries : s)));
       if (selectedSeries?.id === seriesId) {
         setSelectedSeries(updatedSeries);
       }
@@ -183,7 +196,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
     try {
       await db.updatePost(postId, { series_id: seriesId });
       if (onPostUpdate) {
-        const updatedPost = posts.find(p => p.id === postId);
+        const updatedPost = posts.find((p) => p.id === postId);
         if (updatedPost) {
           onPostUpdate({ ...updatedPost, seriesId });
         }
@@ -202,7 +215,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
       theme: '',
       totalPosts: 5,
       frequency: 'weekly',
-      campaignId: ''
+      campaignId: '',
     });
   };
 
@@ -212,12 +225,12 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
       theme: series.theme,
       totalPosts: series.totalPosts,
       frequency: series.frequency,
-      campaignId: series.campaignId || ''
+      campaignId: series.campaignId || '',
     });
   };
 
   const getSeriesPosts = (seriesId: string) => {
-    return posts.filter(post => post.seriesId === seriesId);
+    return posts.filter((post) => post.seriesId === seriesId);
   };
 
   const getProgressPercentage = (series: ContentSeries) => {
@@ -226,16 +239,20 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
   const getFrequencyLabel = (frequency: string) => {
     switch (frequency) {
-      case 'daily': return 'Daily';
-      case 'weekly': return 'Weekly';
-      case 'biweekly': return 'Bi-weekly';
-      default: return frequency;
+      case 'daily':
+        return 'Daily';
+      case 'weekly':
+        return 'Weekly';
+      case 'biweekly':
+        return 'Bi-weekly';
+      default:
+        return frequency;
     }
   };
 
   const getCampaignName = (campaignId?: string) => {
     if (!campaignId) return 'No Campaign';
-    const campaign = campaigns.find(c => c.id === campaignId);
+    const campaign = campaigns.find((c) => c.id === campaignId);
     return campaign ? campaign.name : 'Unknown Campaign';
   };
 
@@ -261,8 +278,8 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
             { key: 'overview', label: 'Overview' },
             { key: 'create', label: 'Create Series' },
             { key: 'progress', label: 'Progress Tracking', disabled: !selectedSeries },
-            { key: 'schedule', label: 'Scheduling', disabled: !selectedSeries }
-          ].map(tab => (
+            { key: 'schedule', label: 'Scheduling', disabled: !selectedSeries },
+          ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
@@ -271,8 +288,8 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                 activeTab === tab.key
                   ? 'border-blue-500 text-blue-600'
                   : tab.disabled
-                  ? 'border-transparent text-gray-400 cursor-not-allowed'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-transparent text-gray-400 cursor-not-allowed'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               {tab.label}
@@ -326,10 +343,10 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {contentSeries.map(series => {
+                  {contentSeries.map((series) => {
                     const seriesPosts = getSeriesPosts(series.id);
                     const progressPercentage = getProgressPercentage(series);
-                    
+
                     return (
                       <div
                         key={series.id}
@@ -345,15 +362,17 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                               </span>
                             </div>
                             <p className="text-gray-600 mb-3">Theme: {series.theme}</p>
-                            
+
                             {/* Progress Bar */}
                             <div className="mb-3">
                               <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-                                <span>Progress: {series.currentPost} of {series.totalPosts} posts</span>
+                                <span>
+                                  Progress: {series.currentPost} of {series.totalPosts} posts
+                                </span>
                                 <span>{progressPercentage}%</span>
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div 
+                                <div
                                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                                   style={{ width: `${progressPercentage}%` }}
                                 />
@@ -413,22 +432,28 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                     Assign Posts to "{selectedSeries.name}"
                   </h4>
                   <div className="grid gap-3">
-                    {posts.filter(post => !post.seriesId).map(post => (
-                      <div key={post.id} className="flex items-center justify-between p-3 border border-gray-200 rounded">
-                        <div>
-                          <div className="font-medium text-gray-900">{post.topic}</div>
-                          <div className="text-sm text-gray-500">
-                            Status: {post.status} | Created: {post.createdAt?.toLocaleDateString()}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleAssignPostToSeries(post.id, selectedSeries.id)}
-                          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                    {posts
+                      .filter((post) => !post.seriesId)
+                      .map((post) => (
+                        <div
+                          key={post.id}
+                          className="flex items-center justify-between p-3 border border-gray-200 rounded"
                         >
-                          Assign
-                        </button>
-                      </div>
-                    ))}
+                          <div>
+                            <div className="font-medium text-gray-900">{post.topic}</div>
+                            <div className="text-sm text-gray-500">
+                              Status: {post.status} | Created:{' '}
+                              {post.createdAt?.toLocaleDateString()}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleAssignPostToSeries(post.id, selectedSeries.id)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                          >
+                            Assign
+                          </button>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
@@ -450,7 +475,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter series name"
                   />
@@ -463,7 +488,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                   <input
                     type="text"
                     value={formData.theme}
-                    onChange={(e) => setFormData(prev => ({ ...prev, theme: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, theme: e.target.value }))}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Getting Started with AI, Weekly Tips, Product Deep Dives"
                   />
@@ -479,7 +504,12 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                       min="1"
                       max="50"
                       value={formData.totalPosts}
-                      onChange={(e) => setFormData(prev => ({ ...prev, totalPosts: parseInt(e.target.value) || 1 }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          totalPosts: parseInt(e.target.value) || 1,
+                        }))
+                      }
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -489,7 +519,9 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                     </label>
                     <select
                       value={formData.frequency}
-                      onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as any }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, frequency: e.target.value as any }))
+                      }
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="daily">Daily</option>
@@ -505,11 +537,13 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                   </label>
                   <select
                     value={formData.campaignId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, campaignId: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, campaignId: e.target.value }))
+                    }
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">No Campaign</option>
-                    {campaigns.map(campaign => (
+                    {campaigns.map((campaign) => (
                       <option key={campaign.id} value={campaign.id}>
                         {campaign.name}
                       </option>
@@ -558,19 +592,27 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="grid grid-cols-4 gap-4">
                   <div>
-                    <div className="text-2xl font-bold text-blue-600">{selectedSeries.currentPost}</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {selectedSeries.currentPost}
+                    </div>
                     <div className="text-sm text-gray-600">Current Post</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-green-600">{selectedSeries.totalPosts}</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {selectedSeries.totalPosts}
+                    </div>
                     <div className="text-sm text-gray-600">Total Posts</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-purple-600">{getProgressPercentage(selectedSeries)}%</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {getProgressPercentage(selectedSeries)}%
+                    </div>
                     <div className="text-sm text-gray-600">Complete</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-orange-600">{getFrequencyLabel(selectedSeries.frequency)}</div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {getFrequencyLabel(selectedSeries.frequency)}
+                    </div>
                     <div className="text-sm text-gray-600">Frequency</div>
                   </div>
                 </div>
@@ -581,18 +623,20 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                 <h4 className="text-md font-semibold text-gray-900 mb-4">Series Posts</h4>
                 <div className="space-y-3">
                   {selectedSeries.posts.map((seriesPost, index) => {
-                    const post = posts.find(p => p.id === seriesPost.postId);
+                    const post = posts.find((p) => p.id === seriesPost.postId);
                     return (
                       <div key={seriesPost.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                              index < selectedSeries.currentPost 
-                                ? 'bg-green-100 text-green-800' 
-                                : index === selectedSeries.currentPost
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                                index < selectedSeries.currentPost
+                                  ? 'bg-green-100 text-green-800'
+                                  : index === selectedSeries.currentPost
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
                               {index + 1}
                             </div>
                             <div>
@@ -600,8 +644,9 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                                 {post ? post.topic : seriesPost.title}
                               </div>
                               <div className="text-sm text-gray-500">
-                                Status: {post ? post.status : 'Not Created'} 
-                                {seriesPost.scheduledDate && ` | Scheduled: ${seriesPost.scheduledDate.toLocaleDateString()}`}
+                                Status: {post ? post.status : 'Not Created'}
+                                {seriesPost.scheduledDate &&
+                                  ` | Scheduled: ${seriesPost.scheduledDate.toLocaleDateString()}`}
                               </div>
                             </div>
                           </div>
@@ -632,7 +677,9 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
               {/* Optimization Suggestions */}
               {optimizationSuggestions.length > 0 && (
                 <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-4">Optimization Suggestions</h4>
+                  <h4 className="text-md font-semibold text-gray-900 mb-4">
+                    Optimization Suggestions
+                  </h4>
                   <div className="space-y-3">
                     {optimizationSuggestions.map((suggestion, index) => (
                       <div key={index} className="border border-gray-200 rounded-lg p-4">
@@ -640,18 +687,26 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <h5 className="font-medium text-gray-900">{suggestion.title}</h5>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                suggestion.impact === 'high' ? 'bg-red-100 text-red-800' :
-                                suggestion.impact === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-green-100 text-green-800'
-                              }`}>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  suggestion.impact === 'high'
+                                    ? 'bg-red-100 text-red-800'
+                                    : suggestion.impact === 'medium'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-green-100 text-green-800'
+                                }`}
+                              >
                                 {suggestion.impact} impact
                               </span>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                suggestion.effort === 'high' ? 'bg-red-100 text-red-800' :
-                                suggestion.effort === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-green-100 text-green-800'
-                              }`}>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  suggestion.effort === 'high'
+                                    ? 'bg-red-100 text-red-800'
+                                    : suggestion.effort === 'medium'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-green-100 text-green-800'
+                                }`}
+                              >
                                 {suggestion.effort} effort
                               </span>
                             </div>
@@ -695,7 +750,9 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                   </div>
                   <div>
                     <span className="text-blue-700">Remaining:</span>
-                    <div className="font-medium">{selectedSeries.totalPosts - selectedSeries.currentPost}</div>
+                    <div className="font-medium">
+                      {selectedSeries.totalPosts - selectedSeries.currentPost}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -703,10 +760,12 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
               {/* Scheduling Suggestions */}
               {schedulingSuggestions.length > 0 && (
                 <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-4">Optimal Scheduling Suggestions</h4>
+                  <h4 className="text-md font-semibold text-gray-900 mb-4">
+                    Optimal Scheduling Suggestions
+                  </h4>
                   <div className="space-y-3">
                     {schedulingSuggestions.map((suggestion, index) => {
-                      const post = posts.find(p => p.id === suggestion.postId);
+                      const post = posts.find((p) => p.id === suggestion.postId);
                       return (
                         <div key={index} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex items-center justify-between">
@@ -725,11 +784,15 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                suggestion.confidence > 0.8 ? 'bg-green-100 text-green-800' :
-                                suggestion.confidence > 0.6 ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  suggestion.confidence > 0.8
+                                    ? 'bg-green-100 text-green-800'
+                                    : suggestion.confidence > 0.6
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-red-100 text-red-800'
+                                }`}
+                              >
                                 {Math.round(suggestion.confidence * 100)}% confidence
                               </span>
                               <button

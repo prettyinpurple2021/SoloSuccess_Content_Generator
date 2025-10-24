@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ContentTemplate, TemplateSection, TemplateField } from '../types';
-import { db } from '../services/supabaseService';
+import { apiService } from '../services/apiService';
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, Eye, Settings } from '../constants';
 
 interface TemplateEditorProps {
@@ -10,12 +10,7 @@ interface TemplateEditorProps {
   onSave: (template: ContentTemplate) => void;
 }
 
-export default function TemplateEditor({
-  isOpen,
-  onClose,
-  template,
-  onSave
-}: TemplateEditorProps) {
+export default function TemplateEditor({ isOpen, onClose, template, onSave }: TemplateEditorProps) {
   const [templateData, setTemplateData] = useState<Partial<ContentTemplate>>({
     name: '',
     category: 'marketing',
@@ -25,7 +20,7 @@ export default function TemplateEditor({
     customizableFields: [],
     usageCount: 0,
     rating: 0,
-    isPublic: false
+    isPublic: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +42,7 @@ export default function TemplateEditor({
         customizableFields: [],
         usageCount: 0,
         rating: 0,
-        isPublic: false
+        isPublic: false,
       });
     }
   }, [template]);
@@ -76,7 +71,7 @@ export default function TemplateEditor({
         customizable_fields: templateData.customizableFields || [],
         usage_count: templateData.usageCount || 0,
         rating: templateData.rating || 0,
-        is_public: templateData.isPublic || false
+        is_public: templateData.isPublic || false,
       };
 
       let savedTemplate: ContentTemplate;
@@ -104,47 +99,53 @@ export default function TemplateEditor({
       type: 'paragraph',
       content: '',
       isCustomizable: true,
-      placeholder: 'Enter content here...'
+      placeholder: 'Enter content here...',
     };
 
-    setTemplateData(prev => ({
+    setTemplateData((prev) => ({
       ...prev,
-      structure: [...(prev.structure || []), newSection]
+      structure: [...(prev.structure || []), newSection],
     }));
   };
 
   const updateSection = (index: number, updates: Partial<TemplateSection>) => {
-    setTemplateData(prev => ({
+    setTemplateData((prev) => ({
       ...prev,
-      structure: prev.structure?.map((section, i) => 
-        i === index ? { ...section, ...updates } : section
-      ) || []
+      structure:
+        prev.structure?.map((section, i) => (i === index ? { ...section, ...updates } : section)) ||
+        [],
     }));
   };
 
   const removeSection = (index: number) => {
-    setTemplateData(prev => ({
+    setTemplateData((prev) => ({
       ...prev,
-      structure: prev.structure?.filter((_, i) => i !== index) || []
+      structure: prev.structure?.filter((_, i) => i !== index) || [],
     }));
   };
 
   const moveSectionUp = (index: number) => {
     if (index === 0) return;
-    
-    setTemplateData(prev => {
+
+    setTemplateData((prev) => {
       const newStructure = [...(prev.structure || [])];
-      [newStructure[index - 1], newStructure[index]] = [newStructure[index], newStructure[index - 1]];
+      [newStructure[index - 1], newStructure[index]] = [
+        newStructure[index],
+        newStructure[index - 1],
+      ];
       return { ...prev, structure: newStructure };
     });
   };
 
   const moveSectionDown = (index: number) => {
     if (index === (templateData.structure?.length || 0) - 1) return;
-    
-    setTemplateData(prev => {
+
+    setTemplateData((prev) => {
       const newStructure = [...(prev.structure || [])];
-      [newStructure[index], newStructure[index + 1]] = [newStructure[index + 1], newStructure[index]];
+      [newStructure[index], newStructure[index + 1]] = [
+        newStructure[index + 1],
+        newStructure[index],
+      ];
       return { ...prev, structure: newStructure };
     });
   };
@@ -156,28 +157,29 @@ export default function TemplateEditor({
       type: 'text',
       label: 'New Field',
       placeholder: '',
-      required: false
+      required: false,
     };
 
-    setTemplateData(prev => ({
+    setTemplateData((prev) => ({
       ...prev,
-      customizableFields: [...(prev.customizableFields || []), newField]
+      customizableFields: [...(prev.customizableFields || []), newField],
     }));
   };
 
   const updateCustomField = (index: number, updates: Partial<TemplateField>) => {
-    setTemplateData(prev => ({
+    setTemplateData((prev) => ({
       ...prev,
-      customizableFields: prev.customizableFields?.map((field, i) => 
-        i === index ? { ...field, ...updates } : field
-      ) || []
+      customizableFields:
+        prev.customizableFields?.map((field, i) =>
+          i === index ? { ...field, ...updates } : field
+        ) || [],
     }));
   };
 
   const removeCustomField = (index: number) => {
-    setTemplateData(prev => ({
+    setTemplateData((prev) => ({
       ...prev,
-      customizableFields: prev.customizableFields?.filter((_, i) => i !== index) || []
+      customizableFields: prev.customizableFields?.filter((_, i) => i !== index) || [],
     }));
   };
 
@@ -204,9 +206,7 @@ export default function TemplateEditor({
             <div key={section.id} className="border rounded-lg p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    Section {index + 1}
-                  </span>
+                  <span className="text-sm font-medium text-gray-700">Section {index + 1}</span>
                   <select
                     value={section.type}
                     onChange={(e) => updateSection(index, { type: e.target.value as any })}
@@ -245,9 +245,7 @@ export default function TemplateEditor({
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Content
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
                   <textarea
                     value={section.content}
                     onChange={(e) => updateSection(index, { content: e.target.value })}
@@ -310,9 +308,7 @@ export default function TemplateEditor({
           {templateData.customizableFields?.map((field, index) => (
             <div key={field.id} className="border rounded-lg p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-700">
-                  Field {index + 1}
-                </span>
+                <span className="text-sm font-medium text-gray-700">Field {index + 1}</span>
                 <button
                   onClick={() => removeCustomField(index)}
                   className="p-1 text-red-400 hover:text-red-600"
@@ -323,9 +319,7 @@ export default function TemplateEditor({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Field Name
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
                   <input
                     type="text"
                     value={field.name}
@@ -335,9 +329,7 @@ export default function TemplateEditor({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Field Type
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Field Type</label>
                   <select
                     value={field.type}
                     onChange={(e) => updateCustomField(index, { type: e.target.value as any })}
@@ -351,9 +343,7 @@ export default function TemplateEditor({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Label
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
                   <input
                     type="text"
                     value={field.label}
@@ -382,9 +372,11 @@ export default function TemplateEditor({
                   </label>
                   <textarea
                     value={field.options?.join('\n') || ''}
-                    onChange={(e) => updateCustomField(index, { 
-                      options: e.target.value.split('\n').filter(opt => opt.trim()) 
-                    })}
+                    onChange={(e) =>
+                      updateCustomField(index, {
+                        options: e.target.value.split('\n').filter((opt) => opt.trim()),
+                      })
+                    }
                     placeholder="Option 1&#10;Option 2&#10;Option 3"
                     className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                     rows={3}
@@ -426,25 +418,21 @@ export default function TemplateEditor({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Template Name *
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Template Name *</label>
           <input
             type="text"
             value={templateData.name || ''}
-            onChange={(e) => setTemplateData(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => setTemplateData((prev) => ({ ...prev, name: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
             placeholder="Enter template name..."
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Category
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
           <select
             value={templateData.category || 'marketing'}
-            onChange={(e) => setTemplateData(prev => ({ ...prev, category: e.target.value }))}
+            onChange={(e) => setTemplateData((prev) => ({ ...prev, category: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
           >
             <option value="marketing">Marketing</option>
@@ -456,12 +444,12 @@ export default function TemplateEditor({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Content Type
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
           <select
             value={templateData.contentType || 'blog'}
-            onChange={(e) => setTemplateData(prev => ({ ...prev, contentType: e.target.value as any }))}
+            onChange={(e) =>
+              setTemplateData((prev) => ({ ...prev, contentType: e.target.value as any }))
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
           >
             <option value="blog">Blog Post</option>
@@ -472,12 +460,10 @@ export default function TemplateEditor({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Industry
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
           <select
             value={templateData.industry || 'general'}
-            onChange={(e) => setTemplateData(prev => ({ ...prev, industry: e.target.value }))}
+            onChange={(e) => setTemplateData((prev) => ({ ...prev, industry: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
           >
             <option value="general">General</option>
@@ -499,7 +485,7 @@ export default function TemplateEditor({
           <input
             type="checkbox"
             checked={templateData.isPublic || false}
-            onChange={(e) => setTemplateData(prev => ({ ...prev, isPublic: e.target.checked }))}
+            onChange={(e) => setTemplateData((prev) => ({ ...prev, isPublic: e.target.checked }))}
             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <span className="text-sm text-gray-700">
@@ -513,10 +499,12 @@ export default function TemplateEditor({
   const renderPreview = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">Template Preview</h3>
-      
+
       <div className="border rounded-lg p-6 bg-gray-50">
         <div className="mb-4">
-          <h4 className="text-xl font-bold text-gray-900">{templateData.name || 'Untitled Template'}</h4>
+          <h4 className="text-xl font-bold text-gray-900">
+            {templateData.name || 'Untitled Template'}
+          </h4>
           <div className="flex items-center gap-2 mt-2">
             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
               {templateData.category}
@@ -564,10 +552,15 @@ export default function TemplateEditor({
                       disabled
                     />
                   ) : field.type === 'select' ? (
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded text-sm" disabled>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                      disabled
+                    >
                       <option>{field.placeholder || 'Select an option'}</option>
                       {field.options?.map((option, i) => (
-                        <option key={i} value={option}>{option}</option>
+                        <option key={i} value={option}>
+                          {option}
+                        </option>
                       ))}
                     </select>
                   ) : (
@@ -614,10 +607,7 @@ export default function TemplateEditor({
                 <Save className="w-4 h-4" />
                 {loading ? 'Saving...' : 'Save Template'}
               </button>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                 ×
               </button>
             </div>

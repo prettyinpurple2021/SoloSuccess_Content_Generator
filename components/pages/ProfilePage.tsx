@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
-import { User } from '../services/supabaseService';
+// User type will be defined in types.ts or imported from Stack Auth
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -56,10 +61,12 @@ export const ProfilePage: React.FC = () => {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           setUser(user);
-          setProfileData(prev => ({
+          setProfileData((prev) => ({
             ...prev,
             display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '',
             bio: user.user_metadata?.bio || '',
@@ -78,7 +85,7 @@ export const ProfilePage: React.FC = () => {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    
+
     setSaving(true);
     setError('');
     setMessage('');
@@ -92,7 +99,7 @@ export const ProfilePage: React.FC = () => {
           timezone: profileData.timezone,
           notifications: profileData.notifications,
           preferences: profileData.preferences,
-        }
+        },
       });
 
       if (error) {
@@ -117,7 +124,7 @@ export const ProfilePage: React.FC = () => {
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
       });
 
       if (error) {
@@ -141,7 +148,7 @@ export const ProfilePage: React.FC = () => {
       // Note: In a real app, you'd want to implement proper account deletion
       // This would involve deleting all user data from your database
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         setError(error.message);
       } else {
@@ -181,10 +188,13 @@ export const ProfilePage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle" style={{top: '10%', left: '10%', animationDelay: '0s'}}></div>
-        <div className="sparkle" style={{top: '20%', right: '15%', animationDelay: '0.5s'}}></div>
-        <div className="sparkle" style={{bottom: '30%', left: '20%', animationDelay: '1s'}}></div>
-        <div className="sparkle" style={{bottom: '10%', right: '10%', animationDelay: '1.5s'}}></div>
+        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
+        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
+        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
+        <div
+          className="sparkle"
+          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
+        ></div>
       </div>
 
       {/* Navigation */}
@@ -225,25 +235,23 @@ export const ProfilePage: React.FC = () => {
           {/* Profile Information */}
           <div className="glass-card p-8">
             <h2 className="text-2xl font-bold text-white mb-6">Profile Information</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Display Name
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Display Name</label>
                 <input
                   type="text"
                   value={profileData.display_name}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, display_name: e.target.value }))}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({ ...prev, display_name: e.target.value }))
+                  }
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Your display name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Email
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Email</label>
                 <input
                   type="email"
                   value={user.email || ''}
@@ -253,12 +261,10 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-white mb-2">
-                  Bio
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Bio</label>
                 <textarea
                   value={profileData.bio}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                  onChange={(e) => setProfileData((prev) => ({ ...prev, bio: e.target.value }))}
                   rows={3}
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Tell us about yourself"
@@ -266,25 +272,23 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Website
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Website</label>
                 <input
                   type="url"
                   value={profileData.website}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
+                  onChange={(e) => setProfileData((prev) => ({ ...prev, website: e.target.value }))}
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="https://yourwebsite.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Timezone
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Timezone</label>
                 <select
                   value={profileData.timezone}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, timezone: e.target.value }))}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({ ...prev, timezone: e.target.value }))
+                  }
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="UTC">UTC</option>
@@ -303,7 +307,7 @@ export const ProfilePage: React.FC = () => {
           {/* Notifications */}
           <div className="glass-card p-8">
             <h2 className="text-2xl font-bold text-white mb-6">Notifications</h2>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -313,10 +317,12 @@ export const ProfilePage: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={profileData.notifications.email}
-                  onChange={(e) => setProfileData(prev => ({
-                    ...prev,
-                    notifications: { ...prev.notifications, email: e.target.checked }
-                  }))}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, email: e.target.checked },
+                    }))
+                  }
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
               </div>
@@ -329,10 +335,12 @@ export const ProfilePage: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={profileData.notifications.push}
-                  onChange={(e) => setProfileData(prev => ({
-                    ...prev,
-                    notifications: { ...prev.notifications, push: e.target.checked }
-                  }))}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, push: e.target.checked },
+                    }))
+                  }
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
               </div>
@@ -345,10 +353,12 @@ export const ProfilePage: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={profileData.notifications.marketing}
-                  onChange={(e) => setProfileData(prev => ({
-                    ...prev,
-                    notifications: { ...prev.notifications, marketing: e.target.checked }
-                  }))}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({
+                      ...prev,
+                      notifications: { ...prev.notifications, marketing: e.target.checked },
+                    }))
+                  }
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
               </div>
@@ -358,18 +368,21 @@ export const ProfilePage: React.FC = () => {
           {/* Preferences */}
           <div className="glass-card p-8">
             <h2 className="text-2xl font-bold text-white mb-6">Preferences</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Theme
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Theme</label>
                 <select
                   value={profileData.preferences.theme}
-                  onChange={(e) => setProfileData(prev => ({
-                    ...prev,
-                    preferences: { ...prev.preferences, theme: e.target.value as 'light' | 'dark' | 'auto' }
-                  }))}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({
+                      ...prev,
+                      preferences: {
+                        ...prev.preferences,
+                        theme: e.target.value as 'light' | 'dark' | 'auto',
+                      },
+                    }))
+                  }
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="dark">Dark</option>
@@ -379,15 +392,15 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Language
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Language</label>
                 <select
                   value={profileData.preferences.language}
-                  onChange={(e) => setProfileData(prev => ({
-                    ...prev,
-                    preferences: { ...prev.preferences, language: e.target.value }
-                  }))}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({
+                      ...prev,
+                      preferences: { ...prev.preferences, language: e.target.value },
+                    }))
+                  }
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="en">English</option>
@@ -402,7 +415,7 @@ export const ProfilePage: React.FC = () => {
           {/* Account Actions */}
           <div className="glass-card p-8">
             <h2 className="text-2xl font-bold text-white mb-6">Account Actions</h2>
-            
+
             <div className="space-y-4">
               <button
                 onClick={handleChangePassword}
@@ -473,7 +486,7 @@ export const ProfilePage: React.FC = () => {
             <p className="text-white/80 mb-6">
               This action cannot be undone. All your data will be permanently deleted.
             </p>
-            
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-white mb-2">
                 Type DELETE to confirm

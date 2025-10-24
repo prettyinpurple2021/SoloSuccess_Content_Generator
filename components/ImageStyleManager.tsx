@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ImageStyle, BrandAsset, LoadingState } from '../types';
-import { db } from '../services/supabaseService';
+import { apiService } from '../services/apiService';
 import { Spinner } from '../constants';
 
 interface ImageStyleManagerProps {
@@ -9,11 +9,7 @@ interface ImageStyleManagerProps {
   onError: (message: string) => void;
 }
 
-const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
-  onClose,
-  onSuccess,
-  onError
-}) => {
+const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({ onClose, onSuccess, onError }) => {
   const [imageStyles, setImageStyles] = useState<ImageStyle[]>([]);
   const [isLoading, setIsLoading] = useState<LoadingState>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -27,19 +23,19 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
     stylePrompt: '',
     colorPalette: [''],
     visualElements: [''],
-    brandAssets: [] as BrandAsset[]
+    brandAssets: [] as BrandAsset[],
   });
 
   const withLoading = <T extends any[]>(key: string, fn: (...args: T) => Promise<void>) => {
     return async (...args: T) => {
-      setIsLoading(prev => ({ ...prev, [key]: true }));
+      setIsLoading((prev) => ({ ...prev, [key]: true }));
       try {
         await fn(...args);
       } catch (error: any) {
         console.error(`Error in ${key}:`, error);
         onError(error.message || 'An unexpected error occurred.');
       } finally {
-        setIsLoading(prev => ({ ...prev, [key]: false }));
+        setIsLoading((prev) => ({ ...prev, [key]: false }));
       }
     };
   };
@@ -58,12 +54,12 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
     const newStyle = await db.addImageStyle({
       name: formData.name,
       style_prompt: formData.stylePrompt,
-      color_palette: formData.colorPalette.filter(color => color.trim()),
-      visual_elements: formData.visualElements.filter(element => element.trim()),
-      brand_assets: formData.brandAssets
+      color_palette: formData.colorPalette.filter((color) => color.trim()),
+      visual_elements: formData.visualElements.filter((element) => element.trim()),
+      brand_assets: formData.brandAssets,
     });
 
-    setImageStyles(prev => [newStyle, ...prev]);
+    setImageStyles((prev) => [newStyle, ...prev]);
     setShowCreateModal(false);
     resetForm();
     onSuccess('Image style created successfully!');
@@ -78,14 +74,14 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
     const updatedStyle = await db.updateImageStyle(editingStyle.id, {
       name: formData.name,
       style_prompt: formData.stylePrompt,
-      color_palette: formData.colorPalette.filter(color => color.trim()),
-      visual_elements: formData.visualElements.filter(element => element.trim()),
-      brand_assets: formData.brandAssets
+      color_palette: formData.colorPalette.filter((color) => color.trim()),
+      visual_elements: formData.visualElements.filter((element) => element.trim()),
+      brand_assets: formData.brandAssets,
     });
 
-    setImageStyles(prev => prev.map(style => 
-      style.id === editingStyle.id ? updatedStyle : style
-    ));
+    setImageStyles((prev) =>
+      prev.map((style) => (style.id === editingStyle.id ? updatedStyle : style))
+    );
     setEditingStyle(null);
     setShowCreateModal(false);
     resetForm();
@@ -94,7 +90,7 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
 
   const handleDeleteStyle = withLoading('deleteStyle', async (styleId: string) => {
     await db.deleteImageStyle(styleId);
-    setImageStyles(prev => prev.filter(style => style.id !== styleId));
+    setImageStyles((prev) => prev.filter((style) => style.id !== styleId));
     onSuccess('Image style deleted successfully!');
   });
 
@@ -104,7 +100,7 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
       stylePrompt: '',
       colorPalette: [''],
       visualElements: [''],
-      brandAssets: []
+      brandAssets: [],
     });
   };
 
@@ -115,78 +111,81 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
       stylePrompt: style.stylePrompt,
       colorPalette: style.colorPalette.length > 0 ? style.colorPalette : [''],
       visualElements: style.visualElements.length > 0 ? style.visualElements : [''],
-      brandAssets: style.brandAssets
+      brandAssets: style.brandAssets,
     });
     setShowCreateModal(true);
   };
 
   const handleAddColorField = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      colorPalette: [...prev.colorPalette, '']
+      colorPalette: [...prev.colorPalette, ''],
     }));
   };
 
   const handleRemoveColorField = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      colorPalette: prev.colorPalette.filter((_, i) => i !== index)
+      colorPalette: prev.colorPalette.filter((_, i) => i !== index),
     }));
   };
 
   const handleColorChange = (index: number, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      colorPalette: prev.colorPalette.map((color, i) => i === index ? value : color)
+      colorPalette: prev.colorPalette.map((color, i) => (i === index ? value : color)),
     }));
   };
 
   const handleAddElementField = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      visualElements: [...prev.visualElements, '']
+      visualElements: [...prev.visualElements, ''],
     }));
   };
 
   const handleRemoveElementField = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      visualElements: prev.visualElements.filter((_, i) => i !== index)
+      visualElements: prev.visualElements.filter((_, i) => i !== index),
     }));
   };
 
   const handleElementChange = (index: number, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      visualElements: prev.visualElements.map((element, i) => i === index ? value : element)
+      visualElements: prev.visualElements.map((element, i) => (i === index ? value : element)),
     }));
   };
 
   const handleAddBrandAsset = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      brandAssets: [...prev.brandAssets, {
-        id: Date.now().toString(),
-        type: 'logo',
-        data: '',
-        usage: 'optional'
-      }]
+      brandAssets: [
+        ...prev.brandAssets,
+        {
+          id: Date.now().toString(),
+          type: 'logo',
+          data: '',
+          usage: 'optional',
+        },
+      ],
     }));
   };
 
   const handleRemoveBrandAsset = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      brandAssets: prev.brandAssets.filter((_, i) => i !== index)
+      brandAssets: prev.brandAssets.filter((_, i) => i !== index),
     }));
   };
 
   const handleBrandAssetChange = (index: number, field: keyof BrandAsset, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      brandAssets: prev.brandAssets.map((asset, i) => 
+      brandAssets: prev.brandAssets.map((asset, i) =>
         i === index ? { ...asset, [field]: value } : asset
-      )
+      ),
     }));
   };
 
@@ -200,11 +199,19 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4" onClick={onClose}>
-      <div className="glass-card w-full max-w-6xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="glass-card w-full max-w-6xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-6 border-b border-border">
           <h3 className="text-2xl font-display text-secondary">Image Style Manager</h3>
-          <p className="text-muted-foreground mt-2">Create and manage image styles for consistent brand visuals</p>
+          <p className="text-muted-foreground mt-2">
+            Create and manage image styles for consistent brand visuals
+          </p>
         </div>
 
         <div className="p-6 overflow-y-auto flex-grow">
@@ -245,8 +252,10 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
               {imageStyles.map((style) => (
                 <div key={style.id} className="glass-card p-4">
                   <h5 className="font-semibold text-primary-foreground mb-2">{style.name}</h5>
-                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{style.stylePrompt}</p>
-                  
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                    {style.stylePrompt}
+                  </p>
+
                   {style.colorPalette.length > 0 && (
                     <div className="mb-3">
                       <p className="text-xs text-muted-foreground mb-1">Colors:</p>
@@ -260,7 +269,9 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
                           />
                         ))}
                         {style.colorPalette.length > 5 && (
-                          <span className="text-xs text-muted-foreground">+{style.colorPalette.length - 5}</span>
+                          <span className="text-xs text-muted-foreground">
+                            +{style.colorPalette.length - 5}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -276,7 +287,9 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
                           </span>
                         ))}
                         {style.visualElements.length > 3 && (
-                          <span className="text-xs text-muted-foreground">+{style.visualElements.length - 3}</span>
+                          <span className="text-xs text-muted-foreground">
+                            +{style.visualElements.length - 3}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -321,8 +334,14 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
 
       {/* Create/Edit Style Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-60 p-4" onClick={() => setShowCreateModal(false)}>
-          <div className="glass-card w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-60 p-4"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="glass-card w-full max-w-2xl max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-border">
               <h4 className="text-xl font-display text-secondary">
                 {editingStyle ? 'Edit Image Style' : 'Create New Image Style'}
@@ -338,7 +357,7 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
                   placeholder="e.g., Corporate Professional, Creative Minimalist"
                 />
@@ -350,7 +369,9 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
                 </label>
                 <textarea
                   value={formData.stylePrompt}
-                  onChange={(e) => setFormData(prev => ({ ...prev, stylePrompt: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, stylePrompt: e.target.value }))
+                  }
                   className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground h-24"
                   placeholder="Describe the visual style, composition, lighting, and aesthetic you want for images..."
                 />
@@ -509,8 +530,11 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
 
       {/* Preview Modal */}
       {showPreview && selectedStyle && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-60 p-4" onClick={() => setShowPreview(false)}>
-          <div className="glass-card w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-60 p-4"
+          onClick={() => setShowPreview(false)}
+        >
+          <div className="glass-card w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b border-border">
               <h4 className="text-xl font-display text-secondary">{selectedStyle.name}</h4>
             </div>
@@ -521,7 +545,7 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
                   {selectedStyle.stylePrompt}
                 </p>
               </div>
-              
+
               {selectedStyle.colorPalette.length > 0 && (
                 <div>
                   <h5 className="font-semibold text-primary-foreground mb-2">Color Palette</h5>
@@ -557,9 +581,16 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
                   <h5 className="font-semibold text-primary-foreground mb-2">Brand Assets</h5>
                   <div className="space-y-2">
                     {selectedStyle.brandAssets.map((asset, index) => (
-                      <div key={index} className="flex justify-between items-center bg-muted/50 p-2 rounded">
-                        <span className="text-sm">{asset.type}: {asset.data}</span>
-                        <span className="text-xs text-muted-foreground capitalize">{asset.usage}</span>
+                      <div
+                        key={index}
+                        className="flex justify-between items-center bg-muted/50 p-2 rounded"
+                      >
+                        <span className="text-sm">
+                          {asset.type}: {asset.data}
+                        </span>
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {asset.usage}
+                        </span>
                       </div>
                     ))}
                   </div>

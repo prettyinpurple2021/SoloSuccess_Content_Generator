@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ContentTemplate, TemplateSection, TemplateField } from '../types';
-import { db } from '../services/supabaseService';
+import { apiService } from '../services/apiService';
 import { Star, Search, Filter, Eye, Edit, Copy, Trash2, Plus } from '../constants';
 
 interface TemplateLibraryProps {
@@ -16,7 +16,7 @@ export default function TemplateLibrary({
   onClose,
   onSelectTemplate,
   onEditTemplate,
-  onCreateNew
+  onCreateNew,
 }: TemplateLibraryProps) {
   const [templates, setTemplates] = useState<ContentTemplate[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<ContentTemplate[]>([]);
@@ -60,26 +60,27 @@ export default function TemplateLibrary({
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(template =>
-        template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        template.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        template.industry.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (template) =>
+          template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          template.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          template.industry.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Apply category filter
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(template => template.category === selectedCategory);
+      filtered = filtered.filter((template) => template.category === selectedCategory);
     }
 
     // Apply content type filter
     if (selectedContentType !== 'all') {
-      filtered = filtered.filter(template => template.contentType === selectedContentType);
+      filtered = filtered.filter((template) => template.contentType === selectedContentType);
     }
 
     // Apply industry filter
     if (selectedIndustry !== 'all') {
-      filtered = filtered.filter(template => template.industry === selectedIndustry);
+      filtered = filtered.filter((template) => template.industry === selectedIndustry);
     }
 
     // Sort templates
@@ -105,15 +106,13 @@ export default function TemplateLibrary({
     try {
       // Increment usage count
       await db.updateContentTemplate(template.id, {
-        usage_count: template.usageCount + 1
+        usage_count: template.usageCount + 1,
       });
-      
+
       // Update local state
-      setTemplates(prev => prev.map(t => 
-        t.id === template.id 
-          ? { ...t, usageCount: t.usageCount + 1 }
-          : t
-      ));
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === template.id ? { ...t, usageCount: t.usageCount + 1 } : t))
+      );
 
       onSelectTemplate(template);
       onClose();
@@ -130,7 +129,7 @@ export default function TemplateLibrary({
 
     try {
       await db.deleteContentTemplate(template.id);
-      setTemplates(prev => prev.filter(t => t.id !== template.id));
+      setTemplates((prev) => prev.filter((t) => t.id !== template.id));
     } catch (err) {
       setError('Failed to delete template. Please try again.');
       console.error('Error deleting template:', err);
@@ -148,11 +147,11 @@ export default function TemplateLibrary({
         customizable_fields: template.customizableFields,
         usage_count: 0,
         rating: 0,
-        is_public: false
+        is_public: false,
       };
 
       const newTemplate = await db.addContentTemplate(duplicatedTemplate);
-      setTemplates(prev => [newTemplate, ...prev]);
+      setTemplates((prev) => [newTemplate, ...prev]);
     } catch (err) {
       setError('Failed to duplicate template. Please try again.');
       console.error('Error duplicating template:', err);
@@ -272,10 +271,7 @@ export default function TemplateLibrary({
                   <Plus className="w-4 h-4" />
                   Create New
                 </button>
-                <button
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                   ×
                 </button>
               </div>
@@ -352,10 +348,9 @@ export default function TemplateLibrary({
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
                 <p className="text-gray-600 mb-4">
-                  {templates.length === 0 
+                  {templates.length === 0
                     ? "You haven't created any templates yet."
-                    : "Try adjusting your search or filters."
-                  }
+                    : 'Try adjusting your search or filters.'}
                 </p>
                 <button
                   onClick={onCreateNew}
@@ -367,7 +362,10 @@ export default function TemplateLibrary({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTemplates.map((template) => (
-                  <div key={template.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div
+                    key={template.id}
+                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-1">{template.name}</h3>

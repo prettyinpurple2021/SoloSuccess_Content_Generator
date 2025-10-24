@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Campaign, ContentSeries, Post, CampaignMetrics, OptimizationSuggestion } from '../types';
 import { campaignService } from '../services/campaignService';
-import { db } from '../services/supabaseService';
+import { apiService } from '../services/apiService';
 import { PLATFORMS, Spinner } from '../constants';
 
 interface CampaignManagerProps {
@@ -15,12 +15,14 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
   isOpen,
   onClose,
   posts,
-  onPostUpdate
+  onPostUpdate,
 }) => {
   // State management
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'create' | 'edit' | 'performance'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'create' | 'edit' | 'performance'>(
+    'overview'
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -32,12 +34,14 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
     theme: '',
     startDate: '',
     endDate: '',
-    platforms: [] as string[]
+    platforms: [] as string[],
   });
 
   // Performance data
   const [campaignMetrics, setCampaignMetrics] = useState<CampaignMetrics | null>(null);
-  const [optimizationSuggestions, setOptimizationSuggestions] = useState<OptimizationSuggestion[]>([]);
+  const [optimizationSuggestions, setOptimizationSuggestions] = useState<OptimizationSuggestion[]>(
+    []
+  );
 
   // Load campaigns on component mount
   useEffect(() => {
@@ -70,7 +74,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       setIsLoading(true);
       const metrics = await campaignService.getCampaignPerformance(campaignId);
       setCampaignMetrics(metrics);
-      
+
       // Load optimization suggestions if campaign has posts
       if (metrics.totalPosts > 0) {
         // For now, we'll generate basic suggestions based on metrics
@@ -92,25 +96,26 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       suggestions.push({
         type: 'content',
         title: 'Improve Content Engagement',
-        description: 'Your campaign engagement rate is below average. Consider using more interactive content formats or adjusting your posting times.',
+        description:
+          'Your campaign engagement rate is below average. Consider using more interactive content formats or adjusting your posting times.',
         impact: 'high',
-        effort: 'medium'
+        effort: 'medium',
       });
     }
 
     // Platform performance suggestions
     const platformEntries = Object.entries(metrics.platformPerformance);
     if (platformEntries.length > 1) {
-      const bestPlatform = platformEntries.reduce((best, current) => 
+      const bestPlatform = platformEntries.reduce((best, current) =>
         current[1].avgEngagementRate > best[1].avgEngagementRate ? current : best
       );
-      
+
       suggestions.push({
         type: 'format',
         title: `Focus on ${bestPlatform[0]}`,
         description: `${bestPlatform[0]} is showing the best engagement rate (${bestPlatform[1].avgEngagementRate.toFixed(1)}%). Consider allocating more resources to this platform.`,
         impact: 'medium',
-        effort: 'low'
+        effort: 'low',
       });
     }
 
@@ -119,9 +124,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       suggestions.push({
         type: 'content',
         title: 'Increase Content Volume',
-        description: 'Your campaign has relatively few posts. Consider creating more content to maintain audience engagement and improve reach.',
+        description:
+          'Your campaign has relatively few posts. Consider creating more content to maintain audience engagement and improve reach.',
         impact: 'medium',
-        effort: 'high'
+        effort: 'high',
       });
     }
 
@@ -147,10 +153,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         theme: formData.theme,
         startDate: new Date(formData.startDate),
         endDate: new Date(formData.endDate),
-        platforms: formData.platforms
+        platforms: formData.platforms,
       });
 
-      setCampaigns(prev => [...prev, campaign]);
+      setCampaigns((prev) => [...prev, campaign]);
       setSuccess('Campaign created successfully!');
       setActiveTab('overview');
       resetForm();
@@ -177,8 +183,8 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       if (formData.platforms.length > 0) updates.platforms = formData.platforms;
 
       const updatedCampaign = await campaignService.updateCampaign(selectedCampaign.id, updates);
-      
-      setCampaigns(prev => prev.map(c => c.id === updatedCampaign.id ? updatedCampaign : c));
+
+      setCampaigns((prev) => prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)));
       setSelectedCampaign(updatedCampaign);
       setSuccess('Campaign updated successfully!');
       setActiveTab('overview');
@@ -197,7 +203,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
     try {
       setIsLoading(true);
       await campaignService.deleteCampaign(campaignId, false); // Don't delete associated content
-      setCampaigns(prev => prev.filter(c => c.id !== campaignId));
+      setCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
       if (selectedCampaign?.id === campaignId) {
         setSelectedCampaign(null);
       }
@@ -213,7 +219,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
     try {
       await db.updatePost(postId, { campaign_id: campaignId });
       if (onPostUpdate) {
-        const updatedPost = posts.find(p => p.id === postId);
+        const updatedPost = posts.find((p) => p.id === postId);
         if (updatedPost) {
           onPostUpdate({ ...updatedPost, campaignId });
         }
@@ -231,7 +237,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       theme: '',
       startDate: '',
       endDate: '',
-      platforms: []
+      platforms: [],
     });
   };
 
@@ -242,29 +248,33 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       theme: campaign.theme,
       startDate: campaign.startDate.toISOString().split('T')[0],
       endDate: campaign.endDate.toISOString().split('T')[0],
-      platforms: campaign.platforms
+      platforms: campaign.platforms,
     });
   };
 
   const handlePlatformToggle = (platform: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       platforms: prev.platforms.includes(platform)
-        ? prev.platforms.filter(p => p !== platform)
-        : [...prev.platforms, platform]
+        ? prev.platforms.filter((p) => p !== platform)
+        : [...prev.platforms, platform],
     }));
   };
 
   const getCampaignPosts = (campaignId: string) => {
-    return posts.filter(post => post.campaignId === campaignId);
+    return posts.filter((post) => post.campaignId === campaignId);
   };
 
   const getStatusColor = (status: Campaign['status']) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'completed': return 'text-blue-600 bg-blue-100';
-      case 'paused': return 'text-yellow-600 bg-yellow-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'active':
+        return 'text-green-600 bg-green-100';
+      case 'completed':
+        return 'text-blue-600 bg-blue-100';
+      case 'paused':
+        return 'text-yellow-600 bg-yellow-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -289,8 +299,8 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
           {[
             { key: 'overview', label: 'Overview' },
             { key: 'create', label: 'Create Campaign' },
-            { key: 'performance', label: 'Performance', disabled: !selectedCampaign }
-          ].map(tab => (
+            { key: 'performance', label: 'Performance', disabled: !selectedCampaign },
+          ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
@@ -299,8 +309,8 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 activeTab === tab.key
                   ? 'border-blue-500 text-blue-600'
                   : tab.disabled
-                  ? 'border-transparent text-gray-400 cursor-not-allowed'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-transparent text-gray-400 cursor-not-allowed'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               {tab.label}
@@ -354,7 +364,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {campaigns.map(campaign => {
+                  {campaigns.map((campaign) => {
                     const campaignPosts = getCampaignPosts(campaign.id);
                     return (
                       <div
@@ -365,8 +375,12 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <h4 className="text-lg font-semibold text-gray-900">{campaign.name}</h4>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
+                              <h4 className="text-lg font-semibold text-gray-900">
+                                {campaign.name}
+                              </h4>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}
+                              >
                                 {campaign.status}
                               </span>
                             </div>
@@ -417,22 +431,28 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     Assign Posts to "{selectedCampaign.name}"
                   </h4>
                   <div className="grid gap-3">
-                    {posts.filter(post => !post.campaignId).map(post => (
-                      <div key={post.id} className="flex items-center justify-between p-3 border border-gray-200 rounded">
-                        <div>
-                          <div className="font-medium text-gray-900">{post.topic}</div>
-                          <div className="text-sm text-gray-500">
-                            Status: {post.status} | Created: {post.createdAt?.toLocaleDateString()}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleAssignPostToCampaign(post.id, selectedCampaign.id)}
-                          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                    {posts
+                      .filter((post) => !post.campaignId)
+                      .map((post) => (
+                        <div
+                          key={post.id}
+                          className="flex items-center justify-between p-3 border border-gray-200 rounded"
                         >
-                          Assign
-                        </button>
-                      </div>
-                    ))}
+                          <div>
+                            <div className="font-medium text-gray-900">{post.topic}</div>
+                            <div className="text-sm text-gray-500">
+                              Status: {post.status} | Created:{' '}
+                              {post.createdAt?.toLocaleDateString()}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleAssignPostToCampaign(post.id, selectedCampaign.id)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                          >
+                            Assign
+                          </button>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
@@ -454,7 +474,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter campaign name"
                   />
@@ -466,7 +486,9 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, description: e.target.value }))
+                    }
                     rows={3}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Describe your campaign goals and strategy"
@@ -480,7 +502,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                   <input
                     type="text"
                     value={formData.theme}
-                    onChange={(e) => setFormData(prev => ({ ...prev, theme: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, theme: e.target.value }))}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Product Launch, Brand Awareness, Holiday Campaign"
                   />
@@ -494,7 +516,9 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     <input
                       type="date"
                       value={formData.startDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, startDate: e.target.value }))
+                      }
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -505,7 +529,9 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     <input
                       type="date"
                       value={formData.endDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+                      }
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -516,7 +542,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     Target Platforms *
                   </label>
                   <div className="grid grid-cols-3 gap-3">
-                    {PLATFORMS.map(platform => (
+                    {PLATFORMS.map((platform) => (
                       <label key={platform} className="flex items-center space-x-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -572,15 +598,21 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                   {/* Key Metrics */}
                   <div className="grid grid-cols-4 gap-4">
                     <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{campaignMetrics.totalPosts}</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {campaignMetrics.totalPosts}
+                      </div>
                       <div className="text-sm text-gray-600">Total Posts</div>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{campaignMetrics.totalEngagement}</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {campaignMetrics.totalEngagement}
+                      </div>
                       <div className="text-sm text-gray-600">Total Engagement</div>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{campaignMetrics.avgEngagementRate.toFixed(1)}%</div>
+                      <div className="text-2xl font-bold text-purple-600">
+                        {campaignMetrics.avgEngagementRate.toFixed(1)}%
+                      </div>
                       <div className="text-sm text-gray-600">Avg Engagement Rate</div>
                     </div>
                     <div className="bg-orange-50 p-4 rounded-lg">
@@ -593,41 +625,49 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
                   {/* Platform Performance */}
                   <div>
-                    <h4 className="text-md font-semibold text-gray-900 mb-4">Platform Performance</h4>
+                    <h4 className="text-md font-semibold text-gray-900 mb-4">
+                      Platform Performance
+                    </h4>
                     <div className="grid gap-4">
-                      {Object.entries(campaignMetrics.platformPerformance).map(([platform, metrics]) => (
-                        <div key={platform} className="border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h5 className="font-medium text-gray-900 capitalize">{platform}</h5>
-                            <span className="text-sm text-gray-500">{metrics.posts} posts</span>
+                      {Object.entries(campaignMetrics.platformPerformance).map(
+                        ([platform, metrics]) => (
+                          <div key={platform} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="font-medium text-gray-900 capitalize">{platform}</h5>
+                              <span className="text-sm text-gray-500">{metrics.posts} posts</span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <div className="text-gray-600">Likes</div>
+                                <div className="font-medium">{metrics.totalLikes}</div>
+                              </div>
+                              <div>
+                                <div className="text-gray-600">Shares</div>
+                                <div className="font-medium">{metrics.totalShares}</div>
+                              </div>
+                              <div>
+                                <div className="text-gray-600">Comments</div>
+                                <div className="font-medium">{metrics.totalComments}</div>
+                              </div>
+                              <div>
+                                <div className="text-gray-600">Engagement Rate</div>
+                                <div className="font-medium">
+                                  {metrics.avgEngagementRate.toFixed(1)}%
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="grid grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <div className="text-gray-600">Likes</div>
-                              <div className="font-medium">{metrics.totalLikes}</div>
-                            </div>
-                            <div>
-                              <div className="text-gray-600">Shares</div>
-                              <div className="font-medium">{metrics.totalShares}</div>
-                            </div>
-                            <div>
-                              <div className="text-gray-600">Comments</div>
-                              <div className="font-medium">{metrics.totalComments}</div>
-                            </div>
-                            <div>
-                              <div className="text-gray-600">Engagement Rate</div>
-                              <div className="font-medium">{metrics.avgEngagementRate.toFixed(1)}%</div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      )}
                     </div>
                   </div>
 
                   {/* Optimization Suggestions */}
                   {optimizationSuggestions.length > 0 && (
                     <div>
-                      <h4 className="text-md font-semibold text-gray-900 mb-4">Optimization Suggestions</h4>
+                      <h4 className="text-md font-semibold text-gray-900 mb-4">
+                        Optimization Suggestions
+                      </h4>
                       <div className="space-y-3">
                         {optimizationSuggestions.map((suggestion, index) => (
                           <div key={index} className="border border-gray-200 rounded-lg p-4">
@@ -635,18 +675,26 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
                                   <h5 className="font-medium text-gray-900">{suggestion.title}</h5>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    suggestion.impact === 'high' ? 'bg-red-100 text-red-800' :
-                                    suggestion.impact === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-green-100 text-green-800'
-                                  }`}>
+                                  <span
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      suggestion.impact === 'high'
+                                        ? 'bg-red-100 text-red-800'
+                                        : suggestion.impact === 'medium'
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : 'bg-green-100 text-green-800'
+                                    }`}
+                                  >
                                     {suggestion.impact} impact
                                   </span>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    suggestion.effort === 'high' ? 'bg-red-100 text-red-800' :
-                                    suggestion.effort === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-green-100 text-green-800'
-                                  }`}>
+                                  <span
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      suggestion.effort === 'high'
+                                        ? 'bg-red-100 text-red-800'
+                                        : suggestion.effort === 'medium'
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : 'bg-green-100 text-green-800'
+                                    }`}
+                                  >
                                     {suggestion.effort} effort
                                   </span>
                                 </div>

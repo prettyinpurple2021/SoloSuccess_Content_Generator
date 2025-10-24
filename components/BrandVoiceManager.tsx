@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrandVoice } from '../types';
-import { db } from '../services/supabaseService';
+import { apiService } from '../services/apiService';
 import { analyzeBrandVoice } from '../services/geminiService';
 import { X, Plus, Edit2, Trash2, Eye, Upload, Loader2, Save, AlertCircle } from 'lucide-react';
 
@@ -32,7 +32,7 @@ const TONE_OPTIONS = [
   'Friendly',
   'Conversational',
   'Technical',
-  'Creative'
+  'Creative',
 ];
 
 const WRITING_STYLE_OPTIONS = [
@@ -45,7 +45,7 @@ const WRITING_STYLE_OPTIONS = [
   'Descriptive',
   'Persuasive',
   'Analytical',
-  'Personal'
+  'Personal',
 ];
 
 export default function BrandVoiceManager({
@@ -54,7 +54,7 @@ export default function BrandVoiceManager({
   selectedBrandVoice,
   onBrandVoiceSelect,
   brandVoices,
-  onBrandVoicesUpdate
+  onBrandVoicesUpdate,
 }: BrandVoiceManagerProps) {
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'edit' | 'preview'>('list');
   const [editingVoice, setEditingVoice] = useState<BrandVoice | null>(null);
@@ -70,7 +70,7 @@ export default function BrandVoiceManager({
     writingStyle: '',
     targetAudience: '',
     vocabulary: [],
-    sampleContent: []
+    sampleContent: [],
   });
 
   const [newVocabularyTerm, setNewVocabularyTerm] = useState('');
@@ -84,7 +84,7 @@ export default function BrandVoiceManager({
         writingStyle: editingVoice.writingStyle,
         targetAudience: editingVoice.targetAudience,
         vocabulary: [...editingVoice.vocabulary],
-        sampleContent: [...editingVoice.sampleContent]
+        sampleContent: [...editingVoice.sampleContent],
       });
     } else if (activeTab === 'create') {
       setForm({
@@ -93,7 +93,7 @@ export default function BrandVoiceManager({
         writingStyle: '',
         targetAudience: '',
         vocabulary: [],
-        sampleContent: []
+        sampleContent: [],
       });
     }
   }, [activeTab, editingVoice]);
@@ -129,14 +129,14 @@ export default function BrandVoiceManager({
 
     try {
       await db.deleteBrandVoice(voice.id);
-      const updatedVoices = brandVoices.filter(v => v.id !== voice.id);
+      const updatedVoices = brandVoices.filter((v) => v.id !== voice.id);
       onBrandVoicesUpdate(updatedVoices);
-      
+
       // If this was the selected voice, clear selection
       if (selectedBrandVoice?.id === voice.id) {
         onBrandVoiceSelect(null);
       }
-      
+
       setSuccess('Brand voice deleted successfully');
       setActiveTab('list');
     } catch (err) {
@@ -148,35 +148,35 @@ export default function BrandVoiceManager({
 
   const addVocabularyTerm = () => {
     if (newVocabularyTerm.trim() && !form.vocabulary.includes(newVocabularyTerm.trim())) {
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
-        vocabulary: [...prev.vocabulary, newVocabularyTerm.trim()]
+        vocabulary: [...prev.vocabulary, newVocabularyTerm.trim()],
       }));
       setNewVocabularyTerm('');
     }
   };
 
   const removeVocabularyTerm = (term: string) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      vocabulary: prev.vocabulary.filter(t => t !== term)
+      vocabulary: prev.vocabulary.filter((t) => t !== term),
     }));
   };
 
   const addSampleContent = () => {
     if (newSampleContent.trim() && !form.sampleContent.includes(newSampleContent.trim())) {
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
-        sampleContent: [...prev.sampleContent, newSampleContent.trim()]
+        sampleContent: [...prev.sampleContent, newSampleContent.trim()],
       }));
       setNewSampleContent('');
     }
   };
 
   const removeSampleContent = (content: string) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      sampleContent: prev.sampleContent.filter(c => c !== content)
+      sampleContent: prev.sampleContent.filter((c) => c !== content),
     }));
   };
 
@@ -192,19 +192,21 @@ export default function BrandVoiceManager({
     try {
       const analysis = await analyzeBrandVoice(form.sampleContent.join('\n\n'));
       setAnalysisResults(analysis);
-      
+
       // Auto-populate form with analysis results
       if (analysis.tone && !form.tone) {
-        setForm(prev => ({ ...prev, tone: analysis.tone }));
+        setForm((prev) => ({ ...prev, tone: analysis.tone }));
       }
       if (analysis.writingStyle && !form.writingStyle) {
-        setForm(prev => ({ ...prev, writingStyle: analysis.writingStyle }));
+        setForm((prev) => ({ ...prev, writingStyle: analysis.writingStyle }));
       }
       if (analysis.vocabulary && analysis.vocabulary.length > 0) {
-        const newVocab = analysis.vocabulary.filter((term: string) => !form.vocabulary.includes(term));
-        setForm(prev => ({ ...prev, vocabulary: [...prev.vocabulary, ...newVocab] }));
+        const newVocab = analysis.vocabulary.filter(
+          (term: string) => !form.vocabulary.includes(term)
+        );
+        setForm((prev) => ({ ...prev, vocabulary: [...prev.vocabulary, ...newVocab] }));
       }
-      
+
       setSuccess('Sample content analyzed successfully! Form updated with insights.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze sample content');
@@ -234,14 +236,14 @@ export default function BrandVoiceManager({
         writing_style: form.writingStyle,
         target_audience: form.targetAudience,
         vocabulary: form.vocabulary,
-        sample_content: form.sampleContent
+        sample_content: form.sampleContent,
       };
 
       let savedVoice: BrandVoice;
 
       if (activeTab === 'edit' && editingVoice) {
         savedVoice = await db.updateBrandVoice(editingVoice.id, voiceData);
-        const updatedVoices = brandVoices.map(v => v.id === editingVoice.id ? savedVoice : v);
+        const updatedVoices = brandVoices.map((v) => (v.id === editingVoice.id ? savedVoice : v));
         onBrandVoicesUpdate(updatedVoices);
         setSuccess('Brand voice updated successfully');
       } else {
@@ -271,10 +273,7 @@ export default function BrandVoiceManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Brand Voice Manager</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -346,7 +345,9 @@ export default function BrandVoiceManager({
                     <Upload className="w-8 h-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Brand Voices Yet</h3>
-                  <p className="text-gray-500 mb-4">Create your first brand voice to get started with personalized content.</p>
+                  <p className="text-gray-500 mb-4">
+                    Create your first brand voice to get started with personalized content.
+                  </p>
                   <button
                     onClick={handleCreateNew}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -443,24 +444,24 @@ export default function BrandVoiceManager({
                   <input
                     type="text"
                     value={form.name}
-                    onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., Professional Expert, Friendly Guide"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tone *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tone *</label>
                   <select
                     value={form.tone}
-                    onChange={(e) => setForm(prev => ({ ...prev, tone: e.target.value }))}
+                    onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a tone</option>
-                    {TONE_OPTIONS.map(tone => (
-                      <option key={tone} value={tone}>{tone}</option>
+                    {TONE_OPTIONS.map((tone) => (
+                      <option key={tone} value={tone}>
+                        {tone}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -471,12 +472,14 @@ export default function BrandVoiceManager({
                   </label>
                   <select
                     value={form.writingStyle}
-                    onChange={(e) => setForm(prev => ({ ...prev, writingStyle: e.target.value }))}
+                    onChange={(e) => setForm((prev) => ({ ...prev, writingStyle: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a writing style</option>
-                    {WRITING_STYLE_OPTIONS.map(style => (
-                      <option key={style} value={style}>{style}</option>
+                    {WRITING_STYLE_OPTIONS.map((style) => (
+                      <option key={style} value={style}>
+                        {style}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -488,7 +491,9 @@ export default function BrandVoiceManager({
                   <input
                     type="text"
                     value={form.targetAudience}
-                    onChange={(e) => setForm(prev => ({ ...prev, targetAudience: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, targetAudience: e.target.value }))
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., Small business owners, Tech professionals"
                   />
@@ -537,9 +542,7 @@ export default function BrandVoiceManager({
               {/* Sample Content */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Sample Content
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Sample Content</label>
                   {form.sampleContent.length > 0 && (
                     <button
                       onClick={analyzeSampleContent}
@@ -592,10 +595,20 @@ export default function BrandVoiceManager({
                 <div className="p-4 bg-purple-50 border border-purple-200 rounded-md">
                   <h4 className="font-medium text-purple-900 mb-2">Voice Analysis Results</h4>
                   <div className="text-sm text-purple-700 space-y-1">
-                    {analysisResults.tone && <p><strong>Detected Tone:</strong> {analysisResults.tone}</p>}
-                    {analysisResults.writingStyle && <p><strong>Writing Style:</strong> {analysisResults.writingStyle}</p>}
+                    {analysisResults.tone && (
+                      <p>
+                        <strong>Detected Tone:</strong> {analysisResults.tone}
+                      </p>
+                    )}
+                    {analysisResults.writingStyle && (
+                      <p>
+                        <strong>Writing Style:</strong> {analysisResults.writingStyle}
+                      </p>
+                    )}
                     {analysisResults.vocabulary && analysisResults.vocabulary.length > 0 && (
-                      <p><strong>Key Terms:</strong> {analysisResults.vocabulary.join(', ')}</p>
+                      <p>
+                        <strong>Key Terms:</strong> {analysisResults.vocabulary.join(', ')}
+                      </p>
                     )}
                   </div>
                 </div>

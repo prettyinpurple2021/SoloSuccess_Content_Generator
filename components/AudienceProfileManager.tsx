@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { AudienceProfile, EngagementData } from '../types';
-import { db } from '../services/supabaseService';
+import { apiService } from '../services/apiService';
 import { generateAudienceInsights } from '../services/geminiService';
-import { X, Plus, Edit2, Trash2, Eye, Users, TrendingUp, Loader2, Save, AlertCircle, Target, BarChart3 } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Edit2,
+  Trash2,
+  Eye,
+  Users,
+  TrendingUp,
+  Loader2,
+  Save,
+  AlertCircle,
+  Target,
+  BarChart3,
+} from 'lucide-react';
 
 interface AudienceProfileManagerProps {
   isOpen: boolean;
@@ -23,14 +36,7 @@ interface AudienceProfileForm {
   engagementPatterns: EngagementData;
 }
 
-const AGE_RANGE_OPTIONS = [
-  '18-24',
-  '25-34',
-  '35-44',
-  '45-54',
-  '55-64',
-  '65+'
-];
+const AGE_RANGE_OPTIONS = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
 
 const INDUSTRY_OPTIONS = [
   'Technology',
@@ -47,7 +53,7 @@ const INDUSTRY_OPTIONS = [
   'Non-profit',
   'Government',
   'Entertainment',
-  'Other'
+  'Other',
 ];
 
 const CONTENT_TYPE_OPTIONS = [
@@ -64,7 +70,7 @@ const CONTENT_TYPE_OPTIONS = [
   'Webinars',
   'E-books',
   'Templates',
-  'Checklists'
+  'Checklists',
 ];
 
 export default function AudienceProfileManager({
@@ -73,9 +79,11 @@ export default function AudienceProfileManager({
   selectedAudienceProfile,
   onAudienceProfileSelect,
   audienceProfiles,
-  onAudienceProfilesUpdate
+  onAudienceProfilesUpdate,
 }: AudienceProfileManagerProps) {
-  const [activeTab, setActiveTab] = useState<'list' | 'create' | 'edit' | 'preview' | 'insights'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'create' | 'edit' | 'preview' | 'insights'>(
+    'list'
+  );
   const [editingProfile, setEditingProfile] = useState<AudienceProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +98,7 @@ export default function AudienceProfileManager({
     interests: [],
     painPoints: [],
     preferredContentTypes: [],
-    engagementPatterns: {}
+    engagementPatterns: {},
   });
 
   const [newInterest, setNewInterest] = useState('');
@@ -105,7 +113,7 @@ export default function AudienceProfileManager({
         interests: [...editingProfile.interests],
         painPoints: [...editingProfile.painPoints],
         preferredContentTypes: [...editingProfile.preferredContentTypes],
-        engagementPatterns: { ...editingProfile.engagementPatterns }
+        engagementPatterns: { ...editingProfile.engagementPatterns },
       });
     } else if (activeTab === 'create') {
       setForm({
@@ -115,7 +123,7 @@ export default function AudienceProfileManager({
         interests: [],
         painPoints: [],
         preferredContentTypes: [],
-        engagementPatterns: {}
+        engagementPatterns: {},
       });
     }
   }, [activeTab, editingProfile]);
@@ -159,14 +167,14 @@ export default function AudienceProfileManager({
 
     try {
       await db.deleteAudienceProfile(profile.id);
-      const updatedProfiles = audienceProfiles.filter(p => p.id !== profile.id);
+      const updatedProfiles = audienceProfiles.filter((p) => p.id !== profile.id);
       onAudienceProfilesUpdate(updatedProfiles);
-      
+
       // If this was the selected profile, clear selection
       if (selectedAudienceProfile?.id === profile.id) {
         onAudienceProfileSelect(null);
       }
-      
+
       setSuccess('Audience profile deleted successfully');
       setActiveTab('list');
     } catch (err) {
@@ -178,44 +186,44 @@ export default function AudienceProfileManager({
 
   const addInterest = () => {
     if (newInterest.trim() && !form.interests.includes(newInterest.trim())) {
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
-        interests: [...prev.interests, newInterest.trim()]
+        interests: [...prev.interests, newInterest.trim()],
       }));
       setNewInterest('');
     }
   };
 
   const removeInterest = (interest: string) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      interests: prev.interests.filter(i => i !== interest)
+      interests: prev.interests.filter((i) => i !== interest),
     }));
   };
 
   const addPainPoint = () => {
     if (newPainPoint.trim() && !form.painPoints.includes(newPainPoint.trim())) {
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
-        painPoints: [...prev.painPoints, newPainPoint.trim()]
+        painPoints: [...prev.painPoints, newPainPoint.trim()],
       }));
       setNewPainPoint('');
     }
   };
 
   const removePainPoint = (painPoint: string) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      painPoints: prev.painPoints.filter(p => p !== painPoint)
+      painPoints: prev.painPoints.filter((p) => p !== painPoint),
     }));
   };
 
   const toggleContentType = (contentType: string) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       preferredContentTypes: prev.preferredContentTypes.includes(contentType)
-        ? prev.preferredContentTypes.filter(t => t !== contentType)
-        : [...prev.preferredContentTypes, contentType]
+        ? prev.preferredContentTypes.filter((t) => t !== contentType)
+        : [...prev.preferredContentTypes, contentType],
     }));
   };
 
@@ -230,27 +238,31 @@ export default function AudienceProfileManager({
 
     try {
       const targetAudience = `${form.ageRange} ${form.industry} professionals`;
-      const insights = await generateAudienceInsights(
-        targetAudience,
-        form.industry,
-        ['engagement', 'content creation', 'social media marketing']
-      );
-      
+      const insights = await generateAudienceInsights(targetAudience, form.industry, [
+        'engagement',
+        'content creation',
+        'social media marketing',
+      ]);
+
       setGeneratedInsights(insights);
-      
+
       // Auto-populate form with insights if fields are empty
       if (insights.interests && insights.interests.length > 0 && form.interests.length === 0) {
-        setForm(prev => ({ ...prev, interests: insights.interests }));
+        setForm((prev) => ({ ...prev, interests: insights.interests }));
       }
-      
+
       if (insights.painPoints && insights.painPoints.length > 0 && form.painPoints.length === 0) {
-        setForm(prev => ({ ...prev, painPoints: insights.painPoints }));
+        setForm((prev) => ({ ...prev, painPoints: insights.painPoints }));
       }
-      
-      if (insights.contentPreferences && insights.contentPreferences.length > 0 && form.preferredContentTypes.length === 0) {
-        setForm(prev => ({ ...prev, preferredContentTypes: insights.contentPreferences }));
+
+      if (
+        insights.contentPreferences &&
+        insights.contentPreferences.length > 0 &&
+        form.preferredContentTypes.length === 0
+      ) {
+        setForm((prev) => ({ ...prev, preferredContentTypes: insights.contentPreferences }));
       }
-      
+
       setSuccess('Audience insights generated successfully! Form updated with recommendations.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate audience insights');
@@ -286,14 +298,16 @@ export default function AudienceProfileManager({
         interests: form.interests,
         pain_points: form.painPoints,
         preferred_content_types: form.preferredContentTypes,
-        engagement_patterns: form.engagementPatterns
+        engagement_patterns: form.engagementPatterns,
       };
 
       let savedProfile: AudienceProfile;
 
       if (activeTab === 'edit' && editingProfile) {
         savedProfile = await db.updateAudienceProfile(editingProfile.id, profileData);
-        const updatedProfiles = audienceProfiles.map(p => p.id === editingProfile.id ? savedProfile : p);
+        const updatedProfiles = audienceProfiles.map((p) =>
+          p.id === editingProfile.id ? savedProfile : p
+        );
         onAudienceProfilesUpdate(updatedProfiles);
         setSuccess('Audience profile updated successfully');
       } else {
@@ -323,10 +337,7 @@ export default function AudienceProfileManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Audience Profile Manager</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -405,8 +416,12 @@ export default function AudienceProfileManager({
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Users className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Audience Profiles Yet</h3>
-                  <p className="text-gray-500 mb-4">Create your first audience profile to better target your content.</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Audience Profiles Yet
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    Create your first audience profile to better target your content.
+                  </p>
                   <button
                     onClick={handleCreateNew}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -538,7 +553,7 @@ export default function AudienceProfileManager({
                   <input
                     type="text"
                     value={form.name}
-                    onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., Tech Entrepreneurs, Small Business Owners"
                   />
@@ -550,28 +565,30 @@ export default function AudienceProfileManager({
                   </label>
                   <select
                     value={form.ageRange}
-                    onChange={(e) => setForm(prev => ({ ...prev, ageRange: e.target.value }))}
+                    onChange={(e) => setForm((prev) => ({ ...prev, ageRange: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select age range</option>
-                    {AGE_RANGE_OPTIONS.map(range => (
-                      <option key={range} value={range}>{range}</option>
+                    {AGE_RANGE_OPTIONS.map((range) => (
+                      <option key={range} value={range}>
+                        {range}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Industry *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Industry *</label>
                   <select
                     value={form.industry}
-                    onChange={(e) => setForm(prev => ({ ...prev, industry: e.target.value }))}
+                    onChange={(e) => setForm((prev) => ({ ...prev, industry: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select industry</option>
-                    {INDUSTRY_OPTIONS.map(industry => (
-                      <option key={industry} value={industry}>{industry}</option>
+                    {INDUSTRY_OPTIONS.map((industry) => (
+                      <option key={industry} value={industry}>
+                        {industry}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -698,22 +715,28 @@ export default function AudienceProfileManager({
                         <p className="text-purple-700">{generatedInsights.painPoints.join(', ')}</p>
                       </div>
                     )}
-                    {generatedInsights.contentPreferences && generatedInsights.contentPreferences.length > 0 && (
-                      <div>
-                        <h5 className="font-medium text-purple-800 mb-1">Content Preferences:</h5>
-                        <p className="text-purple-700">{generatedInsights.contentPreferences.join(', ')}</p>
-                      </div>
-                    )}
-                    {generatedInsights.engagementTips && generatedInsights.engagementTips.length > 0 && (
-                      <div>
-                        <h5 className="font-medium text-purple-800 mb-1">Engagement Tips:</h5>
-                        <ul className="text-purple-700 list-disc list-inside">
-                          {generatedInsights.engagementTips.slice(0, 3).map((tip: string, index: number) => (
-                            <li key={index}>{tip}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {generatedInsights.contentPreferences &&
+                      generatedInsights.contentPreferences.length > 0 && (
+                        <div>
+                          <h5 className="font-medium text-purple-800 mb-1">Content Preferences:</h5>
+                          <p className="text-purple-700">
+                            {generatedInsights.contentPreferences.join(', ')}
+                          </p>
+                        </div>
+                      )}
+                    {generatedInsights.engagementTips &&
+                      generatedInsights.engagementTips.length > 0 && (
+                        <div>
+                          <h5 className="font-medium text-purple-800 mb-1">Engagement Tips:</h5>
+                          <ul className="text-purple-700 list-disc list-inside">
+                            {generatedInsights.engagementTips
+                              .slice(0, 3)
+                              .map((tip: string, index: number) => (
+                                <li key={index}>{tip}</li>
+                              ))}
+                          </ul>
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
@@ -841,7 +864,9 @@ export default function AudienceProfileManager({
                   <div className="space-y-2 text-sm text-blue-800">
                     <p>• Focus on {editingProfile.preferredContentTypes.slice(0, 3).join(', ')}</p>
                     <p>• Address pain points: {editingProfile.painPoints.slice(0, 2).join(', ')}</p>
-                    <p>• Target {editingProfile.ageRange} professionals in {editingProfile.industry}</p>
+                    <p>
+                      • Target {editingProfile.ageRange} professionals in {editingProfile.industry}
+                    </p>
                   </div>
                 </div>
 
