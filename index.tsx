@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles/holographic-theme.css';
@@ -31,7 +30,7 @@ class ErrorBoundary extends React.Component<
           <div className="text-center text-white p-8">
             <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
             <p className="mb-4">Please check the console for details</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="bg-white/20 backdrop-blur-sm border border-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-all duration-300"
             >
@@ -47,7 +46,7 @@ class ErrorBoundary extends React.Component<
 }
 
 Sentry.init({
-  dsn: "https://f9f127c56f81953217dd8571584f1f80@o4509278644011008.ingest.us.sentry.io/4510191856254976",
+  dsn: 'https://f9f127c56f81953217dd8571584f1f80@o4509278644011008.ingest.us.sentry.io/4510191856254976',
   sendDefaultPii: true,
   integrations: [Sentry.browserTracingIntegration()],
   tracesSampleRate: 0.1,
@@ -56,7 +55,7 @@ Sentry.init({
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
+  throw new Error('Could not find root element to mount to');
 }
 
 // Clear any existing content to prevent React root conflicts
@@ -64,10 +63,12 @@ rootElement.innerHTML = '';
 
 // Debug environment variables
 console.log('Environment check:', {
-  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'Present' : 'Missing',
-  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing',
+  VITE_STACK_PROJECT_ID: import.meta.env.VITE_STACK_PROJECT_ID ? 'Present' : 'Missing',
+  VITE_STACK_PUBLISHABLE_CLIENT_KEY: import.meta.env.VITE_STACK_PUBLISHABLE_CLIENT_KEY
+    ? 'Present'
+    : 'Missing',
   NODE_ENV: import.meta.env.NODE_ENV,
-  MODE: import.meta.env.MODE
+  MODE: import.meta.env.MODE,
 });
 
 const root = ReactDOM.createRoot(rootElement);

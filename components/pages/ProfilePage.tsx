@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
-// User type will be defined in types.ts or imported from Stack Auth
+import { useUser } from '@stackframe/stack';
+// User type from Stack Auth
 interface User {
   id: string;
   email: string;
   name?: string;
 }
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 interface ProfileData {
   display_name: string;
@@ -32,8 +27,8 @@ interface ProfileData {
 }
 
 export const ProfilePage: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const user = useUser();
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -59,29 +54,15 @@ export const ProfilePage: React.FC = () => {
   });
 
   useEffect(() => {
-    const getUser = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          setUser(user);
-          setProfileData((prev) => ({
-            ...prev,
-            display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '',
-            bio: user.user_metadata?.bio || '',
-            website: user.user_metadata?.website || '',
-          }));
-        }
-      } catch (error) {
-        console.error('Error getting user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getUser();
-  }, []);
+    if (user) {
+      setProfileData((prev) => ({
+        ...prev,
+        display_name: user.displayName || user.email?.split('@')[0] || '',
+        bio: user.profile?.bio || '',
+        website: user.profile?.website || '',
+      }));
+    }
+  }, [user]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -91,9 +72,10 @@ export const ProfilePage: React.FC = () => {
     setMessage('');
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          display_name: profileData.display_name,
+      // Update user profile using Stack Auth
+      await user.update({
+        displayName: profileData.display_name,
+        profile: {
           bio: profileData.bio,
           website: profileData.website,
           timezone: profileData.timezone,
@@ -102,12 +84,8 @@ export const ProfilePage: React.FC = () => {
         },
       });
 
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage('Profile updated successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      }
+      setMessage('Profile updated successfully!');
+      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setError('Failed to update profile');
     } finally {
@@ -123,16 +101,10 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage('Password updated successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      }
+      // Stack Auth handles password updates differently
+      // This would need to be implemented based on Stack Auth's API
+      setMessage('Password update feature coming soon!');
+      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setError('Failed to update password');
     }
@@ -145,18 +117,10 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
-      // Note: In a real app, you'd want to implement proper account deletion
-      // This would involve deleting all user data from your database
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage('Account deletion initiated. You will be signed out.');
-        setTimeout(() => {
-          navigate('/');
-        }, 2000);
-      }
+      // Stack Auth handles account deletion differently
+      // This would need to be implemented based on Stack Auth's API
+      setMessage('Account deletion feature coming soon!');
+      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setError('Failed to delete account');
     }
@@ -164,23 +128,15 @@ export const ProfilePage: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await user.signOut();
       navigate('/');
     } catch (error) {
       setError('Failed to sign out');
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
-  }
-
   if (!user) {
-    navigate('/signin');
+    navigate('/auth/signin');
     return null;
   }
 

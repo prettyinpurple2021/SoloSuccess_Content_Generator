@@ -36,12 +36,16 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/genai": "^1.12.0",
     "@sentry/react": "^8.55.0",
+    "@stackframe/react": "^2.8.44",
     "@stackframe/stack": "^2.8.44",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.39.0",
     "@tailwindcss/cli": "^4.1.14",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.6.1",
+    "express": "^4.18.2",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
     "marked": "^13.0.1",
@@ -50,10 +54,7 @@
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",
     "serve": "^14.2.1",
-    "uuid": "^10.0.0",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "concurrently": "^8.2.2"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
