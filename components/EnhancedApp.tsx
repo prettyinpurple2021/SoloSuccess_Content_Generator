@@ -39,15 +39,15 @@ const EnhancedApp: React.FC = () => {
   React.useEffect(() => {
     const fetchUserProgress = async () => {
       try {
-        const { db } = await import('../services/supabaseService');
+        const { apiService } = await import('../services/apiService');
 
         // For now, we'll use a placeholder user ID since Stack Auth integration is pending
         const placeholderUserId = '00000000-0000-0000-0000-000000000000';
 
         const [brandVoices, audienceProfiles, campaigns] = await Promise.all([
-          db.getBrandVoices(placeholderUserId).catch(() => []),
-          db.getAudienceProfiles(placeholderUserId).catch(() => []),
-          db.getCampaigns(placeholderUserId).catch(() => []),
+          apiService.getBrandVoices(placeholderUserId).catch(() => []),
+          apiService.getAudienceProfiles(placeholderUserId).catch(() => []),
+          apiService.getCampaigns(placeholderUserId).catch(() => []),
         ]);
 
         // Check if user has viewed analytics by checking localStorage

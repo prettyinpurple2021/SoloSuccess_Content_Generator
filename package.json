@@ -17,7 +17,9 @@
     "docker:run": "docker run -p 3000:80 solosuccess-ai",
     "docker:compose": "docker-compose up --build",
     "migrate:neon": "node scripts/apply-neon-migrations.js",
-    "test:neon": "node scripts/test-neon-integration.js"
+    "test:neon": "node scripts/test-neon-integration.js",
+    "server": "node server.js",
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\""
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
@@ -48,7 +50,10 @@
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",
     "serve": "^14.2.1",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "concurrently": "^8.2.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
