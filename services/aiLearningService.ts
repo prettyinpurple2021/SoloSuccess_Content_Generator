@@ -256,9 +256,10 @@ export class AILearningService {
   /**
    * Get trending topics based on user's network and preferences
    */
-  getTrendingTopicsForUser(
-    userId: string
-  ): { topic: string; trendScore: number; personalRelevance: number }[] {
+  async getTrendingTopicsForUser(
+    userId: string,
+    userInterests: string[] = []
+  ): Promise<{ topic: string; trendScore: number; personalRelevance: number }[]> {
     const preferences = this.userPreferences.get(userId);
     if (!preferences) return [];
 
