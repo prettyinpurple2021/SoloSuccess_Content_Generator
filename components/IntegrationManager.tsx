@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Integration, 
-  CreateIntegrationData, 
+import {
+  Integration,
+  CreateIntegrationData,
   UpdateIntegrationData,
   ConnectionTestResult,
   SyncResult,
   HealthCheckResult,
   IntegrationType,
-  SyncFrequency
+  SyncFrequency,
 } from '../types';
-import { integrationService } from '../services/integrationService';
+// import { integrationService } from '../services/integrationService';
 import IntegrationOverview from './integrations/IntegrationOverview';
 import AddIntegration from './integrations/AddIntegration';
 import ConfigureIntegration from './integrations/ConfigureIntegration';
@@ -27,7 +27,7 @@ type ActiveTab = 'overview' | 'add' | 'configure' | 'monitor';
 const IntegrationManager: React.FC<IntegrationManagerProps> = ({
   isOpen,
   onClose,
-  onIntegrationUpdate
+  onIntegrationUpdate,
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -63,11 +63,11 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setIsLoading(true);
       setError('');
       const newIntegration = await integrationService.createIntegration(data);
-      setIntegrations(prev => [...prev, newIntegration]);
+      setIntegrations((prev) => [...prev, newIntegration]);
       setSuccess('Integration created successfully');
       setActiveTab('overview');
       onIntegrationUpdate?.(newIntegration);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -83,10 +83,10 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setIsLoading(true);
       setError('');
       const updatedIntegration = await integrationService.updateIntegration(id, updates);
-      setIntegrations(prev => prev.map(i => i.id === id ? updatedIntegration : i));
+      setIntegrations((prev) => prev.map((i) => (i.id === id ? updatedIntegration : i)));
       setSuccess('Integration updated successfully');
       onIntegrationUpdate?.(updatedIntegration);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -98,7 +98,9 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Delete integration
   const deleteIntegration = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this integration? This action cannot be undone.')) {
+    if (
+      !confirm('Are you sure you want to delete this integration? This action cannot be undone.')
+    ) {
       return;
     }
 
@@ -106,9 +108,9 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setIsLoading(true);
       setError('');
       await integrationService.deleteIntegration(id);
-      setIntegrations(prev => prev.filter(i => i.id !== id));
+      setIntegrations((prev) => prev.filter((i) => i.id !== id));
       setSuccess('Integration deleted successfully');
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -124,25 +126,25 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setIsLoading(true);
       setError('');
       const result = await integrationService.testConnection(id);
-      
+
       if (result.success) {
         setSuccess('Connection test successful');
         // Update integration status
-        const integration = integrations.find(i => i.id === id);
+        const integration = integrations.find((i) => i.id === id);
         if (integration) {
           const updatedIntegration = { ...integration, status: 'connected' as const };
-          setIntegrations(prev => prev.map(i => i.id === id ? updatedIntegration : i));
+          setIntegrations((prev) => prev.map((i) => (i.id === id ? updatedIntegration : i)));
         }
       } else {
         setError(`Connection test failed: ${result.error}`);
       }
-      
+
       // Clear messages after 3 seconds
       setTimeout(() => {
         setSuccess('');
         setError('');
       }, 3000);
-      
+
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Connection test failed';
@@ -152,7 +154,7 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
         success: false,
         error: errorMessage,
         responseTime: 0,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     } finally {
       setIsLoading(false);
@@ -165,25 +167,25 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setIsLoading(true);
       setError('');
       const result = await integrationService.syncIntegration(id);
-      
+
       if (result.success) {
         setSuccess(`Sync completed: ${result.recordsProcessed} records processed`);
         // Update integration last sync time
-        const integration = integrations.find(i => i.id === id);
+        const integration = integrations.find((i) => i.id === id);
         if (integration) {
           const updatedIntegration = { ...integration, lastSync: result.timestamp };
-          setIntegrations(prev => prev.map(i => i.id === id ? updatedIntegration : i));
+          setIntegrations((prev) => prev.map((i) => (i.id === id ? updatedIntegration : i)));
         }
       } else {
         setError(`Sync failed: ${result.errors.join(', ')}`);
       }
-      
+
       // Clear messages after 5 seconds
       setTimeout(() => {
         setSuccess('');
         setError('');
       }, 5000);
-      
+
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Sync failed';
@@ -198,7 +200,7 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
         recordsDeleted: 0,
         errors: [errorMessage],
         duration: 0,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     } finally {
       setIsLoading(false);
@@ -230,19 +232,19 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setIsLoading(true);
       setError('');
       const success = await integrationService.connectIntegration(id);
-      
+
       if (success) {
         setSuccess('Integration connected successfully');
         // Update integration status
-        const integration = integrations.find(i => i.id === id);
+        const integration = integrations.find((i) => i.id === id);
         if (integration) {
           const updatedIntegration = { ...integration, status: 'connected' as const };
-          setIntegrations(prev => prev.map(i => i.id === id ? updatedIntegration : i));
+          setIntegrations((prev) => prev.map((i) => (i.id === id ? updatedIntegration : i)));
         }
       } else {
         setError('Failed to connect integration');
       }
-      
+
       setTimeout(() => {
         setSuccess('');
         setError('');
@@ -262,14 +264,14 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setError('');
       await integrationService.disconnectIntegration(id);
       setSuccess('Integration disconnected successfully');
-      
+
       // Update integration status
-      const integration = integrations.find(i => i.id === id);
+      const integration = integrations.find((i) => i.id === id);
       if (integration) {
         const updatedIntegration = { ...integration, status: 'disconnected' as const };
-        setIntegrations(prev => prev.map(i => i.id === id ? updatedIntegration : i));
+        setIntegrations((prev) => prev.map((i) => (i.id === id ? updatedIntegration : i)));
       }
-      
+
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to disconnect integration');
@@ -285,7 +287,7 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setIsLoading(true);
       setError('');
       const results = await integrationService.syncAll();
-      const successful = results.filter(r => r.success).length;
+      const successful = results.filter((r) => r.success).length;
       const total = results.length;
       setSuccess(`Sync completed: ${successful}/${total} integrations synced successfully`);
       setTimeout(() => setSuccess(''), 5000);
@@ -303,9 +305,9 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setIsLoading(true);
       setError('');
       const healthChecks = await Promise.allSettled(
-        integrations.map(integration => integrationService.checkIntegrationHealth(integration.id))
+        integrations.map((integration) => integrationService.checkIntegrationHealth(integration.id))
       );
-      const successful = healthChecks.filter(h => h.status === 'fulfilled').length;
+      const successful = healthChecks.filter((h) => h.status === 'fulfilled').length;
       const total = healthChecks.length;
       setSuccess(`Health check completed: ${successful}/${total} integrations checked`);
       setTimeout(() => setSuccess(''), 5000);
@@ -344,7 +346,7 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
     { key: 'overview', label: 'Overview', icon: '📊' },
     { key: 'add', label: 'Add Integration', icon: '➕' },
     { key: 'configure', label: 'Configure', icon: '⚙️' },
-    { key: 'monitor', label: 'Monitor', icon: '📈' }
+    { key: 'monitor', label: 'Monitor', icon: '📈' },
   ] as const;
 
   return (
@@ -367,7 +369,9 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
           <div className="flex items-center justify-between p-8 border-b border-white/20 bg-white/10 backdrop-blur-sm">
             <div>
               <h2 className="text-4xl font-bold gradient-text">Integration Manager</h2>
-              <p className="text-lg text-white/80 mt-2">Manage your external platform integrations</p>
+              <p className="text-lg text-white/80 mt-2">
+                Manage your external platform integrations
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -397,7 +401,7 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
           {/* Tab Navigation */}
           <div className="flex border-b border-white/20 bg-white/5 backdrop-blur-sm">
-            {tabs.map(tab => (
+            {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
@@ -452,10 +456,7 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
                   />
                 )}
                 {activeTab === 'add' && (
-                  <AddIntegration
-                    onCreateIntegration={createIntegration}
-                    isLoading={isLoading}
-                  />
+                  <AddIntegration onCreateIntegration={createIntegration} isLoading={isLoading} />
                 )}
                 {activeTab === 'configure' && (
                   <ConfigureIntegration

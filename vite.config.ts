@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       sourcemap: false,
       rollupOptions: {
+        external: ['postgres', 'fs', 'os', 'net', 'tls', 'crypto', 'stream', 'perf_hooks'],
         output: {
           manualChunks: undefined,
         },

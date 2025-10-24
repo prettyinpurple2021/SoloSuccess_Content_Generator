@@ -1,6 +1,6 @@
 /**
  * SmartPosting - Intelligent multi-platform content posting
- * 
+ *
  * Features:
  * - Platform-specific content adaptation
  * - Real-time character counting
@@ -13,7 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentAdaptationService } from '../../services/contentAdaptationService';
-import { schedulePost } from '../../services/schedulerService';
+// import { schedulePost } from '../../services/schedulerService';
 import ContentPreview from './ContentPreview';
 
 interface SmartPostingProps {
@@ -31,7 +31,7 @@ interface SmartPostingProps {
 export const SmartPosting: React.FC<SmartPostingProps> = ({
   availableIntegrations,
   onPostSuccess,
-  onPostError
+  onPostError,
 }) => {
   const [content, setContent] = useState('');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
@@ -41,7 +41,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
     scheduleForLater: false,
     scheduledTime: '',
     includeMedia: false,
-    mediaUrls: [] as string[]
+    mediaUrls: [] as string[],
   });
   const [isPosting, setIsPosting] = useState(false);
   const [postResults, setPostResults] = useState<Record<string, any>>({});
@@ -49,15 +49,13 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
   // Get connected integrations
   const connectedIntegrations = availableIntegrations.filter(
-    integration => integration.status === 'connected'
+    (integration) => integration.status === 'connected'
   );
 
   // Handle platform selection
   const handlePlatformToggle = (platform: string) => {
-    setSelectedPlatforms(prev => 
-      prev.includes(platform)
-        ? prev.filter(p => p !== platform)
-        : [...prev, platform]
+    setSelectedPlatforms((prev) =>
+      prev.includes(platform) ? prev.filter((p) => p !== platform) : [...prev, platform]
     );
   };
 
@@ -75,7 +73,10 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
     for (const platform of selectedPlatforms) {
       try {
-        const validation = await socialMediaIntegrations.validateContentForPlatform(content, platform);
+        const validation = await socialMediaIntegrations.validateContentForPlatform(
+          content,
+          platform
+        );
         validations[platform] = validation;
         if (!validation.isValid) {
           allValid = false;
@@ -84,7 +85,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
         validations[platform] = {
           isValid: false,
           issues: [`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`],
-          suggestions: []
+          suggestions: [],
         };
         allValid = false;
       }
@@ -106,7 +107,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
     try {
       // Validate content first
       const { validations, allValid } = await validateAllPlatforms();
-      
+
       if (!allValid) {
         onPostError?.('Content validation failed. Please check the preview for issues.');
         setIsPosting(false);
@@ -114,9 +115,10 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
       }
 
       // Create scheduling jobs
-      const scheduleDate = postingOptions.scheduleForLater && postingOptions.scheduledTime
-        ? new Date(postingOptions.scheduledTime).toISOString()
-        : new Date().toISOString();
+      const scheduleDate =
+        postingOptions.scheduleForLater && postingOptions.scheduledTime
+          ? new Date(postingOptions.scheduledTime).toISOString()
+          : new Date().toISOString();
 
       await schedulePost({
         content,
@@ -126,16 +128,13 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
         options: {
           tone: postingOptions.tone,
           includeCallToAction: postingOptions.includeCallToAction,
-        }
+        },
       });
 
       setPostResults(
-        Object.fromEntries(
-          selectedPlatforms.map(p => [p, { success: true, queued: true }])
-        )
+        Object.fromEntries(selectedPlatforms.map((p) => [p, { success: true, queued: true }]))
       );
       onPostSuccess?.({ queued: true });
-
     } catch (error) {
       onPostError?.(error instanceof Error ? error.message : 'Unknown error occurred');
     } finally {
@@ -152,7 +151,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
       bluesky: '☁️',
       reddit: '🤖',
       pinterest: '📌',
-      youtube: '📺'
+      youtube: '📺',
     };
     return icons[platform] || '📱';
   };
@@ -166,7 +165,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
       bluesky: 'from-sky-400 to-sky-600',
       reddit: 'from-orange-500 to-orange-700',
       pinterest: 'from-red-500 to-red-700',
-      youtube: 'from-red-500 to-red-700'
+      youtube: 'from-red-500 to-red-700',
     };
     return colors[platform] || 'from-gray-400 to-gray-600';
   };
@@ -183,9 +182,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
       {/* Content Input */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <label className="block text-sm font-medium text-gray-700 mb-3">
-          Content
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-3">Content</label>
         <textarea
           value={content}
           onChange={(e) => handleContentChange(e.target.value)}
@@ -193,9 +190,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
           className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
         />
         <div className="flex justify-between items-center mt-2">
-          <span className="text-sm text-gray-500">
-            {content.length} characters
-          </span>
+          <span className="text-sm text-gray-500">{content.length} characters</span>
           <button
             onClick={() => setShowPreview(!showPreview)}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium"
@@ -207,9 +202,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
       {/* Platform Selection */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <label className="block text-sm font-medium text-gray-700 mb-4">
-          Select Platforms
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-4">Select Platforms</label>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {connectedIntegrations.map((integration) => (
             <motion.button
@@ -229,7 +222,9 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
                   {integration.platform}
                 </span>
                 <span className="text-xs text-gray-500 mt-1">
-                  {contentAdaptationService.getPlatformLimits(integration.platform)?.maxCharacters || 0} chars
+                  {contentAdaptationService.getPlatformLimits(integration.platform)
+                    ?.maxCharacters || 0}{' '}
+                  chars
                 </span>
               </div>
               {selectedPlatforms.includes(integration.platform) && (
@@ -240,7 +235,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
             </motion.button>
           ))}
         </div>
-        
+
         {selectedPlatforms.length === 0 && (
           <p className="text-sm text-gray-500 mt-4 text-center">
             Select at least one platform to continue
@@ -252,16 +247,16 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
       {selectedPlatforms.length > 0 && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Posting Options</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tone Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Content Tone
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Content Tone</label>
               <select
                 value={postingOptions.tone}
-                onChange={(e) => setPostingOptions(prev => ({ ...prev, tone: e.target.value as any }))}
+                onChange={(e) =>
+                  setPostingOptions((prev) => ({ ...prev, tone: e.target.value as any }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="professional">Professional</option>
@@ -277,7 +272,9 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
                 type="checkbox"
                 id="includeCTA"
                 checked={postingOptions.includeCallToAction}
-                onChange={(e) => setPostingOptions(prev => ({ ...prev, includeCallToAction: e.target.checked }))}
+                onChange={(e) =>
+                  setPostingOptions((prev) => ({ ...prev, includeCallToAction: e.target.checked }))
+                }
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="includeCTA" className="ml-2 text-sm text-gray-700">
@@ -290,10 +287,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
       {/* Content Preview */}
       {showPreview && selectedPlatforms.length > 0 && (
-        <ContentPreview
-          content={content}
-          selectedPlatforms={selectedPlatforms}
-        />
+        <ContentPreview content={content} selectedPlatforms={selectedPlatforms} />
       )}
 
       {/* Post Results */}
@@ -322,7 +316,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
                     {result.success ? '✅' : '❌'}
                   </div>
                 </div>
-                
+
                 {result.success && result.url && (
                   <div className="mt-2">
                     <a
@@ -335,11 +329,9 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
                     </a>
                   </div>
                 )}
-                
+
                 {result.error && (
-                  <div className="mt-2 text-sm text-red-700">
-                    Error: {result.error}
-                  </div>
+                  <div className="mt-2 text-sm text-red-700">Error: {result.error}</div>
                 )}
               </div>
             ))}
@@ -359,7 +351,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
         >
           Clear All
         </button>
-        
+
         <button
           onClick={handlePost}
           disabled={!content.trim() || selectedPlatforms.length === 0 || isPosting}

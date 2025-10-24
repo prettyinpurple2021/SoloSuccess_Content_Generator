@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Integration, 
-  IntegrationMetrics, 
-  IntegrationLog, 
+import {
+  Integration,
+  IntegrationMetrics,
+  IntegrationLog,
   IntegrationAlert,
-  WebhookDelivery 
+  WebhookDelivery,
 } from '../../types';
-import { monitoringService } from '../../services/monitoringService';
-import { webhookService } from '../../services/webhookService';
+// import { monitoringService } from '../../services/monitoringService';
+// import { webhookService } from '../../services/webhookService';
 
 interface RealTimeMonitoringDashboardProps {
   integrations: Integration[];
@@ -19,7 +19,7 @@ interface RealTimeMonitoringDashboardProps {
 const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = ({
   integrations,
   onRefresh,
-  isLoading
+  isLoading,
 }) => {
   const [metrics, setMetrics] = useState<IntegrationMetrics[]>([]);
   const [logs, setLogs] = useState<IntegrationLog[]>([]);
@@ -29,8 +29,10 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h');
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
-  
+  const [connectionStatus, setConnectionStatus] = useState<
+    'connected' | 'disconnected' | 'connecting'
+  >('disconnected');
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
@@ -60,7 +62,7 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
     }
 
     setConnectionStatus('connecting');
-    
+
     try {
       const wsUrl = process.env.VITE_WS_URL || 'ws://localhost:3001';
       wsRef.current = new WebSocket(wsUrl);
@@ -69,12 +71,19 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
         console.log('WebSocket connected');
         setConnectionStatus('connected');
         reconnectAttempts.current = 0;
-        
+
         // Subscribe to integration events
-        wsRef.current?.send(JSON.stringify({
-          type: 'subscribe',
-          channels: ['integration_metrics', 'integration_logs', 'integration_alerts', 'webhook_deliveries']
-        }));
+        wsRef.current?.send(
+          JSON.stringify({
+            type: 'subscribe',
+            channels: [
+              'integration_metrics',
+              'integration_logs',
+              'integration_alerts',
+              'webhook_deliveries',
+            ],
+          })
+        );
       };
 
       wsRef.current.onmessage = (event) => {
@@ -89,7 +98,7 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
       wsRef.current.onclose = () => {
         console.log('WebSocket disconnected');
         setConnectionStatus('disconnected');
-        
+
         if (isRealTimeEnabled && reconnectAttempts.current < maxReconnectAttempts) {
           scheduleReconnect();
         }
@@ -110,19 +119,19 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
       wsRef.current.close();
       wsRef.current = null;
     }
-    
+
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
-    
+
     setConnectionStatus('disconnected');
   };
 
   const scheduleReconnect = () => {
     reconnectAttempts.current++;
     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-    
+
     reconnectTimeoutRef.current = setTimeout(() => {
       if (isRealTimeEnabled) {
         connectWebSocket();
@@ -133,9 +142,11 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
   const handleWebSocketMessage = (data: any) => {
     switch (data.type) {
       case 'integration_metrics':
-        setMetrics(prev => {
+        setMetrics((prev) => {
           const updated = [...prev];
-          const existingIndex = updated.findIndex(m => m.integrationId === data.metrics.integrationId);
+          const existingIndex = updated.findIndex(
+            (m) => m.integrationId === data.metrics.integrationId
+          );
           if (existingIndex >= 0) {
             updated[existingIndex] = data.metrics;
           } else {
@@ -144,19 +155,19 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
           return updated.slice(-100); // Keep last 100 metrics
         });
         break;
-        
+
       case 'integration_log':
-        setLogs(prev => [data.log, ...prev.slice(0, 999)]);
+        setLogs((prev) => [data.log, ...prev.slice(0, 999)]);
         break;
-        
+
       case 'integration_alert':
-        setAlerts(prev => [data.alert, ...prev.slice(0, 99)]);
+        setAlerts((prev) => [data.alert, ...prev.slice(0, 99)]);
         break;
-        
+
       case 'webhook_delivery':
-        setWebhookDeliveries(prev => [data.delivery, ...prev.slice(0, 199)]);
+        setWebhookDeliveries((prev) => [data.delivery, ...prev.slice(0, 199)]);
         break;
-        
+
       case 'ping':
         wsRef.current?.send(JSON.stringify({ type: 'pong' }));
         break;
@@ -166,40 +177,36 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
   const loadMonitoringData = async () => {
     setIsLoadingData(true);
     try {
-      const integrationIds = selectedIntegration === 'all' 
-        ? integrations.map(i => i.id)
-        : [selectedIntegration];
+      const integrationIds =
+        selectedIntegration === 'all' ? integrations.map((i) => i.id) : [selectedIntegration];
 
       // Load metrics
-      const metricsPromises = integrationIds.map(id => 
+      const metricsPromises = integrationIds.map((id) =>
         monitoringService.getIntegrationMetrics(id, timeRange)
       );
       const metricsResults = await Promise.allSettled(metricsPromises);
       const allMetrics = metricsResults
-        .filter(result => result.status === 'fulfilled')
-        .flatMap(result => (result as PromiseFulfilledResult<IntegrationMetrics[]>).value);
+        .filter((result) => result.status === 'fulfilled')
+        .flatMap((result) => (result as PromiseFulfilledResult<IntegrationMetrics[]>).value);
       setMetrics(allMetrics);
 
       // Load logs
-      const logsPromises = integrationIds.map(id => 
+      const logsPromises = integrationIds.map((id) =>
         monitoringService.getIntegrationLogs(id, timeRange)
       );
       const logsResults = await Promise.allSettled(logsPromises);
       const allLogs = logsResults
-        .filter(result => result.status === 'fulfilled')
-        .flatMap(result => (result as PromiseFulfilledResult<IntegrationLog[]>).value);
+        .filter((result) => result.status === 'fulfilled')
+        .flatMap((result) => (result as PromiseFulfilledResult<IntegrationLog[]>).value);
       setLogs(allLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
 
       // Load alerts
-      const alertsPromises = integrationIds.map(id => 
-        monitoringService.getIntegrationAlerts(id)
-      );
+      const alertsPromises = integrationIds.map((id) => monitoringService.getIntegrationAlerts(id));
       const alertsResults = await Promise.allSettled(alertsPromises);
       const allAlerts = alertsResults
-        .filter(result => result.status === 'fulfilled')
-        .flatMap(result => (result as PromiseFulfilledResult<IntegrationAlert[]>).value);
+        .filter((result) => result.status === 'fulfilled')
+        .flatMap((result) => (result as PromiseFulfilledResult<IntegrationAlert[]>).value);
       setAlerts(allAlerts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
-
     } catch (error) {
       console.error('Failed to load monitoring data:', error);
     } finally {
@@ -211,53 +218,74 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
   const totalRequests = metrics.reduce((sum, m) => sum + m.totalRequests, 0);
   const successfulRequests = metrics.reduce((sum, m) => sum + m.successfulRequests, 0);
   const failedRequests = metrics.reduce((sum, m) => sum + m.failedRequests, 0);
-  const avgResponseTime = metrics.length > 0 
-    ? metrics.reduce((sum, m) => sum + m.averageResponseTime, 0) / metrics.length 
-    : 0;
+  const avgResponseTime =
+    metrics.length > 0
+      ? metrics.reduce((sum, m) => sum + m.averageResponseTime, 0) / metrics.length
+      : 0;
   const errorRate = totalRequests > 0 ? (failedRequests / totalRequests) * 100 : 0;
   const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0;
 
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'connected': return 'text-green-600';
-      case 'error': return 'text-red-600';
-      case 'syncing': return 'text-blue-600';
-      case 'maintenance': return 'text-yellow-600';
-      default: return 'text-gray-600';
+      case 'connected':
+        return 'text-green-600';
+      case 'error':
+        return 'text-red-600';
+      case 'syncing':
+        return 'text-blue-600';
+      case 'maintenance':
+        return 'text-yellow-600';
+      default:
+        return 'text-gray-600';
     }
   };
 
   // Get severity color
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'critical':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   // Get log level color
   const getLogLevelColor = (level: string) => {
     switch (level) {
-      case 'error': return 'text-red-600 bg-red-50';
-      case 'warn': return 'text-yellow-600 bg-yellow-50';
-      case 'info': return 'text-blue-600 bg-blue-50';
-      case 'debug': return 'text-gray-600 bg-gray-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'error':
+        return 'text-red-600 bg-red-50';
+      case 'warn':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'info':
+        return 'text-blue-600 bg-blue-50';
+      case 'debug':
+        return 'text-gray-600 bg-gray-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
     }
   };
 
   // Get delivery status color
   const getDeliveryStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered': return 'text-green-600 bg-green-50';
-      case 'failed': return 'text-red-600 bg-red-50';
-      case 'delivering': return 'text-blue-600 bg-blue-50';
-      case 'pending': return 'text-yellow-600 bg-yellow-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'delivered':
+        return 'text-green-600 bg-green-50';
+      case 'failed':
+        return 'text-red-600 bg-red-50';
+      case 'delivering':
+        return 'text-blue-600 bg-blue-50';
+      case 'pending':
+        return 'text-yellow-600 bg-yellow-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
     }
   };
 
@@ -267,7 +295,9 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Real-time Monitoring Dashboard</h2>
-          <p className="text-sm text-gray-600">Live monitoring and analytics for your integrations</p>
+          <p className="text-sm text-gray-600">
+            Live monitoring and analytics for your integrations
+          </p>
         </div>
         <div className="flex items-center space-x-4">
           {/* Real-time Toggle */}
@@ -285,11 +315,15 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
                 }`}
               />
             </button>
-            <div className={`w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-green-500' :
-              connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-              'bg-red-500'
-            }`}></div>
+            <div
+              className={`w-2 h-2 rounded-full ${
+                connectionStatus === 'connected'
+                  ? 'bg-green-500'
+                  : connectionStatus === 'connecting'
+                    ? 'bg-yellow-500 animate-pulse'
+                    : 'bg-red-500'
+              }`}
+            ></div>
           </div>
 
           <select
@@ -298,7 +332,7 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Integrations</option>
-            {integrations.map(integration => (
+            {integrations.map((integration) => (
               <option key={integration.id} value={integration.id}>
                 {integration.name}
               </option>
@@ -399,12 +433,12 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Real-time Alerts</h3>
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${
-                isRealTimeEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-              }`}></div>
-              <span className="text-sm text-gray-600">
-                {isRealTimeEnabled ? 'Live' : 'Static'}
-              </span>
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isRealTimeEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                }`}
+              ></div>
+              <span className="text-sm text-gray-600">{isRealTimeEnabled ? 'Live' : 'Static'}</span>
             </div>
           </div>
         </div>
@@ -416,7 +450,7 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
             </div>
           ) : (
             <div className="space-y-3">
-              {alerts.slice(0, 10).map(alert => (
+              {alerts.slice(0, 10).map((alert) => (
                 <motion.div
                   key={alert.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -424,7 +458,9 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={`px-2 py-1 rounded text-xs font-medium border ${getSeverityColor(alert.severity)}`}>
+                    <div
+                      className={`px-2 py-1 rounded text-xs font-medium border ${getSeverityColor(alert.severity)}`}
+                    >
                       {alert.severity}
                     </div>
                     <div>
@@ -433,12 +469,8 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-500">
-                      {alert.createdAt.toLocaleString()}
-                    </div>
-                    {alert.isResolved && (
-                      <div className="text-xs text-green-600">Resolved</div>
-                    )}
+                    <div className="text-sm text-gray-500">{alert.createdAt.toLocaleString()}</div>
+                    {alert.isResolved && <div className="text-xs text-green-600">Resolved</div>}
                   </div>
                 </motion.div>
               ))}
@@ -458,12 +490,12 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Real-time Logs</h3>
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${
-                isRealTimeEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-              }`}></div>
-              <span className="text-sm text-gray-600">
-                {isRealTimeEnabled ? 'Live' : 'Static'}
-              </span>
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isRealTimeEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                }`}
+              ></div>
+              <span className="text-sm text-gray-600">{isRealTimeEnabled ? 'Live' : 'Static'}</span>
             </div>
           </div>
         </div>
@@ -481,7 +513,7 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               <AnimatePresence>
-                {logs.slice(0, 50).map(log => (
+                {logs.slice(0, 50).map((log) => (
                   <motion.div
                     key={log.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -490,14 +522,14 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
                     className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className={`px-2 py-1 rounded text-xs font-medium ${getLogLevelColor(log.level)}`}>
+                      <div
+                        className={`px-2 py-1 rounded text-xs font-medium ${getLogLevelColor(log.level)}`}
+                      >
                         {log.level.toUpperCase()}
                       </div>
                       <div className="text-sm text-gray-900">{log.message}</div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {log.timestamp.toLocaleString()}
-                    </div>
+                    <div className="text-xs text-gray-500">{log.timestamp.toLocaleString()}</div>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -517,12 +549,12 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Webhook Deliveries</h3>
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${
-                isRealTimeEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-              }`}></div>
-              <span className="text-sm text-gray-600">
-                {isRealTimeEnabled ? 'Live' : 'Static'}
-              </span>
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isRealTimeEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                }`}
+              ></div>
+              <span className="text-sm text-gray-600">{isRealTimeEnabled ? 'Live' : 'Static'}</span>
             </div>
           </div>
         </div>
@@ -535,7 +567,7 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               <AnimatePresence>
-                {webhookDeliveries.slice(0, 50).map(delivery => (
+                {webhookDeliveries.slice(0, 50).map((delivery) => (
                   <motion.div
                     key={delivery.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -544,7 +576,9 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
                     className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className={`px-2 py-1 rounded text-xs font-medium ${getDeliveryStatusColor(delivery.status)}`}>
+                      <div
+                        className={`px-2 py-1 rounded text-xs font-medium ${getDeliveryStatusColor(delivery.status)}`}
+                      >
                         {delivery.status.toUpperCase()}
                       </div>
                       <div className="text-sm text-gray-900">

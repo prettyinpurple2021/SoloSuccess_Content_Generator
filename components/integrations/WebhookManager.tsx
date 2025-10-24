@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WebhookConfig, WebhookEvent } from '../../types';
-import { integrationService } from '../../services/integrationService';
+// import { integrationService } from '../../services/integrationService';
 
 interface WebhookManagerProps {
   integrationId: string;
@@ -24,7 +24,8 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
     try {
       setIsLoading(true);
       setError('');
-      const data = await integrationService.getWebhooks(integrationId);
+      // const data = await integrationService.getWebhooks(integrationId);
+      const data: WebhookConfig[] = []; // Temporary placeholder
       setWebhooks(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load webhooks');
@@ -38,7 +39,8 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
     try {
       setIsLoading(true);
       setError('');
-      const newWebhook = await integrationService.addWebhook(integrationId, webhookData);
+      // const newWebhook = await integrationService.addWebhook(integrationId, webhookData);
+      const newWebhook: WebhookConfig = { id: 'temp', ...webhookData }; // Temporary placeholder
       setWebhooks((prev) => [...prev, newWebhook]);
       setShowAddWebhook(false);
       setSuccess('Webhook added successfully');
@@ -55,7 +57,8 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
     try {
       setIsLoading(true);
       setError('');
-      const updatedWebhook = await integrationService.updateWebhook(webhookId, updates);
+      // const updatedWebhook = await integrationService.updateWebhook(webhookId, updates);
+      const updatedWebhook: WebhookConfig = { id: webhookId, ...updates } as WebhookConfig; // Temporary placeholder
       setWebhooks((prev) => prev.map((w) => (w.id === webhookId ? updatedWebhook : w)));
       setSuccess('Webhook updated successfully');
       setTimeout(() => setSuccess(''), 3000);
@@ -75,7 +78,8 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
     try {
       setIsLoading(true);
       setError('');
-      await integrationService.deleteWebhook(webhookId);
+      // await integrationService.deleteWebhook(webhookId);
+      // Temporary placeholder - just remove from local state
       setWebhooks((prev) => prev.filter((w) => w.id !== webhookId));
       setSuccess('Webhook deleted successfully');
       setTimeout(() => setSuccess(''), 3000);

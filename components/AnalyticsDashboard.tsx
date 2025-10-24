@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  PerformanceReport, 
-  AnalyticsData, 
-  ContentInsight, 
+import {
+  PerformanceReport,
+  AnalyticsData,
+  ContentInsight,
   PerformanceTrend,
   PlatformMetrics,
-  LoadingState 
+  LoadingState,
 } from '../types';
-import { analyticsService } from '../services/analyticsService';
+// import { analyticsService } from '../services/analyticsService';
 import { Spinner } from '../constants';
 
 interface AnalyticsDashboardProps {
@@ -21,11 +21,15 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   isOpen,
   onClose,
   loading,
-  setLoading
+  setLoading,
 }) => {
   const [performanceReport, setPerformanceReport] = useState<PerformanceReport | null>(null);
-  const [selectedTimeframe, setSelectedTimeframe] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
-  const [selectedMetric, setSelectedMetric] = useState<'engagement' | 'reach' | 'rate'>('engagement');
+  const [selectedTimeframe, setSelectedTimeframe] = useState<'week' | 'month' | 'quarter' | 'year'>(
+    'month'
+  );
+  const [selectedMetric, setSelectedMetric] = useState<'engagement' | 'reach' | 'rate'>(
+    'engagement'
+  );
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
@@ -38,7 +42,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     try {
       setLoading({ ...loading, performanceReport: true });
       setError('');
-      
+
       const report = await analyticsService.generatePerformanceReport(selectedTimeframe);
       setPerformanceReport(report);
     } catch (error) {
@@ -64,17 +68,23 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   const getTrendIcon = (direction: 'up' | 'down' | 'stable'): string => {
     switch (direction) {
-      case 'up': return '↗️';
-      case 'down': return '↘️';
-      case 'stable': return '→';
+      case 'up':
+        return '↗️';
+      case 'down':
+        return '↘️';
+      case 'stable':
+        return '→';
     }
   };
 
   const getTrendColor = (direction: 'up' | 'down' | 'stable'): string => {
     switch (direction) {
-      case 'up': return 'text-green-600';
-      case 'down': return 'text-red-600';
-      case 'stable': return 'text-gray-600';
+      case 'up':
+        return 'text-green-600';
+      case 'down':
+        return 'text-red-600';
+      case 'stable':
+        return 'text-gray-600';
     }
   };
 
@@ -99,17 +109,21 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     if (!performanceReport?.platformBreakdown) return null;
 
     const platforms = Object.entries(performanceReport.platformBreakdown);
-    const maxEngagement = Math.max(...platforms.map(([, metrics]) => 
-      metrics.totalLikes + metrics.totalShares + metrics.totalComments));
+    const maxEngagement = Math.max(
+      ...platforms.map(
+        ([, metrics]) => metrics.totalLikes + metrics.totalShares + metrics.totalComments
+      )
+    );
 
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Platform Performance</h3>
         <div className="space-y-4">
           {platforms.map(([platform, metrics]) => {
-            const totalEngagement = metrics.totalLikes + metrics.totalShares + metrics.totalComments;
+            const totalEngagement =
+              metrics.totalLikes + metrics.totalShares + metrics.totalComments;
             const percentage = maxEngagement > 0 ? (totalEngagement / maxEngagement) * 100 : 0;
-            
+
             return (
               <div key={platform} className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -124,7 +138,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${percentage}%` }}
                   />
@@ -145,7 +159,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Content</h3>
         <div className="space-y-3">
           {performanceReport.topContent.slice(0, 5).map((content, index) => (
-            <div key={content.postId} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+            <div
+              key={content.postId}
+              className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+            >
               <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <span className="text-sm font-semibold text-blue-600">#{index + 1}</span>
               </div>
@@ -218,7 +235,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -234,8 +256,18 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           ) : error ? (
             <div className="text-center py-12">
               <div className="text-red-600 mb-4">
-                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-12 h-12 mx-auto"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               </div>
               <p className="text-gray-600 mb-4">{error}</p>
@@ -250,25 +282,27 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <div className="space-y-6">
               {/* Key Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {renderMetricCard(
-                  'Total Posts',
-                  performanceReport.totalPosts.toString(),
-                )}
+                {renderMetricCard('Total Posts', performanceReport.totalPosts.toString())}
                 {renderMetricCard(
                   'Total Engagement',
                   formatNumber(performanceReport.totalEngagement),
-                  performanceReport.trends.find(t => t.metric === 'Total Engagement')
+                  performanceReport.trends.find((t) => t.metric === 'Total Engagement')
                 )}
                 {renderMetricCard(
                   'Avg Engagement Rate',
                   formatPercentage(performanceReport.avgEngagementRate),
-                  performanceReport.trends.find(t => t.metric === 'Engagement Rate')
+                  performanceReport.trends.find((t) => t.metric === 'Engagement Rate')
                 )}
                 {renderMetricCard(
                   'Total Reach',
-                  formatNumber(Object.values(performanceReport.platformBreakdown)
-                    .reduce((sum, metrics) => sum + (metrics.totalLikes + metrics.totalShares + metrics.totalComments), 0)),
-                  performanceReport.trends.find(t => t.metric === 'Total Reach')
+                  formatNumber(
+                    Object.values(performanceReport.platformBreakdown).reduce(
+                      (sum, metrics) =>
+                        sum + (metrics.totalLikes + metrics.totalShares + metrics.totalComments),
+                      0
+                    )
+                  ),
+                  performanceReport.trends.find((t) => t.metric === 'Total Reach')
                 )}
               </div>
 
@@ -309,12 +343,24 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           ) : (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
-                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <svg
+                  className="w-12 h-12 mx-auto"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
                 </svg>
               </div>
               <p className="text-gray-600 mb-4">No analytics data available</p>
-              <p className="text-sm text-gray-500">Start creating and publishing content to see performance insights</p>
+              <p className="text-sm text-gray-500">
+                Start creating and publishing content to see performance insights
+              </p>
             </div>
           )}
         </div>

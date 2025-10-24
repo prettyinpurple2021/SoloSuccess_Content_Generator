@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Post, TimeSlot, SchedulingSuggestion, ConflictAnalysis, AudienceProfile } from '../types';
-import { schedulingService } from '../services/schedulingService';
+// import { schedulingService } from '../services/schedulingService';
 
 interface SmartSchedulerProps {
   posts: Post[];
@@ -17,7 +17,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
   audienceProfiles,
   onScheduleUpdate,
   onBulkSchedule,
-  onClose
+  onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<'single' | 'bulk'>('single');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -25,7 +25,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
   const [schedulingSuggestions, setSchedulingSuggestions] = useState<SchedulingSuggestion[]>([]);
   const [conflictAnalysis, setConflictAnalysis] = useState<ConflictAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   // Bulk scheduling options
   const [bulkOptions, setBulkOptions] = useState({
     startDate: new Date(),
@@ -35,13 +35,13 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
     customSpacingHours: 4,
     respectOptimalTimes: true,
     avoidWeekends: false,
-    targetTimezones: ['UTC']
+    targetTimezones: ['UTC'],
   });
-  
+
   // Timezone management
   const [selectedTimezone, setSelectedTimezone] = useState('UTC');
   const availableTimezones = ['UTC', 'EST', 'PST', 'GMT', 'CET', 'JST', 'AEST'];
-  
+
   // Platform selection
   const availablePlatforms = [
     { id: 'twitter', name: 'Twitter', color: 'bg-blue-500' },
@@ -49,7 +49,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
     { id: 'facebook', name: 'Facebook', color: 'bg-blue-700' },
     { id: 'instagram', name: 'Instagram', color: 'bg-pink-500' },
     { id: 'threads', name: 'Threads', color: 'bg-gray-800' },
-    { id: 'bluesky', name: 'Bluesky', color: 'bg-sky-500' }
+    { id: 'bluesky', name: 'Bluesky', color: 'bg-sky-500' },
   ];
 
   useEffect(() => {
@@ -67,10 +67,12 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
 
   const loadOptimalTimes = async () => {
     if (!selectedPost) return;
-    
+
     setLoading(true);
     try {
-      const audienceProfile = audienceProfiles.find(ap => ap.id === selectedPost.audienceProfileId);
+      const audienceProfile = audienceProfiles.find(
+        (ap) => ap.id === selectedPost.audienceProfileId
+      );
       const times = await schedulingService.analyzeOptimalTimes(undefined, audienceProfile);
       setOptimalTimes(times);
     } catch (error) {
@@ -82,9 +84,11 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
 
   const loadSchedulingSuggestions = async () => {
     if (!selectedPost) return;
-    
+
     try {
-      const audienceProfile = audienceProfiles.find(ap => ap.id === selectedPost.audienceProfileId);
+      const audienceProfile = audienceProfiles.find(
+        (ap) => ap.id === selectedPost.audienceProfileId
+      );
       const suggestions = await schedulingService.getSchedulingSuggestions(
         selectedPost,
         bulkOptions.platforms,
@@ -108,7 +112,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
   const handleBulkSchedule = async () => {
     setLoading(true);
     try {
-      const postsToSchedule = posts.filter(post => selectedPosts.includes(post.id));
+      const postsToSchedule = posts.filter((post) => selectedPosts.includes(post.id));
       const suggestions = await schedulingService.bulkSchedulePosts(postsToSchedule, bulkOptions);
       setSchedulingSuggestions(suggestions);
       onBulkSchedule(suggestions);
@@ -132,10 +136,14 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'border-red-500 bg-red-500/10';
-      case 'medium': return 'border-yellow-500 bg-yellow-500/10';
-      case 'low': return 'border-blue-500 bg-blue-500/10';
-      default: return 'border-gray-500 bg-gray-500/10';
+      case 'high':
+        return 'border-red-500 bg-red-500/10';
+      case 'medium':
+        return 'border-yellow-500 bg-yellow-500/10';
+      case 'low':
+        return 'border-blue-500 bg-blue-500/10';
+      default:
+        return 'border-gray-500 bg-gray-500/10';
     }
   };
 
@@ -146,13 +154,11 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
         <div className="sparkle"></div>
         <div className="sparkle"></div>
         <div className="sparkle"></div>
-        
+
         <div className="glass-card-inner">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-display font-black text-white">
-              Smart Scheduler
-            </h2>
+            <h2 className="text-3xl font-display font-black text-white">Smart Scheduler</h2>
             <button
               onClick={onClose}
               className="text-white/60 hover:text-white text-2xl transition-colors"
@@ -193,15 +199,24 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
               </h3>
               <div className="space-y-2">
                 {conflictAnalysis.conflicts.slice(0, 3).map((conflict, index) => (
-                  <div key={index} className={`p-3 rounded border ${getSeverityColor(conflict.severity)}`}>
+                  <div
+                    key={index}
+                    className={`p-3 rounded border ${getSeverityColor(conflict.severity)}`}
+                  >
                     <div className="flex justify-between items-start">
                       <div>
-                        <span className="font-semibold capitalize">{conflict.conflictType} Conflict</span>
-                        <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                          conflict.severity === 'high' ? 'bg-red-500 text-white' :
-                          conflict.severity === 'medium' ? 'bg-yellow-500 text-black' :
-                          'bg-blue-500 text-white'
-                        }`}>
+                        <span className="font-semibold capitalize">
+                          {conflict.conflictType} Conflict
+                        </span>
+                        <span
+                          className={`ml-2 px-2 py-1 rounded text-xs ${
+                            conflict.severity === 'high'
+                              ? 'bg-red-500 text-white'
+                              : conflict.severity === 'medium'
+                                ? 'bg-yellow-500 text-black'
+                                : 'bg-blue-500 text-white'
+                          }`}
+                        >
                           {conflict.severity}
                         </span>
                       </div>
@@ -219,20 +234,22 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
               <div>
                 <h3 className="text-xl font-semibold text-white mb-4">Select Post</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {posts.filter(post => post.status === 'draft').map(post => (
-                    <div
-                      key={post.id}
-                      onClick={() => setSelectedPost(post)}
-                      className={`p-3 rounded-lg cursor-pointer transition-all ${
-                        selectedPost?.id === post.id
-                          ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 border border-purple-400/50'
-                          : 'bg-white/10 hover:bg-white/20 border border-white/20'
-                      }`}
-                    >
-                      <div className="font-semibold text-white">{post.idea}</div>
-                      <div className="text-sm text-white/70">{post.topic}</div>
-                    </div>
-                  ))}
+                  {posts
+                    .filter((post) => post.status === 'draft')
+                    .map((post) => (
+                      <div
+                        key={post.id}
+                        onClick={() => setSelectedPost(post)}
+                        className={`p-3 rounded-lg cursor-pointer transition-all ${
+                          selectedPost?.id === post.id
+                            ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 border border-purple-400/50'
+                            : 'bg-white/10 hover:bg-white/20 border border-white/20'
+                        }`}
+                      >
+                        <div className="font-semibold text-white">{post.idea}</div>
+                        <div className="text-sm text-white/70">{post.topic}</div>
+                      </div>
+                    ))}
                 </div>
               </div>
 
@@ -254,7 +271,9 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                           <span className="font-semibold text-white">
                             {formatTimeSlot(timeSlot)}
                           </span>
-                          <span className={`text-sm font-semibold ${getConfidenceColor(timeSlot.confidence)}`}>
+                          <span
+                            className={`text-sm font-semibold ${getConfidenceColor(timeSlot.confidence)}`}
+                          >
                             {Math.round(timeSlot.confidence * 100)}% confidence
                           </span>
                         </div>
@@ -284,12 +303,16 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                               <div className="text-sm text-white/70">
                                 {suggestion.suggestedTime.toLocaleString()}
                               </div>
-                              <div className="text-xs text-white/60 mt-1">
-                                {suggestion.reason}
-                              </div>
+                              <div className="text-xs text-white/60 mt-1">{suggestion.reason}</div>
                             </div>
                             <button
-                              onClick={() => onScheduleUpdate(suggestion.postId, suggestion.suggestedTime, suggestion.platform)}
+                              onClick={() =>
+                                onScheduleUpdate(
+                                  suggestion.postId,
+                                  suggestion.suggestedTime,
+                                  suggestion.platform
+                                )
+                              }
                               className="holographic-btn text-sm px-3 py-1"
                             >
                               Apply
@@ -310,26 +333,28 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Date Range */}
                 <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
-                    Date Range
-                  </label>
+                  <label className="block text-sm font-semibold text-white mb-2">Date Range</label>
                   <div className="space-y-2">
                     <input
                       type="datetime-local"
                       value={bulkOptions.startDate.toISOString().slice(0, 16)}
-                      onChange={(e) => setBulkOptions(prev => ({
-                        ...prev,
-                        startDate: new Date(e.target.value)
-                      }))}
+                      onChange={(e) =>
+                        setBulkOptions((prev) => ({
+                          ...prev,
+                          startDate: new Date(e.target.value),
+                        }))
+                      }
                       className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
                     />
                     <input
                       type="datetime-local"
                       value={bulkOptions.endDate.toISOString().slice(0, 16)}
-                      onChange={(e) => setBulkOptions(prev => ({
-                        ...prev,
-                        endDate: new Date(e.target.value)
-                      }))}
+                      onChange={(e) =>
+                        setBulkOptions((prev) => ({
+                          ...prev,
+                          endDate: new Date(e.target.value),
+                        }))
+                      }
                       className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
                     />
                   </div>
@@ -337,25 +362,23 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
 
                 {/* Platforms */}
                 <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
-                    Platforms
-                  </label>
+                  <label className="block text-sm font-semibold text-white mb-2">Platforms</label>
                   <div className="space-y-2">
-                    {availablePlatforms.map(platform => (
+                    {availablePlatforms.map((platform) => (
                       <label key={platform.id} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
                           checked={bulkOptions.platforms.includes(platform.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setBulkOptions(prev => ({
+                              setBulkOptions((prev) => ({
                                 ...prev,
-                                platforms: [...prev.platforms, platform.id]
+                                platforms: [...prev.platforms, platform.id],
                               }));
                             } else {
-                              setBulkOptions(prev => ({
+                              setBulkOptions((prev) => ({
                                 ...prev,
-                                platforms: prev.platforms.filter(p => p !== platform.id)
+                                platforms: prev.platforms.filter((p) => p !== platform.id),
                               }));
                             }
                           }}
@@ -374,25 +397,29 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                   </label>
                   <select
                     value={bulkOptions.spacing}
-                    onChange={(e) => setBulkOptions(prev => ({
-                      ...prev,
-                      spacing: e.target.value as 'optimal' | 'even' | 'custom'
-                    }))}
+                    onChange={(e) =>
+                      setBulkOptions((prev) => ({
+                        ...prev,
+                        spacing: e.target.value as 'optimal' | 'even' | 'custom',
+                      }))
+                    }
                     className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
                   >
                     <option value="optimal">Optimal Times</option>
                     <option value="even">Even Distribution</option>
                     <option value="custom">Custom Spacing</option>
                   </select>
-                  
+
                   {bulkOptions.spacing === 'custom' && (
                     <input
                       type="number"
                       value={bulkOptions.customSpacingHours}
-                      onChange={(e) => setBulkOptions(prev => ({
-                        ...prev,
-                        customSpacingHours: parseInt(e.target.value)
-                      }))}
+                      onChange={(e) =>
+                        setBulkOptions((prev) => ({
+                          ...prev,
+                          customSpacingHours: parseInt(e.target.value),
+                        }))
+                      }
                       className="w-full mt-2 p-2 bg-white/10 border border-white/20 rounded text-white"
                       placeholder="Hours between posts"
                       min="1"
@@ -412,32 +439,37 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                     multiple
                     value={bulkOptions.targetTimezones}
                     onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setBulkOptions(prev => ({ ...prev, targetTimezones: selected }));
+                      const selected = Array.from(
+                        e.target.selectedOptions,
+                        (option) => option.value
+                      );
+                      setBulkOptions((prev) => ({ ...prev, targetTimezones: selected }));
                     }}
                     className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
                     size={4}
                   >
-                    {availableTimezones.map(tz => (
-                      <option key={tz} value={tz}>{tz}</option>
+                    {availableTimezones.map((tz) => (
+                      <option key={tz} value={tz}>
+                        {tz}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 {/* Preferences */}
                 <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
-                    Preferences
-                  </label>
+                  <label className="block text-sm font-semibold text-white mb-2">Preferences</label>
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2">
                       <input
                         type="checkbox"
                         checked={bulkOptions.respectOptimalTimes}
-                        onChange={(e) => setBulkOptions(prev => ({
-                          ...prev,
-                          respectOptimalTimes: e.target.checked
-                        }))}
+                        onChange={(e) =>
+                          setBulkOptions((prev) => ({
+                            ...prev,
+                            respectOptimalTimes: e.target.checked,
+                          }))
+                        }
                         className="rounded"
                       />
                       <span className="text-white text-sm">Respect optimal times</span>
@@ -446,10 +478,12 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                       <input
                         type="checkbox"
                         checked={bulkOptions.avoidWeekends}
-                        onChange={(e) => setBulkOptions(prev => ({
-                          ...prev,
-                          avoidWeekends: e.target.checked
-                        }))}
+                        onChange={(e) =>
+                          setBulkOptions((prev) => ({
+                            ...prev,
+                            avoidWeekends: e.target.checked,
+                          }))
+                        }
                         className="rounded"
                       />
                       <span className="text-white text-sm">Avoid weekends</span>
@@ -464,15 +498,17 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                   Selected Posts ({selectedPosts.length})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
-                  {posts.filter(post => selectedPosts.includes(post.id)).map(post => (
-                    <div
-                      key={post.id}
-                      className="p-3 bg-white/10 rounded-lg border border-white/20"
-                    >
-                      <div className="font-semibold text-white text-sm">{post.idea}</div>
-                      <div className="text-xs text-white/70">{post.topic}</div>
-                    </div>
-                  ))}
+                  {posts
+                    .filter((post) => selectedPosts.includes(post.id))
+                    .map((post) => (
+                      <div
+                        key={post.id}
+                        className="p-3 bg-white/10 rounded-lg border border-white/20"
+                      >
+                        <div className="font-semibold text-white text-sm">{post.idea}</div>
+                        <div className="text-xs text-white/70">{post.topic}</div>
+                      </div>
+                    ))}
                 </div>
               </div>
 
@@ -490,12 +526,10 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
               {/* Bulk Scheduling Results */}
               {schedulingSuggestions.length > 0 && activeTab === 'bulk' && (
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-3">
-                    Scheduling Suggestions
-                  </h3>
+                  <h3 className="text-lg font-semibold text-white mb-3">Scheduling Suggestions</h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {schedulingSuggestions.map((suggestion, index) => {
-                      const post = posts.find(p => p.id === suggestion.postId);
+                      const post = posts.find((p) => p.id === suggestion.postId);
                       return (
                         <div
                           key={index}
@@ -509,16 +543,22 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                               <div className="text-xs text-white/70 capitalize">
                                 {suggestion.platform} • {suggestion.suggestedTime.toLocaleString()}
                               </div>
-                              <div className="text-xs text-white/60 mt-1">
-                                {suggestion.reason}
-                              </div>
+                              <div className="text-xs text-white/60 mt-1">{suggestion.reason}</div>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <span className={`text-xs ${getConfidenceColor(suggestion.confidence)}`}>
+                              <span
+                                className={`text-xs ${getConfidenceColor(suggestion.confidence)}`}
+                              >
                                 {Math.round(suggestion.confidence * 100)}%
                               </span>
                               <button
-                                onClick={() => onScheduleUpdate(suggestion.postId, suggestion.suggestedTime, suggestion.platform)}
+                                onClick={() =>
+                                  onScheduleUpdate(
+                                    suggestion.postId,
+                                    suggestion.suggestedTime,
+                                    suggestion.platform
+                                  )
+                                }
                                 className="holographic-btn text-xs px-2 py-1"
                               >
                                 Apply
