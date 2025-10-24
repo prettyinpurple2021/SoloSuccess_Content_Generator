@@ -1,5 +1,5 @@
 import { WebhookConfig, IntegrationWebhook, WebhookEvent, WebhookDelivery } from '../types';
-import { db } from './supabaseService';
+import { db, query } from './databaseService';
 import crypto from 'crypto';
 
 export class WebhookService {
@@ -302,19 +302,16 @@ export class WebhookService {
   private async getPendingDeliveries(): Promise<WebhookDelivery[]> {
     try {
       // Query database for pending deliveries
-      const { data, error } = await db.supabase
-        .from('webhook_deliveries')
-        .select('*')
-        .eq('status', 'pending')
-        .lt('next_retry_at', new Date().toISOString())
-        .order('created_at', { ascending: true });
+      const result = await query(
+        `
+        SELECT * FROM webhook_deliveries 
+        WHERE status = 'pending' 
+        AND next_retry_at < NOW()
+        ORDER BY created_at ASC
+      `
+      );
 
-      if (error) {
-        console.error('Error fetching pending deliveries:', error);
-        return [];
-      }
-
-      return (data || []).map(this.transformDatabaseDeliveryToDelivery);
+      return result.rows.map(this.transformDatabaseDeliveryToDelivery);
     } catch (error) {
       console.error('Error fetching pending deliveries:', error);
       return [];
@@ -343,11 +340,39 @@ export class WebhookService {
         updated_at: delivery.updatedAt.toISOString(),
       };
 
-      const { error } = await db.supabase.from('webhook_deliveries').upsert(deliveryData);
-
-      if (error) {
-        console.error('Error saving delivery attempt:', error);
-      }
+      await query(
+        `
+        INSERT INTO webhook_deliveries (
+          id, webhook_id, event, payload, response_headers, status, 
+          response_status, error, attempts, max_attempts,
+          next_retry_at, delivered_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        ON CONFLICT (id) DO UPDATE SET
+          status = EXCLUDED.status,
+          response_status = EXCLUDED.response_status,
+          error = EXCLUDED.error,
+          attempts = EXCLUDED.attempts,
+          next_retry_at = EXCLUDED.next_retry_at,
+          delivered_at = EXCLUDED.delivered_at,
+          updated_at = EXCLUDED.updated_at
+      `,
+        [
+          deliveryData.id,
+          deliveryData.webhook_id,
+          deliveryData.event,
+          JSON.stringify(deliveryData.payload),
+          JSON.stringify(deliveryData.response_headers),
+          deliveryData.status,
+          deliveryData.response_status,
+          deliveryData.error,
+          deliveryData.attempts,
+          deliveryData.max_attempts,
+          deliveryData.next_retry_at,
+          deliveryData.delivered_at,
+          deliveryData.created_at,
+          deliveryData.updated_at,
+        ]
+      );
     } catch (error) {
       console.error('Error saving delivery attempt:', error);
     }
@@ -430,18 +455,16 @@ export class WebhookService {
       const startTime = new Date(Date.now() - timeRanges[timeRange]);
 
       // Query actual webhook deliveries from database
-      const { data, error } = await db.supabase
-        .from('webhook_deliveries')
-        .select('*')
-        .eq('webhook_id', webhookId)
-        .gte('created_at', startTime.toISOString());
+      const result = await db.query(
+        `
+        SELECT * FROM webhook_deliveries 
+        WHERE webhook_id = $1 
+        AND created_at >= $2
+      `,
+        [webhookId, startTime.toISOString()]
+      );
 
-      if (error) {
-        console.error('Error fetching webhook stats:', error);
-        throw new Error('Failed to fetch webhook statistics');
-      }
-
-      const deliveries = data || [];
+      const deliveries = result.rows || [];
       const totalDeliveries = deliveries.length;
       const successfulDeliveries = deliveries.filter((d) => d.status === 'delivered').length;
       const failedDeliveries = deliveries.filter((d) => d.status === 'failed').length;

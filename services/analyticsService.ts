@@ -1,28 +1,27 @@
-import { 
-  AnalyticsData, 
-  PerformanceReport, 
-  ContentInsight, 
-  OptimizationSuggestion, 
+import {
+  AnalyticsData,
+  PerformanceReport,
+  ContentInsight,
+  OptimizationSuggestion,
   PerformanceTrend,
   Post,
   PlatformMetrics,
   EngagementData,
-  TimeSlot
+  TimeSlot,
 } from '../types';
-import { db } from './supabaseService';
+import { db } from './databaseService';
 
 /**
  * Analytics Service for tracking engagement, generating performance reports,
  * and providing content optimization insights
  */
 export class AnalyticsService {
-  
   /**
    * Track engagement metrics for a specific post and platform
    */
   async trackEngagement(
-    postId: string, 
-    platform: string, 
+    postId: string,
+    platform: string,
     metrics: {
       likes: number;
       shares: number;
@@ -41,7 +40,7 @@ export class AnalyticsService {
         comments: metrics.comments,
         clicks: metrics.clicks,
         impressions: metrics.impressions,
-        reach: metrics.reach
+        reach: metrics.reach,
       });
     } catch (error) {
       console.error('Error tracking engagement:', error);
@@ -67,7 +66,7 @@ export class AnalyticsService {
     }>
   ): Promise<AnalyticsData[]> {
     try {
-      const analyticsArray = engagementData.map(data => ({
+      const analyticsArray = engagementData.map((data) => ({
         post_id: data.postId,
         platform: data.platform,
         likes: data.metrics.likes,
@@ -75,7 +74,7 @@ export class AnalyticsService {
         comments: data.metrics.comments,
         clicks: data.metrics.clicks,
         impressions: data.metrics.impressions,
-        reach: data.metrics.reach
+        reach: data.metrics.reach,
       }));
 
       return await db.batchInsertAnalytics(analyticsArray);
@@ -88,11 +87,13 @@ export class AnalyticsService {
   /**
    * Generate comprehensive performance report for a given timeframe
    */
-  async generatePerformanceReport(timeframe: 'week' | 'month' | 'quarter' | 'year'): Promise<PerformanceReport> {
+  async generatePerformanceReport(
+    timeframe: 'week' | 'month' | 'quarter' | 'year'
+  ): Promise<PerformanceReport> {
     try {
       // Get base report from database
       const baseReport = await db.generatePerformanceReport(timeframe);
-      
+
       // Enhance with additional insights
       const topContent = await this.identifyTopPerformingContent(timeframe);
       const trends = await this.calculatePerformanceTrends(timeframe);
@@ -102,7 +103,7 @@ export class AnalyticsService {
         ...baseReport,
         topContent,
         trends,
-        recommendations
+        recommendations,
       };
     } catch (error) {
       console.error('Error generating performance report:', error);
@@ -120,11 +121,11 @@ export class AnalyticsService {
     try {
       const topAnalytics = await db.getTopPerformingContent(limit, timeframe);
       const posts = await db.getPosts();
-      
+
       const insights: ContentInsight[] = [];
 
       for (const analytics of topAnalytics) {
-        const post = posts.find(p => p.id === analytics.postId);
+        const post = posts.find((p) => p.id === analytics.postId);
         if (!post) continue;
 
         const engagementScore = this.calculateEngagementScore(analytics);
@@ -136,7 +137,7 @@ export class AnalyticsService {
           platform: analytics.platform,
           engagementScore,
           insights: contentInsights,
-          contentType: this.determineContentType(post)
+          contentType: this.determineContentType(post),
         });
       }
 
@@ -150,7 +151,9 @@ export class AnalyticsService {
   /**
    * Calculate performance trends over time
    */
-  async calculatePerformanceTrends(timeframe: 'week' | 'month' | 'quarter' | 'year'): Promise<PerformanceTrend[]> {
+  async calculatePerformanceTrends(
+    timeframe: 'week' | 'month' | 'quarter' | 'year'
+  ): Promise<PerformanceTrend[]> {
     try {
       const currentPeriod = await this.getAnalyticsForPeriod(timeframe, 0);
       const previousPeriod = await this.getAnalyticsForPeriod(timeframe, 1);
@@ -160,13 +163,16 @@ export class AnalyticsService {
       // Calculate engagement trend
       const currentEngagement = this.calculateTotalEngagement(currentPeriod);
       const previousEngagement = this.calculateTotalEngagement(previousPeriod);
-      const engagementChange = this.calculatePercentageChange(currentEngagement, previousEngagement);
+      const engagementChange = this.calculatePercentageChange(
+        currentEngagement,
+        previousEngagement
+      );
 
       trends.push({
         metric: 'Total Engagement',
         direction: engagementChange > 0 ? 'up' : engagementChange < 0 ? 'down' : 'stable',
         percentage: Math.abs(engagementChange),
-        timeframe
+        timeframe,
       });
 
       // Calculate reach trend
@@ -178,7 +184,7 @@ export class AnalyticsService {
         metric: 'Total Reach',
         direction: reachChange > 0 ? 'up' : reachChange < 0 ? 'down' : 'stable',
         percentage: Math.abs(reachChange),
-        timeframe
+        timeframe,
       });
 
       // Calculate engagement rate trend
@@ -190,7 +196,7 @@ export class AnalyticsService {
         metric: 'Engagement Rate',
         direction: rateChange > 0 ? 'up' : rateChange < 0 ? 'down' : 'stable',
         percentage: Math.abs(rateChange),
-        timeframe
+        timeframe,
       });
 
       return trends;
@@ -206,11 +212,11 @@ export class AnalyticsService {
   async generateOptimizationRecommendations(timeframe?: string): Promise<OptimizationSuggestion[]> {
     try {
       const recommendations: OptimizationSuggestion[] = [];
-      
+
       // Get analytics data for analysis
-      const analyticsData = timeframe ? 
-        await this.getAnalyticsForPeriod(timeframe as any, 0) : 
-        await this.getAllAnalytics();
+      const analyticsData = timeframe
+        ? await this.getAnalyticsForPeriod(timeframe as any, 0)
+        : await this.getAllAnalytics();
 
       // Analyze posting times
       const timingRecommendation = this.analyzeOptimalTiming(analyticsData);
@@ -233,10 +239,10 @@ export class AnalyticsService {
       return recommendations.sort((a, b) => {
         const impactScore = { high: 3, medium: 2, low: 1 };
         const effortScore = { low: 3, medium: 2, high: 1 };
-        
+
         const aScore = impactScore[a.impact] + effortScore[a.effort];
         const bScore = impactScore[b.impact] + effortScore[b.effort];
-        
+
         return bScore - aScore;
       });
     } catch (error) {
@@ -256,7 +262,7 @@ export class AnalyticsService {
     try {
       const analytics = await db.getPostAnalytics(postId);
       const posts = await db.getPosts();
-      const post = posts.find(p => p.id === postId);
+      const post = posts.find((p) => p.id === postId);
 
       if (!post) {
         throw new Error('Post not found');
@@ -268,7 +274,7 @@ export class AnalyticsService {
       return {
         analytics,
         insights,
-        recommendations
+        recommendations,
       };
     } catch (error) {
       console.error('Error getting post insights:', error);
@@ -282,23 +288,23 @@ export class AnalyticsService {
   async calculateOptimalPostingTimes(platform?: string): Promise<TimeSlot[]> {
     try {
       const analyticsData = await this.getAllAnalytics();
-      const filteredData = platform ? 
-        analyticsData.filter(data => data.platform === platform) : 
-        analyticsData;
+      const filteredData = platform
+        ? analyticsData.filter((data) => data.platform === platform)
+        : analyticsData;
 
       const timeSlots: { [key: string]: { engagement: number; count: number } } = {};
 
-      filteredData.forEach(data => {
+      filteredData.forEach((data) => {
         const hour = data.recordedAt.getHours();
         const dayOfWeek = data.recordedAt.getDay();
         const key = `${dayOfWeek}-${hour}`;
-        
+
         const engagement = data.likes + data.shares + data.comments + data.clicks;
-        
+
         if (!timeSlots[key]) {
           timeSlots[key] = { engagement: 0, count: 0 };
         }
-        
+
         timeSlots[key].engagement += engagement;
         timeSlots[key].count += 1;
       });
@@ -306,18 +312,16 @@ export class AnalyticsService {
       const slots: TimeSlot[] = Object.entries(timeSlots).map(([key, data]) => {
         const [dayOfWeek, hour] = key.split('-').map(Number);
         const avgEngagement = data.engagement / data.count;
-        
+
         return {
           time: `${hour.toString().padStart(2, '0')}:00`,
           dayOfWeek,
           engagementScore: avgEngagement,
-          confidence: Math.min(data.count / 10, 1) // Confidence based on sample size
+          confidence: Math.min(data.count / 10, 1), // Confidence based on sample size
         };
       });
 
-      return slots
-        .sort((a, b) => b.engagementScore - a.engagementScore)
-        .slice(0, 10); // Return top 10 time slots
+      return slots.sort((a, b) => b.engagementScore - a.engagementScore).slice(0, 10); // Return top 10 time slots
     } catch (error) {
       console.error('Error calculating optimal posting times:', error);
       throw new Error('Failed to calculate optimal posting times');
@@ -329,20 +333,20 @@ export class AnalyticsService {
   private calculateEngagementScore(analytics: AnalyticsData): number {
     const { likes, shares, comments, clicks, impressions } = analytics;
     const totalEngagement = likes + shares + comments + clicks;
-    
+
     // Weight different engagement types
-    const weightedEngagement = (likes * 1) + (shares * 3) + (comments * 2) + (clicks * 1.5);
-    
+    const weightedEngagement = likes * 1 + shares * 3 + comments * 2 + clicks * 1.5;
+
     // Calculate engagement rate
     const engagementRate = impressions > 0 ? (totalEngagement / impressions) * 100 : 0;
-    
+
     // Combine weighted engagement and rate for final score
-    return (weightedEngagement * 0.7) + (engagementRate * 0.3);
+    return weightedEngagement * 0.7 + engagementRate * 0.3;
   }
 
   private analyzeContentCharacteristics(post: Post, analytics?: AnalyticsData): string[] {
     const insights: string[] = [];
-    
+
     // Analyze content length
     const contentLength = post.content.length;
     if (contentLength > 2000) {
@@ -358,13 +362,16 @@ export class AnalyticsService {
 
     // Analyze engagement if available
     if (analytics) {
-      const engagementRate = analytics.impressions > 0 ? 
-        ((analytics.likes + analytics.shares + analytics.comments) / analytics.impressions) * 100 : 0;
-      
+      const engagementRate =
+        analytics.impressions > 0
+          ? ((analytics.likes + analytics.shares + analytics.comments) / analytics.impressions) *
+            100
+          : 0;
+
       if (engagementRate > 5) {
         insights.push('High engagement rate indicates strong audience resonance');
       }
-      
+
       if (analytics.shares > analytics.likes * 0.1) {
         insights.push('High share rate suggests valuable, shareable content');
       }
@@ -375,7 +382,7 @@ export class AnalyticsService {
 
   private determineContentType(post: Post): string {
     const content = post.content.toLowerCase();
-    
+
     if (content.includes('how to') || content.includes('tutorial')) {
       return 'Educational';
     } else if (content.includes('tip') || content.includes('advice')) {
@@ -389,14 +396,17 @@ export class AnalyticsService {
     }
   }
 
-  private async getAnalyticsForPeriod(timeframe: string, periodsBack: number): Promise<AnalyticsData[]> {
+  private async getAnalyticsForPeriod(
+    timeframe: string,
+    periodsBack: number
+  ): Promise<AnalyticsData[]> {
     const endDate = new Date();
     const startDate = new Date();
 
     // Calculate the period
     switch (timeframe) {
       case 'week':
-        endDate.setDate(endDate.getDate() - (7 * periodsBack));
+        endDate.setDate(endDate.getDate() - 7 * periodsBack);
         startDate.setDate(endDate.getDate() - 7);
         break;
       case 'month':
@@ -404,7 +414,7 @@ export class AnalyticsService {
         startDate.setMonth(endDate.getMonth() - 1);
         break;
       case 'quarter':
-        endDate.setMonth(endDate.getMonth() - (3 * periodsBack));
+        endDate.setMonth(endDate.getMonth() - 3 * periodsBack);
         startDate.setMonth(endDate.getMonth() - 3);
         break;
       case 'year':
@@ -417,16 +427,18 @@ export class AnalyticsService {
   }
 
   private calculateTotalEngagement(analyticsData: AnalyticsData[]): number {
-    return analyticsData.reduce((sum, data) => 
-      sum + data.likes + data.shares + data.comments + data.clicks, 0);
+    return analyticsData.reduce(
+      (sum, data) => sum + data.likes + data.shares + data.comments + data.clicks,
+      0
+    );
   }
 
   private calculateAverageEngagementRate(analyticsData: AnalyticsData[]): number {
     if (analyticsData.length === 0) return 0;
-    
+
     const totalEngagement = this.calculateTotalEngagement(analyticsData);
     const totalImpressions = analyticsData.reduce((sum, data) => sum + data.impressions, 0);
-    
+
     return totalImpressions > 0 ? (totalEngagement / totalImpressions) * 100 : 0;
   }
 
@@ -440,7 +452,7 @@ export class AnalyticsService {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setFullYear(endDate.getFullYear() - 1);
-    
+
     return await db.getAnalyticsByTimeframe(startDate, endDate);
   }
 
@@ -448,11 +460,11 @@ export class AnalyticsService {
     if (analyticsData.length < 10) return null;
 
     const hourlyEngagement: { [hour: number]: number[] } = {};
-    
-    analyticsData.forEach(data => {
+
+    analyticsData.forEach((data) => {
       const hour = data.recordedAt.getHours();
       const engagement = data.likes + data.shares + data.comments + data.clicks;
-      
+
       if (!hourlyEngagement[hour]) {
         hourlyEngagement[hour] = [];
       }
@@ -461,32 +473,33 @@ export class AnalyticsService {
 
     const avgHourlyEngagement = Object.entries(hourlyEngagement).map(([hour, engagements]) => ({
       hour: parseInt(hour),
-      avgEngagement: engagements.reduce((sum, eng) => sum + eng, 0) / engagements.length
+      avgEngagement: engagements.reduce((sum, eng) => sum + eng, 0) / engagements.length,
     }));
 
     const bestHour = avgHourlyEngagement.sort((a, b) => b.avgEngagement - a.avgEngagement)[0];
-    
+
     return {
       type: 'timing',
       title: 'Optimize Posting Time',
       description: `Your content performs best when posted around ${bestHour.hour}:00. Consider scheduling more posts during this time.`,
       impact: 'medium',
-      effort: 'low'
+      effort: 'low',
     };
   }
 
-  private async analyzeContentPerformance(analyticsData: AnalyticsData[]): Promise<OptimizationSuggestion[]> {
+  private async analyzeContentPerformance(
+    analyticsData: AnalyticsData[]
+  ): Promise<OptimizationSuggestion[]> {
     const recommendations: OptimizationSuggestion[] = [];
-    
+
     // Analyze platform performance
     const platformPerformance: { [platform: string]: number } = {};
-    analyticsData.forEach(data => {
+    analyticsData.forEach((data) => {
       const engagement = data.likes + data.shares + data.comments + data.clicks;
       platformPerformance[data.platform] = (platformPerformance[data.platform] || 0) + engagement;
     });
 
-    const sortedPlatforms = Object.entries(platformPerformance)
-      .sort(([,a], [,b]) => b - a);
+    const sortedPlatforms = Object.entries(platformPerformance).sort(([, a], [, b]) => b - a);
 
     if (sortedPlatforms.length > 1) {
       const topPlatform = sortedPlatforms[0][0];
@@ -495,7 +508,7 @@ export class AnalyticsService {
         title: 'Focus on Top-Performing Platform',
         description: `${topPlatform} shows the highest engagement. Consider creating more content specifically for this platform.`,
         impact: 'high',
-        effort: 'medium'
+        effort: 'medium',
       });
     }
 
@@ -504,29 +517,33 @@ export class AnalyticsService {
 
   private analyzePlatformPerformance(analyticsData: AnalyticsData[]): OptimizationSuggestion[] {
     const recommendations: OptimizationSuggestion[] = [];
-    
-    const platformStats: { [platform: string]: { engagement: number; impressions: number; count: number } } = {};
-    
-    analyticsData.forEach(data => {
+
+    const platformStats: {
+      [platform: string]: { engagement: number; impressions: number; count: number };
+    } = {};
+
+    analyticsData.forEach((data) => {
       if (!platformStats[data.platform]) {
         platformStats[data.platform] = { engagement: 0, impressions: 0, count: 0 };
       }
-      
-      platformStats[data.platform].engagement += data.likes + data.shares + data.comments + data.clicks;
+
+      platformStats[data.platform].engagement +=
+        data.likes + data.shares + data.comments + data.clicks;
       platformStats[data.platform].impressions += data.impressions;
       platformStats[data.platform].count += 1;
     });
 
     Object.entries(platformStats).forEach(([platform, stats]) => {
-      const avgEngagementRate = stats.impressions > 0 ? (stats.engagement / stats.impressions) * 100 : 0;
-      
+      const avgEngagementRate =
+        stats.impressions > 0 ? (stats.engagement / stats.impressions) * 100 : 0;
+
       if (avgEngagementRate < 1 && stats.count > 5) {
         recommendations.push({
           type: 'content',
           title: `Improve ${platform} Performance`,
           description: `${platform} shows low engagement rates. Consider adjusting content format or posting strategy for this platform.`,
           impact: 'medium',
-          effort: 'medium'
+          effort: 'medium',
         });
       }
     });
@@ -537,43 +554,52 @@ export class AnalyticsService {
   private async analyzeHashtagPerformance(): Promise<OptimizationSuggestion[]> {
     // This would analyze hashtag performance if we had hashtag tracking
     // For now, return general hashtag recommendations
-    return [{
-      type: 'hashtags',
-      title: 'Optimize Hashtag Strategy',
-      description: 'Research and use trending hashtags relevant to your content to increase discoverability.',
-      impact: 'medium',
-      effort: 'low'
-    }];
+    return [
+      {
+        type: 'hashtags',
+        title: 'Optimize Hashtag Strategy',
+        description:
+          'Research and use trending hashtags relevant to your content to increase discoverability.',
+        impact: 'medium',
+        effort: 'low',
+      },
+    ];
   }
 
   private async generatePostSpecificRecommendations(
-    post: Post, 
+    post: Post,
     analytics: AnalyticsData[]
   ): Promise<OptimizationSuggestion[]> {
     const recommendations: OptimizationSuggestion[] = [];
-    
+
     if (analytics.length === 0) {
       recommendations.push({
         type: 'content',
         title: 'Track Performance',
-        description: 'Start tracking engagement metrics for this post to get personalized recommendations.',
+        description:
+          'Start tracking engagement metrics for this post to get personalized recommendations.',
         impact: 'low',
-        effort: 'low'
+        effort: 'low',
       });
       return recommendations;
     }
 
     const latestAnalytics = analytics[0];
-    const engagementRate = latestAnalytics.impressions > 0 ? 
-      ((latestAnalytics.likes + latestAnalytics.shares + latestAnalytics.comments) / latestAnalytics.impressions) * 100 : 0;
+    const engagementRate =
+      latestAnalytics.impressions > 0
+        ? ((latestAnalytics.likes + latestAnalytics.shares + latestAnalytics.comments) /
+            latestAnalytics.impressions) *
+          100
+        : 0;
 
     if (engagementRate < 2) {
       recommendations.push({
         type: 'content',
         title: 'Improve Content Engagement',
-        description: 'This post has low engagement. Consider adding more interactive elements or calls-to-action.',
+        description:
+          'This post has low engagement. Consider adding more interactive elements or calls-to-action.',
         impact: 'high',
-        effort: 'medium'
+        effort: 'medium',
       });
     }
 
@@ -581,9 +607,10 @@ export class AnalyticsService {
       recommendations.push({
         type: 'content',
         title: 'Increase Shareability',
-        description: 'Add more shareable elements like quotes, statistics, or actionable tips to encourage sharing.',
+        description:
+          'Add more shareable elements like quotes, statistics, or actionable tips to encourage sharing.',
         impact: 'medium',
-        effort: 'low'
+        effort: 'low',
       });
     }
 

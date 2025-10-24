@@ -1,6 +1,6 @@
 // services/platforms/pinterestClient.ts
 import { PinterestCredentials } from '../../types';
-import { db } from '../supabaseService';
+import { db } from '../databaseService';
 
 export class PinterestClient {
   private credentials: PinterestCredentials;
@@ -21,9 +21,9 @@ export class PinterestClient {
       const response = await fetch(`${this.baseUrl}/user_account`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
@@ -36,13 +36,19 @@ export class PinterestClient {
     }
   }
 
-  async createPin(boardId: string, title: string, description: string, imageUrl: string, link?: string): Promise<{ success: boolean; pinId?: string; url?: string; error?: string }> {
+  async createPin(
+    boardId: string,
+    title: string,
+    description: string,
+    imageUrl: string,
+    link?: string
+  ): Promise<{ success: boolean; pinId?: string; url?: string; error?: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/pins`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           board_id: boardId,
@@ -50,18 +56,18 @@ export class PinterestClient {
           description: description,
           media_source: {
             source_type: 'image_url',
-            url: imageUrl
+            url: imageUrl,
           },
-          ...(link && { link })
-        })
+          ...(link && { link }),
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        return { 
-          success: true, 
-          pinId: data.id, 
-          url: `https://pinterest.com/pin/${data.id}/` 
+        return {
+          success: true,
+          pinId: data.id,
+          url: `https://pinterest.com/pin/${data.id}/`,
         };
       } else {
         const errorData = await response.json();
@@ -83,21 +89,21 @@ export class PinterestClient {
       const response = await fetch(`${this.baseUrl}/pins/${pinId}/analytics`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
         const data = await response.json();
         const metrics = data.daily_metrics?.[0] || {};
-        
+
         return {
           likes: metrics.pin_promoter_metrics?.impressions || 0,
           shares: metrics.pin_promoter_metrics?.saves || 0,
           comments: 0, // Pinterest doesn't have comments in basic API
           impressions: metrics.pin_promoter_metrics?.impressions || 0,
-          engagementRate: metrics.pin_promoter_metrics?.engagement_rate || 0
+          engagementRate: metrics.pin_promoter_metrics?.engagement_rate || 0,
         };
       }
 
@@ -114,15 +120,15 @@ export class PinterestClient {
       const response = await fetch(`${this.baseUrl}/boards/${this.credentials.userId}/pins`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
         const data = await response.json();
         const pins = data.items || [];
-        
+
         return pins.slice(0, 10).map((pin: any) => ({
           topic: pin.title,
           platform: 'pinterest',
@@ -131,7 +137,7 @@ export class PinterestClient {
           relatedHashtags: [],
           category: 'visual',
           trendingScore: pin.save_count || 0,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         }));
       }
 
@@ -146,7 +152,7 @@ export class PinterestClient {
     try {
       // Pinterest doesn't have a direct hashtag trending API
       // Return topic-based hashtags
-      return topics.map(topic => `#${topic.replace(/\s+/g, '')}`);
+      return topics.map((topic) => `#${topic.replace(/\s+/g, '')}`);
     } catch (error) {
       console.error('Error fetching Pinterest trending hashtags:', error);
       return [];
@@ -158,52 +164,27 @@ export class PinterestClient {
     avgEngagement: number;
     trendingScore: number;
   }> {
-    try {
-      // Pinterest doesn't provide hashtag metrics in their API
-      return {
-        usageCount: 0,
-        avgEngagement: 0,
-        trendingScore: 0
-      };
-    } catch (error) {
-      console.error('Error fetching Pinterest hashtag metrics:', error);
-      return {
-        usageCount: 0,
-        avgEngagement: 0,
-        trendingScore: 0
-      };
-    }
+    // Pinterest doesn't provide hashtag metrics in their API
+    return {
+      usageCount: 0,
+      avgEngagement: 0,
+      trendingScore: 0,
+    };
   }
 
   async getOptimizationData(): Promise<any> {
-    try {
-      return {
-        platform: 'pinterest',
-        bestPostingTimes: ['8:00', '11:00', '15:00', '19:00'],
-        optimalContentLength: 200,
-        topPerformingContentTypes: ['image', 'video', 'carousel'],
-        recommendedHashtagCount: 3,
-        audienceInsights: {
-          demographics: { age: '25-54', gender: 'female', location: 'global' },
-          interests: ['lifestyle', 'home', 'fashion', 'food', 'travel'],
-          activeHours: ['8:00', '11:00', '15:00', '19:00']
-        }
-      };
-    } catch (error) {
-      console.error('Error fetching Pinterest optimization data:', error);
-      return {
-        platform: 'pinterest',
-        bestPostingTimes: ['8:00', '11:00', '15:00', '19:00'],
-        optimalContentLength: 200,
-        topPerformingContentTypes: ['image'],
-        recommendedHashtagCount: 3,
-        audienceInsights: {
-          demographics: { age: '25-54', gender: 'female', location: 'global' },
-          interests: ['lifestyle'],
-          activeHours: ['8:00', '11:00', '15:00', '19:00']
-        }
-      };
-    }
+    return {
+      platform: 'pinterest',
+      bestPostingTimes: ['8:00', '11:00', '15:00', '19:00'],
+      optimalContentLength: 200,
+      topPerformingContentTypes: ['image', 'video', 'carousel'],
+      recommendedHashtagCount: 3,
+      audienceInsights: {
+        demographics: { age: '25-54', gender: 'female', location: 'global' },
+        interests: ['lifestyle', 'home', 'fashion', 'food', 'travel'],
+        activeHours: ['8:00', '11:00', '15:00', '19:00'],
+      },
+    };
   }
 
   async getBoards(): Promise<{ id: string; name: string; description: string }[]> {
@@ -211,18 +192,20 @@ export class PinterestClient {
       const response = await fetch(`${this.baseUrl}/boards`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
         const data = await response.json();
-        return data.items?.map((board: any) => ({
-          id: board.id,
-          name: board.name,
-          description: board.description || ''
-        })) || [];
+        return (
+          data.items?.map((board: any) => ({
+            id: board.id,
+            name: board.name,
+            description: board.description || '',
+          })) || []
+        );
       }
 
       return [];

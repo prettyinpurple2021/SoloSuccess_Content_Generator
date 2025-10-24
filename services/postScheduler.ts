@@ -1,4 +1,4 @@
-import { db } from './supabaseService';
+import { db } from './databaseService';
 import { Post } from '../types';
 
 /**
@@ -13,13 +13,13 @@ export class PostScheduler {
    */
   start() {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     console.log('Post scheduler started');
-    
+
     // Check immediately
     this.checkAndPublishPosts();
-    
+
     // Then check every minute
     this.intervalId = setInterval(() => {
       this.checkAndPublishPosts();
@@ -43,14 +43,13 @@ export class PostScheduler {
    */
   private async checkAndPublishPosts() {
     try {
-      const posts = await db.getPosts();
+      const posts = await db.getAllScheduledPosts();
       const now = new Date();
-      
+
       // Find posts that are scheduled and ready to publish
-      const postsToPublish = posts.filter(post => 
-        post.status === 'scheduled' && 
-        post.scheduleDate && 
-        new Date(post.scheduleDate) <= now
+      const postsToPublish = posts.filter(
+        (post) =>
+          post.status === 'scheduled' && post.scheduleDate && new Date(post.scheduleDate) <= now
       );
 
       if (postsToPublish.length === 0) {
@@ -63,7 +62,6 @@ export class PostScheduler {
       for (const post of postsToPublish) {
         await this.publishPost(post);
       }
-
     } catch (error) {
       console.error('Error checking scheduled posts:', error);
     }
@@ -76,49 +74,70 @@ export class PostScheduler {
     try {
       console.log(`Publishing post: ${post.idea}`);
 
+      if (!post.userId) {
+        throw new Error(`Post ${post.id} is missing userId - cannot update`);
+      }
+
       // Update status to 'posting' to prevent duplicate publishing
-      await db.updatePost(post.id, {
-        status: 'posting'
-      });
+      await db.updatePost(
+        post.id,
+        {
+          status: 'posting',
+        },
+        post.userId
+      );
 
       // Publish to Blogger (you can add other platforms here)
       const success = await this.publishToBloggerSafely(post);
 
       if (success) {
         // Mark as posted
-        await db.updatePost(post.id, {
-          status: 'posted',
-          posted_at: new Date().toISOString()
-        });
-        
+        await db.updatePost(
+          post.id,
+          {
+            status: 'posted',
+            posted_at: new Date().toISOString(),
+          },
+          post.userId
+        );
+
         console.log(`Successfully published post: ${post.idea}`);
-        
+
         // Show success notification if possible
         if (typeof window !== 'undefined' && 'Notification' in window) {
           this.showNotification(`Published: ${post.idea}`, 'success');
         }
       } else {
         // Revert to scheduled if publishing failed
-        await db.updatePost(post.id, {
-          status: 'scheduled'
-        });
-        
+        await db.updatePost(
+          post.id,
+          {
+            status: 'scheduled',
+          },
+          post.userId
+        );
+
         console.error(`Failed to publish post: ${post.idea}`);
-        
+
         // Show error notification
         if (typeof window !== 'undefined' && 'Notification' in window) {
           this.showNotification(`Failed to publish: ${post.idea}`, 'error');
         }
       }
-
     } catch (error) {
       console.error(`Error publishing post ${post.id}:`, error);
-      
+
       // Revert status on error
       try {
-        await db.updatePost(post.id, {
-          status: 'scheduled'
-        });
+        if (post.userId) {
+          await db.updatePost(
+            post.id,
+            {
+              status: 'scheduled',
+            },
+            post.userId
+          );
+        }
       } catch (updateError) {
         console.error('Error reverting post status:', updateError);
       }
@@ -158,7 +177,7 @@ export class PostScheduler {
       new Notification('SoloSuccess AI', {
         body: message,
         icon: type === 'success' ? '✅' : '❌',
-        tag: 'post-scheduler'
+        tag: 'post-scheduler',
       });
     }
   }
@@ -169,7 +188,7 @@ export class PostScheduler {
   getStatus() {
     return {
       isRunning: this.isRunning,
-      intervalId: this.intervalId !== null
+      intervalId: this.intervalId !== null,
     };
   }
 

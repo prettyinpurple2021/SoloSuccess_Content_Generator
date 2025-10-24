@@ -91,6 +91,25 @@ export const db = {
     });
   },
 
+  // Get all scheduled posts across all users (for global scheduler)
+  getAllScheduledPosts: async (): Promise<Post[]> => {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        `
+        SELECT * FROM posts 
+        WHERE status = 'scheduled' 
+        AND schedule_date IS NOT NULL
+        ORDER BY schedule_date ASC
+      `
+      );
+
+      return result.rows.map(transformDatabasePostToPost);
+    } finally {
+      client.release();
+    }
+  },
+
   // Get paginated posts for better performance with large datasets
   getPostsPaginated: async (
     userId: string,
@@ -907,6 +926,7 @@ export const db = {
 function transformDatabasePostToPost(dbPost: DatabasePost): Post {
   return {
     id: dbPost.id,
+    userId: dbPost.user_id,
     topic: dbPost.topic,
     idea: dbPost.idea,
     content: dbPost.content,
@@ -1056,4 +1076,18 @@ function transformDatabaseIntegrationLogToIntegrationLog(
 }
 
 // Export for compatibility
-export const supabaseService = db;
+export const databaseService = db;
+
+// Export the raw postgres connection for direct SQL queries
+export const query = async (sql: string, params: any[] = []) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(sql, params);
+    return result;
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error; // Re-throw the error so it can be handled by the caller
+  } finally {
+    client.release();
+  }
+};

@@ -9,7 +9,7 @@ import {
   HealthCheckResult,
   RateLimitResult,
 } from '../types';
-import { db } from './supabaseService';
+import { db } from './databaseService';
 import { credentialEncryption } from './credentialEncryption';
 
 /**

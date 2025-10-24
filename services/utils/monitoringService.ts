@@ -1,5 +1,5 @@
 // services/utils/monitoringService.ts
-import { db } from '../supabaseService';
+import { db, query } from '../databaseService';
 
 export interface MonitoringConfig {
   enabled: boolean;
@@ -39,9 +39,9 @@ export class MonitoringService {
     alertThresholds: {
       errorRate: 5, // 5%
       responseTime: 5000, // 5 seconds
-      availability: 95 // 95%
+      availability: 95, // 95%
     },
-    notificationChannels: ['console', 'database']
+    notificationChannels: ['console', 'database'],
   };
 
   /**
@@ -52,23 +52,24 @@ export class MonitoringService {
 
     try {
       // Store in database
-      const { error } = await db.supabase
-        .from('api_metrics')
-        .insert({
-          service: metrics.service,
-          operation: metrics.operation,
-          timestamp: metrics.timestamp.toISOString(),
-          duration: metrics.duration,
-          success: metrics.success,
-          status_code: metrics.statusCode,
-          error_message: metrics.errorMessage,
-          user_id: metrics.userId,
-          metadata: metrics.metadata
-        });
-
-      if (error) {
-        console.error('Failed to record API metrics:', error);
-      }
+      await query(
+        `
+        INSERT INTO api_metrics (
+          service, operation, timestamp, duration, success, status_code, error_message, user_id, metadata
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `,
+        [
+          metrics.service,
+          metrics.operation,
+          metrics.timestamp.toISOString(),
+          metrics.duration,
+          metrics.success,
+          metrics.statusCode,
+          metrics.errorMessage,
+          metrics.userId,
+          JSON.stringify(metrics.metadata),
+        ]
+      );
 
       // Check for alerts
       await this.checkAlerts(metrics);
@@ -87,22 +88,24 @@ export class MonitoringService {
 
     try {
       // Get recent metrics for the service
-      const { data: metrics, error } = await db.supabase
-        .from('api_metrics')
-        .select('*')
-        .eq('service', service)
-        .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-        .order('timestamp', { ascending: false })
-        .limit(100);
+      const result = await query(
+        `
+        SELECT * FROM api_metrics 
+        WHERE service = $1 
+        AND timestamp >= $2
+        ORDER BY timestamp DESC 
+        LIMIT 100
+      `,
+        [service, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()]
+      );
 
-      if (error) {
-        throw new Error(`Failed to fetch metrics: ${error.message}`);
-      }
+      const metrics = result.rows;
 
       const responseTime = Date.now() - startTime;
       const totalRequests = metrics?.length || 0;
-      const successfulRequests = metrics?.filter(m => m.success).length || 0;
-      const errorRate = totalRequests > 0 ? ((totalRequests - successfulRequests) / totalRequests) * 100 : 0;
+      const successfulRequests = metrics?.filter((m) => m.success).length || 0;
+      const errorRate =
+        totalRequests > 0 ? ((totalRequests - successfulRequests) / totalRequests) * 100 : 0;
       const availability = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 100;
 
       // Determine status based on thresholds
@@ -128,7 +131,7 @@ export class MonitoringService {
         responseTime,
         errorRate,
         availability,
-        issues
+        issues,
       };
 
       // Store health check result
@@ -143,7 +146,9 @@ export class MonitoringService {
         responseTime: Date.now() - startTime,
         errorRate: 100,
         availability: 0,
-        issues: [`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`]
+        issues: [
+          `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ],
       };
 
       await this.storeHealthCheck(healthCheck);
@@ -165,17 +170,25 @@ export class MonitoringService {
     };
   }> {
     const services = [
-      'twitter', 'linkedin', 'facebook', 'instagram', 'reddit', 
-      'pinterest', 'bluesky', 'google_analytics', 'openai', 'claude'
+      'twitter',
+      'linkedin',
+      'facebook',
+      'instagram',
+      'reddit',
+      'pinterest',
+      'bluesky',
+      'google_analytics',
+      'openai',
+      'claude',
     ];
 
     const healthChecks = await Promise.all(
-      services.map(service => this.performHealthCheck(service))
+      services.map((service) => this.performHealthCheck(service))
     );
 
-    const healthyServices = healthChecks.filter(h => h.status === 'healthy').length;
-    const degradedServices = healthChecks.filter(h => h.status === 'degraded').length;
-    const unhealthyServices = healthChecks.filter(h => h.status === 'unhealthy').length;
+    const healthyServices = healthChecks.filter((h) => h.status === 'healthy').length;
+    const degradedServices = healthChecks.filter((h) => h.status === 'degraded').length;
+    const unhealthyServices = healthChecks.filter((h) => h.status === 'unhealthy').length;
 
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     if (unhealthyServices > 0) {
@@ -191,8 +204,8 @@ export class MonitoringService {
         totalServices: services.length,
         healthyServices,
         degradedServices,
-        unhealthyServices
-      }
+        unhealthyServices,
+      },
     };
   }
 
@@ -209,31 +222,35 @@ export class MonitoringService {
     const timeRanges = {
       '1h': 60 * 60 * 1000,
       '24h': 24 * 60 * 60 * 1000,
-      '7d': 7 * 24 * 60 * 60 * 1000
+      '7d': 7 * 24 * 60 * 60 * 1000,
     };
 
     const startTime = new Date(Date.now() - timeRanges[timeRange]);
 
-    const { data: metrics, error } = await db.supabase
-      .from('api_metrics')
-      .select('*')
-      .gte('timestamp', startTime.toISOString());
+    const result = await query(
+      `
+      SELECT * FROM api_metrics 
+      WHERE timestamp >= $1
+    `,
+      [startTime.toISOString()]
+    );
 
-    if (error) {
-      throw new Error(`Failed to fetch dashboard data: ${error.message}`);
-    }
+    const metrics = result.rows;
 
     const totalRequests = metrics?.length || 0;
-    const successfulRequests = metrics?.filter(m => m.success).length || 0;
+    const successfulRequests = metrics?.filter((m) => m.success).length || 0;
     const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0;
-    const averageResponseTime = metrics?.reduce((sum, m) => sum + m.duration, 0) / totalRequests || 0;
+    const averageResponseTime =
+      metrics?.reduce((sum, m) => sum + m.duration, 0) / totalRequests || 0;
 
     // Top errors
     const errorCounts: { [key: string]: number } = {};
-    metrics?.filter(m => !m.success).forEach(m => {
-      const error = m.error_message || 'Unknown error';
-      errorCounts[error] = (errorCounts[error] || 0) + 1;
-    });
+    metrics
+      ?.filter((m) => !m.success)
+      .forEach((m) => {
+        const error = m.error_message || 'Unknown error';
+        errorCounts[error] = (errorCounts[error] || 0) + 1;
+      });
 
     const topErrors = Object.entries(errorCounts)
       .map(([error, count]) => ({ error, count }))
@@ -242,7 +259,7 @@ export class MonitoringService {
 
     // Service breakdown
     const serviceCounts: { [key: string]: { requests: number; errors: number } } = {};
-    metrics?.forEach(m => {
+    metrics?.forEach((m) => {
       if (!serviceCounts[m.service]) {
         serviceCounts[m.service] = { requests: 0, errors: 0 };
       }
@@ -261,7 +278,7 @@ export class MonitoringService {
       successRate,
       averageResponseTime,
       topErrors,
-      serviceBreakdown
+      serviceBreakdown,
     };
   }
 
@@ -275,7 +292,7 @@ export class MonitoringService {
       console.error(`Service ${metrics.service} is experiencing server errors:`, {
         operation: metrics.operation,
         statusCode: metrics.statusCode,
-        errorMessage: metrics.errorMessage
+        errorMessage: metrics.errorMessage,
       });
     }
   }
@@ -285,21 +302,29 @@ export class MonitoringService {
    */
   private static async storeHealthCheck(healthCheck: HealthCheck): Promise<void> {
     try {
-      const { error } = await db.supabase
-        .from('health_checks')
-        .upsert({
-          service: healthCheck.service,
-          status: healthCheck.status,
-          last_check: healthCheck.lastCheck.toISOString(),
-          response_time: healthCheck.responseTime,
-          error_rate: healthCheck.errorRate,
-          availability: healthCheck.availability,
-          issues: healthCheck.issues
-        });
-
-      if (error) {
-        console.error('Failed to store health check:', error);
-      }
+      await query(
+        `
+        INSERT INTO health_checks (
+          service, status, last_check, response_time, error_rate, availability, issues
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (service) DO UPDATE SET
+          status = EXCLUDED.status,
+          last_check = EXCLUDED.last_check,
+          response_time = EXCLUDED.response_time,
+          error_rate = EXCLUDED.error_rate,
+          availability = EXCLUDED.availability,
+          issues = EXCLUDED.issues
+      `,
+        [
+          healthCheck.service,
+          healthCheck.status,
+          healthCheck.lastCheck.toISOString(),
+          healthCheck.responseTime,
+          healthCheck.errorRate,
+          healthCheck.availability,
+          JSON.stringify(healthCheck.issues),
+        ]
+      );
     } catch (error) {
       console.error('Error storing health check:', error);
     }

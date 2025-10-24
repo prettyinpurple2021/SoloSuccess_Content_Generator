@@ -1,5 +1,5 @@
 import { IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
-import { db } from './supabaseService';
+import { db } from './databaseService';
 
 export class MonitoringService {
   private metricsCache: Map<string, IntegrationMetrics[]> = new Map();
@@ -40,19 +40,24 @@ export class MonitoringService {
 
       // Fetch from database
       const metrics = await db.getIntegrationMetrics(integrationId, startTime, endTime);
-      
+
       // Cache results
       this.metricsCache.set(cacheKey, metrics);
-      
+
       // Clear cache after 5 minutes
-      setTimeout(() => {
-        this.metricsCache.delete(cacheKey);
-      }, 5 * 60 * 1000);
+      setTimeout(
+        () => {
+          this.metricsCache.delete(cacheKey);
+        },
+        5 * 60 * 1000
+      );
 
       return metrics;
     } catch (error) {
       console.error('Error fetching integration metrics:', error);
-      throw new Error(`Failed to fetch metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -91,19 +96,24 @@ export class MonitoringService {
 
       // Fetch from database
       const logs = await db.getIntegrationLogs(integrationId, startTime, endTime, level);
-      
+
       // Cache results
       this.logsCache.set(cacheKey, logs);
-      
+
       // Clear cache after 2 minutes
-      setTimeout(() => {
-        this.logsCache.delete(cacheKey);
-      }, 2 * 60 * 1000);
+      setTimeout(
+        () => {
+          this.logsCache.delete(cacheKey);
+        },
+        2 * 60 * 1000
+      );
 
       return logs;
     } catch (error) {
       console.error('Error fetching integration logs:', error);
-      throw new Error(`Failed to fetch logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch logs: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -123,10 +133,10 @@ export class MonitoringService {
 
       // Fetch from database
       const alerts = await db.getIntegrationAlerts(integrationId, status);
-      
+
       // Cache results
       this.alertsCache.set(cacheKey, alerts);
-      
+
       // Clear cache after 1 minute
       setTimeout(() => {
         this.alertsCache.delete(cacheKey);
@@ -135,14 +145,18 @@ export class MonitoringService {
       return alerts;
     } catch (error) {
       console.error('Error fetching integration alerts:', error);
-      throw new Error(`Failed to fetch alerts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch alerts: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Get all metrics across all integrations
    */
-  async getAllMetrics(timeRange: '1h' | '24h' | '7d' | '30d' = '24h'): Promise<IntegrationMetrics[]> {
+  async getAllMetrics(
+    timeRange: '1h' | '24h' | '7d' | '30d' = '24h'
+  ): Promise<IntegrationMetrics[]> {
     try {
       // Calculate time range
       const endTime = new Date();
@@ -167,7 +181,9 @@ export class MonitoringService {
       return metrics;
     } catch (error) {
       console.error('Error fetching all metrics:', error);
-      throw new Error(`Failed to fetch metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -202,7 +218,9 @@ export class MonitoringService {
       return logs;
     } catch (error) {
       console.error('Error fetching all logs:', error);
-      throw new Error(`Failed to fetch logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch logs: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -216,7 +234,9 @@ export class MonitoringService {
       return alerts;
     } catch (error) {
       console.error('Error fetching all alerts:', error);
-      throw new Error(`Failed to fetch alerts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch alerts: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -226,34 +246,40 @@ export class MonitoringService {
   async resolveAlert(alertId: string): Promise<void> {
     try {
       await db.resolveIntegrationAlert(alertId);
-      
+
       // Clear cache for this integration
       this.alertsCache.clear();
     } catch (error) {
       console.error('Error resolving alert:', error);
-      throw new Error(`Failed to resolve alert: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to resolve alert: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Create a new alert
    */
-  async createAlert(alert: Omit<IntegrationAlert, 'id' | 'createdAt' | 'updatedAt'>): Promise<IntegrationAlert> {
+  async createAlert(
+    alert: Omit<IntegrationAlert, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<IntegrationAlert> {
     try {
       const newAlert = await db.addIntegrationAlert({
         ...alert,
         id: crypto.randomUUID(),
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
-      
+
       // Clear cache
       this.alertsCache.clear();
-      
+
       return newAlert;
     } catch (error) {
       console.error('Error creating alert:', error);
-      throw new Error(`Failed to create alert: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create alert: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -273,11 +299,11 @@ export class MonitoringService {
         level,
         message,
         details,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       await db.addIntegrationLog(log);
-      
+
       // Clear cache
       this.logsCache.clear();
     } catch (error) {
@@ -289,20 +315,17 @@ export class MonitoringService {
   /**
    * Update integration metrics
    */
-  async updateMetrics(
-    integrationId: string,
-    metrics: Partial<IntegrationMetrics>
-  ): Promise<void> {
+  async updateMetrics(integrationId: string, metrics: Partial<IntegrationMetrics>): Promise<void> {
     try {
       const existingMetrics = await db.getIntegrationMetrics(integrationId);
       const latestMetrics = existingMetrics[existingMetrics.length - 1];
-      
+
       if (latestMetrics) {
         // Update existing metrics
         const updatedMetrics: IntegrationMetrics = {
           ...latestMetrics,
           ...metrics,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
         await db.updateIntegrationMetrics(latestMetrics.id, updatedMetrics);
       } else {
@@ -316,11 +339,11 @@ export class MonitoringService {
           avgResponseTime: metrics.avgResponseTime || 0,
           successRate: metrics.successRate || 0,
           errorRate: metrics.errorRate || 0,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
         await db.updateIntegrationMetrics(newMetrics.id, newMetrics);
       }
-      
+
       // Clear cache
       this.metricsCache.clear();
     } catch (error) {
@@ -336,7 +359,7 @@ export class MonitoringService {
     try {
       const metrics = await this.getIntegrationMetrics(integrationId, '24h');
       const alerts = await this.getIntegrationAlerts(integrationId, 'active');
-      
+
       if (metrics.length === 0) {
         return 0;
       }
@@ -385,30 +408,34 @@ export class MonitoringService {
     try {
       const [metrics, alerts] = await Promise.all([
         this.getAllMetrics('24h'),
-        this.getAllAlerts('active')
+        this.getAllAlerts('active'),
       ]);
 
       const totalRequests = metrics.reduce((sum, m) => sum + m.totalRequests, 0);
-      const avgResponseTime = metrics.length > 0 
-        ? metrics.reduce((sum, m) => sum + m.avgResponseTime, 0) / metrics.length 
-        : 0;
-      const successRate = metrics.length > 0 
-        ? metrics.reduce((sum, m) => sum + m.successRate, 0) / metrics.length 
-        : 0;
+      const avgResponseTime =
+        metrics.length > 0
+          ? metrics.reduce((sum, m) => sum + m.avgResponseTime, 0) / metrics.length
+          : 0;
+      const successRate =
+        metrics.length > 0
+          ? metrics.reduce((sum, m) => sum + m.successRate, 0) / metrics.length
+          : 0;
 
       return {
         totalIntegrations: 0, // This would come from integration service
         connectedIntegrations: 0, // This would come from integration service
         activeIntegrations: 0, // This would come from integration service
         totalAlerts: alerts.length,
-        criticalAlerts: alerts.filter(a => a.severity === 'critical').length,
+        criticalAlerts: alerts.filter((a) => a.severity === 'critical').length,
         avgResponseTime,
         totalRequests,
-        successRate
+        successRate,
       };
     } catch (error) {
       console.error('Error getting dashboard summary:', error);
-      throw new Error(`Failed to get dashboard summary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get dashboard summary: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 

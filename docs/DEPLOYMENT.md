@@ -1,44 +1,42 @@
-# Deployment (Render + Cloudflare)
+# Deployment (Vercel)
 
 ## Overview
-- Containerized via Docker (multi-stage build) and served by Nginx.
-- Cloudflare in front for SSL, WAF, caching, and image optimization.
+
+- Static React application built with Vite and deployed to Vercel.
+- Serverless functions for API routes if needed.
+- Automatic deployments from Git repository.
 
 ## Steps
-1. Create a Render Web Service from this repo (Docker runtime).
-2. Confirm `render.yaml` exists; health check at `/healthz`.
-3. Set env vars in Render dashboard:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
+
+1. Connect your GitHub repository to Vercel.
+2. Import the project in Vercel dashboard.
+3. Configure environment variables in Vercel dashboard:
    - `GEMINI_API_KEY` (optional)
    - `GOOGLE_CLIENT_ID`, `GOOGLE_API_KEY` (optional)
-4. Point Cloudflare DNS to Render, enable proxy, SSL Full(strict).
-5. Cache settings: default; bypass cache for `/index.html`.
-6. Purge cache on deploy via Render deploy hook or CI.
+   - `NEXT_PUBLIC_STACK_PROJECT_ID`
+   - `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY`
+   - `STACK_SECRET_SERVER_KEY`
+4. Deploy automatically on push to main branch.
 
 ## Environments
-- dev: feature branches or PR previews.
-- staging: `main` auto-deploy with smoke tests.
-- prod: manual promotion after staging passes.
+
+- Preview: automatic deployments for pull requests.
+- Production: automatic deployments from main branch.
+
+## Configuration
+
+- `vercel.json` defines build configuration and routing.
+- Static files served from `dist` directory.
+- SPA routing handled with fallback to `index.html`.
 
 ## Security
-- CSP and headers in `nginx.conf`.
-- Secrets only in server env; no secrets in client code.
+
+- Environment variables managed through Vercel dashboard.
+- No secrets in client code; all sensitive data in environment variables.
+- Automatic HTTPS and security headers.
 
 ## Troubleshooting
-- Check Render logs; verify `/healthz` returns 200.
-- Ensure env vars exist; Vite build fails if missing.
 
----
-
-# Fly.io (Fallback via Docker/Nginx)
-
-## Steps
-1. Install `flyctl` and run `flyctl launch` (use existing `Dockerfile`).
-2. Set secrets: `fly secrets set VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... VITE_SENTRY_DSN=...`.
-3. Deploy: `flyctl deploy`. Keep autoscale min=1, max=1.
-4. Map your domain and certificates.
-
-## Config
-- `fly.toml` defines HTTP service on port 80.
-- `nginx.conf` enforces SPA fallback, caching, and security headers.
+- Check Vercel build logs for deployment issues.
+- Verify environment variables are set correctly.
+- Ensure all dependencies are properly installed.

@@ -1,75 +1,80 @@
-// Frontend API service that uses fetch to communicate with the backend
-const API_BASE_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'https://solosuccess-ai.fly.dev'
-    : 'http://localhost:3001';
+// Frontend API service that uses Neon database directly
+import { db } from './databaseService';
 
 export const apiService = {
   // Posts
   async getPosts(userId: string) {
-    const response = await fetch(`${API_BASE_URL}/api/posts?userId=${userId}`);
-    if (!response.ok) throw new Error('Failed to fetch posts');
-    return response.json();
+    try {
+      return await db.getPosts(userId);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+      throw new Error('Failed to fetch posts');
+    }
   },
 
   async addPost(userId: string, post: any) {
-    const response = await fetch(`${API_BASE_URL}/api/posts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, post }),
-    });
-    if (!response.ok) throw new Error('Failed to create post');
-    return response.json();
+    try {
+      return await db.addPost(post, userId);
+    } catch (error) {
+      console.error('Failed to create post:', error);
+      throw new Error('Failed to create post');
+    }
   },
 
   // Brand Voices
   async getBrandVoices(userId: string) {
-    const response = await fetch(`${API_BASE_URL}/api/brand-voices?userId=${userId}`);
-    if (!response.ok) throw new Error('Failed to fetch brand voices');
-    return response.json();
+    try {
+      return await db.getBrandVoices(userId);
+    } catch (error) {
+      console.error('Failed to fetch brand voices:', error);
+      throw new Error('Failed to fetch brand voices');
+    }
   },
 
   async addBrandVoice(userId: string, brandVoice: any) {
-    const response = await fetch(`${API_BASE_URL}/api/brand-voices`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, brandVoice }),
-    });
-    if (!response.ok) throw new Error('Failed to create brand voice');
-    return response.json();
+    try {
+      return await db.addBrandVoice(brandVoice, userId);
+    } catch (error) {
+      console.error('Failed to create brand voice:', error);
+      throw new Error('Failed to create brand voice');
+    }
   },
 
   // Audience Profiles
   async getAudienceProfiles(userId: string) {
-    const response = await fetch(`${API_BASE_URL}/api/audience-profiles?userId=${userId}`);
-    if (!response.ok) throw new Error('Failed to fetch audience profiles');
-    return response.json();
+    try {
+      return await db.getAudienceProfiles(userId);
+    } catch (error) {
+      console.error('Failed to fetch audience profiles:', error);
+      throw new Error('Failed to fetch audience profiles');
+    }
   },
 
   async addAudienceProfile(userId: string, audienceProfile: any) {
-    const response = await fetch(`${API_BASE_URL}/api/audience-profiles`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, audienceProfile }),
-    });
-    if (!response.ok) throw new Error('Failed to create audience profile');
-    return response.json();
+    try {
+      return await db.addAudienceProfile(audienceProfile, userId);
+    } catch (error) {
+      console.error('Failed to create audience profile:', error);
+      throw new Error('Failed to create audience profile');
+    }
   },
 
   // Campaigns
   async getCampaigns(userId: string) {
-    const response = await fetch(`${API_BASE_URL}/api/campaigns?userId=${userId}`);
-    if (!response.ok) throw new Error('Failed to fetch campaigns');
-    return response.json();
+    try {
+      return await db.getCampaigns(userId);
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+      throw new Error('Failed to fetch campaigns');
+    }
   },
 
   async addCampaign(userId: string, campaign: any) {
-    const response = await fetch(`${API_BASE_URL}/api/campaigns`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, campaign }),
-    });
-    if (!response.ok) throw new Error('Failed to create campaign');
-    return response.json();
+    try {
+      return await db.addCampaign(campaign, userId);
+    } catch (error) {
+      console.error('Failed to create campaign:', error);
+      throw new Error('Failed to create campaign');
+    }
   },
 };

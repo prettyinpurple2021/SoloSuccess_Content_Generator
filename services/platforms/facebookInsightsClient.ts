@@ -1,6 +1,6 @@
 // services/platforms/facebookInsightsClient.ts
 import { FacebookCredentials } from '../../types';
-import { db } from '../supabaseService';
+import { db } from '../databaseService';
 
 export class FacebookInsightsClient {
   private credentials: FacebookCredentials;
@@ -20,9 +20,9 @@ export class FacebookInsightsClient {
       const response = await fetch(`${this.baseUrl}/me/accounts`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
@@ -35,7 +35,11 @@ export class FacebookInsightsClient {
     }
   }
 
-  async getPageInsights(pageId: string, startDate: string, endDate: string): Promise<{
+  async getPageInsights(
+    pageId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{
     pageViews: number;
     pageLikes: number;
     postEngagements: number;
@@ -46,33 +50,33 @@ export class FacebookInsightsClient {
       const response = await fetch(`${this.baseUrl}/${pageId}/insights`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
         },
         body: new URLSearchParams({
           metric: 'page_views,page_fans,post_engagements,page_reach,page_impressions',
           since: startDate,
           until: endDate,
-          period: 'day'
-        })
+          period: 'day',
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         const insights = data.data || [];
-        
+
         const result = {
           pageViews: 0,
           pageLikes: 0,
           postEngagements: 0,
           reach: 0,
-          impressions: 0
+          impressions: 0,
         };
 
         insights.forEach((insight: any) => {
           const values = insight.values || [];
           const total = values.reduce((sum: number, val: any) => sum + (val.value || 0), 0);
-          
+
           switch (insight.name) {
             case 'page_views':
               result.pageViews = total;
@@ -102,7 +106,10 @@ export class FacebookInsightsClient {
     }
   }
 
-  async getPostInsights(pageId: string, postId: string): Promise<{
+  async getPostInsights(
+    pageId: string,
+    postId: string
+  ): Promise<{
     likes: number;
     comments: number;
     shares: number;
@@ -114,31 +121,32 @@ export class FacebookInsightsClient {
       const response = await fetch(`${this.baseUrl}/${postId}/insights`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
         },
         body: new URLSearchParams({
-          metric: 'post_impressions,post_engaged_users,post_reactions_by_type_total,post_impressions_unique'
-        })
+          metric:
+            'post_impressions,post_engaged_users,post_reactions_by_type_total,post_impressions_unique',
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         const insights = data.data || [];
-        
+
         const result = {
           likes: 0,
           comments: 0,
           shares: 0,
           reactions: 0,
           reach: 0,
-          impressions: 0
+          impressions: 0,
         };
 
         insights.forEach((insight: any) => {
           const values = insight.values || [];
           const total = values.reduce((sum: number, val: any) => sum + (val.value || 0), 0);
-          
+
           switch (insight.name) {
             case 'post_impressions':
               result.impressions = total;
@@ -175,27 +183,28 @@ export class FacebookInsightsClient {
       const response = await fetch(`${this.baseUrl}/${pageId}/insights`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
         },
         body: new URLSearchParams({
-          metric: 'page_fans_gender_age,page_fans_country,page_fans_locale,page_impressions_by_story_type'
-        })
+          metric:
+            'page_fans_gender_age,page_fans_country,page_fans_locale,page_impressions_by_story_type',
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         const insights = data.data || [];
-        
+
         const demographics = {
           ageGroups: [] as { age: string; percentage: number }[],
           genders: [] as { gender: string; percentage: number }[],
-          countries: [] as { country: string; percentage: number }[]
+          countries: [] as { country: string; percentage: number }[],
         };
 
         insights.forEach((insight: any) => {
           const values = insight.values || [];
-          
+
           switch (insight.name) {
             case 'page_fans_gender_age':
               values.forEach((val: any) => {
@@ -215,26 +224,30 @@ export class FacebookInsightsClient {
         return {
           demographics,
           interests: [], // Would need additional API calls
-          activeHours: [] // Would need additional API calls
+          activeHours: [], // Would need additional API calls
         };
       }
 
       return {
         demographics: { ageGroups: [], genders: [], countries: [] },
         interests: [],
-        activeHours: []
+        activeHours: [],
       };
     } catch (error) {
       console.error('Error fetching Facebook audience insights:', error);
       return {
         demographics: { ageGroups: [], genders: [], countries: [] },
         interests: [],
-        activeHours: []
+        activeHours: [],
       };
     }
   }
 
-  async getContentPerformance(pageId: string, startDate: string, endDate: string): Promise<{
+  async getContentPerformance(
+    pageId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{
     topPosts: { postId: string; engagement: number; reach: number }[];
     contentTypes: { type: string; performance: number }[];
   }> {
@@ -242,30 +255,32 @@ export class FacebookInsightsClient {
       const response = await fetch(`${this.baseUrl}/${pageId}/posts`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.credentials.accessToken}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${this.credentials.accessToken}`,
+          'Content-Type': 'application/json',
         },
         body: new URLSearchParams({
           fields: 'id,message,created_time,insights.metric(post_impressions,post_engaged_users)',
           since: startDate,
           until: endDate,
-          limit: '25'
-        })
+          limit: '25',
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         const posts = data.data || [];
-        
-        const topPosts = posts.map((post: any) => ({
-          postId: post.id,
-          engagement: post.insights?.data?.[0]?.values?.[0]?.value || 0,
-          reach: post.insights?.data?.[1]?.values?.[0]?.value || 0
-        })).sort((a: any, b: any) => b.engagement - a.engagement);
+
+        const topPosts = posts
+          .map((post: any) => ({
+            postId: post.id,
+            engagement: post.insights?.data?.[0]?.values?.[0]?.value || 0,
+            reach: post.insights?.data?.[1]?.values?.[0]?.value || 0,
+          }))
+          .sort((a: any, b: any) => b.engagement - a.engagement);
 
         return {
           topPosts: topPosts.slice(0, 10),
-          contentTypes: [] // Would need additional analysis
+          contentTypes: [], // Would need additional analysis
         };
       }
 

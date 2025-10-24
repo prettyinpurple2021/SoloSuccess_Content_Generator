@@ -14,6 +14,7 @@ export interface GeneratedImages {
 
 export interface Post {
   id: string;
+  userId?: string;
   topic: string;
   idea: string;
   content: string;
