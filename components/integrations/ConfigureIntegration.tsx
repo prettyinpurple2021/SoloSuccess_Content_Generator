@@ -166,7 +166,7 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key as 'general' | 'sync' | 'webhooks' | 'monitoring')}
+            onClick={() => setActiveTab(tab.key as any)}
             className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors flex items-center space-x-2 ${
               activeTab === tab.key
                 ? 'border-purple-400 text-white bg-white/10'

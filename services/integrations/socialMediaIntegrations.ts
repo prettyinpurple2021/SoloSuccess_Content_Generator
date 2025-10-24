@@ -1,4 +1,5 @@
 import {
+  Integration,
   TwitterCredentials,
   LinkedInCredentials,
   FacebookCredentials,

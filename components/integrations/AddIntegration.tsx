@@ -376,7 +376,7 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
       <div className="bg-blue-500/20 border border-blue-500/50 rounded-xl p-6">
         <h4 className="text-lg font-semibold text-blue-300 mb-2">💡 Need Help?</h4>
         <p className="text-blue-200/80 mb-2">
-          To get started with {selectedPlatform || 'your integration'}, you&apos;ll need to:
+          To get started with {selectedPlatform || 'your integration'}, you'll need to:
         </p>
         <ol className="list-decimal list-inside text-blue-200/80 space-y-1">
           <li>Create a developer account with the platform</li>

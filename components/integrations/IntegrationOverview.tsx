@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Integration, ConnectionTestResult, SyncResult } from '../../types';
+import { Integration, ConnectionTestResult, SyncResult, HealthCheckResult } from '../../types';
 
 interface IntegrationOverviewProps {
   integrations: Integration[];
