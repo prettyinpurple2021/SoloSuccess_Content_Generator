@@ -1,4 +1,4 @@
-import { Pool } from 'postgres';
+import postgres from 'postgres';
 import {
   DatabasePost,
   Post,
@@ -37,12 +37,11 @@ if (!connectionString) {
 }
 
 // Create connection pool
-const pool = new Pool({
-  connectionString,
+const pool = postgres(connectionString, {
   ssl: { rejectUnauthorized: false },
   max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  idle_timeout: 30,
+  connect_timeout: 2,
 });
 
 // Auth functions (using Stack Auth)

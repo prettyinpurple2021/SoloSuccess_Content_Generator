@@ -274,19 +274,22 @@ export class AILearningService {
       'Creator economy',
     ];
 
-    return globalTrends
-      .map((trend) => {
-        const personalRelevance = this.calculateTopicRelevance(trend, preferences);
-        // Calculate real trend score based on social media engagement
-        const trendScore = await this.calculateTrendScore(trend, userInterests);
+    const trendPromises = globalTrends.map(async (trend) => {
+      const personalRelevance = this.calculateTopicRelevance(trend, preferences);
+      // Calculate real trend score based on social media engagement
+      const trendScore = await this.calculateTrendScore(trend, userInterests);
 
-        return {
-          topic: trend,
-          trendScore,
-          personalRelevance,
-        };
-      })
-      .sort((a, b) => b.trendScore * b.personalRelevance - a.trendScore * a.personalRelevance);
+      return {
+        topic: trend,
+        trendScore,
+        personalRelevance,
+      };
+    });
+
+    const trends = await Promise.all(trendPromises);
+    return trends.sort(
+      (a, b) => b.trendScore * b.personalRelevance - a.trendScore * a.personalRelevance
+    );
   }
 
   /**
