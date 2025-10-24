@@ -18,7 +18,14 @@ import {
   OptimizationSuggestion,
   SchedulingSuggestion,
 } from './types';
-import { db, transformPostToDatabasePost, User } from './services/supabaseService';
+import { apiService } from './services/apiService';
+
+// User type for Stack Auth
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
 import * as geminiService from './services/geminiService';
 // import * as schedulerService from './services/schedulerService';
 import * as bloggerService from './services/bloggerService';

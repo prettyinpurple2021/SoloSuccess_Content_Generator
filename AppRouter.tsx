@@ -2,7 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
-import { User } from './services/supabaseService';
+// User type for Stack Auth
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
 
 // Import all pages
 import LandingPage from './components/pages/LandingPage';
@@ -14,7 +19,8 @@ import ProfilePage from './components/pages/ProfilePage';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL || 'https://uwqavioyiqwjkvazlsrl.supabase.co',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3cWF2aW95aXF3amt2YXpsc3JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MDk5ODUsImV4cCI6MjA3NDQ4NTk4NX0.hOZZTMp920REf_FRqsP4EocU8vcO5uM-JY1uSkyCnX8'
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3cWF2aW95aXF3amt2YXpsc3JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MDk5ODUsImV4cCI6MjA3NDQ4NTk4NX0.hOZZTMp920REf_FRqsP4EocU8vcO5uM-JY1uSkyCnX8'
 );
 
 // Protected Route Component
@@ -29,7 +35,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         setUser(user);
       } catch (error) {
         console.error('Error getting user:', error);
@@ -40,7 +48,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
 
@@ -73,7 +83,9 @@ const PublicRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         setUser(user);
       } catch (error) {
         console.error('Error getting user:', error);
@@ -84,7 +96,9 @@ const PublicRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
 
@@ -114,55 +128,55 @@ const AppRouter: React.FC = () => {
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <PublicRoute>
               <LandingPage />
             </PublicRoute>
-          } 
+          }
         />
-        <Route 
-          path="/signup" 
+        <Route
+          path="/signup"
           element={
             <PublicRoute>
               <SignUpPage />
             </PublicRoute>
-          } 
+          }
         />
-        <Route 
-          path="/signin" 
+        <Route
+          path="/signin"
           element={
             <PublicRoute>
               <SignInPage />
             </PublicRoute>
-          } 
+          }
         />
-        <Route 
-          path="/forgot-password" 
+        <Route
+          path="/forgot-password"
           element={
             <PublicRoute>
               <ForgotPasswordPage />
             </PublicRoute>
-          } 
+          }
         />
 
         {/* Protected Routes */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <DashboardPage />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/profile" 
+        <Route
+          path="/profile"
           element={
             <ProtectedRoute>
               <ProfilePage />
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Catch all route - redirect to landing page */}
