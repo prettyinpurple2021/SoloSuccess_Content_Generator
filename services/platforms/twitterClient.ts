@@ -1,4 +1,7 @@
 import { TwitterCredentials, PostResult } from '../../types';
+import ApiErrorHandler from '../utils/apiErrorHandler';
+import RateLimiter from '../utils/rateLimiter';
+import MonitoringService from '../utils/monitoringService';
 
 /**
  * Twitter API v2 Client
@@ -16,23 +19,46 @@ export class TwitterClient {
    * Test connection to Twitter API
    */
   async testConnection(): Promise<{ success: boolean; error?: string; details?: any }> {
+    const startTime = Date.now();
+    
     try {
-      const response = await fetch(`${this.baseUrl}/users/me`, {
-        headers: {
-          Authorization: `Bearer ${this.credentials.bearerToken || this.credentials.accessToken}`,
-          'Content-Type': 'application/json',
-        },
+      const result = await ApiErrorHandler.executeWithRetry(
+        () => RateLimiter.executeWithRateLimit(
+          'twitter',
+          async () => {
+            const response = await ApiErrorHandler.withTimeout(
+              () => fetch(`${this.baseUrl}/users/me`, {
+                headers: {
+                  Authorization: `Bearer ${this.credentials.bearerToken || this.credentials.accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+              }),
+              10000
+            );
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(`HTTP ${response.status}: ${errorData.detail || response.statusText}`);
+            }
+
+            return response;
+          }
+        )
+      );
+
+      const data = await result.json();
+      const duration = Date.now() - startTime;
+      
+      // Record successful metrics
+      await MonitoringService.recordMetrics({
+        service: 'twitter',
+        operation: 'testConnection',
+        timestamp: new Date(),
+        duration,
+        success: true,
+        statusCode: 200
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        return {
-          success: false,
-          error: `HTTP ${response.status}: ${errorData.detail || response.statusText}`,
-        };
-      }
-
-      const data = await response.json();
       return {
         success: true,
         details: {
@@ -42,6 +68,18 @@ export class TwitterClient {
         },
       };
     } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      // Record failed metrics
+      await MonitoringService.recordMetrics({
+        service: 'twitter',
+        operation: 'testConnection',
+        timestamp: new Date(),
+        duration,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
+
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
