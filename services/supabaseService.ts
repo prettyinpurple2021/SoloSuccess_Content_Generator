@@ -670,6 +670,55 @@ export const db = {
     }
   },
 
+  // Integration Alerts Operations
+  getIntegrationAlerts: async (
+    integrationId: string,
+    includeResolved: boolean = false
+  ): Promise<IntegrationAlert[]> => {
+    const client = await pool.connect();
+    try {
+      let query = `
+        SELECT * FROM integration_alerts 
+        WHERE integration_id = $1
+      `;
+      const params = [integrationId];
+
+      if (!includeResolved) {
+        query += ` AND is_resolved = false`;
+      }
+
+      query += ` ORDER BY created_at DESC`;
+
+      const result = await client.query(query, params);
+      return result.rows.map(transformDatabaseIntegrationAlertToIntegrationAlert);
+    } finally {
+      client.release();
+    }
+  },
+
+  // Integration Logs Operations
+  getIntegrationLogs: async (
+    integrationId: string,
+    limit: number = 100
+  ): Promise<IntegrationLog[]> => {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        `
+        SELECT * FROM integration_logs 
+        WHERE integration_id = $1
+        ORDER BY timestamp DESC
+        LIMIT $2
+      `,
+        [integrationId, limit]
+      );
+
+      return result.rows.map(transformDatabaseIntegrationLogToIntegrationLog);
+    } finally {
+      client.release();
+    }
+  },
+
   // Analytics Data Operations
   insertPostAnalytics: async (
     analytics: Omit<DatabaseAnalyticsData, 'id' | 'recorded_at'>
@@ -971,6 +1020,39 @@ function transformDatabaseAnalyticsDataToAnalyticsData(
     impressions: dbAnalytics.impressions,
     reach: dbAnalytics.reach,
     recordedAt: new Date(dbAnalytics.recorded_at),
+  };
+}
+
+// Helper functions for Integration Alert transformations
+function transformDatabaseIntegrationAlertToIntegrationAlert(
+  dbAlert: DatabaseIntegrationAlert
+): IntegrationAlert {
+  return {
+    id: dbAlert.id,
+    integrationId: dbAlert.integration_id,
+    type: dbAlert.type,
+    title: dbAlert.title,
+    message: dbAlert.message,
+    severity: dbAlert.severity,
+    isResolved: dbAlert.is_resolved,
+    resolvedAt: dbAlert.resolved_at ? new Date(dbAlert.resolved_at) : undefined,
+    createdAt: new Date(dbAlert.created_at),
+    metadata: dbAlert.metadata,
+  };
+}
+
+// Helper functions for Integration Log transformations
+function transformDatabaseIntegrationLogToIntegrationLog(
+  dbLog: DatabaseIntegrationLog
+): IntegrationLog {
+  return {
+    id: dbLog.id,
+    integrationId: dbLog.integration_id,
+    level: dbLog.level,
+    message: dbLog.message,
+    metadata: dbLog.metadata,
+    timestamp: new Date(dbLog.timestamp),
+    userId: dbLog.user_id,
   };
 }
 

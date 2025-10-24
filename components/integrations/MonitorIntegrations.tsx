@@ -61,33 +61,20 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         return;
       }
 
-      const { data, error } = await db.supabase
-        .from('integration_alerts')
-        .select('*')
-        .in('integration_id', integrationIds)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Use Neon database methods instead of Supabase client
+      const alertsPromises = integrationIds.map(async (integrationId) => {
+        try {
+          return await db.getIntegrationAlerts(integrationId, true);
+        } catch (error) {
+          console.error(`Failed to load alerts for ${integrationId}:`, error);
+          return [];
+        }
+      });
 
-      if (error) {
-        console.error('Error fetching alerts:', error);
-        setAlerts([]);
-        return;
-      }
+      const alertsResults = await Promise.all(alertsPromises);
+      const allAlerts = alertsResults.flat();
 
-      const parsedAlerts: IntegrationAlert[] = (data || []).map((alert) => ({
-        id: alert.id,
-        integrationId: alert.integration_id,
-        type: alert.type,
-        title: alert.title,
-        message: alert.message,
-        severity: alert.severity,
-        isResolved: alert.is_resolved,
-        resolvedAt: alert.resolved_at ? new Date(alert.resolved_at) : undefined,
-        createdAt: new Date(alert.created_at),
-        metadata: alert.metadata,
-      }));
-
-      setAlerts(parsedAlerts);
+      setAlerts(allAlerts);
     } catch (error) {
       console.error('Failed to load integration alerts:', error);
       setAlerts([]);
@@ -106,30 +93,20 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         return;
       }
 
-      const { data, error } = await db.supabase
-        .from('integration_logs')
-        .select('*')
-        .in('integration_id', integrationIds)
-        .order('timestamp', { ascending: false })
-        .limit(100);
+      // Use Neon database methods instead of Supabase client
+      const logsPromises = integrationIds.map(async (integrationId) => {
+        try {
+          return await db.getIntegrationLogs(integrationId, 100);
+        } catch (error) {
+          console.error(`Failed to load logs for ${integrationId}:`, error);
+          return [];
+        }
+      });
 
-      if (error) {
-        console.error('Error fetching logs:', error);
-        setLogs([]);
-        return;
-      }
+      const logsResults = await Promise.all(logsPromises);
+      const allLogs = logsResults.flat();
 
-      const parsedLogs: IntegrationLog[] = (data || []).map((log) => ({
-        id: log.id,
-        integrationId: log.integration_id,
-        level: log.level,
-        message: log.message,
-        metadata: log.metadata,
-        timestamp: new Date(log.timestamp),
-        userId: log.user_id,
-      }));
-
-      setLogs(parsedLogs);
+      setLogs(allLogs);
     } catch (error) {
       console.error('Failed to load integration logs:', error);
       setLogs([]);
@@ -300,7 +277,12 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
                       <div className="text-right">
                         <p className="text-sm text-white/70">Health Score</p>
                         <p className="font-bold text-white">
-                          {integration.status?.healthScore || 0}%
+                          {integration.status === 'connected'
+                            ? 95
+                            : integration.status === 'error'
+                              ? 15
+                              : 50}
+                          %
                         </p>
                       </div>
                       <div
