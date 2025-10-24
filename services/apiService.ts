@@ -1,6 +1,8 @@
 // Frontend API service that uses fetch to communicate with the backend
 const API_BASE_URL =
-  process.env.NODE_ENV === 'production' ? 'https://your-fly-app.fly.dev' : 'http://localhost:3001';
+  process.env.NODE_ENV === 'production'
+    ? 'https://solosuccess-ai.fly.dev'
+    : 'http://localhost:3001';
 
 export const apiService = {
   // Posts
