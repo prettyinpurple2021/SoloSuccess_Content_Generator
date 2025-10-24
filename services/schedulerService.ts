@@ -1,20 +1,34 @@
-
 import { z } from 'zod';
-import { supabase } from './supabaseService';
+// import { supabase } from './supabaseService';
 import { contentAdaptationService } from './contentAdaptationService';
 
 export const schedulePayloadSchema = z.object({
   userId: z.string().uuid().optional(),
   postId: z.string().uuid().optional(),
   content: z.string().min(1),
-  platforms: z.array(z.enum(['twitter','linkedin','facebook','instagram','bluesky','reddit','pinterest','blogger'])).min(1),
+  platforms: z
+    .array(
+      z.enum([
+        'twitter',
+        'linkedin',
+        'facebook',
+        'instagram',
+        'bluesky',
+        'reddit',
+        'pinterest',
+        'blogger',
+      ])
+    )
+    .min(1),
   scheduleDate: z.string(), // ISO 8601
   mediaUrls: z.array(z.string().url()).optional(),
-  options: z.object({
-    tone: z.enum(['professional','casual','friendly','authoritative']).optional(),
-    includeCallToAction: z.boolean().optional(),
-    targetAudience: z.string().optional(),
-  }).optional(),
+  options: z
+    .object({
+      tone: z.enum(['professional', 'casual', 'friendly', 'authoritative']).optional(),
+      includeCallToAction: z.boolean().optional(),
+      targetAudience: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type SchedulePayload = z.infer<typeof schedulePayloadSchema>;
@@ -28,7 +42,9 @@ export const schedulePost = async (payload: SchedulePayload): Promise<void> => {
   // Resolve user id if not provided
   let userId = parsed.userId || '';
   if (!userId) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
     userId = user.id;
   }

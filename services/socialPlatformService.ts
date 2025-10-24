@@ -1,4 +1,4 @@
-import { supabase } from './supabaseService';
+// import { supabase } from './supabaseService';
 
 // Types for social platform integrations
 export interface SocialPlatformConfig {
