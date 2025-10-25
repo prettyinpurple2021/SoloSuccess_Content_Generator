@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { useStackApp } from '@stackframe/stack';
 
 export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const app = useStackApp();
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,15 +17,8 @@ export const ForgotPasswordPage: React.FC = () => {
     setMessage('');
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage('Check your email for the password reset link!');
-      }
+      await app.sendPasswordResetEmail(email);
+      setMessage('Check your email for the password reset link!');
     } catch (err) {
       setError('An unexpected error occurred');
     } finally {
@@ -41,10 +30,13 @@ export const ForgotPasswordPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle" style={{top: '10%', left: '10%', animationDelay: '0s'}}></div>
-        <div className="sparkle" style={{top: '20%', right: '15%', animationDelay: '0.5s'}}></div>
-        <div className="sparkle" style={{bottom: '30%', left: '20%', animationDelay: '1s'}}></div>
-        <div className="sparkle" style={{bottom: '10%', right: '10%', animationDelay: '1.5s'}}></div>
+        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
+        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
+        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
+        <div
+          className="sparkle"
+          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
+        ></div>
       </div>
 
       {/* Navigation */}

@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useStackApp } from '@stackframe/stack';
 import { motion } from 'framer-motion';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 interface PasswordResetProps {
   onBack: () => void;
@@ -16,6 +11,7 @@ export const PasswordReset: React.FC<PasswordResetProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const app = useStackApp();
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,15 +20,8 @@ export const PasswordReset: React.FC<PasswordResetProps> = ({ onBack }) => {
     setMessage('');
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage('Check your email for the password reset link!');
-      }
+      await app.sendPasswordResetEmail(email);
+      setMessage('Check your email for the password reset link!');
     } catch (err) {
       setError('An unexpected error occurred');
     } finally {
@@ -49,9 +38,7 @@ export const PasswordReset: React.FC<PasswordResetProps> = ({ onBack }) => {
         className="max-w-md w-full space-y-8"
       >
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Reset Password
-          </h2>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Reset Password</h2>
           <p className="mt-2 text-sm text-gray-600">
             Enter your email address and we'll send you a link to reset your password
           </p>
@@ -133,10 +120,7 @@ export const PasswordReset: React.FC<PasswordResetProps> = ({ onBack }) => {
         <div className="text-center">
           <p className="text-xs text-gray-500">
             Remember your password?{' '}
-            <button
-              onClick={onBack}
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
+            <button onClick={onBack} className="font-medium text-indigo-600 hover:text-indigo-500">
               Sign in here
             </button>
           </p>
