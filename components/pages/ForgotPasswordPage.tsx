@@ -17,8 +17,28 @@ export const ForgotPasswordPage: React.FC = () => {
     setMessage('');
 
     try {
-      await app.sendPasswordResetEmail(email);
-      setMessage('Check your email for the password reset link!');
+      const result = await app.sendPasswordResetEmail(email);
+
+      if (result.status === 'success') {
+        setMessage('Check your email for the password reset link!');
+      } else {
+        // Handle specific error cases
+        switch (result.error?.code) {
+          case 'UserNotFound':
+            setError('No user found with this email address.');
+            break;
+          case 'RateLimitExceeded':
+            setError('Too many requests. Please try again later.');
+            break;
+          case 'InvalidEmail':
+            setError('Please enter a valid email address.');
+            break;
+          default:
+            setError(
+              result.error?.message || 'Failed to send password reset email. Please try again.'
+            );
+        }
+      }
     } catch (err) {
       setError('An unexpected error occurred');
     } finally {
