@@ -12,6 +12,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
     "prepare": "husky",
+    "clean:install": "node scripts/clean-install.js",
     "setup:database": "node scripts/setup-neon-database.js",
     "migrate:neon": "node scripts/apply-neon-migrations.js",
     "test:neon": "node scripts/test-neon-integration.js"
@@ -39,15 +40,15 @@
     "lucide-react": "^0.544.0",
     "marked": "^13.0.1",
     "postgres": "^3.4.7",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-router-dom": "^7.9.3",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
     "@vitejs/plugin-react": "^5.0.0",
@@ -67,5 +68,17 @@
   },
   "optionalDependencies": {
     "zod": "^3.23.8"
+  },
+  "resolutions": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1"
+  },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1"
   }
 }

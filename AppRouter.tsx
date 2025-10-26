@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useUser } from '@stackframe/stack';
+import { useUser, StackProvider, StackTheme } from '@stackframe/stack';
+import { stackServerApp } from './stack';
 
 // Import all pages
 import LandingPage from './components/pages/LandingPage';
@@ -63,64 +64,68 @@ const PublicRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
 const AppRouter: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route
-          path="/"
-          element={
-            <PublicRoute>
-              <LandingPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/signup"
-          element={
-            <PublicRoute>
-              <SignUpPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/signin"
-          element={
-            <PublicRoute>
-              <SignInPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <PublicRoute>
-              <ForgotPasswordPage />
-            </PublicRoute>
-          }
-        />
+    <StackProvider app={stackServerApp}>
+      <StackTheme>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route
+              path="/"
+              element={
+                <PublicRoute>
+                  <LandingPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <PublicRoute>
+                  <SignUpPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/signin"
+              element={
+                <PublicRoute>
+                  <SignInPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPasswordPage />
+                </PublicRoute>
+              }
+            />
 
-        {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
 
-        {/* Catch all route - redirect to landing page */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+            {/* Catch all route - redirect to landing page */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </StackTheme>
+    </StackProvider>
   );
 };
 
