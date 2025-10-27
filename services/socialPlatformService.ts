@@ -1,4 +1,5 @@
 import { db } from './neonService';
+import { query } from './databaseService';
 
 // Types for social platform integrations
 export interface SocialPlatformConfig {
@@ -562,7 +563,7 @@ class SocialPlatformService {
               }
             })
           );
-          return results.filter((r): r is HashtagPerformance => r !== null);
+          return results.filter((r): r is HashtagPerformance => r !== null) as HashtagPerformance[];
         }
         case 'linkedin': {
           const { default: LinkedInClient } = await import('./platforms/linkedInClient');
@@ -591,7 +592,7 @@ class SocialPlatformService {
               }
             })
           );
-          return results.filter((r): r is HashtagPerformance => r !== null);
+          return results.filter((r): r is HashtagPerformance => r !== null) as HashtagPerformance[];
         }
         default:
           // For platforms without hashtag API support, return empty array
@@ -685,28 +686,30 @@ class SocialPlatformService {
     hashtags: string[],
     platform: string
   ): Promise<HashtagPerformance[]> {
-    const { data, error } = await supabase
-      .from('hashtag_performance')
-      .select('*')
-      .in('hashtag', hashtags)
-      .eq('platform', platform)
-      .order('last_updated', { ascending: false });
+    try {
+      // Use parameterized query to prevent SQL injection
+      const placeholders = hashtags.map((_, index) => `$${index + 2}`).join(',');
+      const sqlQuery = `
+        SELECT * FROM hashtag_performance 
+        WHERE hashtag IN (${placeholders}) 
+        AND platform = $1 
+        ORDER BY last_updated DESC
+      `;
 
-    if (error) {
-      console.error('Error fetching hashtag performance history:', error);
-      return [];
-    }
+      const result = await query(sqlQuery, [platform, ...hashtags]);
 
-    return (
-      data?.map((row) => ({
+      return result.map((row: any) => ({
         hashtag: row.hashtag,
         platform: row.platform,
         usageCount: row.usage_count,
         avgEngagement: row.avg_engagement,
         trendingScore: row.trending_score,
         lastUpdated: new Date(row.last_updated),
-      })) || []
-    );
+      }));
+    } catch (error) {
+      console.error('Error fetching hashtag performance history:', error);
+      return [];
+    }
   }
 
   private scoreHashtags(
@@ -946,20 +949,18 @@ Return only the content text, no additional formatting.`;
   }
 
   private async getHistoricalEngagement(platform: string, days: number): Promise<EngagementData[]> {
-    const { data, error } = await supabase
-      .from('post_analytics')
-      .select('*')
-      .eq('platform', platform)
-      .gte('recorded_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
-      .order('recorded_at', { ascending: false });
+    try {
+      const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const sqlQuery = `
+        SELECT * FROM post_analytics 
+        WHERE platform = $1 
+        AND recorded_at >= $2 
+        ORDER BY recorded_at DESC
+      `;
 
-    if (error) {
-      console.error('Error fetching historical engagement:', error);
-      return [];
-    }
+      const result = await query(sqlQuery, [platform, startDate]);
 
-    return (
-      data?.map((row) => ({
+      return result.map((row: any) => ({
         platform: row.platform,
         postId: row.post_id,
         likes: row.likes,
@@ -970,8 +971,11 @@ Return only the content text, no additional formatting.`;
         reach: row.reach,
         engagementRate: (row.likes + row.shares + row.comments) / Math.max(row.impressions, 1),
         timestamp: new Date(row.recorded_at),
-      })) || []
-    );
+      }));
+    } catch (error) {
+      console.error('Error fetching historical engagement:', error);
+      return [];
+    }
   }
 
   private analyzeEngagementByTime(engagementData: EngagementData[]): string[] {

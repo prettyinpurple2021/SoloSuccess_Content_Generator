@@ -217,7 +217,7 @@ export class LinkedInClient {
     try {
       // LinkedIn doesn't have a public trending hashtags API
       // Return hashtags based on provided topics
-      return topics.map(topic => `#${topic.replace(/\s+/g, '')}`);
+      return topics.map((topic) => `#${topic.replace(/\s+/g, '')}`);
     } catch (error) {
       console.error('Error fetching LinkedIn trending hashtags:', error);
       return [];
@@ -232,22 +232,13 @@ export class LinkedInClient {
     avgEngagement: number;
     trendingScore: number;
   }> {
-    try {
-      // LinkedIn doesn't provide hashtag metrics in their API
-      // Return basic metrics
-      return {
-        usageCount: 0,
-        avgEngagement: 0,
-        trendingScore: 0,
-      };
-    } catch (error) {
-      console.error('Error fetching LinkedIn hashtag metrics:', error);
-      return {
-        usageCount: 0,
-        avgEngagement: 0,
-        trendingScore: 0,
-      };
-    }
+    // LinkedIn doesn't provide hashtag metrics in their API
+    // Return basic metrics
+    return {
+      usageCount: 0,
+      avgEngagement: 0,
+      trendingScore: 0,
+    };
   }
 }
 

@@ -1,5 +1,6 @@
 import { WebhookConfig, IntegrationWebhook, WebhookEvent, WebhookDelivery } from '../types';
-import { db, query } from './databaseService';
+import { db } from './neonService';
+import { query } from './databaseService';
 import crypto from 'crypto';
 
 export class WebhookService {
@@ -191,7 +192,7 @@ export class WebhookService {
         method: 'POST',
         headers,
         body: JSON.stringify(delivery.payload),
-        signal: AbortSignal.timeout(webhook.timeout),
+        signal: AbortSignal.timeout(webhook.timeout || 30000),
       });
 
       if (response.ok) {
@@ -311,7 +312,7 @@ export class WebhookService {
       `
       );
 
-      return result.rows.map(this.transformDatabaseDeliveryToDelivery);
+      return result.map(this.transformDatabaseDeliveryToDelivery);
     } catch (error) {
       console.error('Error fetching pending deliveries:', error);
       return [];
@@ -411,12 +412,12 @@ export class WebhookService {
       }
 
       const testPayload = {
-        event: 'test',
+        event: 'post_created',
         timestamp: new Date().toISOString(),
         message: 'This is a test webhook delivery',
       };
 
-      const delivery = await this.deliverWebhook(webhookId, 'test', testPayload);
+      const delivery = await this.deliverWebhook(webhookId, 'post_created', testPayload);
 
       return {
         success: delivery.status === 'delivered',
@@ -455,7 +456,7 @@ export class WebhookService {
       const startTime = new Date(Date.now() - timeRanges[timeRange]);
 
       // Query actual webhook deliveries from database
-      const result = await db.query(
+      const result = await query(
         `
         SELECT * FROM webhook_deliveries 
         WHERE webhook_id = $1 
@@ -464,7 +465,7 @@ export class WebhookService {
         [webhookId, startTime.toISOString()]
       );
 
-      const deliveries = result.rows || [];
+      const deliveries = result || [];
       const totalDeliveries = deliveries.length;
       const successfulDeliveries = deliveries.filter((d) => d.status === 'delivered').length;
       const failedDeliveries = deliveries.filter((d) => d.status === 'failed').length;
