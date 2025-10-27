@@ -280,7 +280,7 @@ export class SocialMediaIntegrations {
   ): Promise<PostResult> {
     try {
       const postData = {
-        author: `urn:li:person:${credentials.userId || 'me'}`,
+        author: 'urn:li:person:me',
         lifecycleState: 'PUBLISHED',
         specificContent: {
           'com.linkedin.ugc.ShareContent': {

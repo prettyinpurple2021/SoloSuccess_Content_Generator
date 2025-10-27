@@ -70,6 +70,7 @@ export class ComprehensiveLoggingService {
         integrationId,
         level,
         message,
+        metadata: context?.metadata || {},
         details: {
           timestamp: new Date().toISOString(),
           level: level.toUpperCase(),
