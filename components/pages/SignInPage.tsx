@@ -24,7 +24,7 @@ export const SignInPage: React.FC = () => {
             SoloSuccess AI
           </Link>
           <Link
-            to="/signup"
+            to="/auth/signup"
             className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-300"
           >
             Sign Up
@@ -71,7 +71,7 @@ export const SignInPage: React.FC = () => {
             <p className="text-white/60">
               Don't have an account?{' '}
               <Link
-                to="/signup"
+                to="/auth/signup"
                 className="font-medium text-purple-400 hover:text-purple-300 transition-colors duration-300"
               >
                 Sign up here

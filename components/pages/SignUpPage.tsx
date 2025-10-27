@@ -94,7 +94,7 @@ export const SignUpPage: React.FC = () => {
             SoloSuccess AI
           </Link>
           <Link
-            to="/signin"
+            to="/auth/signin"
             className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-all duration-300"
           >
             Sign In
@@ -278,7 +278,7 @@ export const SignUpPage: React.FC = () => {
             <p className="text-white/60">
               Already have an account?{' '}
               <Link
-                to="/signin"
+                to="/auth/signin"
                 className="font-medium text-purple-400 hover:text-purple-300 transition-colors duration-300"
               >
                 Sign in here

@@ -33,7 +33,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // If no user, redirect to sign in
   if (!user) {
-    return <Navigate to="/signin" replace />;
+    return <Navigate to="/auth/signin" replace />;
   }
 
   return <>{children}</>;
@@ -78,7 +78,7 @@ const AppRouter: React.FC = () => {
               }
             />
             <Route
-              path="/signup"
+              path="/auth/signup"
               element={
                 <PublicRoute>
                   <SignUpPage />
@@ -86,7 +86,7 @@ const AppRouter: React.FC = () => {
               }
             />
             <Route
-              path="/signin"
+              path="/auth/signin"
               element={
                 <PublicRoute>
                   <SignInPage />
