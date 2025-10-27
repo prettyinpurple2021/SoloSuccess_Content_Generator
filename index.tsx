@@ -71,13 +71,37 @@ console.log('Environment check:', {
   MODE: import.meta.env.MODE,
 });
 
+// Additional debug info
+console.log('Full environment:', import.meta.env);
+console.log('Stack config check:', {
+  projectId: import.meta.env.VITE_STACK_PROJECT_ID,
+  publishableKey: import.meta.env.VITE_STACK_PUBLISHABLE_CLIENT_KEY,
+  secretKey: import.meta.env.STACK_SECRET_SERVER_KEY ? 'Present' : 'Missing',
+});
+
 const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <HolographicThemeProvider>
-        <AppRouter />
-      </HolographicThemeProvider>
-    </ErrorBoundary>
-  </React.StrictMode>
-);
+
+try {
+  root.render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <HolographicThemeProvider>
+          <AppRouter />
+        </HolographicThemeProvider>
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+} catch (error) {
+  console.error('Failed to render app:', error);
+  rootElement.innerHTML = `
+    <div style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; text-align: center; padding: 2rem;">
+      <div>
+        <h1 style="font-size: 2rem; margin-bottom: 1rem;">App Failed to Load</h1>
+        <p style="margin-bottom: 1rem;">Check the console for error details</p>
+        <button onclick="window.location.reload()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
+          Reload Page
+        </button>
+      </div>
+    </div>
+  `;
+}
