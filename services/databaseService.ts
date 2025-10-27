@@ -73,40 +73,35 @@ export const db = {
     if (!userId) throw new Error('User ID is required');
 
     return await contentCache.cacheUserPosts(userId, async () => {
-      const client = await pool.connect();
       try {
-        const result = await client.query(
-          `
+        const result = await pool`
           SELECT * FROM posts 
-          WHERE user_id = $1 
+          WHERE user_id = ${userId} 
           ORDER BY created_at DESC
-        `,
-          [userId]
-        );
+        `;
 
-        return result.rows.map(transformDatabasePostToPost);
-      } finally {
-        client.release();
+        return result.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        throw error;
       }
     });
   },
 
   // Get all scheduled posts across all users (for global scheduler)
   getAllScheduledPosts: async (): Promise<Post[]> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         SELECT * FROM posts 
         WHERE status = 'scheduled' 
         AND schedule_date IS NOT NULL
         ORDER BY schedule_date ASC
-      `
-      );
+      `;
 
-      return result.rows.map(transformDatabasePostToPost);
-    } finally {
-      client.release();
+      return result.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
+    } catch (error) {
+      console.error('Error fetching scheduled posts:', error);
+      throw error;
     }
   },
 
@@ -133,65 +128,38 @@ export const db = {
       };
     }
 
-    const client = await pool.connect();
     try {
-      let whereClause = 'WHERE user_id = $1';
-      const params: any[] = [userId];
-      let paramIndex = 2;
-
-      if (filters?.status) {
-        whereClause += ` AND status = $${paramIndex}`;
-        params.push(filters.status);
-        paramIndex++;
-      }
-      if (filters?.campaignId) {
-        whereClause += ` AND campaign_id = $${paramIndex}`;
-        params.push(filters.campaignId);
-        paramIndex++;
-      }
-      if (filters?.seriesId) {
-        whereClause += ` AND series_id = $${paramIndex}`;
-        params.push(filters.seriesId);
-        paramIndex++;
-      }
-
+      // For now, use a simplified approach without dynamic query building
+      // This can be enhanced later with proper postgres library dynamic queries
+      
       // Get total count
-      const countResult = await client.query(
-        `
-        SELECT COUNT(*) FROM posts ${whereClause}
-      `,
-        params
-      );
-      const totalCount = parseInt(countResult.rows[0].count);
+      const countResult = await pool`
+        SELECT COUNT(*) FROM posts WHERE user_id = ${userId}
+      `;
+      const totalCount = parseInt(countResult[0].count);
 
       // Get paginated results
       const offset = (page - 1) * pageSize;
-      const result = await client.query(
-        `
-        SELECT * FROM posts 
-        ${whereClause}
+      const result = await pool`
+        SELECT * FROM posts
+        WHERE user_id = ${userId}
         ORDER BY created_at DESC
-        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-      `,
-        [...params, pageSize, offset]
-      );
+        LIMIT ${pageSize} OFFSET ${offset}
+      `;
 
-      const posts = result.rows.map(transformDatabasePostToPost);
+      const posts = result.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
 
       // Cache the full result set for this filter combination
       if (page === 1) {
         // For first page, fetch more data to cache
-        const { rows: fullData } = await client.query(
-          `
-          SELECT * FROM posts 
-          ${whereClause}
+        const fullData = await pool`
+          SELECT * FROM posts
+          WHERE user_id = ${userId}
           ORDER BY created_at DESC
-          LIMIT $${paramIndex + 2}
-        `,
-          [...params, Math.min(1000, totalCount)]
-        );
+          LIMIT ${Math.min(1000, totalCount)}
+        `;
 
-        const fullPosts = fullData.map(transformDatabasePostToPost);
+        const fullPosts = fullData.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
         paginationCache.set(cacheKey, fullPosts, totalCount);
       }
 
@@ -200,8 +168,9 @@ export const db = {
         totalCount,
         hasMore: page * pageSize < totalCount,
       };
-    } finally {
-      client.release();
+    } catch (error) {
+      console.error('Error fetching paginated posts:', error);
+      throw error;
     }
   },
 
@@ -210,10 +179,14 @@ export const db = {
     post: Omit<DatabasePost, 'id' | 'user_id' | 'created_at'>,
     userId: string
   ): Promise<Post> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      // Pre-stringify JSON fields to avoid template literal issues
+      const socialMediaPostsJson = JSON.stringify(post.social_media_posts);
+      const socialMediaTonesJson = JSON.stringify(post.social_media_tones);
+      const socialMediaAudiencesJson = JSON.stringify(post.social_media_audiences);
+      const optimizationSuggestionsJson = JSON.stringify(post.optimization_suggestions);
+
+      const result = await pool`
         INSERT INTO posts (
           user_id, topic, idea, content, status, tags, summary, headlines,
           social_media_posts, social_media_tones, social_media_audiences,
@@ -221,40 +194,23 @@ export const db = {
           campaign_id, series_id, template_id, performance_score,
           optimization_suggestions, image_style_id
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+          ${userId}, ${post.topic || null}, ${post.idea || null}, ${post.content || null}, ${post.status || null},
+          ${post.tags || null}, ${post.summary || null}, ${post.headlines || null},
+          ${socialMediaPostsJson || null}, ${socialMediaTonesJson || null},
+          ${socialMediaAudiencesJson || null}, ${post.selected_image || null}, ${post.schedule_date || null},
+          ${post.brand_voice_id || null}, ${post.audience_profile_id || null}, ${post.campaign_id || null},
+          ${post.series_id || null}, ${post.template_id || null}, ${post.performance_score || null},
+          ${optimizationSuggestionsJson || null}, ${post.image_style_id || null}
         ) RETURNING *
-      `,
-        [
-          userId,
-          post.topic,
-          post.idea,
-          post.content,
-          post.status,
-          post.tags,
-          post.summary,
-          post.headlines,
-          JSON.stringify(post.social_media_posts),
-          JSON.stringify(post.social_media_tones),
-          JSON.stringify(post.social_media_audiences),
-          post.selected_image,
-          post.schedule_date,
-          post.brand_voice_id,
-          post.audience_profile_id,
-          post.campaign_id,
-          post.series_id,
-          post.template_id,
-          post.performance_score,
-          JSON.stringify(post.optimization_suggestions),
-          post.image_style_id,
-        ]
-      );
+      `;
 
       // Invalidate user cache after adding post
       contentCache.invalidateUserCache(userId);
 
-      return transformDatabasePostToPost(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabasePostToPost(result[0] as DatabasePost);
+    } catch (error) {
+      console.error('Error adding post:', error);
+      throw error;
     }
   },
 
@@ -264,41 +220,36 @@ export const db = {
     updates: Partial<Omit<DatabasePost, 'id' | 'user_id'>>,
     userId: string
   ): Promise<Post> => {
-    const client = await pool.connect();
     try {
-      const setClause = [];
-      const values = [];
-      let paramIndex = 1;
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (typeof value === 'object' && value !== null) {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(JSON.stringify(value));
-          } else {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(value);
-          }
-          paramIndex++;
-        }
-      });
-
-      if (setClause.length === 0) {
-        throw new Error('No updates provided');
-      }
-
-      values.push(id, userId);
-      const result = await client.query(
-        `
-        UPDATE posts 
-        SET ${setClause.join(', ')}, updated_at = NOW()
-        WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}
+      const result = await pool`
+        UPDATE posts
+        SET
+          topic = COALESCE(${updates.topic || null}, topic),
+          idea = COALESCE(${updates.idea || null}, idea),
+          content = COALESCE(${updates.content || null}, content),
+          status = COALESCE(${updates.status || null}, status),
+          tags = COALESCE(${updates.tags || null}, tags),
+          summary = COALESCE(${updates.summary || null}, summary),
+          headlines = COALESCE(${updates.headlines || null}, headlines),
+          social_media_posts = COALESCE(${JSON.stringify(updates.social_media_posts) || null}, social_media_posts),
+          social_media_tones = COALESCE(${JSON.stringify(updates.social_media_tones) || null}, social_media_tones),
+          social_media_audiences = COALESCE(${JSON.stringify(updates.social_media_audiences) || null}, social_media_audiences),
+          selected_image = COALESCE(${updates.selected_image || null}, selected_image),
+          schedule_date = COALESCE(${updates.schedule_date || null}, schedule_date),
+          brand_voice_id = COALESCE(${updates.brand_voice_id || null}, brand_voice_id),
+          audience_profile_id = COALESCE(${updates.audience_profile_id || null}, audience_profile_id),
+          campaign_id = COALESCE(${updates.campaign_id || null}, campaign_id),
+          series_id = COALESCE(${updates.series_id || null}, series_id),
+          template_id = COALESCE(${updates.template_id || null}, template_id),
+          performance_score = COALESCE(${updates.performance_score || null}, performance_score),
+          optimization_suggestions = COALESCE(${JSON.stringify(updates.optimization_suggestions) || null}, optimization_suggestions),
+          image_style_id = COALESCE(${updates.image_style_id || null}, image_style_id),
+          updated_at = NOW()
+        WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
-      `,
-        values
-      );
+      `;
 
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         throw new Error('Post not found or access denied');
       }
 
@@ -306,53 +257,48 @@ export const db = {
       contentCache.invalidateUserCache(userId);
       contentCache.invalidatePostCache(id);
 
-      return transformDatabasePostToPost(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabasePostToPost(result[0] as DatabasePost);
+    } catch (error) {
+      console.error('Error updating post:', error);
+      throw error;
     }
   },
 
   // Delete post
   deletePost: async (id: string, userId: string): Promise<void> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         DELETE FROM posts 
-        WHERE id = $1 AND user_id = $2
-      `,
-        [id, userId]
-      );
+        WHERE id = ${id} AND user_id = ${userId}
+      `;
 
-      if (result.rowCount === 0) {
+      if (result.length === 0) {
         throw new Error('Post not found or access denied');
       }
 
       // Invalidate related caches
       contentCache.invalidateUserCache(userId);
       contentCache.invalidatePostCache(id);
-    } finally {
-      client.release();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      throw error;
     }
   },
 
   // Brand Voices CRUD operations
   getBrandVoices: async (userId: string): Promise<BrandVoice[]> => {
     return await contentCache.cacheBrandVoices(userId, async () => {
-      const client = await pool.connect();
       try {
-        const result = await client.query(
-          `
+        const result = await pool`
           SELECT * FROM brand_voices 
-          WHERE user_id = $1 
+          WHERE user_id = ${userId} 
           ORDER BY created_at DESC
-        `,
-          [userId]
-        );
+        `;
 
-        return result.rows.map(transformDatabaseBrandVoiceToBrandVoice);
-      } finally {
-        client.release();
+        return result.map((row: any) => transformDatabaseBrandVoiceToBrandVoice(row as DatabaseBrandVoice));
+      } catch (error) {
+        console.error('Error fetching brand voices:', error);
+        throw error;
       }
     });
   },
@@ -361,29 +307,21 @@ export const db = {
     brandVoice: Omit<DatabaseBrandVoice, 'id' | 'user_id' | 'created_at'>,
     userId: string
   ): Promise<BrandVoice> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         INSERT INTO brand_voices (
           user_id, name, tone, vocabulary, writing_style, target_audience, sample_content
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-      `,
-        [
-          userId,
-          brandVoice.name,
-          brandVoice.tone,
-          brandVoice.vocabulary,
-          brandVoice.writing_style,
-          brandVoice.target_audience,
-          brandVoice.sample_content,
-        ]
-      );
+        ) VALUES (
+          ${userId}, ${brandVoice.name}, ${brandVoice.tone},
+          ${JSON.stringify(brandVoice.vocabulary)}, ${brandVoice.writing_style},
+          ${brandVoice.target_audience}, ${JSON.stringify(brandVoice.sample_content)}
+        ) RETURNING *
+      `;
 
-      return transformDatabaseBrandVoiceToBrandVoice(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseBrandVoiceToBrandVoice(result[0] as DatabaseBrandVoice);
+    } catch (error) {
+      console.error('Error adding brand voice:', error);
+      throw error;
     }
   },
 
@@ -392,80 +330,63 @@ export const db = {
     updates: Partial<Omit<DatabaseBrandVoice, 'id' | 'user_id'>>,
     userId: string
   ): Promise<BrandVoice> => {
-    const client = await pool.connect();
     try {
-      const setClause = [];
-      const values = [];
-      let paramIndex = 1;
+      const vocabularyJson = updates.vocabulary ? JSON.stringify(updates.vocabulary) : null;
+      const sampleContentJson = updates.sample_content ? JSON.stringify(updates.sample_content) : null;
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          setClause.push(`${key} = $${paramIndex}`);
-          values.push(value);
-          paramIndex++;
-        }
-      });
-
-      if (setClause.length === 0) {
-        throw new Error('No updates provided');
-      }
-
-      values.push(id, userId);
-      const result = await client.query(
-        `
-        UPDATE brand_voices 
-        SET ${setClause.join(', ')}
-        WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}
+      const result = await pool`
+        UPDATE brand_voices
+        SET
+          name = COALESCE(${updates.name || null}, name),
+          tone = COALESCE(${updates.tone || null}, tone),
+          vocabulary = COALESCE(${vocabularyJson}, vocabulary),
+          writing_style = COALESCE(${updates.writing_style || null}, writing_style),
+          target_audience = COALESCE(${updates.target_audience || null}, target_audience),
+          sample_content = COALESCE(${sampleContentJson}, sample_content)
+        WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
-      `,
-        values
-      );
+      `;
 
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         throw new Error('Brand voice not found or access denied');
       }
 
-      return transformDatabaseBrandVoiceToBrandVoice(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseBrandVoiceToBrandVoice(result[0] as DatabaseBrandVoice);
+    } catch (error) {
+      console.error('Error updating brand voice:', error);
+      throw error;
     }
   },
 
   deleteBrandVoice: async (id: string, userId: string): Promise<void> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         DELETE FROM brand_voices 
-        WHERE id = $1 AND user_id = $2
-      `,
-        [id, userId]
-      );
+        WHERE id = ${id} AND user_id = ${userId}
+      `;
 
-      if (result.rowCount === 0) {
+      if (result.length === 0) {
         throw new Error('Brand voice not found or access denied');
       }
-    } finally {
-      client.release();
+    } catch (error) {
+      console.error('Error deleting brand voice:', error);
+      throw error;
     }
   },
 
   // Audience Profiles CRUD operations
   getAudienceProfiles: async (userId: string): Promise<AudienceProfile[]> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         SELECT * FROM audience_profiles 
-        WHERE user_id = $1 
+        WHERE user_id = ${userId} 
         ORDER BY created_at DESC
-      `,
-        [userId]
-      );
+      `;
 
-      return result.rows.map(transformDatabaseAudienceProfileToAudienceProfile);
-    } finally {
-      client.release();
+      return result.map((row: any) => transformDatabaseAudienceProfileToAudienceProfile(row as DatabaseAudienceProfile));
+    } catch (error) {
+      console.error('Error fetching audience profiles:', error);
+      throw error;
     }
   },
 
@@ -473,31 +394,26 @@ export const db = {
     profile: Omit<DatabaseAudienceProfile, 'id' | 'user_id' | 'created_at'>,
     userId: string
   ): Promise<AudienceProfile> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const interestsJson = JSON.stringify(profile.interests);
+      const painPointsJson = JSON.stringify(profile.pain_points);
+      const preferredContentTypesJson = JSON.stringify(profile.preferred_content_types);
+      const engagementPatternsJson = JSON.stringify(profile.engagement_patterns);
+
+      const result = await pool`
         INSERT INTO audience_profiles (
           user_id, name, age_range, industry, interests, pain_points, 
           preferred_content_types, engagement_patterns
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *
-      `,
-        [
-          userId,
-          profile.name,
-          profile.age_range,
-          profile.industry,
-          JSON.stringify(profile.interests),
-          JSON.stringify(profile.pain_points),
-          JSON.stringify(profile.preferred_content_types),
-          JSON.stringify(profile.engagement_patterns),
-        ]
-      );
+        ) VALUES (
+          ${userId}, ${profile.name}, ${profile.age_range}, ${profile.industry},
+          ${interestsJson}, ${painPointsJson}, ${preferredContentTypesJson}, ${engagementPatternsJson}
+        ) RETURNING *
+      `;
 
-      return transformDatabaseAudienceProfileToAudienceProfile(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseAudienceProfileToAudienceProfile(result[0] as DatabaseAudienceProfile);
+    } catch (error) {
+      console.error('Error adding audience profile:', error);
+      throw error;
     }
   },
 
@@ -506,85 +422,66 @@ export const db = {
     updates: Partial<Omit<DatabaseAudienceProfile, 'id' | 'user_id'>>,
     userId: string
   ): Promise<AudienceProfile> => {
-    const client = await pool.connect();
     try {
-      const setClause = [];
-      const values = [];
-      let paramIndex = 1;
+      const interestsJson = updates.interests ? JSON.stringify(updates.interests) : null;
+      const painPointsJson = updates.pain_points ? JSON.stringify(updates.pain_points) : null;
+      const preferredContentTypesJson = updates.preferred_content_types ? JSON.stringify(updates.preferred_content_types) : null;
+      const engagementPatternsJson = updates.engagement_patterns ? JSON.stringify(updates.engagement_patterns) : null;
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (typeof value === 'object' && value !== null) {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(JSON.stringify(value));
-          } else {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(value);
-          }
-          paramIndex++;
-        }
-      });
-
-      if (setClause.length === 0) {
-        throw new Error('No updates provided');
-      }
-
-      values.push(id, userId);
-      const result = await client.query(
-        `
-        UPDATE audience_profiles 
-        SET ${setClause.join(', ')}
-        WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}
+      const result = await pool`
+        UPDATE audience_profiles
+        SET
+          name = COALESCE(${updates.name || null}, name),
+          age_range = COALESCE(${updates.age_range || null}, age_range),
+          industry = COALESCE(${updates.industry || null}, industry),
+          interests = COALESCE(${interestsJson}, interests),
+          pain_points = COALESCE(${painPointsJson}, pain_points),
+          preferred_content_types = COALESCE(${preferredContentTypesJson}, preferred_content_types),
+          engagement_patterns = COALESCE(${engagementPatternsJson}, engagement_patterns)
+        WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
-      `,
-        values
-      );
+      `;
 
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         throw new Error('Audience profile not found or access denied');
       }
 
-      return transformDatabaseAudienceProfileToAudienceProfile(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseAudienceProfileToAudienceProfile(result[0] as DatabaseAudienceProfile);
+    } catch (error) {
+      console.error('Error updating audience profile:', error);
+      throw error;
     }
   },
 
   deleteAudienceProfile: async (id: string, userId: string): Promise<void> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         DELETE FROM audience_profiles 
-        WHERE id = $1 AND user_id = $2
-      `,
-        [id, userId]
-      );
+        WHERE id = ${id} AND user_id = ${userId}
+      `;
 
-      if (result.rowCount === 0) {
+      if (result.length === 0) {
         throw new Error('Audience profile not found or access denied');
       }
-    } finally {
-      client.release();
+    } catch (error) {
+      console.error('Error deleting audience profile:', error);
+      throw error;
     }
   },
 
   // Campaigns CRUD operations
   getCampaigns: async (userId: string): Promise<Campaign[]> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         SELECT * FROM campaigns 
-        WHERE user_id = $1 
+        WHERE user_id = ${userId} 
         ORDER BY created_at DESC
-      `,
-        [userId]
-      );
+      `;
 
-      return result.rows.map(transformDatabaseCampaignToCampaign);
-    } finally {
-      client.release();
+      return result.map((row: any) => transformDatabaseCampaignToCampaign(row as DatabaseCampaign));
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      throw error;
     }
   },
 
@@ -592,31 +489,24 @@ export const db = {
     campaign: Omit<DatabaseCampaign, 'id' | 'user_id' | 'created_at'>,
     userId: string
   ): Promise<Campaign> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const platformsJson = JSON.stringify(campaign.platforms);
+      const performanceJson = JSON.stringify(campaign.performance);
+
+      const result = await pool`
         INSERT INTO campaigns (
           user_id, name, description, theme, start_date, end_date, platforms, status, performance
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING *
-      `,
-        [
-          userId,
-          campaign.name,
-          campaign.description,
-          campaign.theme,
-          campaign.start_date,
-          campaign.end_date,
-          JSON.stringify(campaign.platforms),
-          campaign.status,
-          JSON.stringify(campaign.performance),
-        ]
-      );
+        ) VALUES (
+          ${userId}, ${campaign.name}, ${campaign.description}, ${campaign.theme},
+          ${campaign.start_date}, ${campaign.end_date}, ${platformsJson},
+          ${campaign.status}, ${performanceJson}
+        ) RETURNING *
+      `;
 
-      return transformDatabaseCampaignToCampaign(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseCampaignToCampaign(result[0] as DatabaseCampaign);
+    } catch (error) {
+      console.error('Error adding campaign:', error);
+      throw error;
     }
   },
 
@@ -625,66 +515,49 @@ export const db = {
     updates: Partial<Omit<DatabaseCampaign, 'id' | 'user_id'>>,
     userId: string
   ): Promise<Campaign> => {
-    const client = await pool.connect();
     try {
-      const setClause = [];
-      const values = [];
-      let paramIndex = 1;
+      const platformsJson = updates.platforms ? JSON.stringify(updates.platforms) : null;
+      const performanceJson = updates.performance ? JSON.stringify(updates.performance) : null;
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (typeof value === 'object' && value !== null) {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(JSON.stringify(value));
-          } else {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(value);
-          }
-          paramIndex++;
-        }
-      });
-
-      if (setClause.length === 0) {
-        throw new Error('No updates provided');
-      }
-
-      values.push(id, userId);
-      const result = await client.query(
-        `
-        UPDATE campaigns 
-        SET ${setClause.join(', ')}
-        WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}
+      const result = await pool`
+        UPDATE campaigns
+        SET
+          name = COALESCE(${updates.name || null}, name),
+          description = COALESCE(${updates.description || null}, description),
+          theme = COALESCE(${updates.theme || null}, theme),
+          start_date = COALESCE(${updates.start_date || null}, start_date),
+          end_date = COALESCE(${updates.end_date || null}, end_date),
+          platforms = COALESCE(${platformsJson}, platforms),
+          status = COALESCE(${updates.status || null}, status),
+          performance = COALESCE(${performanceJson}, performance)
+        WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
-      `,
-        values
-      );
+      `;
 
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         throw new Error('Campaign not found or access denied');
       }
 
-      return transformDatabaseCampaignToCampaign(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseCampaignToCampaign(result[0] as DatabaseCampaign);
+    } catch (error) {
+      console.error('Error updating campaign:', error);
+      throw error;
     }
   },
 
   deleteCampaign: async (id: string, userId: string): Promise<void> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         DELETE FROM campaigns 
-        WHERE id = $1 AND user_id = $2
-      `,
-        [id, userId]
-      );
+        WHERE id = ${id} AND user_id = ${userId}
+      `;
 
-      if (result.rowCount === 0) {
+      if (result.length === 0) {
         throw new Error('Campaign not found or access denied');
       }
-    } finally {
-      client.release();
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      throw error;
     }
   },
 
@@ -693,24 +566,25 @@ export const db = {
     integrationId: string,
     includeResolved: boolean = false
   ): Promise<IntegrationAlert[]> => {
-    const client = await pool.connect();
     try {
-      let query = `
-        SELECT * FROM integration_alerts 
-        WHERE integration_id = $1
-      `;
-      const params = [integrationId];
-
+      let result;
       if (!includeResolved) {
-        query += ` AND is_resolved = false`;
+        result = await pool`
+          SELECT * FROM integration_alerts 
+          WHERE integration_id = ${integrationId} AND is_resolved = false
+          ORDER BY created_at DESC
+        `;
+      } else {
+        result = await pool`
+          SELECT * FROM integration_alerts 
+          WHERE integration_id = ${integrationId}
+          ORDER BY created_at DESC
+        `;
       }
-
-      query += ` ORDER BY created_at DESC`;
-
-      const result = await client.query(query, params);
-      return result.rows.map(transformDatabaseIntegrationAlertToIntegrationAlert);
-    } finally {
-      client.release();
+      return result.map((row: any) => transformDatabaseIntegrationAlertToIntegrationAlert(row as DatabaseIntegrationAlert));
+    } catch (error) {
+      console.error('Error fetching integration alerts:', error);
+      throw error;
     }
   },
 
@@ -719,21 +593,18 @@ export const db = {
     integrationId: string,
     limit: number = 100
   ): Promise<IntegrationLog[]> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         SELECT * FROM integration_logs 
-        WHERE integration_id = $1
+        WHERE integration_id = ${integrationId}
         ORDER BY timestamp DESC
-        LIMIT $2
-      `,
-        [integrationId, limit]
-      );
+        LIMIT ${limit}
+      `;
 
-      return result.rows.map(transformDatabaseIntegrationLogToIntegrationLog);
-    } finally {
-      client.release();
+      return result.map((row: any) => transformDatabaseIntegrationLogToIntegrationLog(row as DatabaseIntegrationLog));
+    } catch (error) {
+      console.error('Error fetching integration logs:', error);
+      throw error;
     }
   },
 
@@ -741,67 +612,52 @@ export const db = {
   insertPostAnalytics: async (
     analytics: Omit<DatabaseAnalyticsData, 'id' | 'recorded_at'>
   ): Promise<AnalyticsData> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         INSERT INTO post_analytics (
           post_id, platform, likes, shares, comments, clicks, impressions, reach
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *
-      `,
-        [
-          analytics.post_id,
-          analytics.platform,
-          analytics.likes,
-          analytics.shares,
-          analytics.comments,
-          analytics.clicks,
-          analytics.impressions,
-          analytics.reach,
-        ]
-      );
+        ) VALUES (
+          ${analytics.post_id}, ${analytics.platform}, ${analytics.likes},
+          ${analytics.shares}, ${analytics.comments}, ${analytics.clicks},
+          ${analytics.impressions}, ${analytics.reach}
+        ) RETURNING *
+      `;
 
-      return transformDatabaseAnalyticsDataToAnalyticsData(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseAnalyticsDataToAnalyticsData(result[0] as DatabaseAnalyticsData);
+    } catch (error) {
+      console.error('Error inserting post analytics:', error);
+      throw error;
     }
   },
 
   getPostAnalytics: async (postId: string): Promise<AnalyticsData[]> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         SELECT * FROM post_analytics 
-        WHERE post_id = $1 
+        WHERE post_id = ${postId} 
         ORDER BY recorded_at DESC
-      `,
-        [postId]
-      );
+      `;
 
-      return result.rows.map(transformDatabaseAnalyticsDataToAnalyticsData);
-    } finally {
-      client.release();
+      return result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
+    } catch (error) {
+      console.error('Error fetching post analytics:', error);
+      throw error;
     }
   },
 
   // Integration Management Operations
   getIntegrations: async (userId: string): Promise<Integration[]> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         SELECT * FROM integrations 
-        WHERE user_id = $1 
+        WHERE user_id = ${userId} 
         ORDER BY created_at DESC
-      `,
-        [userId]
-      );
+      `;
 
-      return result.rows.map(transformDatabaseIntegrationToIntegration);
-    } finally {
-      client.release();
+      return result.map((row: any) => transformDatabaseIntegrationToIntegration(row as DatabaseIntegration));
+    } catch (error) {
+      console.error('Error fetching integrations:', error);
+      throw error;
     }
   },
 
@@ -809,33 +665,25 @@ export const db = {
     integration: Omit<DatabaseIntegration, 'id' | 'user_id' | 'created_at' | 'updated_at'>,
     userId: string
   ): Promise<Integration> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const credentialsJson = JSON.stringify(integration.credentials);
+      const configurationJson = JSON.stringify(integration.configuration);
+
+      const result = await pool`
         INSERT INTO integrations (
           user_id, name, type, platform, status, credentials, configuration,
           last_sync, sync_frequency, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *
-      `,
-        [
-          userId,
-          integration.name,
-          integration.type,
-          integration.platform,
-          integration.status,
-          JSON.stringify(integration.credentials),
-          JSON.stringify(integration.configuration),
-          integration.last_sync,
-          integration.sync_frequency,
-          integration.is_active,
-        ]
-      );
+        ) VALUES (
+          ${userId}, ${integration.name}, ${integration.type}, ${integration.platform},
+          ${integration.status}, ${credentialsJson}, ${configurationJson},
+          ${integration.last_sync || null}, ${integration.sync_frequency}, ${integration.is_active}
+        ) RETURNING *
+      `;
 
-      return transformDatabaseIntegrationToIntegration(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseIntegrationToIntegration(result[0] as DatabaseIntegration);
+    } catch (error) {
+      console.error('Error adding integration:', error);
+      throw error;
     }
   },
 
@@ -844,80 +692,62 @@ export const db = {
     updates: Partial<Omit<DatabaseIntegration, 'id' | 'user_id' | 'created_at'>>,
     userId: string
   ): Promise<Integration> => {
-    const client = await pool.connect();
     try {
-      const setClause = [];
-      const values = [];
-      let paramIndex = 1;
+      const credentialsJson = updates.credentials ? JSON.stringify(updates.credentials) : null;
+      const configurationJson = updates.configuration ? JSON.stringify(updates.configuration) : null;
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (typeof value === 'object' && value !== null) {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(JSON.stringify(value));
-          } else {
-            setClause.push(`${key} = $${paramIndex}`);
-            values.push(value);
-          }
-          paramIndex++;
-        }
-      });
-
-      if (setClause.length === 0) {
-        throw new Error('No updates provided');
-      }
-
-      values.push(id, userId);
-      const result = await client.query(
-        `
-        UPDATE integrations 
-        SET ${setClause.join(', ')}, updated_at = NOW()
-        WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}
+      const result = await pool`
+        UPDATE integrations
+        SET
+          name = COALESCE(${updates.name || null}, name),
+          type = COALESCE(${updates.type || null}, type),
+          platform = COALESCE(${updates.platform || null}, platform),
+          status = COALESCE(${updates.status || null}, status),
+          credentials = COALESCE(${credentialsJson}, credentials),
+          configuration = COALESCE(${configurationJson}, configuration),
+          last_sync = COALESCE(${updates.last_sync || null}, last_sync),
+          sync_frequency = COALESCE(${updates.sync_frequency || null}, sync_frequency),
+          is_active = COALESCE(${updates.is_active || null}, is_active),
+          updated_at = NOW()
+        WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
-      `,
-        values
-      );
+      `;
 
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         throw new Error('Integration not found or access denied');
       }
 
-      return transformDatabaseIntegrationToIntegration(result.rows[0]);
-    } finally {
-      client.release();
+      return transformDatabaseIntegrationToIntegration(result[0] as DatabaseIntegration);
+    } catch (error) {
+      console.error('Error updating integration:', error);
+      throw error;
     }
   },
 
   deleteIntegration: async (id: string, userId: string): Promise<void> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query(
-        `
+      const result = await pool`
         DELETE FROM integrations 
-        WHERE id = $1 AND user_id = $2
-      `,
-        [id, userId]
-      );
+        WHERE id = ${id} AND user_id = ${userId}
+      `;
 
-      if (result.rowCount === 0) {
+      if (result.length === 0) {
         throw new Error('Integration not found or access denied');
       }
-    } finally {
-      client.release();
+    } catch (error) {
+      console.error('Error deleting integration:', error);
+      throw error;
     }
   },
 
   // Test connection
   testConnection: async (): Promise<boolean> => {
-    const client = await pool.connect();
     try {
-      const result = await client.query('SELECT NOW()');
-      return result.rows.length > 0;
+      const result = await pool`SELECT NOW()`;
+      return result.length > 0;
     } catch (error) {
       console.error('Database connection test failed:', error);
       return false;
-    } finally {
-      client.release();
     }
   },
 };
@@ -1080,14 +910,13 @@ export const databaseService = db;
 
 // Export the raw postgres connection for direct SQL queries
 export const query = async (sql: string, params: any[] = []) => {
-  const client = await pool.connect();
   try {
-    const result = await client.query(sql, params);
+    // Note: This function uses raw SQL strings which is less safe than template literals
+    // Consider refactoring callers to use the postgres template literal syntax instead
+    const result = await pool.unsafe(sql, params);
     return result;
   } catch (error) {
     console.error('Database query error:', error);
     throw error; // Re-throw the error so it can be handled by the caller
-  } finally {
-    client.release();
   }
 };

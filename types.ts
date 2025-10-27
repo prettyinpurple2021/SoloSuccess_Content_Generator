@@ -670,8 +670,9 @@ export interface InstagramCredentials {
 }
 
 export interface BlueSkyCredentials {
-  identifier: string;
+  handle: string;
   password: string;
+  did?: string;
   serviceUrl?: string; // Default: https://bsky.social
   accessToken?: string;
   refreshToken?: string;
@@ -689,6 +690,7 @@ export interface RedditCredentials {
 
 export interface PinterestCredentials {
   accessToken: string;
+  userId: string;
   appId?: string;
   appSecret?: string;
   boardId?: string;
@@ -699,6 +701,8 @@ export interface GoogleAnalyticsCredentials {
   clientSecret: string;
   refreshToken: string;
   viewId: string;
+  propertyId: string;
+  accessToken: string;
 }
 
 export interface OpenAICredentials {

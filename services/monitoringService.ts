@@ -1,5 +1,5 @@
 import { IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
-import { db } from './databaseService';
+import { db } from './neonService';
 
 export class MonitoringService {
   private metricsCache: Map<string, IntegrationMetrics[]> = new Map();

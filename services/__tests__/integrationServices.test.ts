@@ -184,7 +184,7 @@ describe('Integration Services', () => {
       expect(result.allowed).toBe(true);
     });
 
-    it('should clear rate limits correctly', () => {
+    it('should clear rate limits correctly', async () => {
       const { rateLimitingService } = await import('../rateLimitingService');
       
       rateLimitingService.clearRateLimits('test-integration');
@@ -236,7 +236,7 @@ describe('Integration Services', () => {
     it('should get historical performance data', async () => {
       const { performanceMonitoringService } = await import('../performanceMonitoringService');
       
-      const historicalData = performanceMonitoringService.getHistoricalPerformanceData('test-integration');
+      const historicalData = await performanceMonitoringService.getHistoricalPerformanceData('test-integration');
       
       expect(historicalData).toBeDefined();
     });
@@ -280,7 +280,7 @@ describe('Integration Services', () => {
       expect(logs).toBeInstanceOf(Array);
     });
 
-    it('should subscribe to real-time logs', () => {
+    it('should subscribe to real-time logs', async () => {
       const { comprehensiveLoggingService } = await import('../comprehensiveLoggingService');
       
       const unsubscribe = comprehensiveLoggingService.subscribeToLogs(
@@ -376,10 +376,10 @@ describe('Integration Services', () => {
       expect(mockSupabaseService.getIntegrations).toHaveBeenCalled();
     });
 
-    it('should get security summary', () => {
+    it('should get security summary', async () => {
       const { advancedSecurityService } = await import('../advancedSecurityService');
       
-      const summary = advancedSecurityService.getSecuritySummary();
+      const summary = await advancedSecurityService.getSecuritySummary();
       
       expect(summary).toBeDefined();
       expect(summary.complianceScore).toBeGreaterThanOrEqual(0);

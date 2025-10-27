@@ -230,6 +230,57 @@ export class TwitterClient {
   }
 
   /**
+   * Get hashtag metrics
+   */
+  async getHashtagMetrics(hashtag: string): Promise<{
+    usageCount: number;
+    avgEngagement: number;
+    trendingScore: number;
+  }> {
+    try {
+      // Search for tweets with the hashtag
+      const response = await fetch(
+        `https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(hashtag)}&max_results=100`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.credentials.bearerToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Hashtag search failed: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const tweets = data.data || [];
+      
+      // Calculate basic metrics
+      const totalEngagement = tweets.reduce((sum: number, tweet: any) => {
+        return sum + (tweet.public_metrics?.like_count || 0) + 
+               (tweet.public_metrics?.retweet_count || 0) + 
+               (tweet.public_metrics?.reply_count || 0);
+      }, 0);
+
+      const avgEngagement = tweets.length > 0 ? totalEngagement / tweets.length : 0;
+      const trendingScore = Math.min(100, (tweets.length * 10) + (avgEngagement * 2));
+
+      return {
+        usageCount: tweets.length,
+        avgEngagement,
+        trendingScore,
+      };
+    } catch (error) {
+      console.error('Error fetching hashtag metrics:', error);
+      return {
+        usageCount: 0,
+        avgEngagement: 0,
+        trendingScore: 0,
+      };
+    }
+  }
+
+  /**
    * Upload media to Twitter
    */
   async uploadMedia(mediaData: Blob, mediaType: 'image' | 'video' | 'gif'): Promise<string | null> {

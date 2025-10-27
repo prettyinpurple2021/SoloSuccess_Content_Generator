@@ -9,7 +9,7 @@ import {
   HealthCheckResult,
   RateLimitResult,
 } from '../types';
-import { db } from './databaseService';
+import { db } from './neonService';
 import { credentialEncryption } from './credentialEncryption';
 
 /**
@@ -51,7 +51,7 @@ export class IntegrationService {
   /**
    * Creates a new integration with encrypted credentials
    */
-  async createIntegration(data: CreateIntegrationData): Promise<Integration> {
+  async createIntegration(data: CreateIntegrationData, userId: string): Promise<Integration> {
     try {
       // Validate input data
       this.validateCreateIntegrationData(data);
@@ -100,7 +100,7 @@ export class IntegrationService {
         },
         sync_frequency: data.syncFrequency || 'hourly',
         is_active: true,
-      });
+      }, userId);
 
       // Log integration creation
       await this.logIntegrationActivity(
@@ -124,7 +124,7 @@ export class IntegrationService {
   /**
    * Updates an existing integration
    */
-  async updateIntegration(id: string, updates: UpdateIntegrationData): Promise<Integration> {
+  async updateIntegration(id: string, updates: UpdateIntegrationData, userId: string): Promise<Integration> {
     try {
       const existingIntegration = await db.getIntegrationById(id);
       if (!existingIntegration) {
@@ -137,7 +137,7 @@ export class IntegrationService {
         configuration: updates.configuration,
         sync_frequency: updates.syncFrequency,
         is_active: updates.isActive,
-      });
+      }, userId);
 
       // Log update
       await this.logIntegrationActivity(id, 'info', 'Integration updated', {
@@ -155,7 +155,7 @@ export class IntegrationService {
   /**
    * Deletes an integration and cleans up associated data
    */
-  async deleteIntegration(id: string): Promise<void> {
+  async deleteIntegration(id: string, userId: string): Promise<void> {
     try {
       const integration = await db.getIntegrationById(id);
       if (!integration) {
@@ -166,7 +166,7 @@ export class IntegrationService {
       this.stopSync(id);
 
       // Delete integration (cascade will handle related records)
-      await db.deleteIntegration(id);
+      await db.deleteIntegration(id, userId);
 
       // Log deletion
       await this.logIntegrationActivity(id, 'info', 'Integration deleted', {
@@ -183,9 +183,9 @@ export class IntegrationService {
   /**
    * Gets all integrations for the current user
    */
-  async getIntegrations(): Promise<Integration[]> {
+  async getIntegrations(userId: string): Promise<Integration[]> {
     try {
-      return await db.getIntegrations();
+      return await db.getIntegrations(userId);
     } catch (error) {
       throw new Error(
         `Failed to fetch integrations: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -269,16 +269,16 @@ export class IntegrationService {
   /**
    * Connects an integration (sets status to connected)
    */
-  async connectIntegration(id: string): Promise<boolean> {
+  async connectIntegration(id: string, userId: string): Promise<boolean> {
     try {
       const testResult = await this.testConnection(id);
 
       if (testResult.success) {
-        await db.updateIntegration(id, { status: 'connected' });
+        await db.updateIntegration(id, { status: 'connected' }, userId);
         await this.logIntegrationActivity(id, 'info', 'Integration connected successfully');
         return true;
       } else {
-        await db.updateIntegration(id, { status: 'error' });
+        await db.updateIntegration(id, { status: 'error' }, userId);
         await this.logIntegrationActivity(id, 'error', 'Integration connection failed', {
           error: testResult.error,
         });
@@ -296,13 +296,13 @@ export class IntegrationService {
   /**
    * Disconnects an integration
    */
-  async disconnectIntegration(id: string): Promise<void> {
+  async disconnectIntegration(id: string, userId: string): Promise<void> {
     try {
       // Stop sync jobs
       this.stopSync(id);
 
       // Update status
-      await db.updateIntegration(id, { status: 'disconnected' });
+      await db.updateIntegration(id, { status: 'disconnected' }, userId);
 
       // Log disconnection
       await this.logIntegrationActivity(id, 'info', 'Integration disconnected');
@@ -320,7 +320,7 @@ export class IntegrationService {
   /**
    * Starts automatic syncing for an integration
    */
-  async startSync(id: string): Promise<void> {
+  async startSync(id: string, userId: string): Promise<void> {
     try {
       const integration = await db.getIntegrationById(id);
       if (!integration) {
@@ -343,7 +343,7 @@ export class IntegrationService {
       this.syncJobs.set(id, syncJob);
 
       // Update status
-      await db.updateIntegration(id, { status: 'connected' });
+      await db.updateIntegration(id, { status: 'connected' }, userId);
 
       // Log sync start
       await this.logIntegrationActivity(id, 'info', 'Automatic sync started', {
