@@ -545,21 +545,23 @@ export interface IntegrationMetrics {
 export interface IntegrationLog {
   id: string;
   integrationId: string;
-  level: 'info' | 'warn' | 'error' | 'debug';
+  level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal';
   message: string;
   metadata: { [key: string]: unknown };
+  details?: any;
   timestamp: Date;
-  userId: string;
+  userId?: string;
 }
 
 export interface DatabaseIntegrationLog {
   id: string;
   integration_id: string;
-  level: 'info' | 'warn' | 'error' | 'debug';
+  level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal';
   message: string;
   metadata: { [key: string]: unknown };
+  details?: any;
   timestamp: string;
-  user_id: string;
+  user_id?: string;
 }
 
 export interface IntegrationAlert {

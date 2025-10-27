@@ -8,6 +8,7 @@ import {
   SyncResult,
   HealthCheckResult,
   RateLimitResult,
+  SyncFrequency,
 } from '../types';
 import { db } from './neonService';
 import { credentialEncryption } from './credentialEncryption';
@@ -61,46 +62,49 @@ export class IntegrationService {
       const encryptedCredentials = await credentialEncryption.encrypt(data.credentials, userKey);
 
       // Create integration record
-      const integration = await db.addIntegration({
-        name: data.name,
-        type: data.type,
-        platform: data.platform,
-        status: 'disconnected',
-        credentials: encryptedCredentials,
-        configuration: {
-          syncSettings: {
-            autoSync: true,
-            syncInterval: 60,
-            batchSize: 100,
-            retryAttempts: 3,
-            timeoutMs: 30000,
-            syncOnStartup: true,
-            syncOnSchedule: true,
+      const integration = await db.addIntegration(
+        {
+          name: data.name,
+          type: data.type,
+          platform: data.platform,
+          status: 'disconnected',
+          credentials: encryptedCredentials,
+          configuration: {
+            syncSettings: {
+              autoSync: true,
+              syncInterval: 60,
+              batchSize: 100,
+              retryAttempts: 3,
+              timeoutMs: 30000,
+              syncOnStartup: true,
+              syncOnSchedule: true,
+            },
+            rateLimits: {
+              requestsPerMinute: 100,
+              requestsPerHour: 1000,
+              requestsPerDay: 10000,
+              burstLimit: 20,
+            },
+            errorHandling: {
+              maxRetries: 3,
+              retryDelay: 1000,
+              exponentialBackoff: true,
+              deadLetterQueue: true,
+              alertOnFailure: true,
+            },
+            notifications: {
+              emailNotifications: true,
+              webhookNotifications: false,
+              slackNotifications: false,
+              notificationLevels: ['error', 'warn'],
+            },
+            ...data.configuration,
           },
-          rateLimits: {
-            requestsPerMinute: 100,
-            requestsPerHour: 1000,
-            requestsPerDay: 10000,
-            burstLimit: 20,
-          },
-          errorHandling: {
-            maxRetries: 3,
-            retryDelay: 1000,
-            exponentialBackoff: true,
-            deadLetterQueue: true,
-            alertOnFailure: true,
-          },
-          notifications: {
-            emailNotifications: true,
-            webhookNotifications: false,
-            slackNotifications: false,
-            notificationLevels: ['error', 'warn'],
-          },
-          ...data.configuration,
+          syncFrequency: data.syncFrequency || 'hourly',
+          isActive: true,
         },
-        sync_frequency: data.syncFrequency || 'hourly',
-        is_active: true,
-      }, userId);
+        userId
+      );
 
       // Log integration creation
       await this.logIntegrationActivity(
@@ -124,7 +128,11 @@ export class IntegrationService {
   /**
    * Updates an existing integration
    */
-  async updateIntegration(id: string, updates: UpdateIntegrationData, userId: string): Promise<Integration> {
+  async updateIntegration(
+    id: string,
+    updates: UpdateIntegrationData,
+    userId: string
+  ): Promise<Integration> {
     try {
       const existingIntegration = await db.getIntegrationById(id);
       if (!existingIntegration) {
@@ -132,12 +140,16 @@ export class IntegrationService {
       }
 
       // Update integration
-      const updatedIntegration = await db.updateIntegration(id, {
-        name: updates.name,
-        configuration: updates.configuration,
-        sync_frequency: updates.syncFrequency,
-        is_active: updates.isActive,
-      }, userId);
+      const updatedIntegration = await db.updateIntegration(
+        id,
+        {
+          name: updates.name,
+          configuration: updates.configuration,
+          syncFrequency: updates.syncFrequency,
+          isActive: updates.isActive,
+        },
+        userId
+      );
 
       // Log update
       await this.logIntegrationActivity(id, 'info', 'Integration updated', {
@@ -191,6 +203,16 @@ export class IntegrationService {
         `Failed to fetch integrations: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  /**
+   * Gets all integrations across all users (system-wide, for orchestration)
+   */
+  async getAllIntegrations(): Promise<Integration[]> {
+    // This would require a database method that gets all integrations
+    // For now, return empty array as a safe default
+    // TODO: Implement db.getAllIntegrations() in neonService
+    return [];
   }
 
   /**
@@ -285,7 +307,7 @@ export class IntegrationService {
         return false;
       }
     } catch (error) {
-      await db.updateIntegration(id, { status: 'error' });
+      await db.updateIntegration(id, { status: 'error' }, userId);
       await this.logIntegrationActivity(id, 'error', 'Integration connection failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -378,11 +400,11 @@ export class IntegrationService {
   }
 
   /**
-   * Syncs all active integrations
+   * Syncs all active integrations for a user
    */
-  async syncAll(): Promise<SyncResult[]> {
+  async syncAll(userId: string): Promise<SyncResult[]> {
     try {
-      const integrations = await db.getIntegrations();
+      const integrations = await db.getIntegrations(userId);
       const activeIntegrations = integrations.filter((i) => i.isActive && i.status === 'connected');
 
       const results = await Promise.allSettled(
@@ -520,12 +542,9 @@ export class IntegrationService {
   /**
    * Adds a webhook to an integration
    */
-  async addWebhook(
-    integrationId: string,
-    webhook: Omit<WebhookConfig, 'id'>
-  ): Promise<WebhookConfig> {
+  async addWebhook(integrationId: string, webhook: Omit<WebhookConfig, 'id'>): Promise<void> {
     try {
-      return await db.addIntegrationWebhook({
+      await db.addIntegrationWebhook({
         integration_id: integrationId,
         ...webhook,
       });
@@ -539,9 +558,9 @@ export class IntegrationService {
   /**
    * Updates a webhook
    */
-  async updateWebhook(webhookId: string, updates: Partial<WebhookConfig>): Promise<WebhookConfig> {
+  async updateWebhook(webhookId: string, updates: Partial<WebhookConfig>): Promise<void> {
     try {
-      return await db.updateIntegrationWebhook(webhookId, updates);
+      await db.updateIntegrationWebhook(webhookId, updates);
     } catch (error) {
       throw new Error(
         `Failed to update webhook: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -812,16 +831,20 @@ export class IntegrationService {
       }
 
       // Update status to syncing
-      await db.updateIntegration(id, { status: 'syncing' });
+      await db.updateIntegration(id, { status: 'syncing' }, integration.userId);
 
       // Perform platform-specific sync
       const syncResult = await this.performPlatformSync(integration);
 
       // Update last sync time
-      await db.updateIntegration(id, {
-        status: 'connected',
-        last_sync: new Date().toISOString(),
-      });
+      await db.updateIntegration(
+        id,
+        {
+          status: 'connected',
+          lastSync: new Date(),
+        },
+        integration.userId
+      );
 
       // Log sync result
       await this.logIntegrationActivity(id, 'info', 'Sync completed successfully', {
@@ -837,7 +860,11 @@ export class IntegrationService {
       };
     } catch (error) {
       // Update status to error
-      await db.updateIntegration(id, { status: 'error' });
+      await db.updateIntegration(
+        id,
+        { status: 'error' },
+        (await db.getIntegrationById(id))?.userId || ''
+      );
 
       // Log sync error
       await this.logIntegrationActivity(id, 'error', 'Sync failed', {

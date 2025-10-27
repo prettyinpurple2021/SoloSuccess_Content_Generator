@@ -1,6 +1,6 @@
 /**
  * ContentAdaptationService - Platform-specific content optimization
- * 
+ *
  * Features:
  * - Platform-specific character limits
  * - Content style adaptation
@@ -46,7 +46,7 @@ export class ContentAdaptationService {
       supportsRichText: false,
       supportsMedia: true,
       preferredHashtagStyle: 'moderate',
-      preferredMentionStyle: 'casual'
+      preferredMentionStyle: 'casual',
     },
     linkedin: {
       maxCharacters: 1300,
@@ -57,7 +57,7 @@ export class ContentAdaptationService {
       supportsRichText: true,
       supportsMedia: true,
       preferredHashtagStyle: 'minimal',
-      preferredMentionStyle: 'formal'
+      preferredMentionStyle: 'formal',
     },
     facebook: {
       maxCharacters: 63206,
@@ -68,7 +68,7 @@ export class ContentAdaptationService {
       supportsRichText: true,
       supportsMedia: true,
       preferredHashtagStyle: 'minimal',
-      preferredMentionStyle: 'casual'
+      preferredMentionStyle: 'casual',
     },
     instagram: {
       maxCharacters: 2200,
@@ -79,7 +79,7 @@ export class ContentAdaptationService {
       supportsRichText: false,
       supportsMedia: true,
       preferredHashtagStyle: 'heavy',
-      preferredMentionStyle: 'casual'
+      preferredMentionStyle: 'casual',
     },
     bluesky: {
       maxCharacters: 300,
@@ -90,7 +90,7 @@ export class ContentAdaptationService {
       supportsRichText: false,
       supportsMedia: true,
       preferredHashtagStyle: 'minimal',
-      preferredMentionStyle: 'casual'
+      preferredMentionStyle: 'casual',
     },
     reddit: {
       maxCharacters: 40000,
@@ -101,7 +101,7 @@ export class ContentAdaptationService {
       supportsRichText: true,
       supportsMedia: true,
       preferredHashtagStyle: 'none',
-      preferredMentionStyle: 'casual'
+      preferredMentionStyle: 'casual',
     },
     pinterest: {
       maxCharacters: 500,
@@ -112,8 +112,8 @@ export class ContentAdaptationService {
       supportsRichText: false,
       supportsMedia: true,
       preferredHashtagStyle: 'heavy',
-      preferredMentionStyle: 'minimal'
-    }
+      preferredMentionStyle: 'minimal',
+    },
   };
 
   /**
@@ -131,7 +131,7 @@ export class ContentAdaptationService {
       includeCallToAction?: boolean;
     }
   ): Promise<AdaptedContent> {
-    const platformLimits = this.PLATFORM_LIMITS[platform];
+    const platformLimits = ContentAdaptationService.PLATFORM_LIMITS[platform];
     if (!platformLimits) {
       throw new Error(`Unsupported platform: ${platform}`);
     }
@@ -150,7 +150,7 @@ export class ContentAdaptationService {
 
     // Apply platform-specific adaptations
     adaptedContent = await this.applyPlatformStyle(adaptedContent, platform, options);
-    
+
     // Handle hashtags based on platform preferences
     const adaptedHashtags = this.adaptHashtags(hashtags, platform, platformLimits);
     adaptations.push(`Applied ${platformLimits.preferredHashtagStyle} hashtag style`);
@@ -185,7 +185,9 @@ export class ContentAdaptationService {
     // Final validation
     const finalCharacterCount = adaptedContent.length;
     if (finalCharacterCount > platformLimits.maxCharacters) {
-      warnings.push(`Content exceeds platform limit by ${finalCharacterCount - platformLimits.maxCharacters} characters`);
+      warnings.push(
+        `Content exceeds platform limit by ${finalCharacterCount - platformLimits.maxCharacters} characters`
+      );
     }
 
     return {
@@ -196,7 +198,7 @@ export class ContentAdaptationService {
       warnings,
       hashtags: adaptedHashtags,
       mentions: adaptedMentions,
-      links: adaptedLinks
+      links: adaptedLinks,
     };
   }
 
@@ -214,15 +216,20 @@ export class ContentAdaptationService {
       try {
         const adapted = await this.adaptContentForPlatform(originalContent, platform, options);
         // For large-limit platforms, try to expand to near-max if significantly under
-        const limits = this.PLATFORM_LIMITS[platform];
+        const limits = ContentAdaptationService.PLATFORM_LIMITS[platform];
         const targetMin = Math.floor(limits.maxCharacters * 0.85);
         if (adapted.characterCount < targetMin) {
-          const expanded = await this.expandToTargetLength(adapted.content, limits.maxCharacters, platform, options);
+          const expanded = await this.expandToTargetLength(
+            adapted.content,
+            limits.maxCharacters,
+            platform,
+            options
+          );
           results[platform] = {
             ...adapted,
             content: expanded,
             characterCount: expanded.length,
-            adaptations: [...adapted.adaptations, 'Expanded to target near max length']
+            adaptations: [...adapted.adaptations, 'Expanded to target near max length'],
           };
         } else {
           results[platform] = adapted;
@@ -233,10 +240,12 @@ export class ContentAdaptationService {
           characterCount: originalContent.length,
           platform,
           adaptations: [],
-          warnings: [`Error adapting content: ${error instanceof Error ? error.message : 'Unknown error'}`],
+          warnings: [
+            `Error adapting content: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          ],
           hashtags: [],
           mentions: [],
-          links: []
+          links: [],
         };
       }
     }
@@ -255,9 +264,7 @@ export class ContentAdaptationService {
     options?: any
   ): Promise<string> {
     // Lightweight expansion: add clarifying detail and a gentle CTA while respecting limit
-    const addendum = options?.includeCallToAction
-      ? ' Learn more and share your thoughts.'
-      : '';
+    const addendum = options?.includeCallToAction ? ' Learn more and share your thoughts.' : '';
     let expanded = content;
     // Repeat expansion until close to 92% of max or we hit limit
     while (expanded.length < Math.floor(max * 0.92)) {
@@ -293,17 +300,20 @@ export class ContentAdaptationService {
   /**
    * Validates content against platform limits
    */
-  validateContentForPlatform(content: string, platform: string): {
+  validateContentForPlatform(
+    content: string,
+    platform: string
+  ): {
     isValid: boolean;
     issues: string[];
     suggestions: string[];
   } {
-    const platformLimits = this.PLATFORM_LIMITS[platform];
+    const platformLimits = ContentAdaptationService.PLATFORM_LIMITS[platform];
     if (!platformLimits) {
       return {
         isValid: false,
         issues: [`Unsupported platform: ${platform}`],
-        suggestions: []
+        suggestions: [],
       };
     }
 
@@ -312,8 +322,12 @@ export class ContentAdaptationService {
 
     // Check character limit
     if (content.length > platformLimits.maxCharacters) {
-      issues.push(`Content exceeds ${platformLimits.maxCharacters} character limit by ${content.length - platformLimits.maxCharacters} characters`);
-      suggestions.push(`Reduce content by ${content.length - platformLimits.maxCharacters} characters`);
+      issues.push(
+        `Content exceeds ${platformLimits.maxCharacters} character limit by ${content.length - platformLimits.maxCharacters} characters`
+      );
+      suggestions.push(
+        `Reduce content by ${content.length - platformLimits.maxCharacters} characters`
+      );
     }
 
     // Check hashtag limit
@@ -340,7 +354,7 @@ export class ContentAdaptationService {
     return {
       isValid: issues.length === 0,
       issues,
-      suggestions
+      suggestions,
     };
   }
 
@@ -348,14 +362,14 @@ export class ContentAdaptationService {
    * Gets platform limits for a specific platform
    */
   getPlatformLimits(platform: string): PlatformLimits | null {
-    return this.PLATFORM_LIMITS[platform] || null;
+    return ContentAdaptationService.PLATFORM_LIMITS[platform] || null;
   }
 
   /**
    * Gets all supported platforms
    */
   getSupportedPlatforms(): string[] {
-    return Object.keys(this.PLATFORM_LIMITS);
+    return Object.keys(ContentAdaptationService.PLATFORM_LIMITS);
   }
 
   // ============================================================================
@@ -412,99 +426,103 @@ export class ContentAdaptationService {
   private applyTwitterStyle(content: string, options?: any): string {
     // Twitter: Concise, punchy, use of abbreviations
     let adapted = content;
-    
+
     // Make it more conversational and direct
     adapted = adapted.replace(/\bI am\b/g, "I'm");
     adapted = adapted.replace(/\bwe are\b/g, "we're");
     adapted = adapted.replace(/\bdo not\b/g, "don't");
     adapted = adapted.replace(/\bwill not\b/g, "won't");
-    
+
     // Add engagement hooks
     if (options?.includeCallToAction && !adapted.includes('?')) {
       adapted += ' What do you think?';
     }
-    
+
     return adapted;
   }
 
   private applyLinkedInStyle(content: string, options?: any): string {
     // LinkedIn: Professional, informative, industry-focused
     let adapted = content;
-    
+
     // Ensure professional tone
     adapted = adapted.replace(/\bawesome\b/g, 'excellent');
     adapted = adapted.replace(/\bcool\b/g, 'impressive');
     adapted = adapted.replace(/\bamazing\b/g, 'outstanding');
-    
+
     // Add professional elements if needed
     if (options?.tone === 'professional' && !adapted.includes('.')) {
       adapted += '.';
     }
-    
+
     return adapted;
   }
 
   private applyFacebookStyle(content: string, options?: any): string {
     // Facebook: Conversational, community-focused
     let adapted = content;
-    
+
     // Make it more casual and engaging
     if (!adapted.includes('!') && options?.includeCallToAction) {
       adapted += '!';
     }
-    
+
     return adapted;
   }
 
   private applyInstagramStyle(content: string, options?: any): string {
     // Instagram: Visual-focused, emoji-friendly, hashtag-heavy
     let adapted = content;
-    
+
     // Add emojis if none present
-    if (!adapted.match(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u)) {
+    if (
+      !adapted.match(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u
+      )
+    ) {
       adapted += ' ✨';
     }
-    
+
     return adapted;
   }
 
   private applyBlueSkyStyle(content: string, options?: any): string {
     // BlueSky: Decentralized, tech-savvy, community-focused
     let adapted = content;
-    
+
     // Keep it concise and clear
     adapted = adapted.replace(/\bhowever\b/g, 'but');
     adapted = adapted.replace(/\btherefore\b/g, 'so');
-    
+
     return adapted;
   }
 
   private applyRedditStyle(content: string, options?: any): string {
     // Reddit: Community-focused, detailed, discussion-oriented
     let adapted = content;
-    
+
     // Add discussion prompts
     if (options?.includeCallToAction && !adapted.includes('?')) {
       adapted += '\n\nWhat are your thoughts?';
     }
-    
+
     return adapted;
   }
 
   private applyPinterestStyle(content: string, options?: any): string {
     // Pinterest: SEO-optimized, keyword-rich, inspirational
     let adapted = content;
-    
+
     // Make it more descriptive and keyword-rich
     adapted = adapted.replace(/\bgood\b/g, 'amazing');
     adapted = adapted.replace(/\bnice\b/g, 'beautiful');
-    
+
     return adapted;
   }
 
   private adaptHashtags(hashtags: string[], platform: string, limits: PlatformLimits): string[] {
     let adapted = [...hashtags];
-    
+
     // Limit hashtags based on platform preferences
     if (limits.preferredHashtagStyle === 'none') {
       adapted = [];
@@ -515,35 +533,35 @@ export class ContentAdaptationService {
     } else if (limits.preferredHashtagStyle === 'heavy') {
       adapted = adapted.slice(0, limits.maxHashtags);
     }
-    
+
     // Remove duplicates and ensure proper formatting
-    adapted = [...new Set(adapted)].map(tag => 
+    adapted = [...new Set(adapted)].map((tag) =>
       tag.startsWith('#') ? tag : `#${tag.replace('#', '')}`
     );
-    
+
     return adapted;
   }
 
   private adaptMentions(mentions: string[], platform: string, limits: PlatformLimits): string[] {
     let adapted = [...mentions];
-    
+
     // Limit mentions based on platform
     adapted = adapted.slice(0, limits.maxMentions);
-    
+
     // Ensure proper formatting
-    adapted = adapted.map(mention => 
+    adapted = adapted.map((mention) =>
       mention.startsWith('@') ? mention : `@${mention.replace('@', '')}`
     );
-    
+
     return adapted;
   }
 
   private adaptLinks(links: string[], platform: string, limits: PlatformLimits): string[] {
     let adapted = [...links];
-    
+
     // Limit links based on platform
     adapted = adapted.slice(0, limits.maxLinks);
-    
+
     return adapted;
   }
 
@@ -556,12 +574,12 @@ export class ContentAdaptationService {
     limits: PlatformLimits
   ): string {
     let result = content;
-    
+
     // Add mentions at the beginning for some platforms
     if (mentions.length > 0 && (platform === 'twitter' || platform === 'bluesky')) {
       result = `${mentions.join(' ')} ${result}`;
     }
-    
+
     // Add hashtags based on platform preferences
     if (hashtags.length > 0) {
       if (platform === 'instagram' || platform === 'pinterest') {
@@ -572,12 +590,12 @@ export class ContentAdaptationService {
         result = `${result} ${hashtags.join(' ')}`;
       }
     }
-    
+
     // Ensure line breaks are handled properly
     if (!limits.supportsLineBreaks) {
       result = result.replace(/\n/g, ' ');
     }
-    
+
     return result.trim();
   }
 
@@ -586,47 +604,47 @@ export class ContentAdaptationService {
     const hashtags = this.extractHashtags(content);
     const mentions = this.extractMentions(content);
     const links = this.extractLinks(content);
-    
+
     // Calculate space needed for essential elements
     const hashtagSpace = hashtags.join(' ').length;
     const mentionSpace = mentions.join(' ').length;
     const linkSpace = links.join(' ').length;
     const essentialSpace = hashtagSpace + mentionSpace + linkSpace + 10; // 10 for spacing
-    
+
     // Calculate available space for main content
     const availableSpace = limits.maxCharacters - essentialSpace;
-    
+
     if (availableSpace < 50) {
       // If not enough space, just truncate and add essential elements
       let truncated = content.substring(0, limits.maxCharacters - essentialSpace - 3);
       truncated = truncated.substring(0, truncated.lastIndexOf(' ')) + '...';
-      
+
       if (hashtags.length > 0) {
         truncated += ` ${hashtags.slice(0, limits.maxHashtags).join(' ')}`;
       }
-      
+
       return truncated;
     } else {
       // Truncate main content intelligently
       let truncated = content.substring(0, availableSpace);
       truncated = truncated.substring(0, truncated.lastIndexOf(' ')) + '...';
-      
+
       // Add essential elements
       if (mentions.length > 0) {
         truncated = `${mentions.slice(0, limits.maxMentions).join(' ')} ${truncated}`;
       }
-      
+
       if (hashtags.length > 0) {
         truncated += ` ${hashtags.slice(0, limits.maxHashtags).join(' ')}`;
       }
-      
+
       return truncated;
     }
   }
 
   private addPlatformEnhancements(content: string, platform: string, options?: any): string {
     let enhanced = content;
-    
+
     // Add platform-specific enhancements
     switch (platform) {
       case 'twitter':
@@ -649,7 +667,7 @@ export class ContentAdaptationService {
         enhanced = enhanced.replace(/\bamazing\b/g, 'absolutely stunning');
         break;
     }
-    
+
     return enhanced;
   }
 }

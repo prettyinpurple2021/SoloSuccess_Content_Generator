@@ -401,6 +401,54 @@ export class SocialMediaIntegrations {
     }
   }
 
+  /**
+   * Syncs Facebook data
+   */
+  static async syncFacebookData(
+    integrationId: string,
+    credentials: FacebookCredentials
+  ): Promise<SyncResult> {
+    const startTime = Date.now();
+    let recordsProcessed = 0;
+    let recordsCreated = 0;
+    let recordsUpdated = 0;
+    const errors: string[] = [];
+
+    try {
+      // For now, just verify connection - actual sync implementation would fetch posts, insights, etc.
+      const connectionTest = await this.testFacebookConnection(credentials);
+      if (connectionTest.success) {
+        recordsProcessed = 1;
+      } else {
+        errors.push(connectionTest.error || 'Connection test failed');
+      }
+
+      return {
+        integrationId,
+        success: errors.length === 0,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors,
+        duration: Date.now() - startTime,
+        timestamp: new Date(),
+      };
+    } catch (error) {
+      return {
+        integrationId,
+        success: false,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+        duration: Date.now() - startTime,
+        timestamp: new Date(),
+      };
+    }
+  }
+
   // ============================================================================
   // INSTAGRAM INTEGRATION
   // ============================================================================
@@ -435,6 +483,54 @@ export class SocialMediaIntegrations {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
+        timestamp: new Date(),
+      };
+    }
+  }
+
+  /**
+   * Syncs Instagram data
+   */
+  static async syncInstagramData(
+    integrationId: string,
+    credentials: InstagramCredentials
+  ): Promise<SyncResult> {
+    const startTime = Date.now();
+    let recordsProcessed = 0;
+    let recordsCreated = 0;
+    let recordsUpdated = 0;
+    const errors: string[] = [];
+
+    try {
+      // For now, just verify connection - actual sync implementation would fetch media, insights, etc.
+      const connectionTest = await this.testInstagramConnection(credentials);
+      if (connectionTest.success) {
+        recordsProcessed = 1;
+      } else {
+        errors.push(connectionTest.error || 'Connection test failed');
+      }
+
+      return {
+        integrationId,
+        success: errors.length === 0,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors,
+        duration: Date.now() - startTime,
+        timestamp: new Date(),
+      };
+    } catch (error) {
+      return {
+        integrationId,
+        success: false,
+        recordsProcessed,
+        recordsCreated,
+        recordsUpdated,
+        recordsDeleted: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+        duration: Date.now() - startTime,
         timestamp: new Date(),
       };
     }
