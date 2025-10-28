@@ -35,6 +35,7 @@
     "@stackframe/react": "^2.8.44",
     "@stackframe/stack": "^2.8.44",
     "@tailwindcss/cli": "^4.1.14",
+    "@vercel/analytics": "^1.5.0",
     "dotenv": "^16.6.1",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",

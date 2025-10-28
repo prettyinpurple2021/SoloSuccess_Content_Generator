@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrandVoice } from '../types';
-import { apiService } from '../services/apiService';
+import { apiService } from '../services/clientApiService';
 import { analyzeBrandVoice } from '../services/geminiService';
 import { X, Plus, Edit2, Trash2, Eye, Upload, Loader2, Save, AlertCircle } from 'lucide-react';
 

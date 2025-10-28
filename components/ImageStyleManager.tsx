@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ImageStyle, BrandAsset, LoadingState } from '../types';
-import { apiService } from '../services/apiService';
+import { apiService } from '../services/clientApiService';
 import { Spinner } from '../constants';
 
 interface ImageStyleManagerProps {

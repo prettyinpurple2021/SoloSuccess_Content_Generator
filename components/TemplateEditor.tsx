@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ContentTemplate, TemplateSection, TemplateField } from '../types';
-import { apiService } from '../services/apiService';
+import { apiService } from '../services/clientApiService';
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, Eye, Settings } from '../constants';
 
 interface TemplateEditorProps {

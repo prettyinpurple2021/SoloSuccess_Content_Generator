@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AudienceProfile, EngagementData } from '../types';
-import { apiService } from '../services/apiService';
+import { apiService } from '../services/clientApiService';
 import { generateAudienceInsights } from '../services/geminiService';
 import {
   X,

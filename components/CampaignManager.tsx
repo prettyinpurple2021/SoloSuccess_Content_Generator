@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Campaign, ContentSeries, Post, CampaignMetrics, OptimizationSuggestion } from '../types';
-import { campaignService } from '../services/campaignService';
-import { apiService } from '../services/apiService';
+import { campaignService } from '../services/clientCampaignService';
+import { apiService } from '../services/clientApiService';
 import { PLATFORMS, Spinner } from '../constants';
 
 interface CampaignManagerProps {
