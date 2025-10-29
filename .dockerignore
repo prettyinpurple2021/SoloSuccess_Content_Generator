@@ -1,3 +1,16 @@
+node_modules
+dist
+.git
+.gitignore
+Dockerfile
+nginx.conf
+.vscode
+.DS_Store
+README.md
+**/.cache
+**/coverage
+**/*.log
+
 # Dependencies
 node_modules
 npm-debug.log*
