@@ -1,8 +1,6 @@
 // Client-safe campaign service that uses HTTP endpoints instead of direct database access
-import { Campaign, ContentSeries, Post, CampaignMetrics } from '../types';
+import { Campaign, ContentSeries, CampaignMetrics, DatabaseCampaign } from '../types';
 import { apiService } from './clientApiService';
-
-const API_BASE_URL = '/api';
 
 export class CampaignService {
   // Campaign Management Functions
@@ -10,14 +8,17 @@ export class CampaignService {
   /**
    * Creates a new campaign with specified parameters
    */
-  async createCampaign(userId: string, campaignData: {
-    name: string;
-    description: string;
-    theme: string;
-    startDate: Date;
-    endDate: Date;
-    platforms: string[];
-  }): Promise<Campaign> {
+  async createCampaign(
+    userId: string,
+    campaignData: {
+      name: string;
+      description: string;
+      theme: string;
+      startDate: Date;
+      endDate: Date;
+      platforms: string[];
+    }
+  ): Promise<Campaign> {
     try {
       const campaign = await apiService.addCampaign(userId, {
         name: campaignData.name,
@@ -28,12 +29,11 @@ export class CampaignService {
         platforms: campaignData.platforms,
         status: 'draft',
         performance: {
-          totalReach: 0,
+          totalPosts: 0,
           totalEngagement: 0,
-          totalClicks: 0,
           avgEngagementRate: 0,
-          platformMetrics: {},
-        },
+          platformPerformance: {},
+        } as CampaignMetrics,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -61,7 +61,11 @@ export class CampaignService {
   /**
    * Updates an existing campaign
    */
-  async updateCampaign(userId: string, campaignId: string, updates: Partial<Campaign>): Promise<Campaign> {
+  async updateCampaign(
+    userId: string,
+    campaignId: string,
+    updates: Partial<Campaign>
+  ): Promise<Campaign> {
     try {
       const updatedCampaign = await apiService.updateCampaign(userId, campaignId, {
         ...updates,
@@ -90,37 +94,33 @@ export class CampaignService {
   /**
    * Creates a content series within a campaign
    */
-  async createContentSeries(userId: string, campaignId: string, seriesData: {
-    title: string;
-    description: string;
-    theme: string;
-    duration: number; // in days
-    postingFrequency: number; // posts per week
-    platforms: string[];
-  }): Promise<ContentSeries> {
+  async createContentSeries(
+    userId: string,
+    campaignId: string,
+    seriesData: {
+      title: string;
+      theme: string;
+      postingFrequency: number; // posts per week
+    }
+  ): Promise<ContentSeries> {
     try {
-      // For now, we'll create a simple series structure
-      // In a full implementation, this would create a series in the database
+      const frequency: 'daily' | 'weekly' | 'biweekly' =
+        seriesData.postingFrequency >= 7
+          ? 'daily'
+          : seriesData.postingFrequency >= 2
+            ? 'weekly'
+            : 'biweekly';
+
       const series: ContentSeries = {
         id: `series_${Date.now()}`,
         campaignId,
-        title: seriesData.title,
-        description: seriesData.description,
+        name: seriesData.title,
         theme: seriesData.theme,
-        duration: seriesData.duration,
-        postingFrequency: seriesData.postingFrequency,
-        platforms: seriesData.platforms,
-        status: 'draft',
+        totalPosts: 0,
+        frequency,
+        currentPost: 0,
         posts: [],
-        metrics: {
-          totalPosts: 0,
-          totalReach: 0,
-          totalEngagement: 0,
-          avgEngagementRate: 0,
-          completionRate: 0,
-        },
         createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
       return series;
@@ -133,7 +133,7 @@ export class CampaignService {
   /**
    * Gets campaign metrics
    */
-  async getCampaignMetrics(userId: string, campaignId: string): Promise<CampaignMetrics> {
+  async getCampaignMetrics(): Promise<CampaignMetrics> {
     // For now, return minimal structure matching CampaignMetrics
     // In a full implementation, this would aggregate real metrics from analytics
     return {
@@ -147,7 +147,7 @@ export class CampaignService {
   /**
    * Transforms database campaign to Campaign type
    */
-  private transformDatabaseCampaignToCampaign(dbCampaign: any): Campaign {
+  private transformDatabaseCampaignToCampaign(dbCampaign: DatabaseCampaign): Campaign {
     return {
       id: dbCampaign.id,
       name: dbCampaign.name,
@@ -155,17 +155,16 @@ export class CampaignService {
       theme: dbCampaign.theme,
       startDate: new Date(dbCampaign.start_date),
       endDate: new Date(dbCampaign.end_date),
+      posts: [],
       platforms: dbCampaign.platforms || [],
       status: dbCampaign.status || 'draft',
       performance: dbCampaign.performance || {
-        totalReach: 0,
+        totalPosts: 0,
         totalEngagement: 0,
-        totalClicks: 0,
         avgEngagementRate: 0,
-        platformMetrics: {},
+        platformPerformance: {},
       },
       createdAt: new Date(dbCampaign.created_at),
-      updatedAt: new Date(dbCampaign.updated_at),
     };
   }
 }
