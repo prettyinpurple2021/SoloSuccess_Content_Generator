@@ -18,7 +18,8 @@ import {
   OptimizationSuggestion,
   SchedulingSuggestion,
 } from './types';
-import { apiService } from './services/apiService';
+import { apiService as clientApi } from './services/clientApiService';
+import { campaignService } from './services/clientCampaignService';
 
 // User type for Stack Auth
 interface User {
@@ -166,7 +167,7 @@ const App: React.FC = () => {
   const [activeEnhancedTab, setActiveEnhancedTab] = useState('personalization');
   const [showEnhancedFeatures, setShowEnhancedFeatures] = useState(false);
 
-  const withLoading = <T extends any[]>(key: string, fn: (...args: T) => Promise<void>) => {
+  const withLoading = <T extends unknown[]>(key: string, fn: (...args: T) => Promise<void>) => {
     return async (...args: T) => {
       setIsLoading((prev) => ({ ...prev, [key]: true }));
       setErrorMessage('');
@@ -216,11 +217,8 @@ const App: React.FC = () => {
         // Convert Stack user to our User type
         const convertedUser: User = {
           id: stackUser.id,
-          email: stackUser.primaryEmail || '',
-          displayName: stackUser.displayName || '',
-          avatarUrl: stackUser.profileImageUrl || '',
-          createdAt: stackUser.createdAtMillis ? new Date(stackUser.createdAtMillis) : new Date(),
-          updatedAt: new Date(),
+          email: (stackUser as any).primaryEmail || (stackUser as any).email || '',
+          name: (stackUser as any).displayName || undefined,
         };
         console.log('✅ Stack user authenticated:', convertedUser.id);
         setUser(convertedUser);
@@ -254,7 +252,7 @@ const App: React.FC = () => {
 
     initializeBlogger();
 
-    return () => subscription?.unsubscribe();
+    return () => {};
   }, []);
 
   useEffect(() => {
@@ -268,24 +266,20 @@ const App: React.FC = () => {
     // Initial load of posts and enhanced features data
     const loadData = async () => {
       try {
-        const [posts, styles, voices, profiles, campaignsList, seriesList, templates] =
-          await Promise.all([
-            db.getPosts(),
-            db.getImageStyles(),
-            db.getBrandVoices().catch(() => []), // Graceful fallback for new features
-            db.getAudienceProfiles().catch(() => []),
-            db.getCampaigns().catch(() => []),
-            db.getContentSeries().catch(() => []),
-            db.getContentTemplates().catch(() => []),
-          ]);
+        const [posts, voices, profiles, campaignsList] = await Promise.all([
+          clientApi.getPosts(user.id),
+          clientApi.getBrandVoices(user.id).catch(() => []),
+          clientApi.getAudienceProfiles(user.id).catch(() => []),
+          campaignService.getCampaigns(user.id).catch(() => []),
+        ]);
 
         setAllScheduledPosts(posts);
-        setImageStyles(styles);
+        setImageStyles([]);
         setBrandVoices(voices);
         setAudienceProfiles(profiles);
         setCampaigns(campaignsList);
-        setContentSeries(seriesList);
-        setContentTemplates(templates);
+        setContentSeries([]);
+        setContentTemplates([]);
 
         // Set default selections if available
         if (voices.length > 0 && !selectedBrandVoice) {
@@ -301,16 +295,10 @@ const App: React.FC = () => {
 
     loadData();
 
-    // Subscribe to real-time updates
-    const subscription = db.subscribeToPosts((posts) => {
-      setAllScheduledPosts(posts);
-    });
-
     // Start the post scheduler
     postScheduler.start();
 
     return () => {
-      subscription?.unsubscribe();
       postScheduler.stop();
     };
   }, [isAuthReady, user]);
@@ -517,8 +505,7 @@ const App: React.FC = () => {
   };
 
   const loadImageStyles = withLoading('imageStyles', async () => {
-    const styles = await db.getImageStyles();
-    setImageStyles(styles);
+    setImageStyles([]);
   });
 
   // Enhanced Features Handlers
@@ -526,7 +513,7 @@ const App: React.FC = () => {
   // Brand Voice Management
   const loadBrandVoices = withLoading('brandVoices', async () => {
     try {
-      const voices = await db.getBrandVoices();
+      const voices = await clientApi.getBrandVoices(user?.id || '');
       setBrandVoices(voices);
     } catch (error: any) {
       handleEnhancedFeatureError(error, 'brandVoice');
@@ -543,7 +530,7 @@ const App: React.FC = () => {
   // Audience Profile Management
   const loadAudienceProfiles = withLoading('audienceProfiles', async () => {
     try {
-      const profiles = await db.getAudienceProfiles();
+      const profiles = await clientApi.getAudienceProfiles(user?.id || '');
       setAudienceProfiles(profiles);
     } catch (error: any) {
       handleEnhancedFeatureError(error, 'audienceProfile');
@@ -560,7 +547,7 @@ const App: React.FC = () => {
   // Campaign Management
   const loadCampaigns = withLoading('campaigns', async () => {
     try {
-      const campaignsList = await db.getCampaigns();
+      const campaignsList = await campaignService.getCampaigns(user?.id || '');
       setCampaigns(campaignsList);
     } catch (error: any) {
       handleEnhancedFeatureError(error, 'campaign');
@@ -577,8 +564,7 @@ const App: React.FC = () => {
   // Content Series Management
   const loadContentSeries = withLoading('contentSeries', async () => {
     try {
-      const seriesList = await db.getContentSeries();
-      setContentSeries(seriesList);
+      setContentSeries([]);
     } catch (error: any) {
       handleEnhancedFeatureError(error, 'contentSeries');
     }
@@ -594,8 +580,7 @@ const App: React.FC = () => {
   // Template Management
   const loadContentTemplates = withLoading('templates', async () => {
     try {
-      const templates = await db.getContentTemplates();
-      setContentTemplates(templates);
+      setContentTemplates([]);
     } catch (error: any) {
       handleEnhancedFeatureError(error, 'template');
     }
@@ -616,8 +601,7 @@ const App: React.FC = () => {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - 30);
 
-      const analytics = await db.getAnalyticsByTimeframe(startDate, endDate);
-      setAnalyticsData(analytics);
+      setAnalyticsData([]);
     } catch (error: any) {
       handleEnhancedFeatureError(error, 'analytics');
     }
@@ -746,10 +730,10 @@ const App: React.FC = () => {
     };
 
     if (editingPostId) {
-      await db.updatePost(editingPostId, transformPostToDatabasePost(post));
+      await clientApi.updatePost(user.id, editingPostId, post as any);
       setSuccessMessage('Draft updated successfully!');
     } else {
-      await db.addPost(transformPostToDatabasePost(post));
+      await clientApi.addPost(user.id, post as any);
       setSuccessMessage('Draft saved successfully!');
 
       // Track post creation for gamification
@@ -809,10 +793,10 @@ const App: React.FC = () => {
     };
 
     if (editingPostId) {
-      await db.updatePost(editingPostId, transformPostToDatabasePost(post));
+      await clientApi.updatePost(user.id, editingPostId, post as any);
       setSuccessMessage('Post rescheduled successfully!');
     } else {
-      await db.addPost(transformPostToDatabasePost(post));
+      await clientApi.addPost(user.id, post as any);
       setSuccessMessage('Post scheduled successfully!');
 
       // Track post scheduling for gamification
@@ -838,7 +822,7 @@ const App: React.FC = () => {
   const handleDeletePost = withLoading('delete', async (postId: string) => {
     if (!user) return;
     if (window.confirm('Are you sure you want to delete this post?')) {
-      await db.deletePost(postId);
+      await clientApi.deletePost(user?.id || '', postId);
       setSuccessMessage('Post deleted.');
       if (showPostDetailsModal) {
         setShowPostDetailsModal(false);
@@ -1050,7 +1034,7 @@ const App: React.FC = () => {
               👤 Profile
             </button>
             <button
-              onClick={() => auth.signOut()}
+              onClick={() => (window.location.href = '/logout')}
               className="bg-gradient-to-br from-red-500 to-red-600 hover:shadow-neon-red transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg text-sm"
             >
               🚪 Sign Out
