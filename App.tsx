@@ -13,9 +13,7 @@ import {
   Campaign,
   ContentSeries,
   ContentTemplate,
-  AnalyticsData,
   PerformanceReport,
-  OptimizationSuggestion,
   SchedulingSuggestion,
 } from './types';
 import { apiService as clientApi } from './services/clientApiService';
@@ -121,7 +119,7 @@ const App: React.FC = () => {
 
   // Blogger Integration State
   const [isBloggerAuthenticated, setIsBloggerAuthenticated] = useState(false);
-  const [bloggerBlogs, setBloggerBlogs] = useState<any[]>([]);
+  const [bloggerBlogs, setBloggerBlogs] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedBlogId, setSelectedBlogId] = useState<string>('');
 
   // Image Style State
@@ -136,9 +134,9 @@ const App: React.FC = () => {
   const [brandVoices, setBrandVoices] = useState<BrandVoice[]>([]);
 
   // New Feature States
-  const [showContentBuilder, setShowContentBuilder] = useState(false);
+  // Content Builder is shown via Enhanced Features tab
   const [contentBuilderBlocks, setContentBuilderBlocks] = useState<ContentBlock[]>([]);
-  const [showGamification, setShowGamification] = useState(false);
+  // Gamification is shown via Enhanced Features tab
   const [selectedBrandVoice, setSelectedBrandVoice] = useState<BrandVoice | null>(null);
   const [showBrandVoiceManager, setShowBrandVoiceManager] = useState(false);
 
@@ -165,17 +163,14 @@ const App: React.FC = () => {
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
 
   // Analytics and Performance State
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
   const [performanceReport, setPerformanceReport] = useState<PerformanceReport | null>(null);
   const [showAnalyticsDashboard, setShowAnalyticsDashboard] = useState(false);
   const [showPerformanceInsights, setShowPerformanceInsights] = useState(false);
-  const [optimizationSuggestions, setOptimizationSuggestions] = useState<OptimizationSuggestion[]>(
-    []
-  );
+  // Optimization suggestions are computed on-demand inside insights views
 
   // Smart Scheduling State
   const [schedulingSuggestions, setSchedulingSuggestions] = useState<SchedulingSuggestion[]>([]);
-  const [showSmartScheduler, setShowSmartScheduler] = useState(false);
+  // Smart scheduler is accessed via Enhanced Features → Scheduling tab
 
   // Enhanced UI State
   const [activeEnhancedTab, setActiveEnhancedTab] = useState('personalization');
@@ -600,22 +595,6 @@ const App: React.FC = () => {
   };
 
   // Analytics and Performance
-  const loadAnalyticsData = withLoading('analytics', async () => {
-    try {
-      // Get analytics data for the last 30 days
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - 30);
-
-      const analytics = await clientApi.getAnalyticsByTimeframe(
-        startDate.toISOString(),
-        endDate.toISOString()
-      );
-      setAnalyticsData(analytics);
-    } catch (error: any) {
-      handleEnhancedFeatureError(error, 'analytics');
-    }
-  });
 
   const generatePerformanceReport = withLoading(
     'performanceReport',
