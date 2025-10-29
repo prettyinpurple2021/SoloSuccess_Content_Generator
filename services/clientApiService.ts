@@ -303,4 +303,116 @@ export const apiService = {
       throw new Error('Failed to test connection');
     }
   },
+
+  // Image Styles
+  async getImageStyles(userId?: string) {
+    const url = userId
+      ? `${API_BASE_URL}/image-styles?userId=${userId}`
+      : `${API_BASE_URL}/image-styles`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch image styles');
+    return await res.json();
+  },
+  async addImageStyle(userId: string, style: any) {
+    const res = await fetch(`${API_BASE_URL}/image-styles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...style, userId }),
+    });
+    if (!res.ok) throw new Error('Failed to create image style');
+    return await res.json();
+  },
+  async updateImageStyle(userId: string, id: string, updates: any) {
+    const res = await fetch(`${API_BASE_URL}/image-styles/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...updates, userId }),
+    });
+    if (!res.ok) throw new Error('Failed to update image style');
+    return await res.json();
+  },
+  async deleteImageStyle(userId: string, id: string) {
+    const res = await fetch(`${API_BASE_URL}/image-styles/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok && res.status !== 204) throw new Error('Failed to delete image style');
+  },
+
+  // Content Templates
+  async getContentTemplates(userId?: string) {
+    const url = userId ? `${API_BASE_URL}/templates?userId=${userId}` : `${API_BASE_URL}/templates`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch templates');
+    return await res.json();
+  },
+  async addTemplate(userId: string, template: any) {
+    const res = await fetch(`${API_BASE_URL}/templates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...template, userId }),
+    });
+    if (!res.ok) throw new Error('Failed to create template');
+    return await res.json();
+  },
+  async updateTemplate(userId: string, id: string, updates: any) {
+    const res = await fetch(`${API_BASE_URL}/templates/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...updates, userId }),
+    });
+    if (!res.ok) throw new Error('Failed to update template');
+    return await res.json();
+  },
+  async deleteTemplate(userId: string, id: string) {
+    const res = await fetch(`${API_BASE_URL}/templates/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok && res.status !== 204) throw new Error('Failed to delete template');
+  },
+
+  // Content Series
+  async getContentSeries(userId: string) {
+    const res = await fetch(`${API_BASE_URL}/content-series?userId=${userId}`);
+    if (!res.ok) throw new Error('Failed to fetch content series');
+    return await res.json();
+  },
+  async addContentSeries(userId: string, series: any) {
+    const res = await fetch(`${API_BASE_URL}/content-series`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...series, userId }),
+    });
+    if (!res.ok) throw new Error('Failed to create content series');
+    return await res.json();
+  },
+  async updateContentSeries(userId: string, id: string, updates: any) {
+    const res = await fetch(`${API_BASE_URL}/content-series/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...updates, userId }),
+    });
+    if (!res.ok) throw new Error('Failed to update content series');
+    return await res.json();
+  },
+  async deleteContentSeries(userId: string, id: string) {
+    const res = await fetch(`${API_BASE_URL}/content-series/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok && res.status !== 204) throw new Error('Failed to delete content series');
+  },
+
+  // Analytics
+  async getAnalyticsByTimeframe(start: string, end: string) {
+    const res = await fetch(
+      `${API_BASE_URL}/analytics?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+    );
+    if (!res.ok) throw new Error('Failed to fetch analytics');
+    return await res.json();
+  },
 };

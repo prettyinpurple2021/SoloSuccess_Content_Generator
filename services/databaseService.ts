@@ -53,6 +53,93 @@ export const auth = {
     return null; // Placeholder - actual implementation depends on Stack Auth integration
   },
 
+  // Image Styles
+  getImageStyles: async (userId?: string): Promise<ImageStyle[]> => {
+    try {
+      const result = await pool`
+        SELECT * FROM image_styles
+        ${userId ? pool`WHERE user_id = ${userId}` : pool``}
+        ORDER BY created_at DESC
+      `;
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            stylePrompt: row.style_prompt,
+            colorPalette: row.color_palette,
+            visualElements: row.visual_elements,
+            brandAssets: row.brand_assets,
+            createdAt: new Date(row.created_at),
+          }) as ImageStyle
+      );
+    } catch (error) {
+      console.error('Error fetching image styles:', error);
+      throw error;
+    }
+  },
+
+  // Content Templates (read-only for client)
+  getContentTemplates: async (userId?: string): Promise<ContentTemplate[]> => {
+    try {
+      const result = await pool`
+        SELECT * FROM content_templates
+        ${userId ? pool`WHERE user_id = ${userId} OR is_public = true` : pool``}
+        ORDER BY created_at DESC
+      `;
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            category: row.category,
+            industry: row.industry,
+            contentType: row.content_type,
+            structure: row.structure,
+            customizableFields: row.customizable_fields,
+            usageCount: row.usage_count,
+            rating: row.rating,
+            isPublic: row.is_public,
+            createdAt: new Date(row.created_at),
+          }) as ContentTemplate
+      );
+    } catch (error) {
+      console.error('Error fetching content templates:', error);
+      throw error;
+    }
+  },
+
+  // Content Series (read-only for client)
+  getContentSeries: async (userId: string): Promise<ContentSeries[]> => {
+    try {
+      const result = await pool`
+        SELECT * FROM content_series
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+      `;
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            campaignId: row.campaign_id,
+            name: row.name,
+            theme: row.theme,
+            totalPosts: row.total_posts,
+            frequency: row.frequency,
+            currentPost: row.current_post,
+            posts: [],
+            createdAt: new Date(row.created_at),
+          }) as ContentSeries
+      );
+    } catch (error) {
+      console.error('Error fetching content series:', error);
+      throw error;
+    }
+  },
+
   // Listen to auth state changes
   onAuthStateChange: (callback: (user: any) => void) => {
     // This will be handled by Stack Auth on the frontend
@@ -141,7 +228,7 @@ export const db = {
       // Get paginated results
       const offset = (page - 1) * pageSize;
       const result = await pool`
-        SELECT * FROM posts
+        SELECT * FROM posts 
         WHERE user_id = ${userId}
         ORDER BY created_at DESC
         LIMIT ${pageSize} OFFSET ${offset}
@@ -153,7 +240,7 @@ export const db = {
       if (page === 1) {
         // For first page, fetch more data to cache
         const fullData = await pool`
-          SELECT * FROM posts
+          SELECT * FROM posts 
           WHERE user_id = ${userId}
           ORDER BY created_at DESC
           LIMIT ${Math.min(1000, totalCount)}
@@ -224,7 +311,7 @@ export const db = {
   ): Promise<Post> => {
     try {
       const result = await pool`
-        UPDATE posts
+        UPDATE posts 
         SET
           topic = COALESCE(${updates.topic || null}, topic),
           idea = COALESCE(${updates.idea || null}, idea),
@@ -341,7 +428,7 @@ export const db = {
         : null;
 
       const result = await pool`
-        UPDATE brand_voices
+        UPDATE brand_voices 
         SET
           name = COALESCE(${updates.name || null}, name),
           tone = COALESCE(${updates.tone || null}, tone),
@@ -443,7 +530,7 @@ export const db = {
         : null;
 
       const result = await pool`
-        UPDATE audience_profiles
+        UPDATE audience_profiles 
         SET
           name = COALESCE(${updates.name || null}, name),
           age_range = COALESCE(${updates.age_range || null}, age_range),
@@ -536,7 +623,7 @@ export const db = {
       const performanceJson = updates.performance ? JSON.stringify(updates.performance) : null;
 
       const result = await pool`
-        UPDATE campaigns
+        UPDATE campaigns 
         SET
           name = COALESCE(${updates.name || null}, name),
           description = COALESCE(${updates.description || null}, description),
@@ -586,7 +673,7 @@ export const db = {
       let result;
       if (!includeResolved) {
         result = await pool`
-          SELECT * FROM integration_alerts 
+        SELECT * FROM integration_alerts 
           WHERE integration_id = ${integrationId} AND is_resolved = false
           ORDER BY created_at DESC
         `;
@@ -741,7 +828,7 @@ export const db = {
         : null;
 
       const result = await pool`
-        UPDATE integrations
+        UPDATE integrations 
         SET
           name = COALESCE(${updates.name || null}, name),
           type = COALESCE(${updates.type || null}, type),

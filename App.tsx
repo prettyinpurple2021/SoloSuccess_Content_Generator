@@ -55,6 +55,20 @@ import { aiLearningService } from './services/aiLearningService';
 import { marked } from 'marked';
 // import { v4 as uuidv4 } from 'uuid';
 
+// Local type for content builder interoperability
+type ContentBlock = {
+  id: string;
+  type: 'text' | 'image' | 'list' | 'quote' | 'hashtags' | 'link' | 'video' | 'cta';
+  content: string;
+  metadata?: {
+    imageUrl?: string;
+    linkUrl?: string;
+    videoUrl?: string;
+    listItems?: string[];
+    style?: 'bold' | 'italic' | 'highlight';
+  };
+};
+
 const App: React.FC = () => {
   // Stack Auth user
   const stackUser = useUser();
@@ -123,7 +137,7 @@ const App: React.FC = () => {
 
   // New Feature States
   const [showContentBuilder, setShowContentBuilder] = useState(false);
-  const [contentBuilderBlocks, setContentBuilderBlocks] = useState([]);
+  const [contentBuilderBlocks, setContentBuilderBlocks] = useState<ContentBlock[]>([]);
   const [showGamification, setShowGamification] = useState(false);
   const [selectedBrandVoice, setSelectedBrandVoice] = useState<BrandVoice | null>(null);
   const [showBrandVoiceManager, setShowBrandVoiceManager] = useState(false);
@@ -266,20 +280,24 @@ const App: React.FC = () => {
     // Initial load of posts and enhanced features data
     const loadData = async () => {
       try {
-        const [posts, voices, profiles, campaignsList] = await Promise.all([
-          clientApi.getPosts(user.id),
-          clientApi.getBrandVoices(user.id).catch(() => []),
-          clientApi.getAudienceProfiles(user.id).catch(() => []),
-          campaignService.getCampaigns(user.id).catch(() => []),
-        ]);
+        const [posts, voices, profiles, campaignsList, styles, seriesList, templates] =
+          await Promise.all([
+            clientApi.getPosts(user.id),
+            clientApi.getBrandVoices(user.id).catch(() => []),
+            clientApi.getAudienceProfiles(user.id).catch(() => []),
+            campaignService.getCampaigns(user.id).catch(() => []),
+            clientApi.getImageStyles(user.id).catch(() => []),
+            clientApi.getContentSeries(user.id).catch(() => []),
+            clientApi.getContentTemplates(user.id).catch(() => []),
+          ]);
 
         setAllScheduledPosts(posts);
-        setImageStyles([]);
+        setImageStyles(styles);
         setBrandVoices(voices);
         setAudienceProfiles(profiles);
         setCampaigns(campaignsList);
-        setContentSeries([]);
-        setContentTemplates([]);
+        setContentSeries(seriesList);
+        setContentTemplates(templates);
 
         // Set default selections if available
         if (voices.length > 0 && !selectedBrandVoice) {
@@ -418,7 +436,25 @@ const App: React.FC = () => {
       template: selectedTemplate,
     };
 
-    const postContent = await geminiService.generateBlogPost(idea, generationOptions);
+    const postContent = await geminiService.generatePersonalizedContent(
+      idea,
+      selectedBrandVoice
+        ? {
+            tone: selectedBrandVoice.tone,
+            writingStyle: selectedBrandVoice.writingStyle,
+            vocabulary: [],
+            targetAudience: selectedBrandVoice.targetAudience || 'general',
+          }
+        : undefined,
+      selectedAudienceProfile
+        ? {
+            ageRange: selectedAudienceProfile.ageRange,
+            industry: selectedAudienceProfile.industry,
+            interests: selectedAudienceProfile.interests,
+            painPoints: selectedAudienceProfile.painPoints,
+          }
+        : undefined
+    );
     setBlogPost(postContent);
     setPostViewMode('preview');
     handleGenerateTags(postContent); // Auto-generate tags
@@ -447,50 +483,55 @@ const App: React.FC = () => {
     setErrorMessage('');
     try {
       const tone = socialMediaTones[platform] || TONES[0];
-      const audience = socialMediaAudiences[platform] || AUDIENCES[0];
 
       // Enhanced social media generation with personalization
-      const generationOptions = {
-        brandVoice: selectedBrandVoice,
-        audienceProfile: selectedAudienceProfile,
-        campaign: selectedCampaign,
-        contentSeries: selectedContentSeries,
-      };
+      // personalization used via generatePersonalizedContent elsewhere
 
-      const post = await geminiService.generateSocialMediaPost(
-        blogPost,
-        platform,
-        tone,
-        audience,
-        generationOptions
-      );
+      const config = PLATFORM_CONFIG[platform];
+      const length = config?.charLimit || 200;
+      const result = await (async () => {
+        // prefer OpenAI client if available in your integrations; fallback to geminiService wrapper
+        if ((geminiService as any).generateSocialMediaPost) {
+          // keep compatibility if wrapper exists with 4 args
+          return await (geminiService as any).generateSocialMediaPost(
+            currentBlogTopic || selectedIdea || 'Social post',
+            platform,
+            tone,
+            length
+          );
+        }
+        return { content: '' };
+      })();
+      const post = (result as any).content || '';
       setSocialMediaPosts((prev) => ({ ...prev, [platform]: post }));
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
       console.error(`Error generating social post for ${platform}:`, error);
-      setErrorMessage(error.message || `An unexpected error occurred for ${platform}.`);
+      setErrorMessage(msg || `An unexpected error occurred for ${platform}.`);
     } finally {
       setIsLoading((prev) => ({ ...prev, [key]: false }));
     }
   };
 
   const handleGenerateAllSocialPosts = withLoading('socialAll', async () => {
-    const generationOptions = {
-      brandVoice: selectedBrandVoice,
-      audienceProfile: selectedAudienceProfile,
-      campaign: selectedCampaign,
-      contentSeries: selectedContentSeries,
-    };
+    // personalization used via generatePersonalizedContent elsewhere
 
-    const promises = PLATFORMS.map((platform) => {
+    const promises = PLATFORMS.map(async (platform) => {
       const tone = socialMediaTones[platform] || TONES[0];
-      const audience = socialMediaAudiences[platform] || AUDIENCES[0];
-      return geminiService
-        .generateSocialMediaPost(blogPost, platform, tone, audience, generationOptions)
-        .then((post) => ({ platform, post }))
-        .catch((error) => {
-          console.error(`Error generating for ${platform} in 'All' mode:`, error);
-          return { platform, post: `Error: Could not generate content for ${platform}.` };
-        });
+      const config = PLATFORM_CONFIG[platform];
+      const length = config?.charLimit || 200;
+      try {
+        const res = await (geminiService as any).generateSocialMediaPost(
+          currentBlogTopic || selectedIdea || 'Social post',
+          platform,
+          tone,
+          length
+        );
+        return { platform, post: (res as any).content || '' };
+      } catch (error) {
+        console.error(`Error generating for ${platform} in 'All' mode:`, error);
+        return { platform, post: `Error: Could not generate content for ${platform}.` };
+      }
     });
     const results = await Promise.all(promises);
     const newPosts: SocialMediaPosts = {};
@@ -504,21 +545,12 @@ const App: React.FC = () => {
     setSocialMediaPosts((prev) => ({ ...prev, [platform]: value }));
   };
 
-  const loadImageStyles = withLoading('imageStyles', async () => {
-    setImageStyles([]);
-  });
+  // Removed unused loadImageStyles (initial load handles styles)
 
   // Enhanced Features Handlers
 
   // Brand Voice Management
-  const loadBrandVoices = withLoading('brandVoices', async () => {
-    try {
-      const voices = await clientApi.getBrandVoices(user?.id || '');
-      setBrandVoices(voices);
-    } catch (error: any) {
-      handleEnhancedFeatureError(error, 'brandVoice');
-    }
-  });
+  // Removed unused loadBrandVoices
 
   const handleBrandVoiceSelect = (voice: BrandVoice | null) => {
     setSelectedBrandVoice(voice);
@@ -528,14 +560,7 @@ const App: React.FC = () => {
   };
 
   // Audience Profile Management
-  const loadAudienceProfiles = withLoading('audienceProfiles', async () => {
-    try {
-      const profiles = await clientApi.getAudienceProfiles(user?.id || '');
-      setAudienceProfiles(profiles);
-    } catch (error: any) {
-      handleEnhancedFeatureError(error, 'audienceProfile');
-    }
-  });
+  // Removed unused loadAudienceProfiles
 
   const handleAudienceProfileSelect = (profile: AudienceProfile | null) => {
     setSelectedAudienceProfile(profile);
@@ -545,14 +570,7 @@ const App: React.FC = () => {
   };
 
   // Campaign Management
-  const loadCampaigns = withLoading('campaigns', async () => {
-    try {
-      const campaignsList = await campaignService.getCampaigns(user?.id || '');
-      setCampaigns(campaignsList);
-    } catch (error: any) {
-      handleEnhancedFeatureError(error, 'campaign');
-    }
-  });
+  // Removed unused loadCampaigns
 
   const handleCampaignSelect = (campaign: Campaign | null) => {
     setSelectedCampaign(campaign);
@@ -562,13 +580,7 @@ const App: React.FC = () => {
   };
 
   // Content Series Management
-  const loadContentSeries = withLoading('contentSeries', async () => {
-    try {
-      setContentSeries([]);
-    } catch (error: any) {
-      handleEnhancedFeatureError(error, 'contentSeries');
-    }
-  });
+  // Removed unused loadContentSeries
 
   const handleContentSeriesSelect = (series: ContentSeries | null) => {
     setSelectedContentSeries(series);
@@ -578,13 +590,7 @@ const App: React.FC = () => {
   };
 
   // Template Management
-  const loadContentTemplates = withLoading('templates', async () => {
-    try {
-      setContentTemplates([]);
-    } catch (error: any) {
-      handleEnhancedFeatureError(error, 'template');
-    }
-  });
+  // Removed unused loadContentTemplates
 
   const handleTemplateSelect = (template: ContentTemplate | null) => {
     setSelectedTemplate(template);
@@ -601,7 +607,11 @@ const App: React.FC = () => {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - 30);
 
-      setAnalyticsData([]);
+      const analytics = await clientApi.getAnalyticsByTimeframe(
+        startDate.toISOString(),
+        endDate.toISOString()
+      );
+      setAnalyticsData(analytics);
     } catch (error: any) {
       handleEnhancedFeatureError(error, 'analytics');
     }
@@ -2053,7 +2063,23 @@ const App: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <CalendarView posts={allScheduledPosts} onPostClick={handlePostClick} />
+              <CalendarView
+                posts={allScheduledPosts}
+                campaigns={campaigns}
+                contentSeries={contentSeries}
+                audienceProfiles={audienceProfiles}
+                optimalTimes={[]}
+                onPostClick={handlePostClick}
+                onPostReschedule={async (postId, newDate) => {
+                  if (!user) return;
+                  await clientApi.updatePost(user.id, postId, {
+                    schedule_date: newDate.toISOString(),
+                  } as any);
+                  setAllScheduledPosts((prev) =>
+                    prev.map((p) => (p.id === postId ? { ...p, scheduleDate: newDate } : p))
+                  );
+                }}
+              />
             )}
           </div>
         </div>
