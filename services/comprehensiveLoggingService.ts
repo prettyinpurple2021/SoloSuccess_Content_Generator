@@ -1,13 +1,9 @@
-import { 
-  IntegrationLog, 
-  IntegrationAlert,
-  Integration
-} from '../types';
+import { IntegrationLog, IntegrationAlert, Integration } from '../types';
 import { monitoringService } from './monitoringService';
 
 /**
  * ComprehensiveLoggingService - Production-quality logging and audit trail
- * 
+ *
  * Features:
  * - Structured logging with multiple levels
  * - Audit trail for all integration activities
@@ -36,7 +32,7 @@ export class ComprehensiveLoggingService {
     INFO: 2,
     WARN: 3,
     ERROR: 4,
-    FATAL: 5
+    FATAL: 5,
   };
 
   private currentLogLevel = this.logLevels.INFO;
@@ -63,7 +59,9 @@ export class ComprehensiveLoggingService {
   ): Promise<void> {
     try {
       // Check if log level is enabled
-      if (this.logLevels[level.toUpperCase() as keyof typeof this.logLevels] < this.currentLogLevel) {
+      if (
+        this.logLevels[level.toUpperCase() as keyof typeof this.logLevels] < this.currentLogLevel
+      ) {
         return;
       }
 
@@ -72,6 +70,7 @@ export class ComprehensiveLoggingService {
         integrationId,
         level,
         message,
+        metadata: context?.metadata || {},
         details: {
           timestamp: new Date().toISOString(),
           level: level.toUpperCase(),
@@ -82,9 +81,9 @@ export class ComprehensiveLoggingService {
           metadata: context?.metadata,
           tags: context?.tags || [],
           environment: process.env.NODE_ENV || 'development',
-          version: process.env.npm_package_version || '1.0.0'
+          version: process.env.npm_package_version || '1.0.0',
         },
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Add to buffer for batch processing
@@ -109,7 +108,6 @@ export class ComprehensiveLoggingService {
       if (this.shouldProcessLogBuffer(integrationId)) {
         await this.processLogBuffer(integrationId);
       }
-
     } catch (error) {
       console.error('Failed to log message:', error);
     }
@@ -186,7 +184,7 @@ export class ComprehensiveLoggingService {
         action: context?.metadata?.action,
         result: context?.metadata?.result,
         changes: context?.metadata?.changes,
-        metadata: context?.metadata
+        metadata: context?.metadata,
       };
 
       // Add to audit trail buffer
@@ -202,7 +200,6 @@ export class ComprehensiveLoggingService {
         `AUDIT: ${message}`,
         auditEntry
       );
-
     } catch (error) {
       console.error('Failed to create audit trail entry:', error);
     }
@@ -223,24 +220,24 @@ export class ComprehensiveLoggingService {
   ): Promise<any[]> {
     try {
       const auditEntries = this.auditTrail.get(integrationId) || [];
-      
+
       let filtered = auditEntries;
 
       // Apply filters
       if (options?.startDate) {
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= options.startDate!);
+        filtered = filtered.filter((entry) => new Date(entry.timestamp) >= options.startDate!);
       }
 
       if (options?.endDate) {
-        filtered = filtered.filter(entry => new Date(entry.timestamp) <= options.endDate!);
+        filtered = filtered.filter((entry) => new Date(entry.timestamp) <= options.endDate!);
       }
 
       if (options?.operation) {
-        filtered = filtered.filter(entry => entry.operation === options.operation);
+        filtered = filtered.filter((entry) => entry.operation === options.operation);
       }
 
       if (options?.userId) {
-        filtered = filtered.filter(entry => entry.userId === options.userId);
+        filtered = filtered.filter((entry) => entry.userId === options.userId);
       }
 
       // Sort by timestamp (newest first)
@@ -252,7 +249,6 @@ export class ComprehensiveLoggingService {
       }
 
       return filtered;
-
     } catch (error) {
       console.error('Failed to get audit trail:', error);
       return [];
@@ -293,7 +289,7 @@ export class ComprehensiveLoggingService {
         networkLatency: context?.metadata?.networkLatency || 0,
         requestSize: context?.metadata?.requestSize || 0,
         responseSize: context?.metadata?.responseSize || 0,
-        metadata: context?.metadata
+        metadata: context?.metadata,
       };
 
       // Add to performance logs buffer
@@ -301,7 +297,6 @@ export class ComprehensiveLoggingService {
         this.performanceLogs.set(integrationId, []);
       }
       this.performanceLogs.get(integrationId)!.push(performanceEntry);
-
     } catch (error) {
       console.error('Failed to log performance data:', error);
     }
@@ -321,20 +316,20 @@ export class ComprehensiveLoggingService {
   ): Promise<any[]> {
     try {
       const performanceEntries = this.performanceLogs.get(integrationId) || [];
-      
+
       let filtered = performanceEntries;
 
       // Apply filters
       if (options?.startDate) {
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= options.startDate!);
+        filtered = filtered.filter((entry) => new Date(entry.timestamp) >= options.startDate!);
       }
 
       if (options?.endDate) {
-        filtered = filtered.filter(entry => new Date(entry.timestamp) <= options.endDate!);
+        filtered = filtered.filter((entry) => new Date(entry.timestamp) <= options.endDate!);
       }
 
       if (options?.operation) {
-        filtered = filtered.filter(entry => entry.operation === options.operation);
+        filtered = filtered.filter((entry) => entry.operation === options.operation);
       }
 
       // Sort by timestamp (newest first)
@@ -346,7 +341,6 @@ export class ComprehensiveLoggingService {
       }
 
       return filtered;
-
     } catch (error) {
       console.error('Failed to get performance logs:', error);
       return [];
@@ -382,7 +376,7 @@ export class ComprehensiveLoggingService {
         requestId: context?.requestId,
         threatLevel: context?.metadata?.threatLevel || 'low',
         action: context?.metadata?.action || 'none',
-        metadata: context?.metadata
+        metadata: context?.metadata,
       };
 
       // Add to security events buffer
@@ -403,11 +397,10 @@ export class ComprehensiveLoggingService {
           metadata: {
             eventType: 'security',
             securityEvent: securityEntry,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
-
     } catch (error) {
       console.error('Failed to log security event:', error);
     }
@@ -428,24 +421,24 @@ export class ComprehensiveLoggingService {
   ): Promise<any[]> {
     try {
       const securityEntries = this.securityEvents.get(integrationId) || [];
-      
+
       let filtered = securityEntries;
 
       // Apply filters
       if (options?.startDate) {
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= options.startDate!);
+        filtered = filtered.filter((entry) => new Date(entry.timestamp) >= options.startDate!);
       }
 
       if (options?.endDate) {
-        filtered = filtered.filter(entry => new Date(entry.timestamp) <= options.endDate!);
+        filtered = filtered.filter((entry) => new Date(entry.timestamp) <= options.endDate!);
       }
 
       if (options?.severity) {
-        filtered = filtered.filter(entry => entry.severity === options.severity);
+        filtered = filtered.filter((entry) => entry.severity === options.severity);
       }
 
       if (options?.eventType) {
-        filtered = filtered.filter(entry => entry.eventType === options.eventType);
+        filtered = filtered.filter((entry) => entry.eventType === options.eventType);
       }
 
       // Sort by timestamp (newest first)
@@ -457,7 +450,6 @@ export class ComprehensiveLoggingService {
       }
 
       return filtered;
-
     } catch (error) {
       console.error('Failed to get security events:', error);
       return [];
@@ -498,7 +490,7 @@ export class ComprehensiveLoggingService {
 
       // Process logs in batches
       const batch = buffer.splice(0, ComprehensiveLoggingService.MAX_LOG_ENTRIES_PER_BATCH);
-      
+
       for (const logEntry of batch) {
         await monitoringService.logEvent(
           integrationId,
@@ -507,7 +499,6 @@ export class ComprehensiveLoggingService {
           logEntry.details
         );
       }
-
     } catch (error) {
       console.error('Failed to process log buffer:', error);
     }
@@ -547,19 +538,19 @@ export class ComprehensiveLoggingService {
 
       // Analyze log levels
       const logLevelDistribution: Record<string, number> = {};
-      filtered.forEach(log => {
+      filtered.forEach((log) => {
         logLevelDistribution[log.level] = (logLevelDistribution[log.level] || 0) + 1;
       });
 
       // Analyze operations
       const operationDistribution: Record<string, number> = {};
-      filtered.forEach(log => {
+      filtered.forEach((log) => {
         const operation = log.details?.operation || 'unknown';
         operationDistribution[operation] = (operationDistribution[operation] || 0) + 1;
       });
 
       // Analyze error patterns
-      const errorLogs = filtered.filter(log => log.level === 'error' || log.level === 'fatal');
+      const errorLogs = filtered.filter((log) => log.level === 'error' || log.level === 'fatal');
       const errorPatterns = this.extractErrorPatterns(errorLogs);
 
       // Analyze performance insights
@@ -579,9 +570,8 @@ export class ComprehensiveLoggingService {
         operationDistribution,
         errorPatterns,
         performanceInsights,
-        recommendations
+        recommendations,
       };
-
     } catch (error) {
       console.error('Failed to analyze logs:', error);
       return {
@@ -590,7 +580,7 @@ export class ComprehensiveLoggingService {
         operationDistribution: {},
         errorPatterns: [],
         performanceInsights: [],
-        recommendations: []
+        recommendations: [],
       };
     }
   }
@@ -602,19 +592,19 @@ export class ComprehensiveLoggingService {
     let filtered = logs;
 
     if (options.startDate) {
-      filtered = filtered.filter(log => log.timestamp >= options.startDate);
+      filtered = filtered.filter((log) => log.timestamp >= options.startDate);
     }
 
     if (options.endDate) {
-      filtered = filtered.filter(log => log.timestamp <= options.endDate);
+      filtered = filtered.filter((log) => log.timestamp <= options.endDate);
     }
 
     if (options.level) {
-      filtered = filtered.filter(log => log.level === options.level);
+      filtered = filtered.filter((log) => log.level === options.level);
     }
 
     if (options.operation) {
-      filtered = filtered.filter(log => log.details?.operation === options.operation);
+      filtered = filtered.filter((log) => log.details?.operation === options.operation);
     }
 
     return filtered;
@@ -625,7 +615,7 @@ export class ComprehensiveLoggingService {
    */
   private extractErrorPatterns(errorLogs: IntegrationLog[]): string[] {
     const patterns: string[] = [];
-    const errorMessages = errorLogs.map(log => log.message);
+    const errorMessages = errorLogs.map((log) => log.message);
 
     // Simple pattern extraction - in production, use more sophisticated NLP
     const commonPatterns = [
@@ -634,11 +624,11 @@ export class ComprehensiveLoggingService {
       'connection timeout',
       'invalid credentials',
       'network error',
-      'server error'
+      'server error',
     ];
 
-    commonPatterns.forEach(pattern => {
-      const count = errorMessages.filter(msg => msg.toLowerCase().includes(pattern)).length;
+    commonPatterns.forEach((pattern) => {
+      const count = errorMessages.filter((msg) => msg.toLowerCase().includes(pattern)).length;
       if (count > 0) {
         patterns.push(`${pattern} (${count} occurrences)`);
       }
@@ -652,10 +642,10 @@ export class ComprehensiveLoggingService {
    */
   private analyzePerformanceInsights(logs: IntegrationLog[]): any[] {
     const insights: any[] = [];
-    const performanceLogs = logs.filter(log => log.details?.duration !== undefined);
+    const performanceLogs = logs.filter((log) => log.details?.duration !== undefined);
 
     if (performanceLogs.length > 0) {
-      const durations = performanceLogs.map(log => log.details.duration);
+      const durations = performanceLogs.map((log) => log.details.duration);
       const avgDuration = durations.reduce((sum, duration) => sum + duration, 0) / durations.length;
       const maxDuration = Math.max(...durations);
       const minDuration = Math.min(...durations);
@@ -663,19 +653,19 @@ export class ComprehensiveLoggingService {
       insights.push({
         metric: 'average_duration',
         value: avgDuration,
-        unit: 'ms'
+        unit: 'ms',
       });
 
       insights.push({
         metric: 'max_duration',
         value: maxDuration,
-        unit: 'ms'
+        unit: 'ms',
       });
 
       insights.push({
         metric: 'min_duration',
         value: minDuration,
-        unit: 'ms'
+        unit: 'ms',
       });
     }
 
@@ -699,19 +689,27 @@ export class ComprehensiveLoggingService {
     const errorRate = totalLogs > 0 ? errorCount / totalLogs : 0;
 
     if (errorRate > 0.1) {
-      recommendations.push('High error rate detected - investigate error patterns and improve error handling');
+      recommendations.push(
+        'High error rate detected - investigate error patterns and improve error handling'
+      );
     }
 
     // Performance recommendations
-    const avgDuration = performanceInsights.find(insight => insight.metric === 'average_duration')?.value;
+    const avgDuration = performanceInsights.find(
+      (insight) => insight.metric === 'average_duration'
+    )?.value;
     if (avgDuration && avgDuration > 5000) {
-      recommendations.push('Average operation duration is high - consider performance optimization');
+      recommendations.push(
+        'Average operation duration is high - consider performance optimization'
+      );
     }
 
     // Operation distribution recommendations
     const operations = Object.keys(operationDistribution);
     if (operations.length > 10) {
-      recommendations.push('High number of different operations - consider operation consolidation');
+      recommendations.push(
+        'High number of different operations - consider operation consolidation'
+      );
     }
 
     return recommendations;
@@ -726,13 +724,22 @@ export class ComprehensiveLoggingService {
    */
   private shouldCreateAuditTrail(level: string, operation?: string): boolean {
     const auditOperations = [
-      'create', 'update', 'delete', 'connect', 'disconnect',
-      'sync', 'authenticate', 'authorize', 'configure'
+      'create',
+      'update',
+      'delete',
+      'connect',
+      'disconnect',
+      'sync',
+      'authenticate',
+      'authorize',
+      'configure',
     ];
 
     return (
       ['warn', 'error', 'fatal'].includes(level) ||
-      (operation && auditOperations.some(auditOp => operation.toLowerCase().includes(auditOp)))
+      Boolean(
+        operation && auditOperations.some((auditOp) => operation.toLowerCase().includes(auditOp))
+      )
     );
   }
 
@@ -741,15 +748,26 @@ export class ComprehensiveLoggingService {
    */
   private isSecurityEvent(level: string, message: string, context?: any): boolean {
     const securityKeywords = [
-      'authentication', 'authorization', 'credential', 'token', 'access',
-      'permission', 'security', 'breach', 'attack', 'unauthorized',
-      'forbidden', 'suspicious', 'threat', 'vulnerability'
+      'authentication',
+      'authorization',
+      'credential',
+      'token',
+      'access',
+      'permission',
+      'security',
+      'breach',
+      'attack',
+      'unauthorized',
+      'forbidden',
+      'suspicious',
+      'threat',
+      'vulnerability',
     ];
 
     return (
       ['error', 'fatal'].includes(level) &&
-      (securityKeywords.some(keyword => message.toLowerCase().includes(keyword)) ||
-       context?.metadata?.eventType === 'security')
+      (securityKeywords.some((keyword) => message.toLowerCase().includes(keyword)) ||
+        context?.metadata?.eventType === 'security')
     );
   }
 
@@ -764,9 +782,11 @@ export class ComprehensiveLoggingService {
    * Gets current log level
    */
   getLogLevel(): string {
-    return Object.keys(this.logLevels).find(
-      key => this.logLevels[key as keyof typeof this.logLevels] === this.currentLogLevel
-    ) || 'info';
+    return (
+      Object.keys(this.logLevels).find(
+        (key) => this.logLevels[key as keyof typeof this.logLevels] === this.currentLogLevel
+      ) || 'info'
+    );
   }
 
   /**
@@ -794,7 +814,7 @@ export class ComprehensiveLoggingService {
       totalAuditEntries: 0,
       totalPerformanceLogs: 0,
       totalSecurityEvents: 0,
-      bufferSizes: {} as Record<string, number>
+      bufferSizes: {} as Record<string, number>,
     };
 
     // Count buffered logs

@@ -9,7 +9,7 @@ import { monitoringService } from './monitoringService';
 
 /**
  * IntegrationOrchestrator - Central orchestrator for all integration services
- * 
+ *
  * Features:
  * - Unified integration management
  * - Service coordination
@@ -22,7 +22,7 @@ import { monitoringService } from './monitoringService';
 export class IntegrationOrchestrator {
   private static readonly ORCHESTRATION_INTERVAL = 60000; // 1 minute
   private static readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
-  
+
   private orchestrationTimer: NodeJS.Timeout | null = null;
   private healthCheckTimer: NodeJS.Timeout | null = null;
   private isInitialized = false;
@@ -36,11 +36,9 @@ export class IntegrationOrchestrator {
    */
   private async initialize(): Promise<void> {
     try {
-      await comprehensiveLoggingService.info(
-        'system',
-        'Initializing Integration Orchestrator',
-        { operation: 'orchestrator_initialize' }
-      );
+      await comprehensiveLoggingService.info('system', 'Initializing Integration Orchestrator', {
+        operation: 'orchestrator_initialize',
+      });
 
       // Start orchestration services
       this.startOrchestration();
@@ -53,14 +51,13 @@ export class IntegrationOrchestrator {
         'Integration Orchestrator initialized successfully',
         { operation: 'orchestrator_initialize_complete' }
       );
-
     } catch (error) {
       await comprehensiveLoggingService.error(
         'system',
         'Failed to initialize Integration Orchestrator',
         {
           operation: 'orchestrator_initialize_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         }
       );
       throw error;
@@ -98,31 +95,22 @@ export class IntegrationOrchestrator {
    */
   private async performOrchestration(): Promise<void> {
     try {
-      const integrations = await integrationService.getIntegrations();
-      
+      const integrations = await integrationService.getAllIntegrations();
+
       for (const integration of integrations) {
         await this.orchestrateIntegration(integration);
       }
 
-      await comprehensiveLoggingService.debug(
-        'system',
-        'Orchestration cycle completed',
-        {
-          operation: 'orchestration_cycle',
-          integrationsProcessed: integrations.length,
-          timestamp: new Date().toISOString()
-        }
-      );
-
+      await comprehensiveLoggingService.debug('system', 'Orchestration cycle completed', {
+        operation: 'orchestration_cycle',
+        integrationsProcessed: integrations.length,
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Orchestration cycle failed',
-        {
-          operation: 'orchestration_cycle_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error('system', 'Orchestration cycle failed', {
+        operation: 'orchestration_cycle_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -138,7 +126,7 @@ export class IntegrationOrchestrator {
         {
           maxRequests: 100,
           windowSize: 60000,
-          strategy: 'sliding'
+          strategy: 'sliding',
         }
       );
 
@@ -149,7 +137,7 @@ export class IntegrationOrchestrator {
           {
             operation: 'orchestration_rate_limited',
             retryAfter: rateLimitResult.retryAfter,
-            reason: rateLimitResult.reason
+            reason: rateLimitResult.reason,
           }
         );
         return;
@@ -168,19 +156,14 @@ export class IntegrationOrchestrator {
         {
           operation: 'orchestration_success',
           rateLimitRemaining: rateLimitResult.remaining,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         }
       );
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        integration.id,
-        'Integration orchestration failed',
-        {
-          operation: 'orchestration_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error(integration.id, 'Integration orchestration failed', {
+        operation: 'orchestration_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -195,48 +178,37 @@ export class IntegrationOrchestrator {
         performanceMonitoringService: await this.checkServiceHealth('performanceMonitoringService'),
         comprehensiveLoggingService: await this.checkServiceHealth('comprehensiveLoggingService'),
         advancedSecurityService: await this.checkServiceHealth('advancedSecurityService'),
-        productionQualityValidationService: await this.checkServiceHealth('productionQualityValidationService'),
-        monitoringService: await this.checkServiceHealth('monitoringService')
+        productionQualityValidationService: await this.checkServiceHealth(
+          'productionQualityValidationService'
+        ),
+        monitoringService: await this.checkServiceHealth('monitoringService'),
       };
 
-      const healthyServices = Object.values(healthStatus).filter(status => status.healthy).length;
+      const healthyServices = Object.values(healthStatus).filter((status) => status.healthy).length;
       const totalServices = Object.keys(healthStatus).length;
       const overallHealth = healthyServices / totalServices;
 
       if (overallHealth < 0.8) {
-        await comprehensiveLoggingService.error(
-          'system',
-          'System health degraded',
-          {
-            operation: 'health_check_degraded',
-            overallHealth: Math.round(overallHealth * 100),
-            healthyServices,
-            totalServices,
-            healthStatus
-          }
-        );
+        await comprehensiveLoggingService.error('system', 'System health degraded', {
+          operation: 'health_check_degraded',
+          overallHealth: Math.round(overallHealth * 100),
+          healthyServices,
+          totalServices,
+          healthStatus,
+        });
       } else {
-        await comprehensiveLoggingService.debug(
-          'system',
-          'System health check passed',
-          {
-            operation: 'health_check_passed',
-            overallHealth: Math.round(overallHealth * 100),
-            healthyServices,
-            totalServices
-          }
-        );
+        await comprehensiveLoggingService.debug('system', 'System health check passed', {
+          operation: 'health_check_passed',
+          overallHealth: Math.round(overallHealth * 100),
+          healthyServices,
+          totalServices,
+        });
       }
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Health check failed',
-        {
-          operation: 'health_check_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error('system', 'Health check failed', {
+        operation: 'health_check_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -249,58 +221,57 @@ export class IntegrationOrchestrator {
     error?: string;
   }> {
     const startTime = Date.now();
-    
+
     try {
       switch (serviceName) {
         case 'integrationService':
           // Check if integration service is responsive
-          await integrationService.getIntegrations();
+          await integrationService.getAllIntegrations();
           break;
-          
+
         case 'rateLimitingService':
           // Check if rate limiting service is responsive
           rateLimitingService.getRateLimitStats();
           break;
-          
+
         case 'performanceMonitoringService':
           // Check if performance monitoring service is responsive
           await performanceMonitoringService.getPerformanceSummary();
           break;
-          
+
         case 'comprehensiveLoggingService':
           // Check if logging service is responsive
           comprehensiveLoggingService.getLoggingStats();
           break;
-          
+
         case 'advancedSecurityService':
           // Check if security service is responsive
           advancedSecurityService.getSecuritySummary();
           break;
-          
+
         case 'productionQualityValidationService':
           // Check if validation service is responsive
           await productionQualityValidationService.validateProductionReadiness();
           break;
-          
+
         case 'monitoringService':
           // Check if monitoring service is responsive
           await monitoringService.getDashboardSummary();
           break;
-          
+
         default:
           throw new Error(`Unknown service: ${serviceName}`);
       }
 
       return {
         healthy: true,
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
-
     } catch (error) {
       return {
         healthy: false,
         responseTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -337,14 +308,19 @@ export class IntegrationOrchestrator {
       const healthStatus = {
         integrationService: (await this.checkServiceHealth('integrationService')).healthy,
         rateLimitingService: (await this.checkServiceHealth('rateLimitingService')).healthy,
-        performanceMonitoringService: (await this.checkServiceHealth('performanceMonitoringService')).healthy,
-        comprehensiveLoggingService: (await this.checkServiceHealth('comprehensiveLoggingService')).healthy,
+        performanceMonitoringService: (
+          await this.checkServiceHealth('performanceMonitoringService')
+        ).healthy,
+        comprehensiveLoggingService: (await this.checkServiceHealth('comprehensiveLoggingService'))
+          .healthy,
         advancedSecurityService: (await this.checkServiceHealth('advancedSecurityService')).healthy,
-        productionQualityValidationService: (await this.checkServiceHealth('productionQualityValidationService')).healthy,
-        monitoringService: (await this.checkServiceHealth('monitoringService')).healthy
+        productionQualityValidationService: (
+          await this.checkServiceHealth('productionQualityValidationService')
+        ).healthy,
+        monitoringService: (await this.checkServiceHealth('monitoringService')).healthy,
       };
 
-      const healthyServices = Object.values(healthStatus).filter(status => status).length;
+      const healthyServices = Object.values(healthStatus).filter((status) => status).length;
       const totalServices = Object.keys(healthStatus).length;
       const overallHealth = healthyServices / totalServices;
 
@@ -358,26 +334,21 @@ export class IntegrationOrchestrator {
           overall: Math.round(overallHealth * 100),
           details: {
             performance: performanceSummary,
-            security: securitySummary
-          }
+            security: securitySummary,
+          },
         },
         performance: {
           responseTime: performanceSummary.avgResponseTime,
           throughput: performanceSummary.totalRequests,
-          errorRate: 100 - performanceSummary.successRate
-        }
+          errorRate: 100 - performanceSummary.successRate,
+        },
       };
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Failed to get system status',
-        {
-          operation: 'get_system_status_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
-      
+      await comprehensiveLoggingService.error('system', 'Failed to get system status', {
+        operation: 'get_system_status_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       throw error;
     }
   }
@@ -387,13 +358,12 @@ export class IntegrationOrchestrator {
    */
   async validateProductionReadiness(): Promise<any> {
     try {
-      await comprehensiveLoggingService.info(
-        'system',
-        'Starting production readiness validation',
-        { operation: 'production_readiness_validation' }
-      );
+      await comprehensiveLoggingService.info('system', 'Starting production readiness validation', {
+        operation: 'production_readiness_validation',
+      });
 
-      const validationResult = await productionQualityValidationService.validateProductionReadiness();
+      const validationResult =
+        await productionQualityValidationService.validateProductionReadiness();
 
       await comprehensiveLoggingService.info(
         'system',
@@ -403,22 +373,17 @@ export class IntegrationOrchestrator {
           isProductionReady: validationResult.isProductionReady,
           overallScore: validationResult.overallScore,
           passedValidations: validationResult.passedValidations,
-          totalValidations: validationResult.totalValidations
+          totalValidations: validationResult.totalValidations,
         }
       );
 
       return validationResult;
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Production readiness validation failed',
-        {
-          operation: 'production_readiness_validation_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
-      
+      await comprehensiveLoggingService.error('system', 'Production readiness validation failed', {
+        operation: 'production_readiness_validation_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       throw error;
     }
   }
@@ -432,26 +397,29 @@ export class IntegrationOrchestrator {
     recommendations: string[];
   }> {
     try {
-      await comprehensiveLoggingService.info(
-        'system',
-        'Starting system performance optimization',
-        { operation: 'performance_optimization' }
-      );
+      await comprehensiveLoggingService.info('system', 'Starting system performance optimization', {
+        operation: 'performance_optimization',
+      });
 
-      const integrations = await integrationService.getIntegrations();
+      const integrations = await integrationService.getAllIntegrations();
       const optimizationResults = await Promise.allSettled(
-        integrations.map(integration => 
+        integrations.map((integration) =>
           performanceMonitoringService.optimizeIntegrationPerformance(integration.id)
         )
       );
 
       const successfulOptimizations = optimizationResults
-        .filter(result => result.status === 'fulfilled')
-        .map(result => (result as PromiseFulfilledResult<any>).value);
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => (result as PromiseFulfilledResult<any>).value);
 
-      const totalOptimizations = successfulOptimizations.flatMap(result => result.optimizations);
-      const totalPerformanceGain = successfulOptimizations.reduce((sum, result) => sum + result.performanceGain, 0);
-      const allRecommendations = successfulOptimizations.flatMap(result => result.recommendations);
+      const totalOptimizations = successfulOptimizations.flatMap((result) => result.optimizations);
+      const totalPerformanceGain = successfulOptimizations.reduce(
+        (sum, result) => sum + result.performanceGain,
+        0
+      );
+      const allRecommendations = successfulOptimizations.flatMap(
+        (result) => result.recommendations
+      );
 
       await comprehensiveLoggingService.info(
         'system',
@@ -461,26 +429,21 @@ export class IntegrationOrchestrator {
           integrationsOptimized: successfulOptimizations.length,
           totalOptimizations: totalOptimizations.length,
           totalPerformanceGain,
-          recommendations: allRecommendations.length
+          recommendations: allRecommendations.length,
         }
       );
 
       return {
         optimizations: totalOptimizations,
         performanceGain: totalPerformanceGain,
-        recommendations: allRecommendations
+        recommendations: allRecommendations,
       };
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'System performance optimization failed',
-        {
-          operation: 'performance_optimization_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
-      
+      await comprehensiveLoggingService.error('system', 'System performance optimization failed', {
+        operation: 'performance_optimization_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       throw error;
     }
   }
@@ -495,54 +458,43 @@ export class IntegrationOrchestrator {
     incidents: number;
   }> {
     try {
-      await comprehensiveLoggingService.info(
-        'system',
-        'Starting security audit',
-        { operation: 'security_audit' }
-      );
+      await comprehensiveLoggingService.info('system', 'Starting security audit', {
+        operation: 'security_audit',
+      });
 
       const securitySummary = advancedSecurityService.getSecuritySummary();
-      
+
       await advancedSecurityService.performSecurityScan();
       await advancedSecurityService.performVulnerabilityScan();
       await advancedSecurityService.performComplianceCheck();
 
-      const integrations = await integrationService.getIntegrations();
+      const integrations = await integrationService.getAllIntegrations();
       let totalIncidents = 0;
-      
+
       for (const integration of integrations) {
         const incidents = advancedSecurityService.getSecurityIncidents(integration.id);
         totalIncidents += incidents.length;
       }
 
-      await comprehensiveLoggingService.info(
-        'system',
-        'Security audit completed',
-        {
-          operation: 'security_audit_complete',
-          securityScore: securitySummary.complianceScore,
-          totalIncidents,
-          vulnerabilities: securitySummary.vulnerabilityCount
-        }
-      );
+      await comprehensiveLoggingService.info('system', 'Security audit completed', {
+        operation: 'security_audit_complete',
+        securityScore: securitySummary.complianceScore,
+        totalIncidents,
+        vulnerabilities: securitySummary.vulnerabilityCount,
+      });
 
       return {
         securityScore: securitySummary.complianceScore,
         vulnerabilities: [`${securitySummary.vulnerabilityCount} vulnerabilities found`],
         recommendations: ['Review and address all security issues'],
-        incidents: totalIncidents
+        incidents: totalIncidents,
       };
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Security audit failed',
-        {
-          operation: 'security_audit_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
-      
+      await comprehensiveLoggingService.error('system', 'Security audit failed', {
+        operation: 'security_audit_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       throw error;
     }
   }
@@ -558,69 +510,60 @@ export class IntegrationOrchestrator {
     recommendations: string[];
   }> {
     try {
-      await comprehensiveLoggingService.info(
-        'system',
-        'Generating comprehensive system report',
-        { operation: 'system_report_generation' }
-      );
+      await comprehensiveLoggingService.info('system', 'Generating comprehensive system report', {
+        operation: 'system_report_generation',
+      });
 
-      const [status, performanceOptimization, securityAudit, qualityValidation] = await Promise.allSettled([
-        this.getSystemStatus(),
-        this.optimizeSystemPerformance(),
-        this.performSecurityAudit(),
-        this.validateProductionReadiness()
-      ]);
+      const [status, performanceOptimization, securityAudit, qualityValidation] =
+        await Promise.allSettled([
+          this.getSystemStatus(),
+          this.optimizeSystemPerformance(),
+          this.performSecurityAudit(),
+          this.validateProductionReadiness(),
+        ]);
 
       const systemStatus = status.status === 'fulfilled' ? status.value : null;
-      const performance = performanceOptimization.status === 'fulfilled' ? performanceOptimization.value : null;
+      const performance =
+        performanceOptimization.status === 'fulfilled' ? performanceOptimization.value : null;
       const security = securityAudit.status === 'fulfilled' ? securityAudit.value : null;
       const quality = qualityValidation.status === 'fulfilled' ? qualityValidation.value : null;
 
       const recommendations: string[] = [];
-      
+
       if (performance) {
         recommendations.push(...performance.recommendations);
       }
-      
+
       if (security) {
         recommendations.push(...security.recommendations);
       }
-      
+
       if (quality) {
         recommendations.push(...quality.recommendations);
       }
 
-      await comprehensiveLoggingService.info(
-        'system',
-        'Comprehensive system report generated',
-        {
-          operation: 'system_report_complete',
-          statusHealthy: systemStatus?.health.overall || 0,
-          performanceGain: performance?.performanceGain || 0,
-          securityScore: security?.securityScore || 0,
-          qualityScore: quality?.overallScore || 0,
-          totalRecommendations: recommendations.length
-        }
-      );
+      await comprehensiveLoggingService.info('system', 'Comprehensive system report generated', {
+        operation: 'system_report_complete',
+        statusHealthy: systemStatus?.health.overall || 0,
+        performanceGain: performance?.performanceGain || 0,
+        securityScore: security?.securityScore || 0,
+        qualityScore: quality?.overallScore || 0,
+        totalRecommendations: recommendations.length,
+      });
 
       return {
         status: systemStatus,
         performance,
         security,
         quality,
-        recommendations: [...new Set(recommendations)] // Remove duplicates
+        recommendations: [...new Set(recommendations)], // Remove duplicates
       };
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Failed to generate system report',
-        {
-          operation: 'system_report_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
-      
+      await comprehensiveLoggingService.error('system', 'Failed to generate system report', {
+        operation: 'system_report_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       throw error;
     }
   }
@@ -630,11 +573,9 @@ export class IntegrationOrchestrator {
    */
   async shutdown(): Promise<void> {
     try {
-      await comprehensiveLoggingService.info(
-        'system',
-        'Shutting down Integration Orchestrator',
-        { operation: 'orchestrator_shutdown' }
-      );
+      await comprehensiveLoggingService.info('system', 'Shutting down Integration Orchestrator', {
+        operation: 'orchestrator_shutdown',
+      });
 
       // Stop timers
       if (this.orchestrationTimer) {
@@ -658,16 +599,11 @@ export class IntegrationOrchestrator {
         'Integration Orchestrator shutdown completed',
         { operation: 'orchestrator_shutdown_complete' }
       );
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Error during orchestrator shutdown',
-        {
-          operation: 'orchestrator_shutdown_error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error('system', 'Error during orchestrator shutdown', {
+        operation: 'orchestrator_shutdown_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 }
