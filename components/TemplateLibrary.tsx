@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ContentTemplate, TemplateSection, TemplateField } from '../types';
 import { apiService } from '../services/clientApiService';
-import { Star, Search, Filter, Eye, Edit, Copy, Trash2, Plus } from '../constants';
+import { Star, Search, Filter, Eye, Edit, Copy, Trash2, Plus } from 'lucide-react';
 
 interface TemplateLibraryProps {
   isOpen: boolean;
