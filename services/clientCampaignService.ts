@@ -134,24 +134,14 @@ export class CampaignService {
    * Gets campaign metrics
    */
   async getCampaignMetrics(userId: string, campaignId: string): Promise<CampaignMetrics> {
-    try {
-      // For now, return mock metrics
-      // In a full implementation, this would calculate real metrics
-      return {
-        totalReach: 0,
-        totalEngagement: 0,
-        totalClicks: 0,
-        avgEngagementRate: 0,
-        platformMetrics: {},
-        topPerformingPosts: [],
-        engagementTrends: [],
-        audienceGrowth: 0,
-        conversionRate: 0,
-      };
-    } catch (error) {
-      console.error('Error fetching campaign metrics:', error);
-      throw new Error('Failed to fetch campaign metrics');
-    }
+    // For now, return minimal structure matching CampaignMetrics
+    // In a full implementation, this would aggregate real metrics from analytics
+    return {
+      totalPosts: 0,
+      totalEngagement: 0,
+      avgEngagementRate: 0,
+      platformPerformance: {},
+    };
   }
 
   /**
