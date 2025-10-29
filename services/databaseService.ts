@@ -131,7 +131,7 @@ export const db = {
     try {
       // For now, use a simplified approach without dynamic query building
       // This can be enhanced later with proper postgres library dynamic queries
-      
+
       // Get total count
       const countResult = await pool`
         SELECT COUNT(*) FROM posts WHERE user_id = ${userId}
@@ -159,7 +159,9 @@ export const db = {
           LIMIT ${Math.min(1000, totalCount)}
         `;
 
-        const fullPosts = fullData.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
+        const fullPosts = fullData.map((row: any) =>
+          transformDatabasePostToPost(row as DatabasePost)
+        );
         paginationCache.set(cacheKey, fullPosts, totalCount);
       }
 
@@ -295,7 +297,9 @@ export const db = {
           ORDER BY created_at DESC
         `;
 
-        return result.map((row: any) => transformDatabaseBrandVoiceToBrandVoice(row as DatabaseBrandVoice));
+        return result.map((row: any) =>
+          transformDatabaseBrandVoiceToBrandVoice(row as DatabaseBrandVoice)
+        );
       } catch (error) {
         console.error('Error fetching brand voices:', error);
         throw error;
@@ -332,7 +336,9 @@ export const db = {
   ): Promise<BrandVoice> => {
     try {
       const vocabularyJson = updates.vocabulary ? JSON.stringify(updates.vocabulary) : null;
-      const sampleContentJson = updates.sample_content ? JSON.stringify(updates.sample_content) : null;
+      const sampleContentJson = updates.sample_content
+        ? JSON.stringify(updates.sample_content)
+        : null;
 
       const result = await pool`
         UPDATE brand_voices
@@ -383,7 +389,9 @@ export const db = {
         ORDER BY created_at DESC
       `;
 
-      return result.map((row: any) => transformDatabaseAudienceProfileToAudienceProfile(row as DatabaseAudienceProfile));
+      return result.map((row: any) =>
+        transformDatabaseAudienceProfileToAudienceProfile(row as DatabaseAudienceProfile)
+      );
     } catch (error) {
       console.error('Error fetching audience profiles:', error);
       throw error;
@@ -410,7 +418,9 @@ export const db = {
         ) RETURNING *
       `;
 
-      return transformDatabaseAudienceProfileToAudienceProfile(result[0] as DatabaseAudienceProfile);
+      return transformDatabaseAudienceProfileToAudienceProfile(
+        result[0] as DatabaseAudienceProfile
+      );
     } catch (error) {
       console.error('Error adding audience profile:', error);
       throw error;
@@ -425,8 +435,12 @@ export const db = {
     try {
       const interestsJson = updates.interests ? JSON.stringify(updates.interests) : null;
       const painPointsJson = updates.pain_points ? JSON.stringify(updates.pain_points) : null;
-      const preferredContentTypesJson = updates.preferred_content_types ? JSON.stringify(updates.preferred_content_types) : null;
-      const engagementPatternsJson = updates.engagement_patterns ? JSON.stringify(updates.engagement_patterns) : null;
+      const preferredContentTypesJson = updates.preferred_content_types
+        ? JSON.stringify(updates.preferred_content_types)
+        : null;
+      const engagementPatternsJson = updates.engagement_patterns
+        ? JSON.stringify(updates.engagement_patterns)
+        : null;
 
       const result = await pool`
         UPDATE audience_profiles
@@ -446,7 +460,9 @@ export const db = {
         throw new Error('Audience profile not found or access denied');
       }
 
-      return transformDatabaseAudienceProfileToAudienceProfile(result[0] as DatabaseAudienceProfile);
+      return transformDatabaseAudienceProfileToAudienceProfile(
+        result[0] as DatabaseAudienceProfile
+      );
     } catch (error) {
       console.error('Error updating audience profile:', error);
       throw error;
@@ -581,7 +597,9 @@ export const db = {
           ORDER BY created_at DESC
         `;
       }
-      return result.map((row: any) => transformDatabaseIntegrationAlertToIntegrationAlert(row as DatabaseIntegrationAlert));
+      return result.map((row: any) =>
+        transformDatabaseIntegrationAlertToIntegrationAlert(row as DatabaseIntegrationAlert)
+      );
     } catch (error) {
       console.error('Error fetching integration alerts:', error);
       throw error;
@@ -601,7 +619,9 @@ export const db = {
         LIMIT ${limit}
       `;
 
-      return result.map((row: any) => transformDatabaseIntegrationLogToIntegrationLog(row as DatabaseIntegrationLog));
+      return result.map((row: any) =>
+        transformDatabaseIntegrationLogToIntegrationLog(row as DatabaseIntegrationLog)
+      );
     } catch (error) {
       console.error('Error fetching integration logs:', error);
       throw error;
@@ -638,9 +658,29 @@ export const db = {
         ORDER BY recorded_at DESC
       `;
 
-      return result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
+      return result.map((row: any) =>
+        transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData)
+      );
     } catch (error) {
       console.error('Error fetching post analytics:', error);
+      throw error;
+    }
+  },
+
+  // Get analytics between dates
+  getAnalyticsByTimeframe: async (startDate: Date, endDate: Date): Promise<AnalyticsData[]> => {
+    try {
+      const result = await pool`
+        SELECT * FROM post_analytics
+        WHERE recorded_at >= ${startDate.toISOString()} AND recorded_at <= ${endDate.toISOString()}
+        ORDER BY recorded_at DESC
+      `;
+
+      return result.map((row: any) =>
+        transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData)
+      );
+    } catch (error) {
+      console.error('Error fetching analytics by timeframe:', error);
       throw error;
     }
   },
@@ -654,7 +694,9 @@ export const db = {
         ORDER BY created_at DESC
       `;
 
-      return result.map((row: any) => transformDatabaseIntegrationToIntegration(row as DatabaseIntegration));
+      return result.map((row: any) =>
+        transformDatabaseIntegrationToIntegration(row as DatabaseIntegration)
+      );
     } catch (error) {
       console.error('Error fetching integrations:', error);
       throw error;
@@ -694,7 +736,9 @@ export const db = {
   ): Promise<Integration> => {
     try {
       const credentialsJson = updates.credentials ? JSON.stringify(updates.credentials) : null;
-      const configurationJson = updates.configuration ? JSON.stringify(updates.configuration) : null;
+      const configurationJson = updates.configuration
+        ? JSON.stringify(updates.configuration)
+        : null;
 
       const result = await pool`
         UPDATE integrations
