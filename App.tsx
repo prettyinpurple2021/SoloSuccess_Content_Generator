@@ -44,6 +44,8 @@ import CalendarView from './components/CalendarView';
 import IntegrationManager from './components/IntegrationManager';
 import RepurposingWorkflow from './components/RepurposingWorkflow';
 import ImageStyleManager from './components/ImageStyleManager';
+import ContentSeriesManager from './components/ContentSeriesManager';
+import TemplateLibrary from './components/TemplateLibrary';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { PerformanceInsights } from './components/PerformanceInsights';
 import DragDropContentBuilder from './components/DragDropContentBuilder';
@@ -182,9 +184,10 @@ const App: React.FC = () => {
       setErrorMessage('');
       try {
         await fn(...args);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(`Error in ${key}:`, error);
-        setErrorMessage(error.message || 'An unexpected error occurred.');
+        const message = error instanceof Error ? error.message : 'An unexpected error occurred.';
+        setErrorMessage(message);
       } finally {
         setIsLoading((prev) => ({ ...prev, [key]: false }));
       }
@@ -192,14 +195,14 @@ const App: React.FC = () => {
   };
 
   // Enhanced error handling for new features
-  const handleEnhancedFeatureError = (error: any, feature: string) => {
+  const handleEnhancedFeatureError = (error: unknown, feature: string) => {
     console.error(`Enhanced feature error in ${feature}:`, error);
     const userFriendlyMessage = getEnhancedFeatureErrorMessage(error, feature);
     setErrorMessage(userFriendlyMessage);
   };
 
-  const getEnhancedFeatureErrorMessage = (error: any, feature: string): string => {
-    const baseMessage = error.message || 'An unexpected error occurred';
+  const getEnhancedFeatureErrorMessage = (error: unknown, feature: string): string => {
+    const baseMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
 
     switch (feature) {
       case 'brandVoice':
@@ -224,10 +227,15 @@ const App: React.FC = () => {
     if (stackUser !== undefined) {
       if (stackUser) {
         // Convert Stack user to our User type
+        const raw = stackUser as unknown as {
+          primaryEmail?: string;
+          email?: string;
+          displayName?: string;
+        };
         const convertedUser: User = {
           id: stackUser.id,
-          email: (stackUser as any).primaryEmail || (stackUser as any).email || '',
-          name: (stackUser as any).displayName || undefined,
+          email: raw.primaryEmail ?? raw.email ?? '',
+          name: raw.displayName || undefined,
         };
         console.log('✅ Stack user authenticated:', convertedUser.id);
         setUser(convertedUser);
@@ -250,7 +258,7 @@ const App: React.FC = () => {
             setBloggerBlogs(blogs);
             if (blogs.length > 0) setSelectedBlogId(blogs[0].id);
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Blogger integration error:', error);
           setErrorMessage('Could not initialize Blogger integration. Ensure API keys are correct.');
         }
@@ -301,8 +309,9 @@ const App: React.FC = () => {
         if (profiles.length > 0 && !selectedAudienceProfile) {
           setSelectedAudienceProfile(profiles[0]);
         }
-      } catch (error: any) {
-        setErrorMessage(`Failed to load data: ${error.message}`);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : 'Unknown error';
+        setErrorMessage(`Failed to load data: ${msg}`);
       }
     };
 
@@ -425,11 +434,7 @@ const App: React.FC = () => {
     }
 
     // Enhanced content generation with personalization
-    const generationOptions = {
-      brandVoice: selectedBrandVoice,
-      audienceProfile: selectedAudienceProfile,
-      template: selectedTemplate,
-    };
+    // Personalization values are passed into the AI generation calls below
 
     const postContent = await geminiService.generatePersonalizedContent(
       idea,
@@ -472,6 +477,15 @@ const App: React.FC = () => {
     setHeadlines(results);
   });
 
+  type GeminiSocialClient = {
+    generateSocialMediaPost?: (
+      topic: string,
+      platform: string,
+      tone: string,
+      length: number
+    ) => Promise<{ content: string }>;
+  };
+
   const handleGenerateSocialPost = async (platform: string) => {
     const key = `social-${platform}`;
     setIsLoading((prev) => ({ ...prev, [key]: true }));
@@ -484,11 +498,10 @@ const App: React.FC = () => {
 
       const config = PLATFORM_CONFIG[platform];
       const length = config?.charLimit || 200;
+      const gemini = geminiService as unknown as GeminiSocialClient;
       const result = await (async () => {
-        // prefer OpenAI client if available in your integrations; fallback to geminiService wrapper
-        if ((geminiService as any).generateSocialMediaPost) {
-          // keep compatibility if wrapper exists with 4 args
-          return await (geminiService as any).generateSocialMediaPost(
+        if (gemini.generateSocialMediaPost) {
+          return await gemini.generateSocialMediaPost(
             currentBlogTopic || selectedIdea || 'Social post',
             platform,
             tone,
@@ -497,7 +510,7 @@ const App: React.FC = () => {
         }
         return { content: '' };
       })();
-      const post = (result as any).content || '';
+      const post = result.content || '';
       setSocialMediaPosts((prev) => ({ ...prev, [platform]: post }));
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -511,18 +524,20 @@ const App: React.FC = () => {
   const handleGenerateAllSocialPosts = withLoading('socialAll', async () => {
     // personalization used via generatePersonalizedContent elsewhere
 
+    const gemini = geminiService as unknown as GeminiSocialClient;
     const promises = PLATFORMS.map(async (platform) => {
       const tone = socialMediaTones[platform] || TONES[0];
       const config = PLATFORM_CONFIG[platform];
       const length = config?.charLimit || 200;
       try {
-        const res = await (geminiService as any).generateSocialMediaPost(
+        if (!gemini.generateSocialMediaPost) throw new Error('Social generation unavailable');
+        const res = await gemini.generateSocialMediaPost(
           currentBlogTopic || selectedIdea || 'Social post',
           platform,
           tone,
           length
         );
-        return { platform, post: (res as any).content || '' };
+        return { platform, post: res.content || '' };
       } catch (error) {
         console.error(`Error generating for ${platform} in 'All' mode:`, error);
         return { platform, post: `Error: Could not generate content for ${platform}.` };
@@ -613,7 +628,7 @@ const App: React.FC = () => {
           recommendations: [],
         };
         setPerformanceReport(report);
-      } catch (error: any) {
+      } catch (error: unknown) {
         handleEnhancedFeatureError(error, 'analytics');
       }
     }
@@ -626,7 +641,7 @@ const App: React.FC = () => {
       // For now, we'll create placeholder suggestions
       const suggestions: SchedulingSuggestion[] = [];
       setSchedulingSuggestions(suggestions);
-    } catch (error: any) {
+    } catch (error: unknown) {
       handleEnhancedFeatureError(error, 'scheduling');
     }
   });
@@ -719,10 +734,12 @@ const App: React.FC = () => {
     };
 
     if (editingPostId) {
-      await clientApi.updatePost(user.id, editingPostId, post as any);
+      type PostUpsert = Partial<Post>;
+      await clientApi.updatePost(user.id, editingPostId, post as PostUpsert);
       setSuccessMessage('Draft updated successfully!');
     } else {
-      await clientApi.addPost(user.id, post as any);
+      type PostUpsert = Partial<Post>;
+      await clientApi.addPost(user.id, post as PostUpsert);
       setSuccessMessage('Draft saved successfully!');
 
       // Track post creation for gamification
@@ -782,10 +799,12 @@ const App: React.FC = () => {
     };
 
     if (editingPostId) {
-      await clientApi.updatePost(user.id, editingPostId, post as any);
+      type PostUpsert = Partial<Post>;
+      await clientApi.updatePost(user.id, editingPostId, post as PostUpsert);
       setSuccessMessage('Post rescheduled successfully!');
     } else {
-      await clientApi.addPost(user.id, post as any);
+      type PostUpsert = Partial<Post>;
+      await clientApi.addPost(user.id, post as PostUpsert);
       setSuccessMessage('Post scheduled successfully!');
 
       // Track post scheduling for gamification
@@ -1885,8 +1904,8 @@ const App: React.FC = () => {
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground">
-                          Click "Get Suggestions" to see optimal posting times based on your
-                          audience engagement patterns.
+                          Click &quot;Get Suggestions&quot; to see optimal posting times based on
+                          your audience engagement patterns.
                         </p>
                       )}
                     </div>
@@ -2051,9 +2070,8 @@ const App: React.FC = () => {
                 onPostClick={handlePostClick}
                 onPostReschedule={async (postId, newDate) => {
                   if (!user) return;
-                  await clientApi.updatePost(user.id, postId, {
-                    schedule_date: newDate.toISOString(),
-                  } as any);
+                  const update: Partial<Post> = { scheduleDate: newDate };
+                  await clientApi.updatePost(user.id, postId, update);
                   setAllScheduledPosts((prev) =>
                     prev.map((p) => (p.id === postId ? { ...p, scheduleDate: newDate } : p))
                   );
@@ -2216,6 +2234,7 @@ const App: React.FC = () => {
           onClose={() => setShowImageStyleManager(false)}
           onSuccess={setSuccessMessage}
           onError={setErrorMessage}
+          userId={user?.id || ''}
         />
       )}
 
@@ -2281,42 +2300,36 @@ const App: React.FC = () => {
 
       {/* Content Series Manager Modal */}
       {showContentSeriesManager && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl p-6 w-full max-w-4xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-white">Content Series Manager</h2>
-              <button
-                onClick={() => setShowContentSeriesManager(false)}
-                className="text-white/60 hover:text-white text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <p className="text-white/60 text-center py-8">
-              Content Series Manager component will be implemented in a future task.
-            </p>
-          </div>
-        </div>
+        <ContentSeriesManager
+          isOpen={showContentSeriesManager}
+          onClose={() => setShowContentSeriesManager(false)}
+          posts={allScheduledPosts}
+          campaigns={campaigns}
+          onPostUpdate={(updated) => {
+            setAllScheduledPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+          }}
+        />
       )}
 
       {/* Template Library Modal */}
-      {showTemplateLibrary && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-2xl p-6 w-full max-w-4xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-white">Template Library</h2>
-              <button
-                onClick={() => setShowTemplateLibrary(false)}
-                className="text-white/60 hover:text-white text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <p className="text-white/60 text-center py-8">
-              Template Library component will be implemented in a future task.
-            </p>
-          </div>
-        </div>
+      {showTemplateLibrary && user && (
+        <TemplateLibrary
+          isOpen={showTemplateLibrary}
+          onClose={() => setShowTemplateLibrary(false)}
+          onSelectTemplate={(template) => {
+            setSelectedTemplate(template);
+            setSuccessMessage(`Template "${template.name}" selected for content generation.`);
+          }}
+          onEditTemplate={(template) => {
+            setSelectedTemplate(template);
+            setShowTemplateLibrary(false);
+          }}
+          onCreateNew={() => {
+            setShowTemplateLibrary(false);
+            setSuccessMessage('Template creation coming up...');
+          }}
+          userId={user.id}
+        />
       )}
 
       {/* Analytics Dashboard Modal */}
@@ -2408,7 +2421,8 @@ const App: React.FC = () => {
                     ))}
                     {brandVoices.length === 0 && (
                       <p className="text-white/60 text-center py-4">
-                        No brand voices created yet. Click "Manage" to create your first one.
+                        No brand voices created yet. Click &quot;Manage&quot; to create your first
+                        one.
                       </p>
                     )}
                   </div>
@@ -2450,7 +2464,8 @@ const App: React.FC = () => {
                     ))}
                     {audienceProfiles.length === 0 && (
                       <p className="text-white/60 text-center py-4">
-                        No audience profiles created yet. Click "Manage" to create your first one.
+                        No audience profiles created yet. Click &quot;Manage&quot; to create your
+                        first one.
                       </p>
                     )}
                   </div>
@@ -2511,7 +2526,7 @@ const App: React.FC = () => {
                     ))}
                     {campaigns.length === 0 && (
                       <p className="text-white/60 text-center py-4">
-                        No campaigns created yet. Click "Manage" to create your first one.
+                        No campaigns created yet. Click &quot;Manage&quot; to create your first one.
                       </p>
                     )}
                   </div>
@@ -2564,7 +2579,8 @@ const App: React.FC = () => {
                     ))}
                     {contentSeries.length === 0 && (
                       <p className="text-white/60 text-center py-4">
-                        No content series created yet. Click "Manage" to create your first one.
+                        No content series created yet. Click &quot;Manage&quot; to create your first
+                        one.
                       </p>
                     )}
                   </div>
@@ -2627,7 +2643,7 @@ const App: React.FC = () => {
                     </div>
                   ) : (
                     <p className="text-white/60 text-center py-8">
-                      Click "Generate Report" to see your content performance analytics.
+                      Click &quot;Generate Report&quot; to see your content performance analytics.
                     </p>
                   )}
                 </div>
@@ -2675,7 +2691,8 @@ const App: React.FC = () => {
                   ))}
                   {contentTemplates.length === 0 && (
                     <div className="col-span-full text-white/60 text-center py-8">
-                      No templates available yet. Click "Browse Library" to explore templates.
+                      No templates available yet. Click &quot;Browse Library&quot; to explore
+                      templates.
                     </div>
                   )}
                 </div>
@@ -2721,8 +2738,8 @@ const App: React.FC = () => {
                   </div>
                 ) : (
                   <p className="text-white/60 text-center py-8">
-                    Click "Get Suggestions" to see optimal posting times based on your audience
-                    engagement patterns.
+                    Click &quot;Get Suggestions&quot; to see optimal posting times based on your
+                    audience engagement patterns.
                   </p>
                 )}
               </div>

@@ -7,9 +7,15 @@ interface ImageStyleManagerProps {
   onClose: () => void;
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
+  userId: string;
 }
 
-const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({ onClose, onSuccess, onError }) => {
+const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
+  onClose,
+  onSuccess,
+  onError,
+  userId,
+}) => {
   const [imageStyles, setImageStyles] = useState<ImageStyle[]>([]);
   const [isLoading, setIsLoading] = useState<LoadingState>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -26,14 +32,14 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({ onClose, onSucces
     brandAssets: [] as BrandAsset[],
   });
 
-  const withLoading = <T extends any[]>(key: string, fn: (...args: T) => Promise<void>) => {
+  const withLoading = <T extends unknown[]>(key: string, fn: (...args: T) => Promise<void>) => {
     return async (...args: T) => {
       setIsLoading((prev) => ({ ...prev, [key]: true }));
       try {
         await fn(...args);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(`Error in ${key}:`, error);
-        onError(error.message || 'An unexpected error occurred.');
+        onError(error instanceof Error ? error.message : 'An unexpected error occurred.');
       } finally {
         setIsLoading((prev) => ({ ...prev, [key]: false }));
       }
@@ -41,7 +47,7 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({ onClose, onSucces
   };
 
   const loadImageStyles = withLoading('loadStyles', async () => {
-    const styles = await db.getImageStyles();
+    const styles = await apiService.getImageStyles(userId);
     setImageStyles(styles);
   });
 
@@ -51,12 +57,12 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({ onClose, onSucces
       return;
     }
 
-    const newStyle = await db.addImageStyle({
+    const newStyle = await apiService.addImageStyle(userId, {
       name: formData.name,
-      style_prompt: formData.stylePrompt,
-      color_palette: formData.colorPalette.filter((color) => color.trim()),
-      visual_elements: formData.visualElements.filter((element) => element.trim()),
-      brand_assets: formData.brandAssets,
+      stylePrompt: formData.stylePrompt,
+      colorPalette: formData.colorPalette.filter((color) => color.trim()),
+      visualElements: formData.visualElements.filter((element) => element.trim()),
+      brandAssets: formData.brandAssets,
     });
 
     setImageStyles((prev) => [newStyle, ...prev]);
@@ -71,12 +77,12 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({ onClose, onSucces
       return;
     }
 
-    const updatedStyle = await db.updateImageStyle(editingStyle.id, {
+    const updatedStyle = await apiService.updateImageStyle(userId, editingStyle.id, {
       name: formData.name,
-      style_prompt: formData.stylePrompt,
-      color_palette: formData.colorPalette.filter((color) => color.trim()),
-      visual_elements: formData.visualElements.filter((element) => element.trim()),
-      brand_assets: formData.brandAssets,
+      stylePrompt: formData.stylePrompt,
+      colorPalette: formData.colorPalette.filter((color) => color.trim()),
+      visualElements: formData.visualElements.filter((element) => element.trim()),
+      brandAssets: formData.brandAssets,
     });
 
     setImageStyles((prev) =>
@@ -89,7 +95,7 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({ onClose, onSucces
   });
 
   const handleDeleteStyle = withLoading('deleteStyle', async (styleId: string) => {
-    await db.deleteImageStyle(styleId);
+    await apiService.deleteImageStyle(userId, styleId);
     setImageStyles((prev) => prev.filter((style) => style.id !== styleId));
     onSuccess('Image style deleted successfully!');
   });

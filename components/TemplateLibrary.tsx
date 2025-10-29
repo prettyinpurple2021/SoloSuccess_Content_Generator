@@ -9,6 +9,7 @@ interface TemplateLibraryProps {
   onSelectTemplate: (template: ContentTemplate) => void;
   onEditTemplate: (template: ContentTemplate) => void;
   onCreateNew: () => void;
+  userId: string;
 }
 
 export default function TemplateLibrary({
@@ -17,6 +18,7 @@ export default function TemplateLibrary({
   onSelectTemplate,
   onEditTemplate,
   onCreateNew,
+  userId,
 }: TemplateLibraryProps) {
   const [templates, setTemplates] = useState<ContentTemplate[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<ContentTemplate[]>([]);
@@ -45,7 +47,7 @@ export default function TemplateLibrary({
     setLoading(true);
     setError(null);
     try {
-      const templatesData = await db.getContentTemplates();
+      const templatesData = await apiService.getContentTemplates(userId);
       setTemplates(templatesData);
     } catch (err) {
       setError('Failed to load templates. Please try again.');
@@ -105,8 +107,8 @@ export default function TemplateLibrary({
   const handleUseTemplate = async (template: ContentTemplate) => {
     try {
       // Increment usage count
-      await db.updateContentTemplate(template.id, {
-        usage_count: template.usageCount + 1,
+      await apiService.updateTemplate(userId, template.id, {
+        usageCount: template.usageCount + 1,
       });
 
       // Update local state
@@ -128,7 +130,7 @@ export default function TemplateLibrary({
     }
 
     try {
-      await db.deleteContentTemplate(template.id);
+      await apiService.deleteTemplate(userId, template.id);
       setTemplates((prev) => prev.filter((t) => t.id !== template.id));
     } catch (err) {
       setError('Failed to delete template. Please try again.');
@@ -142,15 +144,18 @@ export default function TemplateLibrary({
         name: `${template.name} (Copy)`,
         category: template.category,
         industry: template.industry,
-        content_type: template.contentType,
+        contentType: template.contentType,
         structure: template.structure,
-        customizable_fields: template.customizableFields,
-        usage_count: 0,
+        customizableFields: template.customizableFields,
+        usageCount: 0,
         rating: 0,
-        is_public: false,
+        isPublic: false,
       };
 
-      const newTemplate = await db.addContentTemplate(duplicatedTemplate);
+      const newTemplate = await apiService.addTemplate(
+        userId,
+        duplicatedTemplate as Omit<ContentTemplate, 'id' | 'createdAt' | 'updatedAt'>
+      );
       setTemplates((prev) => [newTemplate, ...prev]);
     } catch (err) {
       setError('Failed to duplicate template. Please try again.');
