@@ -230,9 +230,9 @@ export class MonitoringService {
   async getIntegrations(): Promise<any[]> {
     try {
       // Delegate to database service; tests may stub this
-      // @ts-expect-error: underlying db may expose getIntegrations
+      // @ts-expect-error - dynamic db shim may expose getIntegrations
       if (typeof (db as any).getIntegrations === 'function') {
-        // @ts-expect-error
+        // @ts-expect-error - invoking optional method on dynamic db shim
         return await (db as any).getIntegrations();
       }
     } catch {

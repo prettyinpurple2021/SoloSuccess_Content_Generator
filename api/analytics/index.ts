@@ -1,13 +1,25 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { db } from '../../services/databaseService';
+
+interface ApiRequest {
+  method?: string;
+  query: Record<string, string | string[] | undefined>;
+  body?: unknown;
+}
+
+interface ApiResponse {
+  status: (code: number) => ApiResponse;
+  json: (data: unknown) => void;
+  end: () => void;
+  setHeader: (name: string, value: string) => void;
+}
 
 const querySchema = z.object({
   start: z.string().optional(),
   end: z.string().optional(),
 });
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
     if (req.method === 'GET') {
       const q = querySchema.parse(req.query);

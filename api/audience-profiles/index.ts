@@ -1,51 +1,81 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { db } from '../../services/databaseService';
 
+interface ApiRequest {
+  method?: string;
+  query: Record<string, string | string[] | undefined>;
+  body?: unknown;
+}
+
+interface ApiResponse {
+  status: (code: number) => ApiResponse;
+  json: (data: unknown) => void;
+  end: () => void;
+  setHeader: (name: string, value: string) => void;
+}
+
+// Shape must match DatabaseAudienceProfile (see types.ts)
 const createSchema = z.object({
   userId: z.string().min(1),
   name: z.string().min(1),
-  demographics: z.record(z.any()).default({}),
+  age_range: z.string().default(''),
+  industry: z.string().default(''),
   interests: z.array(z.string()).default([]),
-  behaviors: z.record(z.any()).default({}),
   pain_points: z.array(z.string()).default([]),
-  preferred_content: z.array(z.string()).default([]),
+  preferred_content_types: z.array(z.string()).default([]),
+  engagement_patterns: z.record(z.any()).default({}),
 });
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
-    const id = req.query.id ? z.string().min(1).parse(req.query.id) : undefined;
+    const id = req.query.id
+      ? z
+          .string()
+          .min(1)
+          .parse(req.query.id as string)
+      : undefined;
     if (req.method === 'GET') {
-      const userId = z.string().min(1).parse(req.query.userId);
+      const userId = z
+        .string()
+        .min(1)
+        .parse(req.query.userId as string);
       const items = await db.getAudienceProfiles(userId);
       return res.status(200).json(items);
     }
 
     if (req.method === 'POST') {
       const data = createSchema.parse(req.body);
-      const created = await db.addAudienceProfile({
-        name: data.name,
-        demographics: data.demographics,
-        interests: data.interests,
-        behaviors: data.behaviors,
-        pain_points: data.pain_points,
-        preferred_content: data.preferred_content,
-      }, data.userId);
+      const created = await db.addAudienceProfile(
+        {
+          name: data.name,
+          age_range: data.age_range,
+          industry: data.industry,
+          interests: data.interests,
+          pain_points: data.pain_points,
+          preferred_content_types: data.preferred_content_types,
+          engagement_patterns: data.engagement_patterns,
+        },
+        data.userId
+      );
       return res.status(201).json(created);
     }
 
     if (req.method === 'PUT' && id) {
-      const updateSchema = z.object({
-        userId: z.string().min(1),
-        name: z.string().optional(),
-        demographics: z.record(z.any()).optional(),
-        interests: z.array(z.string()).optional(),
-        behaviors: z.record(z.any()).optional(),
-        pain_points: z.array(z.string()).optional(),
-        preferred_content: z.array(z.string()).optional(),
-      });
+      const updateSchema = createSchema.partial().extend({ userId: z.string().min(1) });
       const data = updateSchema.parse(req.body);
-      const updated = await db.updateAudienceProfile(id, data, data.userId);
+      const updated = await db.updateAudienceProfile(
+        id,
+        {
+          name: data.name,
+          age_range: data.age_range,
+          industry: data.industry,
+          interests: data.interests,
+          pain_points: data.pain_points,
+          preferred_content_types: data.preferred_content_types,
+          engagement_patterns: data.engagement_patterns,
+        },
+        data.userId
+      );
       return res.status(200).json(updated);
     }
 
@@ -62,5 +92,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
-
-
