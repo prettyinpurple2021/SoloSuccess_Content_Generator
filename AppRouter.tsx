@@ -63,10 +63,18 @@ const PublicRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 };
 
 const AppRouter: React.FC = () => {
+  const authUser = useUser();
+  const authState =
+    authUser === undefined ? 'loading' : authUser ? 'authenticated' : 'unauthenticated';
+
   return (
     <StackProvider app={stackServerApp}>
       <StackTheme>
         <Router>
+          {/* TEMP DEBUG BANNER - remove after diagnosing */}
+          <div className="fixed top-2 left-2 z-[1000] text-xs bg-black/60 text-white px-2 py-1 rounded">
+            Auth: {authState}
+          </div>
           <Routes>
             {/* Public Routes */}
             <Route
