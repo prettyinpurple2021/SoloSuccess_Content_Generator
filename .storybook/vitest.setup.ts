@@ -1,5 +1,6 @@
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
-import { setProjectAnnotations } from '@storybook/react'; // Changed from '@storybook/testing-react' to '@storybook/react'
+// @ts-expect-error - provided by Storybook framework package at runtime in v10
+import { setProjectAnnotations } from '@storybook/react';
 import * as projectAnnotations from './preview';
 
 // This is an important step to apply the right configuration when testing your stories.
