@@ -33,7 +33,7 @@ export const apiService = {
 
   async updatePost(userId: string, postId: string, updates: any) {
     try {
-      const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+      const response = await fetch(`${API_BASE_URL}/posts?id=${encodeURIComponent(postId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...updates, userId }),
@@ -48,7 +48,7 @@ export const apiService = {
 
   async deletePost(userId: string, postId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+      const response = await fetch(`${API_BASE_URL}/posts?id=${encodeURIComponent(postId)}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -90,7 +90,7 @@ export const apiService = {
 
   async updateBrandVoice(userId: string, brandVoiceId: string, updates: any) {
     try {
-      const response = await fetch(`${API_BASE_URL}/brand-voices/${brandVoiceId}`, {
+      const response = await fetch(`${API_BASE_URL}/brand-voices?id=${encodeURIComponent(brandVoiceId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...updates, userId }),
@@ -105,7 +105,7 @@ export const apiService = {
 
   async deleteBrandVoice(userId: string, brandVoiceId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/brand-voices/${brandVoiceId}`, {
+      const response = await fetch(`${API_BASE_URL}/brand-voices?id=${encodeURIComponent(brandVoiceId)}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -147,7 +147,7 @@ export const apiService = {
 
   async updateAudienceProfile(userId: string, profileId: string, updates: any) {
     try {
-      const response = await fetch(`${API_BASE_URL}/audience-profiles/${profileId}`, {
+      const response = await fetch(`${API_BASE_URL}/audience-profiles?id=${encodeURIComponent(profileId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...updates, userId }),
@@ -162,7 +162,7 @@ export const apiService = {
 
   async deleteAudienceProfile(userId: string, profileId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/audience-profiles/${profileId}`, {
+      const response = await fetch(`${API_BASE_URL}/audience-profiles?id=${encodeURIComponent(profileId)}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -204,7 +204,7 @@ export const apiService = {
 
   async updateCampaign(userId: string, campaignId: string, updates: any) {
     try {
-      const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}`, {
+      const response = await fetch(`${API_BASE_URL}/campaigns?id=${encodeURIComponent(campaignId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...updates, userId }),
@@ -219,7 +219,7 @@ export const apiService = {
 
   async deleteCampaign(userId: string, campaignId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}`, {
+      const response = await fetch(`${API_BASE_URL}/campaigns?id=${encodeURIComponent(campaignId)}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -323,7 +323,7 @@ export const apiService = {
     return await res.json();
   },
   async updateImageStyle(userId: string, id: string, updates: any) {
-    const res = await fetch(`${API_BASE_URL}/image-styles/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/image-styles?id=${encodeURIComponent(id)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...updates, userId }),
@@ -332,7 +332,7 @@ export const apiService = {
     return await res.json();
   },
   async deleteImageStyle(userId: string, id: string) {
-    const res = await fetch(`${API_BASE_URL}/image-styles/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/image-styles?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
@@ -357,7 +357,7 @@ export const apiService = {
     return await res.json();
   },
   async updateTemplate(userId: string, id: string, updates: any) {
-    const res = await fetch(`${API_BASE_URL}/templates/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/templates?id=${encodeURIComponent(id)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...updates, userId }),
@@ -366,7 +366,7 @@ export const apiService = {
     return await res.json();
   },
   async deleteTemplate(userId: string, id: string) {
-    const res = await fetch(`${API_BASE_URL}/templates/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/templates?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
@@ -390,7 +390,7 @@ export const apiService = {
     return await res.json();
   },
   async updateContentSeries(userId: string, id: string, updates: any) {
-    const res = await fetch(`${API_BASE_URL}/content-series/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/content-series?id=${encodeURIComponent(id)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...updates, userId }),
@@ -399,7 +399,7 @@ export const apiService = {
     return await res.json();
   },
   async deleteContentSeries(userId: string, id: string) {
-    const res = await fetch(`${API_BASE_URL}/content-series/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/content-series?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),

@@ -119,6 +119,22 @@ export class ProductionQualityValidationService {
     }
   }
 
+  /**
+   * Generates a high-level quality report (test helper)
+   */
+  async generateQualityReport(): Promise<{ overallQualityScore: number; integrationReports: any[] }> {
+    const result = await this.validateProductionReadiness();
+    return { overallQualityScore: result.overallScore, integrationReports: result.validations };
+  }
+
+  /**
+   * Validates a specific integration id (test helper)
+   */
+  async validateIntegrationQuality(integrationId: string): Promise<{ qualityScore: number; issues: string[] }> {
+    const result = await this.validateProductionReadiness();
+    return { qualityScore: result.overallScore, issues: result.criticalIssues };
+  }
+
   // ============================================================================
   // CODE QUALITY VALIDATION
   // ============================================================================

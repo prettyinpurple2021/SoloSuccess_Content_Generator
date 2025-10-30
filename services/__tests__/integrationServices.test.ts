@@ -72,9 +72,9 @@ describe('Integration Services', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock global objects
-    global.crypto = mockCrypto as any;
-    global.WebSocket = mockWebSocket as any;
+  // Mock global objects using Vitest API to avoid assigning to read-only globals
+  vi.stubGlobal('crypto', mockCrypto as any);
+  vi.stubGlobal('WebSocket', mockWebSocket as any);
 
     // Mock console methods to avoid noise in tests
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -84,6 +84,7 @@ describe('Integration Services', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('CredentialEncryption', () => {

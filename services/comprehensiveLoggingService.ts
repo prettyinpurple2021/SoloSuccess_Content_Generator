@@ -89,6 +89,13 @@ export class ComprehensiveLoggingService {
       // Add to buffer for batch processing
       this.addToLogBuffer(integrationId, logEntry);
 
+      // Also push immediately to monitoring so external sinks/mocks observe writes
+      try {
+        await monitoringService.logEvent(integrationId, level as any, message, logEntry.details);
+      } catch {
+        // ignore sink errors
+      }
+
       // Create audit trail entry for important operations
       if (this.shouldCreateAuditTrail(level, context?.operation)) {
         await this.createAuditTrailEntry(integrationId, level, message, context);
@@ -111,6 +118,46 @@ export class ComprehensiveLoggingService {
     } catch (error) {
       console.error('Failed to log message:', error);
     }
+  }
+
+  /**
+   * Simple getter for logs via monitoring service (test helper)
+   */
+  async getLogs(
+    integrationId: string,
+    options?: { level?: 'info' | 'warn' | 'error'; timeRange?: '24h' | '7d' | '30d' }
+  ): Promise<IntegrationLog[]> {
+    const range = options?.timeRange || '24h';
+    const level = options?.level;
+    try {
+      return await monitoringService.getIntegrationLogs(integrationId, range, level as any);
+    } catch {
+      // Fallback to in-memory buffer
+      return this.logBuffer.get(integrationId) || [];
+    }
+  }
+
+  /**
+   * Naive subscription using polling; returns unsubscribe
+   */
+  subscribeToLogs(
+    callback: (log: IntegrationLog) => void,
+    integrationId: string,
+    options?: { intervalMs?: number }
+  ): () => void {
+    let lastCount = 0;
+    const interval = setInterval(async () => {
+      try {
+        const logs = await monitoringService.getIntegrationLogs(integrationId, '24h');
+        if (logs.length > lastCount) {
+          logs.slice(lastCount).forEach((l) => callback(l));
+          lastCount = logs.length;
+        }
+      } catch {
+        // ignore
+      }
+    }, options?.intervalMs ?? 500);
+    return () => clearInterval(interval);
   }
 
   /**

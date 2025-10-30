@@ -15,6 +15,7 @@ const createCampaignSchema = z.object({
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    const id = req.query.id ? z.string().min(1).parse(req.query.id) : undefined;
     if (req.method === 'GET') {
       const userId = z.string().min(1).parse(req.query.userId);
       const campaigns = await db.getCampaigns(userId);
@@ -41,7 +42,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json(created);
     }
 
-    res.setHeader('Allow', 'GET, POST');
+    if (req.method === 'PUT' && id) {
+      const updateCampaignSchema = z.object({
+        userId: z.string().min(1),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        theme: z.string().optional(),
+        start_date: z.string().optional(),
+        end_date: z.string().optional(),
+        platforms: z.array(z.string()).optional(),
+        status: z.enum(['draft', 'active', 'completed', 'paused']).optional(),
+        performance: z.any().optional(),
+      });
+      const data = updateCampaignSchema.parse(req.body);
+      const updated = await db.updateCampaign(id, data, data.userId);
+      return res.status(200).json(updated);
+    }
+
+    if (req.method === 'DELETE' && id) {
+      const { userId } = z.object({ userId: z.string().min(1) }).parse(req.body || {});
+      await db.deleteCampaign(id, userId);
+      return res.status(204).end();
+    }
+
+    res.setHeader('Allow', 'GET, POST, PUT, DELETE');
     return res.status(405).json({ error: 'Method Not Allowed' });
   } catch (error: unknown) {
     console.error('CAMPAIGNS handler error:', error);

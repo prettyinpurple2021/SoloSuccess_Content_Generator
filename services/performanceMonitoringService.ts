@@ -58,6 +58,8 @@ export class PerformanceMonitoringService {
     }
   > = new Map();
 
+  private adHocMetrics: Map<string, any[]> = new Map();
+
   constructor() {
     this.startPerformanceMonitoring();
   }
@@ -94,6 +96,65 @@ export class PerformanceMonitoringService {
     } catch (error) {
       console.error('Performance metrics collection failed:', error);
     }
+  }
+
+  /**
+   * Records metrics for an integration (test helper API)
+   */
+  async recordMetrics(integrationId: string, metrics: {
+    avgResponseTime: number;
+    successRate: number;
+    errorRate?: number;
+    totalRequests?: number;
+  }): Promise<void> {
+    await monitoringService.updateMetrics(integrationId, {
+      avgResponseTime: metrics.avgResponseTime,
+      successRate: metrics.successRate,
+      errorRate: metrics.errorRate ?? Math.max(0, 100 - metrics.successRate),
+      totalRequests: metrics.totalRequests ?? 1,
+      successfulRequests: Math.round((metrics.successRate / 100) * (metrics.totalRequests ?? 1)),
+      failedRequests: Math.round(((100 - metrics.successRate) / 100) * (metrics.totalRequests ?? 1)),
+    });
+    if (!this.adHocMetrics.has(integrationId)) this.adHocMetrics.set(integrationId, []);
+    this.adHocMetrics.get(integrationId)!.push({ timestamp: Date.now(), ...metrics });
+  }
+
+  /**
+   * Analyzes performance for a single integration
+   */
+  async analyzeIntegrationPerformance(integrationId: string): Promise<{ overallScore: number; insights: any[]; recommendations: string[] }> {
+    try {
+      const metrics = await monitoringService.getIntegrationMetrics(integrationId, '24h');
+      const latest = metrics[metrics.length - 1];
+      const score = latest ? Math.max(0, 100 - latest.avgResponseTime / 20 + latest.successRate * 0.5) : 0;
+      return { overallScore: Math.round(score), insights: [], recommendations: [] };
+    } catch {
+      return { overallScore: 0, insights: ['No sufficient performance data available for analysis.'], recommendations: [] };
+    }
+  }
+
+  /**
+   * Returns historical performance data
+   */
+  async getHistoricalPerformanceData(integrationId: string): Promise<any[]> {
+    try {
+      return await monitoringService.getIntegrationMetrics(integrationId, '30d');
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Global performance report
+   */
+  async getGlobalPerformanceReport(): Promise<{ totalIntegrations: number; avgGlobalResponseTime: number; avgGlobalSuccessRate: number; avgGlobalErrorRate: number; }> {
+    const summary = await this.getPerformanceSummary();
+    return {
+      totalIntegrations: summary.totalIntegrations,
+      avgGlobalResponseTime: summary.avgResponseTime,
+      avgGlobalSuccessRate: summary.successRate,
+      avgGlobalErrorRate: Math.max(0, 100 - summary.successRate),
+    };
   }
 
   /**
@@ -807,6 +868,15 @@ export class PerformanceMonitoringService {
         } catch (error) {
           // Skip if metrics not available
         }
+
+        // Include ad-hoc metrics recorded via recordMetrics
+        const adhoc = this.adHocMetrics.get(integration.id) || [];
+        adhoc.forEach((m) => {
+          totalResponseTime += m.avgResponseTime;
+          totalRequests += m.totalRequests ?? 1;
+          totalSuccessRate += m.successRate;
+          metricsCount++;
+        });
       }
 
       const monitoredIntegrations = integrations.length;

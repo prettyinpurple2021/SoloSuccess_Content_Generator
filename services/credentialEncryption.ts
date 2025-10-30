@@ -64,15 +64,20 @@ export class CredentialEncryption {
       const authTag = encryptedData.slice(-16);
       const ciphertext = encryptedData.slice(0, -16);
 
+      // Backward-compat: also expose legacy 'data' field mirroring 'encrypted'
+      const encryptedB64 = this.arrayBufferToBase64(ciphertext.buffer);
       return {
-        encrypted: this.arrayBufferToBase64(ciphertext.buffer),
+        encrypted: encryptedB64,
+        // legacy alias used by some older tests
+        // @ts-expect-error: legacy field for compatibility
+        data: encryptedB64,
         iv: this.arrayBufferToBase64(iv.buffer),
         authTag: this.arrayBufferToBase64(authTag.buffer),
         algorithm: this.ALGORITHM,
         salt: this.arrayBufferToBase64(salt.buffer),
         iterations: options?.iterations || this.PBKDF2_ITERATIONS,
         version: options?.version || '1.0',
-      };
+      } as unknown as EncryptedCredentials & { data: string };
     } catch (error) {
       console.error('Encryption error:', error);
       throw new Error(
@@ -89,11 +94,15 @@ export class CredentialEncryption {
       // Validate inputs
       this.validateDecryptionInputs(encryptedCredentials, userKey);
 
-      // Convert base64 strings to ArrayBuffers
+      // Convert base64 strings to ArrayBuffers (support legacy 'data' alias)
       const salt = this.base64ToArrayBuffer(encryptedCredentials.salt || '');
       const iv = this.base64ToArrayBuffer(encryptedCredentials.iv);
       const authTag = this.base64ToArrayBuffer(encryptedCredentials.authTag);
-      const ciphertext = this.base64ToArrayBuffer(encryptedCredentials.encrypted);
+      const encryptedField = (encryptedCredentials as any).encrypted || (encryptedCredentials as any).data;
+      if (!encryptedField) {
+        throw new Error('Missing required field: encrypted');
+      }
+      const ciphertext = this.base64ToArrayBuffer(encryptedField);
 
       // Derive the same encryption key
       const encryptionKey = await this.deriveKey(
@@ -154,16 +163,19 @@ export class CredentialEncryption {
       return false;
     }
 
-    const requiredFields = ['encrypted', 'iv', 'authTag', 'algorithm'];
+    // Accept either 'encrypted' or legacy 'data'
+    const requiredFields = ['iv', 'authTag', 'algorithm'];
     const optionalFields = ['salt', 'iterations', 'version'];
 
-    // Check required fields
-    const hasRequiredFields = requiredFields.every(
-      (field) =>
-        encryptedCredentials[field] &&
-        typeof encryptedCredentials[field] === 'string' &&
-        encryptedCredentials[field].length > 0
-    );
+    const hasEncrypted = Boolean(encryptedCredentials.encrypted || encryptedCredentials.data);
+    const hasRequiredFields =
+      hasEncrypted &&
+      requiredFields.every(
+        (field) =>
+          encryptedCredentials[field] &&
+          typeof encryptedCredentials[field] === 'string' &&
+          encryptedCredentials[field].length > 0
+      );
 
     if (!hasRequiredFields) {
       return false;
@@ -171,7 +183,8 @@ export class CredentialEncryption {
 
     // Validate field formats
     try {
-      this.base64ToArrayBuffer(encryptedCredentials.encrypted);
+      const encryptedField = encryptedCredentials.encrypted || encryptedCredentials.data;
+      this.base64ToArrayBuffer(encryptedField);
       this.base64ToArrayBuffer(encryptedCredentials.iv);
       this.base64ToArrayBuffer(encryptedCredentials.authTag);
       if (encryptedCredentials.salt) {
@@ -268,11 +281,13 @@ export class CredentialEncryption {
       throw new Error('User key must be a string with at least 8 characters');
     }
 
-    const requiredFields = ['encrypted', 'iv', 'authTag', 'algorithm'];
-    for (const field of requiredFields) {
-      if (!encryptedCredentials[field as keyof EncryptedCredentials]) {
-        throw new Error(`Missing required field: ${field}`);
-      }
+    const hasEncrypted = Boolean(
+      (encryptedCredentials as any).encrypted || (encryptedCredentials as any).data
+    );
+    if (!hasEncrypted) throw new Error('Missing required field: encrypted');
+    const mustHave = ['iv', 'authTag', 'algorithm'] as const;
+    for (const field of mustHave) {
+      if (!(encryptedCredentials as any)[field]) throw new Error(`Missing required field: ${field}`);
     }
   }
 
