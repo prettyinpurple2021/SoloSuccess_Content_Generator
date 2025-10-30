@@ -1,10 +1,25 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
+import { query } from '../../services/databaseService';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+interface ApiRequest {
+  method?: string;
+  query: Record<string, string | string[] | undefined>;
+  body?: unknown;
+}
+
+interface ApiResponse {
+  status: (code: number) => ApiResponse;
+  json: (data: unknown) => void;
+  end: () => void;
+  setHeader: (name: string, value: string) => void;
+}
+
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
-    const id = z.string().min(1).parse(req.query.id);
-    const { pool } = await import('../../services/neonService');
+    const id = z
+      .string()
+      .min(1)
+      .parse(req.query.id as string);
 
     if (req.method === 'PUT') {
       const body = z
@@ -19,25 +34,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           is_public: z.boolean().optional(),
         })
         .parse(req.body || {});
-      const result = await (pool as any)`
-        UPDATE content_templates SET
-          name = COALESCE(${body.name || null}, name),
-          category = COALESCE(${body.category || null}, category),
-          industry = COALESCE(${body.industry || null}, industry),
-          content_type = COALESCE(${body.content_type || null}, content_type),
-          structure = COALESCE(${body.structure ? JSON.stringify(body.structure) : null}, structure),
-          customizable_fields = COALESCE(${body.customizable_fields ? JSON.stringify(body.customizable_fields) : null}, customizable_fields),
-          is_public = COALESCE(${typeof body.is_public === 'boolean' ? body.is_public : null}, is_public)
-        WHERE id = ${id} AND user_id = ${body.userId}
-        RETURNING *`;
+
+      const result = await query(
+        `UPDATE content_templates SET
+           name = COALESCE($1, name),
+           category = COALESCE($2, category),
+           industry = COALESCE($3, industry),
+           content_type = COALESCE($4, content_type),
+           structure = COALESCE($5, structure),
+           customizable_fields = COALESCE($6, customizable_fields),
+           is_public = COALESCE($7, is_public)
+         WHERE id = $8 AND user_id = $9
+         RETURNING *`,
+        [
+          body.name ?? null,
+          body.category ?? null,
+          body.industry ?? null,
+          body.content_type ?? null,
+          body.structure ? JSON.stringify(body.structure) : null,
+          body.customizable_fields ? JSON.stringify(body.customizable_fields) : null,
+          typeof body.is_public === 'boolean' ? body.is_public : null,
+          id,
+          body.userId,
+        ]
+      );
       if (!result[0]) return res.status(404).json({ error: 'Not found' });
       return res.status(200).json(result[0]);
     }
 
     if (req.method === 'DELETE') {
       const body = z.object({ userId: z.string().min(1) }).parse(req.body || {});
-      const result =
-        await (pool as any)`DELETE FROM content_templates WHERE id = ${id} AND user_id = ${body.userId} RETURNING id`;
+      const result = await query(
+        `DELETE FROM content_templates WHERE id = $1 AND user_id = $2 RETURNING id`,
+        [id, body.userId]
+      );
       if (!result[0]) return res.status(404).json({ error: 'Not found' });
       return res.status(204).end();
     }

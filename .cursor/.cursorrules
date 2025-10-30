@@ -1,11 +1,10 @@
-This is the .cursorrules file for the Solosuccess AI Content Planner project.
 project:
-  tech_stack: [vite-react-ts, tailwindcss, framer-motion, neon ]
+  tech_stack: [vite-react-ts, tailwindcss, framer-motion, neon]
   ui:
     enforce_tailwind: true
     enforce_glassmorphic_gradient: true
-    use_framer_motion: true
-    component_dir: "components"
+use_framer_motion: true
+component_dir: 'components'
 rules:
   - Always style with Tailwind utility classes; never inline styles or CSS Modules
   - Use Framer Motion for animations (prefer motion.* wrappers and variants)
@@ -14,7 +13,7 @@ rules:
   - Components must be function components with hooks; no class components
   - Strict TypeScript: no any, no implicit any, no ts-ignore
   - Services must validate inputs/outputs with Zod schemas
-  - No mocks/demos/placeholders. Implement real behavior 
+  - No mocks/demos/placeholders. Implement real behavior
   - Do not use supabase in the codebase
   - Use neon for the database
   - Use stack auth for the authentication
@@ -32,4 +31,3 @@ rules:
   - Use the latest version of the security best practices and patterns
   - Use the latest version of the performance best practices and patterns
   - Use the latest version of the accessibility best practices and patterns
-  
