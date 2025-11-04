@@ -485,15 +485,47 @@ class ClientMonitoringService {
    * Generate session ID
    */
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `session_${Date.now()}_${this.secureRandomString(9)}`;
   }
 
   /**
    * Generate metric ID
    */
   private generateMetricId(): string {
-    return `metric_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `metric_${Date.now()}_${this.secureRandomString(9)}`;
   }
+    /**
+     * Generate a cryptographically secure random string.
+     */
+    private secureRandomString(length: number): string {
+      let randomStr = "";
+      const charsetSize = 36;
+      const maxValue = Math.floor(256 / charsetSize) * charsetSize; // 252
+      if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
+        // Browser: use window.crypto
+        while (randomStr.length < length) {
+          const arr = new Uint8Array(1);
+          window.crypto.getRandomValues(arr);
+          const value = arr[0];
+          if (value < maxValue) {
+            randomStr += (value % charsetSize).toString(36);
+          }
+          // else, discard and try again
+        }
+      } else {
+        // Node.js or fallback (note: process.browser may be available)
+        const crypto = require("crypto");
+        while (randomStr.length < length) {
+          const buf = crypto.randomBytes(1);
+          const value = buf[0];
+          if (value < maxValue) {
+            randomStr += (value % charsetSize).toString(36);
+          }
+          // else, discard and try again
+        }
+      }
+      return randomStr;
+    }
 }
 
 // Create singleton instance
