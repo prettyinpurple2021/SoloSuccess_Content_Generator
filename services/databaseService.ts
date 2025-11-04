@@ -593,7 +593,6 @@ export const db = {
     userId: string
   ): Promise<Campaign> => {
     try {
-      const platformsJson = JSON.stringify(campaign.platforms);
       const performanceJson = JSON.stringify(campaign.performance);
 
       const result = await pool`
@@ -601,7 +600,7 @@ export const db = {
           user_id, name, description, theme, start_date, end_date, platforms, status, performance
         ) VALUES (
           ${userId}, ${campaign.name}, ${campaign.description}, ${campaign.theme},
-          ${campaign.start_date}, ${campaign.end_date}, ${platformsJson},
+          ${campaign.start_date}, ${campaign.end_date}, ${campaign.platforms},
           ${campaign.status}, ${performanceJson}
         ) RETURNING *
       `;
@@ -619,19 +618,18 @@ export const db = {
     userId: string
   ): Promise<Campaign> => {
     try {
-      const platformsJson = updates.platforms ? JSON.stringify(updates.platforms) : null;
       const performanceJson = updates.performance ? JSON.stringify(updates.performance) : null;
 
       const result = await pool`
         UPDATE campaigns 
         SET
-          name = COALESCE(${updates.name || null}, name),
-          description = COALESCE(${updates.description || null}, description),
-          theme = COALESCE(${updates.theme || null}, theme),
-          start_date = COALESCE(${updates.start_date || null}, start_date),
-          end_date = COALESCE(${updates.end_date || null}, end_date),
-          platforms = COALESCE(${platformsJson}, platforms),
-          status = COALESCE(${updates.status || null}, status),
+          name = COALESCE(${updates.name ?? null}, name),
+          description = COALESCE(${updates.description ?? null}, description),
+          theme = COALESCE(${updates.theme ?? null}, theme),
+          start_date = COALESCE(${updates.start_date ?? null}, start_date),
+          end_date = COALESCE(${updates.end_date ?? null}, end_date),
+          platforms = COALESCE(${updates.platforms ?? null}, platforms),
+          status = COALESCE(${updates.status ?? null}, status),
           performance = COALESCE(${performanceJson}, performance)
         WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
@@ -830,15 +828,15 @@ export const db = {
       const result = await pool`
         UPDATE integrations 
         SET
-          name = COALESCE(${updates.name || null}, name),
-          type = COALESCE(${updates.type || null}, type),
-          platform = COALESCE(${updates.platform || null}, platform),
-          status = COALESCE(${updates.status || null}, status),
+          name = COALESCE(${updates.name ?? null}, name),
+          type = COALESCE(${updates.type ?? null}, type),
+          platform = COALESCE(${updates.platform ?? null}, platform),
+          status = COALESCE(${updates.status ?? null}, status),
           credentials = COALESCE(${credentialsJson}, credentials),
           configuration = COALESCE(${configurationJson}, configuration),
-          last_sync = COALESCE(${updates.last_sync || null}, last_sync),
-          sync_frequency = COALESCE(${updates.sync_frequency || null}, sync_frequency),
-          is_active = COALESCE(${updates.is_active || null}, is_active),
+          last_sync = COALESCE(${updates.last_sync ?? null}, last_sync),
+          sync_frequency = COALESCE(${updates.sync_frequency ?? null}, sync_frequency),
+          is_active = COALESCE(${updates.is_active ?? null}, is_active),
           updated_at = NOW()
         WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
@@ -892,23 +890,37 @@ function transformDatabasePostToPost(dbPost: DatabasePost): Post {
     idea: dbPost.idea,
     content: dbPost.content,
     status: dbPost.status,
-    tags: dbPost.tags,
-    socialMediaPosts: dbPost.social_media_posts,
-    socialMediaTones: dbPost.social_media_tones,
-    socialMediaAudiences: dbPost.social_media_audiences,
+    tags: dbPost.tags || [],
+    socialMediaPosts:
+      typeof dbPost.social_media_posts === 'string'
+        ? JSON.parse(dbPost.social_media_posts)
+        : dbPost.social_media_posts || {},
+    socialMediaTones:
+      typeof dbPost.social_media_tones === 'string'
+        ? JSON.parse(dbPost.social_media_tones)
+        : dbPost.social_media_tones || {},
+    socialMediaAudiences:
+      typeof dbPost.social_media_audiences === 'string'
+        ? JSON.parse(dbPost.social_media_audiences)
+        : dbPost.social_media_audiences || {},
     scheduleDate: dbPost.schedule_date ? new Date(dbPost.schedule_date) : undefined,
     createdAt: dbPost.created_at ? new Date(dbPost.created_at) : undefined,
     postedAt: dbPost.posted_at ? new Date(dbPost.posted_at) : undefined,
     selectedImage: dbPost.selected_image,
     summary: dbPost.summary,
-    headlines: dbPost.headlines,
+    headlines: dbPost.headlines || [],
     brandVoiceId: dbPost.brand_voice_id,
     audienceProfileId: dbPost.audience_profile_id,
     campaignId: dbPost.campaign_id,
     seriesId: dbPost.series_id,
     templateId: dbPost.template_id,
-    performanceScore: dbPost.performance_score,
-    optimizationSuggestions: dbPost.optimization_suggestions,
+    performanceScore: dbPost.performance_score
+      ? parseFloat(dbPost.performance_score.toString())
+      : undefined,
+    optimizationSuggestions:
+      typeof dbPost.optimization_suggestions === 'string'
+        ? JSON.parse(dbPost.optimization_suggestions)
+        : dbPost.optimization_suggestions || [],
     imageStyleId: dbPost.image_style_id,
   };
 }
@@ -920,10 +932,16 @@ function transformDatabaseBrandVoiceToBrandVoice(dbBrandVoice: DatabaseBrandVoic
     userId: dbBrandVoice.user_id,
     name: dbBrandVoice.name,
     tone: dbBrandVoice.tone,
-    vocabulary: dbBrandVoice.vocabulary,
+    vocabulary:
+      typeof dbBrandVoice.vocabulary === 'string'
+        ? JSON.parse(dbBrandVoice.vocabulary)
+        : dbBrandVoice.vocabulary || [],
     writingStyle: dbBrandVoice.writing_style,
     targetAudience: dbBrandVoice.target_audience,
-    sampleContent: dbBrandVoice.sample_content,
+    sampleContent:
+      typeof dbBrandVoice.sample_content === 'string'
+        ? JSON.parse(dbBrandVoice.sample_content)
+        : dbBrandVoice.sample_content || [],
     createdAt: new Date(dbBrandVoice.created_at),
   };
 }
@@ -938,10 +956,22 @@ function transformDatabaseAudienceProfileToAudienceProfile(
     name: dbProfile.name,
     ageRange: dbProfile.age_range,
     industry: dbProfile.industry,
-    interests: dbProfile.interests,
-    painPoints: dbProfile.pain_points,
-    preferredContentTypes: dbProfile.preferred_content_types,
-    engagementPatterns: dbProfile.engagement_patterns,
+    interests:
+      typeof dbProfile.interests === 'string'
+        ? JSON.parse(dbProfile.interests)
+        : dbProfile.interests || [],
+    painPoints:
+      typeof dbProfile.pain_points === 'string'
+        ? JSON.parse(dbProfile.pain_points)
+        : dbProfile.pain_points || [],
+    preferredContentTypes:
+      typeof dbProfile.preferred_content_types === 'string'
+        ? JSON.parse(dbProfile.preferred_content_types)
+        : dbProfile.preferred_content_types || [],
+    engagementPatterns:
+      typeof dbProfile.engagement_patterns === 'string'
+        ? JSON.parse(dbProfile.engagement_patterns)
+        : dbProfile.engagement_patterns || {},
     createdAt: new Date(dbProfile.created_at),
   };
 }
@@ -957,9 +987,16 @@ function transformDatabaseCampaignToCampaign(dbCampaign: DatabaseCampaign): Camp
     startDate: new Date(dbCampaign.start_date),
     endDate: new Date(dbCampaign.end_date),
     posts: [], // Will be populated by joining with posts table
-    platforms: dbCampaign.platforms,
+    platforms: Array.isArray(dbCampaign.platforms)
+      ? dbCampaign.platforms
+      : typeof dbCampaign.platforms === 'string'
+        ? JSON.parse(dbCampaign.platforms)
+        : [],
     status: dbCampaign.status,
-    performance: dbCampaign.performance,
+    performance:
+      typeof dbCampaign.performance === 'string'
+        ? JSON.parse(dbCampaign.performance)
+        : dbCampaign.performance,
     createdAt: new Date(dbCampaign.created_at),
   };
 }

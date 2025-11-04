@@ -32,3 +32,6 @@ dist-ssr
 
 *storybook.log
 storybook-static
+
+# API credentials and setup files
+API_CREDENTIALS_SETUP.md

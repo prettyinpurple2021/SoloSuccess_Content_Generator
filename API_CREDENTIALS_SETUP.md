@@ -44,11 +44,11 @@ This document provides instructions for obtaining and configuring API credential
 **Environment Variables:**
 
 ```bash
-TWITTER_API_KEY=your_api_key_here
-TWITTER_API_SECRET=your_api_secret_here
-TWITTER_ACCESS_TOKEN=your_access_token_here
-TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret_here
-TWITTER_BEARER_TOKEN=your_bearer_token_here
+TWITTER_API_KEY=eaendzPGLmUcckZ4lFqUFtKlo 
+TWITTER_API_SECRET=lNbhAf1CiXyQvy9BUktgAAxiNXsHdrYGzPGMyOobx5wafJTLSh
+TWITTER_ACCESS_TOKEN=1916358481201733632-3kzeckAyISiR5l4cuYxxhj8H4reutj
+TWITTER_ACCESS_TOKEN_SECRET=Ah3xCjkCfZS7nTyFmVYit5RP3fnKggG1d0qJqeGH1EggJ
+TWITTER_BEARER_TOKEN=AAAAAAAAAAAAAAAAAAAAAEFw4gEAAAAAgzGeAU0D1lmfg2N7qmPyEl1jx88%3DtfYZ6G2bJX08KlIOFffyJMeMFKTj0eCOPV8eGYenslv7LMbyxj
 ```
 
 **Required Permissions:**
@@ -83,8 +83,8 @@ TWITTER_BEARER_TOKEN=your_bearer_token_here
 **Environment Variables:**
 
 ```bash
-LINKEDIN_CLIENT_ID=your_client_id_here
-LINKEDIN_CLIENT_SECRET=your_client_secret_here
+LINKEDIN_CLIENT_ID=867mjzr8zq2zn1
+LINKEDIN_CLIENT_SECRET=
 ```
 
 **OAuth Flow:**
@@ -127,8 +127,12 @@ LINKEDIN_CLIENT_SECRET=your_client_secret_here
 **Environment Variables:**
 
 ```bash
-FACEBOOK_APP_ID=your_app_id_here
-FACEBOOK_APP_SECRET=your_app_secret_here
+FACEBOOK_APP_ID=2272708543228428
+FACEBOOK_APP_SECRET=355c1f926696ae2b3f528d5d763bf1a7
+THREADS_APP_ID=1359918955662619
+THREADS_APP_SECRET=551a98fb4ac3eaa4734f464d57bf6c62
+INSTAGRAM_APP_ID=1329680698625695
+INSTAGRAM_APP_SECRET=e4e52b3422fc202975509e8cefbb613a
 ```
 
 **Required Permissions:**
