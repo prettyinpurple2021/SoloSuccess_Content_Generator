@@ -557,11 +557,18 @@ ${JSON.stringify(report.context, null, 2)}
   );
 };
 
+// Helper: Generate cryptographically secure random string
+function generateSecureRandomString(length: number = 12): string {
+  const array = new Uint8Array(length);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, (dec) => dec.toString(16).padStart(2, '0')).join('').slice(0, length);
+}
+
 // Helper function to get or create session ID
 function getSessionId(): string {
   let sessionId = sessionStorage.getItem('app_session_id');
   if (!sessionId) {
-    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionId = `session_${Date.now()}_${generateSecureRandomString(12)}`;
     sessionStorage.setItem('app_session_id', sessionId);
   }
   return sessionId;
@@ -575,7 +582,7 @@ export const useErrorReporting = () => {
 
   const reportError = useCallback((error: Error, context?: Record<string, any>) => {
     const report: ErrorReport = {
-      id: `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `report_${Date.now()}_${generateSecureRandomString(12)}`,
       timestamp: new Date(),
       level: 'error',
       message: error.message,
