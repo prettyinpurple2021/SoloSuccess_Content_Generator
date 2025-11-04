@@ -499,21 +499,29 @@ class ClientMonitoringService {
      */
     private secureRandomString(length: number): string {
       let randomStr = "";
+      const charsetSize = 36;
+      const maxValue = Math.floor(256 / charsetSize) * charsetSize; // 252
       if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
         // Browser: use window.crypto
-        const arr = new Uint8Array(length);
-        window.crypto.getRandomValues(arr);
-        for (let i = 0; i < arr.length; i++) {
-          // Map byte to 0-35 to use in base36
-          randomStr += arr[i] % 36 .toString(36);
+        while (randomStr.length < length) {
+          const arr = new Uint8Array(1);
+          window.crypto.getRandomValues(arr);
+          const value = arr[0];
+          if (value < maxValue) {
+            randomStr += (value % charsetSize).toString(36);
+          }
+          // else, discard and try again
         }
       } else {
         // Node.js or fallback (note: process.browser may be available)
-        // Import crypto only if not already declared; safe here since we are only editing this file
         const crypto = require("crypto");
-        const buf = crypto.randomBytes(length);
-        for (let i = 0; i < buf.length; i++) {
-          randomStr += (buf[i] % 36).toString(36);
+        while (randomStr.length < length) {
+          const buf = crypto.randomBytes(1);
+          const value = buf[0];
+          if (value < maxValue) {
+            randomStr += (value % charsetSize).toString(36);
+          }
+          // else, discard and try again
         }
       }
       return randomStr;
