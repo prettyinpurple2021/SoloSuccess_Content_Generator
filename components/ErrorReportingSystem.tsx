@@ -13,6 +13,7 @@ import {
   Smartphone,
   Monitor,
 } from 'lucide-react';
+import { error } from 'better-auth/api';
 
 export interface ErrorReport {
   id: string;
@@ -62,7 +63,7 @@ export const ErrorReportingSystem: React.FC<ErrorReportingSystemProps> = ({
             timestamp: new Date(report.timestamp),
           }))
         );
-      } catch (error) {
+      } catch (_error) {
         console.error('Failed to load error reports:', error);
       }
     }
@@ -177,7 +178,7 @@ ${JSON.stringify(report.context, null, 2)}
           await onSubmitReport(report);
           markAsResolved(report.id);
           alert('Report submitted successfully!');
-        } catch (error) {
+        } catch (_error) {
           alert('Failed to submit report. Please try again.');
         }
       }

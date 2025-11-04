@@ -384,7 +384,7 @@ export const useAIServiceErrorRecovery = <T = any>(
       ) {
         try {
           return await fallbackOperation();
-        } catch (fallbackError) {
+        } catch (_fallbackError) {
           // If fallback also fails, throw original error
           throw err;
         }

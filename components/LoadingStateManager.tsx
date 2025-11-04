@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { Loader, AlertCircle, CheckCircle} from 'lucide-react';
+import { Loader, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
 export interface LoadingState {
   [key: string]: boolean | undefined;
@@ -79,7 +79,7 @@ export const LoadingProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Clear operation after a delay
         setTimeout(() => {
           setOperations((prev) => {
-            const { [key]: removed, ...rest } = prev;
+            const { [key]: _removed, ...rest } = prev;
             return rest;
           });
         }, 2000);
@@ -143,11 +143,11 @@ export const LoadingProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const clearOperation = useCallback((key: string) => {
     setLoadingStates((prev) => {
-      const { [key]: removed, ...rest } = prev;
+      const { [key]: _removed, ...rest } = prev;
       return rest;
     });
     setOperations((prev) => {
-      const { [key]: removed, ...rest } = prev;
+      const { [key]: _removed, ...rest } = prev;
       return rest;
     });
   }, []);

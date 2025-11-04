@@ -284,7 +284,7 @@ export const useFormErrorState = (options: ErrorStateOptions = {}) => {
 
   const clearFieldError = useCallback((field: string) => {
     setFieldErrors((prev) => {
-      const { [field]: removed, ...rest } = prev;
+      const { [field]: _removed, ...rest } = prev;
       return rest;
     });
   }, []);
