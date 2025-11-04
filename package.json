@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint . --ext .ts,.tsx",
+    "lint:production": "eslint . --config eslint.config.production.js",
     "format": "prettier --write .",
     "prepare": "husky",
     "clean:install": "node scripts/clean-install.js",

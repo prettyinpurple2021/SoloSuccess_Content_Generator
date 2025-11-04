@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { frontendPerformanceService } from '../services/frontendPerformanceService';
+import React from 'react';
 
 interface PerformanceMetrics {
   renderTime: number;

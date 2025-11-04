@@ -5,7 +5,8 @@ const getEnvVar = (name: string): string => {
   if (typeof import.meta !== 'undefined' && import.meta.env) {
     return import.meta.env[name] || '';
   }
-  return process.env[name] || '';
+  // Use globalThis to access process safely
+  return (globalThis as any).process?.env?.[name] || '';
 };
 
 export const stackServerApp = new StackServerApp({
