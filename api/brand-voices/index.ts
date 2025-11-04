@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { db } from '../../services/databaseService';
+import { enhancedDb } from '../../services/enhancedDatabaseService';
+import { apiErrorHandler, commonSchemas } from '../../services/apiErrorHandler';
+import { errorHandler } from '../../services/errorHandlingService';
 
 interface ApiRequest {
   method?: string;
@@ -25,67 +27,171 @@ const createSchema = z.object({
   sample_content: z.array(z.string()).default([]),
 });
 
-export default async function handler(req: ApiRequest, res: ApiResponse) {
-  try {
-    const id = req.query.id
-      ? z
-          .string()
-          .min(1)
-          .parse(req.query.id as string)
-      : undefined;
-    if (req.method === 'GET') {
-      const userId = z
-        .string()
-        .min(1)
-        .parse(req.query.userId as string);
-      const items = await db.getBrandVoices(userId);
+async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
+  // Add security headers
+  apiErrorHandler.addSecurityHeaders(res);
+
+  const context = {
+    endpoint: '/api/brand-voices',
+    operation: req.method?.toLowerCase(),
+    userId: req.query.userId as string,
+  };
+
+  // Validate and sanitize query parameters
+  const id = req.query.id
+    ? apiErrorHandler.validateQuery(
+        { id: req.query.id },
+        z.object({ id: commonSchemas.id }),
+        context
+      ).id
+    : undefined;
+
+  if (req.method === 'GET') {
+    const { userId } = apiErrorHandler.validateQuery(
+      req.query,
+      z.object({ userId: commonSchemas.userId }),
+      context
+    );
+
+    try {
+      const items = await enhancedDb.getBrandVoices(userId);
       return res.status(200).json(items);
-    }
+    } catch (error) {
+      // Enhanced error handling with graceful degradation
+      const healthStatus = await enhancedDb.getHealthStatus();
 
-    if (req.method === 'POST') {
-      const data = createSchema.parse(req.body);
-      const created = await db.addBrandVoice(
+      if (!healthStatus.isHealthy) {
+        errorHandler.logError(
+          'Database unhealthy during brand voices retrieval, attempting graceful degradation',
+          error instanceof Error ? error : new Error(String(error)),
+          { ...context, healthStatus },
+          'warn'
+        );
+
+        // Return empty array with warning header for graceful degradation
+        res.setHeader('X-Service-Degraded', 'true');
+        res.setHeader('X-Degradation-Reason', 'database-unavailable');
+        return res.status(200).json([]);
+      }
+
+      throw error;
+    }
+  }
+
+  if (req.method === 'POST') {
+    const data = apiErrorHandler.validateBody(req.body, createSchema, context);
+
+    // Sanitize input data
+    const sanitizedData = apiErrorHandler.sanitizeInput(data);
+
+    try {
+      const created = await enhancedDb.addBrandVoice(
         {
-          name: data.name,
-          tone: data.tone,
-          vocabulary: data.vocabulary,
-          writing_style: data.writing_style,
-          target_audience: data.target_audience,
-          sample_content: data.sample_content,
+          name: sanitizedData.name,
+          tone: sanitizedData.tone,
+          vocabulary: sanitizedData.vocabulary,
+          writing_style: sanitizedData.writing_style,
+          target_audience: sanitizedData.target_audience,
+          sample_content: sanitizedData.sample_content,
         },
-        data.userId
+        sanitizedData.userId
       );
-      return res.status(201).json(created);
-    }
 
-    if (req.method === 'PUT' && id) {
-      const updateSchema = createSchema.partial().extend({ userId: z.string().min(1) });
-      const data = updateSchema.parse(req.body);
-      const updated = await db.updateBrandVoice(
+      return res.status(201).json(created);
+    } catch (error) {
+      // Enhanced error handling for brand voice creation
+      if (error instanceof Error && error.message.includes('name is required')) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'Brand voice name is required',
+          timestamp: new Date(),
+        });
+      }
+
+      if (error instanceof Error && error.message.includes('maximum length')) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'Brand voice name exceeds maximum length',
+          timestamp: new Date(),
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  if (req.method === 'PUT' && id) {
+    const updateSchema = createSchema.partial().extend({ userId: commonSchemas.userId });
+    const data = apiErrorHandler.validateBody(req.body, updateSchema, context);
+
+    // Sanitize input data
+    const sanitizedData = apiErrorHandler.sanitizeInput(data);
+
+    try {
+      const updated = await enhancedDb.updateBrandVoice(
         id,
         {
-          name: data.name,
-          tone: data.tone,
-          vocabulary: data.vocabulary,
-          writing_style: data.writing_style,
-          target_audience: data.target_audience,
-          sample_content: data.sample_content,
+          name: sanitizedData.name,
+          tone: sanitizedData.tone,
+          vocabulary: sanitizedData.vocabulary,
+          writing_style: sanitizedData.writing_style,
+          target_audience: sanitizedData.target_audience,
+          sample_content: sanitizedData.sample_content,
         },
-        data.userId
+        sanitizedData.userId
       );
+
       return res.status(200).json(updated);
-    }
+    } catch (error) {
+      // Enhanced error handling for brand voice updates
+      if (error instanceof Error && error.message.includes('not found')) {
+        return res.status(404).json({
+          error: 'Not Found',
+          message: 'Brand voice not found or access denied',
+          timestamp: new Date(),
+        });
+      }
 
-    if (req.method === 'DELETE' && id) {
-      const { userId } = z.object({ userId: z.string().min(1) }).parse(req.body || {});
-      await db.deleteBrandVoice(id, userId);
-      return res.status(204).end();
+      throw error;
     }
-
-    res.setHeader('Allow', 'GET, POST, PUT, DELETE');
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  } catch (error: unknown) {
-    console.error('BRAND VOICES handler error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
   }
+
+  if (req.method === 'DELETE' && id) {
+    const { userId } = apiErrorHandler.validateBody(
+      req.body || {},
+      z.object({ userId: commonSchemas.userId }),
+      context
+    );
+
+    try {
+      await enhancedDb.deleteBrandVoice(id, userId);
+      return res.status(204).end();
+    } catch (error) {
+      // Enhanced error handling for brand voice deletion
+      if (error instanceof Error && error.message.includes('not found')) {
+        return res.status(404).json({
+          error: 'Not Found',
+          message: 'Brand voice not found or access denied',
+          timestamp: new Date(),
+        });
+      }
+
+      if (error instanceof Error && error.message.includes('constraint')) {
+        return res.status(409).json({
+          error: 'Constraint Violation',
+          message: 'Cannot delete brand voice due to existing references',
+          details: error.message,
+          timestamp: new Date(),
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  // Handle method not allowed
+  apiErrorHandler.handleMethodNotAllowed(req, res, ['GET', 'POST', 'PUT', 'DELETE']);
 }
+
+// Export wrapped handler
+export default apiErrorHandler.wrapHandler(brandVoicesHandler, '/api/brand-voices');
