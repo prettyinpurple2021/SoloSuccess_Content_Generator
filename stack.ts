@@ -1,5 +1,13 @@
 import { StackServerApp } from '@stackframe/stack';
 
+// Get environment variables from either import.meta.env (browser) or process.env (Node.js)
+const getEnvVar = (name: string): string => {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env[name] || '';
+  }
+  return process.env[name] || '';
+};
+
 export const stackServerApp = new StackServerApp({
   tokenStore: 'cookie',
   urls: {
@@ -8,7 +16,7 @@ export const stackServerApp = new StackServerApp({
     afterSignIn: '/',
     afterSignUp: '/',
   },
-  projectId: import.meta.env.VITE_STACK_PROJECT_ID!,
-  publishableClientKey: import.meta.env.VITE_STACK_PUBLISHABLE_CLIENT_KEY!,
-  secretServerKey: import.meta.env.STACK_SECRET_SERVER_KEY!,
+  projectId: getEnvVar('VITE_STACK_PROJECT_ID'),
+  publishableClientKey: getEnvVar('VITE_STACK_PUBLISHABLE_CLIENT_KEY'),
+  secretServerKey: getEnvVar('STACK_SECRET_SERVER_KEY'),
 });
