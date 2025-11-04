@@ -1,9 +1,9 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from '@google/genai';
 
-if (!process.env.API_KEY) {
-  console.error('API_KEY environment variable not set.');
+if (!process.env.GEMINI_API_KEY) {
+  console.error('GEMINI_API_KEY environment variable not set.');
 }
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 export const generateTopic = async (): Promise<string> => {
   const prompt = `As a market researcher for solo entrepreneurs, identify the single most relevant and trending blog topic for the current market. Provide ONLY the topic title.`;

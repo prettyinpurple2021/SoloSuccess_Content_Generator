@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@stackframe/stack';
+import { useUser } from '@stackframe/react';
 // FIX: Import Timestamp type and rename Timestamp value to avoid name collision.
 import {
   Post,

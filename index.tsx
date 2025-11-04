@@ -1,9 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { StackHandler, StackProvider, StackTheme } from '@stackframe/react';
+import { Suspense } from 'react';
 import './styles/holographic-theme.css';
 import { HolographicThemeProvider } from './components/HolographicTheme';
 import AppWithErrorHandling from './components/AppWithErrorHandling';
 import { ErrorBoundaryEnhanced } from './components/ErrorBoundaryEnhanced';
+import { stackClientApp } from './stack/client';
 import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -40,31 +44,48 @@ console.log('Stack config check:', {
   secretKey: import.meta.env.STACK_SECRET_SERVER_KEY ? 'Present' : 'Missing',
 });
 
+// Stack Auth Handler Component
+function HandlerRoutes() {
+  const location = useLocation();
+  return <StackHandler app={stackClientApp} location={location.pathname} fullPage />;
+}
+
 const root = ReactDOM.createRoot(rootElement);
 
 try {
   root.render(
     <React.StrictMode>
-      <ErrorBoundaryEnhanced
-        level="page"
-        allowRetry={true}
-        allowReload={true}
-        allowReport={true}
-        onError={(error, errorInfo) => {
-          console.error('Root level error:', error, errorInfo);
-          Sentry.captureException(error, {
-            contexts: {
-              react: {
-                componentStack: errorInfo.componentStack,
-              },
-            },
-          });
-        }}
-      >
-        <HolographicThemeProvider>
-          <AppWithErrorHandling />
-        </HolographicThemeProvider>
-      </ErrorBoundaryEnhanced>
+      <Suspense fallback={<div>Loading...</div>}>
+        <BrowserRouter>
+          <StackProvider app={stackClientApp}>
+            <StackTheme>
+              <ErrorBoundaryEnhanced
+                level="page"
+                allowRetry={true}
+                allowReload={true}
+                allowReport={true}
+                onError={(error, errorInfo) => {
+                  console.error('Root level error:', error, errorInfo);
+                  Sentry.captureException(error, {
+                    contexts: {
+                      react: {
+                        componentStack: errorInfo.componentStack,
+                      },
+                    },
+                  });
+                }}
+              >
+                <HolographicThemeProvider>
+                  <Routes>
+                    <Route path="/handler/*" element={<HandlerRoutes />} />
+                    <Route path="/*" element={<AppWithErrorHandling />} />
+                  </Routes>
+                </HolographicThemeProvider>
+              </ErrorBoundaryEnhanced>
+            </StackTheme>
+          </StackProvider>
+        </BrowserRouter>
+      </Suspense>
     </React.StrictMode>
   );
 } catch (error) {
