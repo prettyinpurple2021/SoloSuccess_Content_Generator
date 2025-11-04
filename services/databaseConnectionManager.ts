@@ -5,7 +5,7 @@
 
 import postgres from 'postgres';
 import { errorHandler } from './errorHandlingService';
-import { databaseErrorHandler } from './databaseErrorHandler';
+import { databasePerformanceService } from './databasePerformanceService';
 
 export interface ConnectionConfig {
   host?: string;
@@ -44,7 +44,7 @@ export interface PoolStatus {
 
 export class DatabaseConnectionManager {
   private static instance: DatabaseConnectionManager;
-  private pool: any;
+  private pool: unknown;
   private config: ConnectionConfig;
   private metrics: ConnectionMetrics;
   private startTime: Date;
@@ -81,7 +81,7 @@ export class DatabaseConnectionManager {
   /**
    * Gets the database connection pool
    */
-  getPool(): any {
+  getPool(): unknown {
     if (!this.pool) {
       throw new Error('Database pool not initialized');
     }
@@ -92,7 +92,7 @@ export class DatabaseConnectionManager {
    * Executes a query with connection management and metrics tracking
    */
   async executeQuery<T>(
-    queryFn: (sql: any) => Promise<T>,
+    queryFn: (sql: unknown) => Promise<T>,
     context?: { operation?: string; userId?: string }
   ): Promise<T> {
     const startTime = Date.now();
@@ -110,6 +110,18 @@ export class DatabaseConnectionManager {
       const responseTime = Date.now() - startTime;
       this.updateResponseTimeMetrics(responseTime);
 
+      // Track performance metrics
+      if (context?.operation) {
+        databasePerformanceService.recordMetrics({
+          query: context.operation,
+          executionTime: responseTime,
+          timestamp: new Date(),
+          userId: context.userId,
+          operation: context.operation,
+          rowsAffected: Array.isArray(result) ? result.length : 1,
+        });
+      }
+
       return result;
     } catch (error) {
       this.metrics.failedQueries++;
@@ -118,6 +130,18 @@ export class DatabaseConnectionManager {
       if (this.isConnectionError(error)) {
         this.metrics.connectionErrors++;
         await this.handleConnectionError(error, context);
+      }
+
+      // Track error metrics
+      if (context?.operation) {
+        databasePerformanceService.recordMetrics({
+          query: context.operation,
+          executionTime: Date.now() - startTime,
+          timestamp: new Date(),
+          userId: context?.userId,
+          operation: context.operation,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
 
       errorHandler.logError(
@@ -132,6 +156,42 @@ export class DatabaseConnectionManager {
 
       throw error;
     }
+  }
+
+  /**
+   * Executes an optimized query with performance monitoring
+   */
+  async executeOptimizedQuery<T>(
+    query: string,
+    params: unknown[],
+    operation: string,
+    userId?: string
+  ): Promise<T> {
+    return await databasePerformanceService.executeWithMonitoring<T>(
+      this.pool,
+      query,
+      params,
+      operation,
+      userId
+    );
+  }
+
+  /**
+   * Executes batch operations with transaction optimization
+   */
+  async executeBatch<T>(
+    operations: Array<{
+      query: string;
+      params: unknown[];
+      operation: string;
+    }>,
+    userId?: string
+  ): Promise<T[]> {
+    return await databasePerformanceService.executeBatchWithOptimization<T>(
+      this.pool,
+      operations,
+      userId
+    );
   }
 
   /**
@@ -426,7 +486,10 @@ export class DatabaseConnectionManager {
     }
   }
 
-  private async handleConnectionError(error: unknown, context?: any): Promise<void> {
+  private async handleConnectionError(
+    error: unknown,
+    _context?: Record<string, unknown>
+  ): Promise<void> {
     this.metrics.lastError = error instanceof Error ? error : new Error(String(error));
     this.metrics.lastErrorTime = new Date();
 

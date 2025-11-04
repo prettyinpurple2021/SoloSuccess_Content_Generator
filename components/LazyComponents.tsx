@@ -1,26 +1,99 @@
 import { lazy } from 'react';
+import { frontendPerformanceService } from '../services/frontendPerformanceService';
 
-// Lazy load heavy components for code splitting
-export const LazyErrorReportingSystem = lazy(() => import('./ErrorReportingSystem'));
-export const LazyEnhancedErrorExample = lazy(() => import('./EnhancedErrorExample'));
-export const LazyIntegrationManager = lazy(() => import('./IntegrationManager'));
-export const LazyRepurposingWorkflow = lazy(() => import('./RepurposingWorkflow'));
-export const LazyImageStyleManager = lazy(() => import('./ImageStyleManager'));
-export const LazyContentSeriesManager = lazy(() => import('./ContentSeriesManager'));
-export const LazyTemplateLibrary = lazy(() => import('./TemplateLibrary'));
-export const LazyAnalyticsDashboard = lazy(() =>
-  import('./AnalyticsDashboard').then((module) => ({ default: module.AnalyticsDashboard }))
-);
-export const LazyPerformanceInsights = lazy(() =>
-  import('./PerformanceInsights').then((module) => ({ default: module.PerformanceInsights }))
-);
-export const LazyDragDropContentBuilder = lazy(() => import('./DragDropContentBuilder'));
-export const LazyVoiceCommands = lazy(() => import('./VoiceCommands'));
-export const LazyGamificationSystem = lazy(() => import('./GamificationSystem'));
+// Enhanced lazy loading with performance monitoring and preloading
+const createLazyComponent = <T extends React.ComponentType<Record<string, unknown>>>(
+  importFn: () => Promise<{ default: T }>,
+  componentName: string,
+  preload: boolean = false
+) => {
+  const LazyComponent = lazy(() => {
+    const startTime = performance.now();
+    return importFn().then((module) => {
+      const loadTime = performance.now() - startTime;
+      frontendPerformanceService.trackComponentRender(`${componentName}_load`, loadTime);
+      return module;
+    });
+  });
 
-// Lazy load service modules
-export const LazyGeminiService = lazy(() => import('../services/geminiService'));
-export const LazyBloggerService = lazy(() => import('../services/bloggerService'));
+  // Preload component if specified
+  if (preload && typeof window !== 'undefined') {
+    // Preload after a short delay to not block initial render
+    setTimeout(() => {
+      importFn().catch(() => {
+        // Ignore preload errors
+      });
+    }, 100);
+  }
+
+  return LazyComponent;
+};
+
+// Critical components (preloaded)
+export const LazyIntegrationManager = createLazyComponent(
+  () => import('./IntegrationManager'),
+  'IntegrationManager',
+  true
+);
+
+export const LazyAnalyticsDashboard = createLazyComponent(
+  () => import('./AnalyticsDashboard').then((module) => ({ default: module.AnalyticsDashboard })),
+  'AnalyticsDashboard',
+  true
+);
+
+// Heavy components (lazy loaded on demand)
+export const LazyErrorReportingSystem = createLazyComponent(
+  () => import('./ErrorReportingSystem'),
+  'ErrorReportingSystem'
+);
+
+export const LazyEnhancedErrorExample = createLazyComponent(
+  () => import('./EnhancedErrorExample'),
+  'EnhancedErrorExample'
+);
+
+export const LazyRepurposingWorkflow = createLazyComponent(
+  () => import('./RepurposingWorkflow'),
+  'RepurposingWorkflow'
+);
+
+export const LazyImageStyleManager = createLazyComponent(
+  () => import('./ImageStyleManager'),
+  'ImageStyleManager'
+);
+
+export const LazyContentSeriesManager = createLazyComponent(
+  () => import('./ContentSeriesManager'),
+  'ContentSeriesManager'
+);
+
+export const LazyTemplateLibrary = createLazyComponent(
+  () => import('./TemplateLibrary'),
+  'TemplateLibrary'
+);
+
+export const LazyPerformanceInsights = createLazyComponent(
+  () => import('./PerformanceInsights').then((module) => ({ default: module.PerformanceInsights })),
+  'PerformanceInsights'
+);
+
+export const LazyDragDropContentBuilder = createLazyComponent(
+  () => import('./DragDropContentBuilder'),
+  'DragDropContentBuilder'
+);
+
+export const LazyVoiceCommands = createLazyComponent(
+  () => import('./VoiceCommands'),
+  'VoiceCommands'
+);
+
+export const LazyGamificationSystem = createLazyComponent(
+  () => import('./GamificationSystem'),
+  'GamificationSystem'
+);
+
+// Note: Service modules are not React components and should not be lazy loaded as components
 
 // Loading fallback component
 export const ComponentLoadingFallback: React.FC<{ name?: string }> = ({ name }) => (

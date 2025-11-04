@@ -14,11 +14,19 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       sourcemap: false,
+      target: 'es2020',
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+        },
+      },
       rollupOptions: {
         external: ['postgres', 'fs', 'os', 'net', 'tls', 'crypto', 'stream', 'perf_hooks'],
         output: {
           manualChunks: (id) => {
-            // Vendor chunks
+            // Vendor chunks with better splitting
             if (id.includes('node_modules')) {
               if (id.includes('react') || id.includes('react-dom')) {
                 return 'vendor-react';
@@ -29,7 +37,19 @@ export default defineConfig(({ mode }) => {
               if (id.includes('marked') || id.includes('uuid')) {
                 return 'vendor-utils';
               }
+              if (id.includes('@google/genai')) {
+                return 'vendor-ai';
+              }
               return 'vendor';
+            }
+
+            // Performance and monitoring
+            if (
+              id.includes('frontendPerformanceService') ||
+              id.includes('databasePerformanceService') ||
+              id.includes('performanceMonitoringService')
+            ) {
+              return 'performance';
             }
 
             // Error handling components
@@ -52,6 +72,15 @@ export default defineConfig(({ mode }) => {
               return 'ai-services';
             }
 
+            // Database services
+            if (
+              id.includes('neonService') ||
+              id.includes('databaseService') ||
+              id.includes('databaseConnectionManager')
+            ) {
+              return 'database-services';
+            }
+
             // Heavy components
             if (
               id.includes('IntegrationManager') ||
@@ -62,9 +91,46 @@ export default defineConfig(({ mode }) => {
             ) {
               return 'components-heavy';
             }
+
+            // Lazy components
+            if (id.includes('LazyComponents')) {
+              return 'lazy-components';
+            }
+          },
+          // Optimize chunk sizes
+          chunkFileNames: (chunkInfo) => {
+            const facadeModuleId = chunkInfo.facadeModuleId
+              ? chunkInfo.facadeModuleId.split('/').pop()?.replace('.tsx', '').replace('.ts', '')
+              : 'chunk';
+            return `assets/js/[name]-[hash].js`;
+          },
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name?.split('.') || [];
+            const ext = info[info.length - 1];
+            if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext || '')) {
+              return `assets/images/[name]-[hash][extname]`;
+            }
+            if (/css/i.test(ext || '')) {
+              return `assets/css/[name]-[hash][extname]`;
+            }
+            return `assets/[name]-[hash][extname]`;
           },
         },
       },
+      // Performance optimizations
+      reportCompressedSize: false,
+      chunkSizeWarningLimit: 1000,
+    },
+    optimizeDeps: {
+      include: ['react', 'react-dom', 'lucide-react', '@stackframe/stack'],
+      exclude: [
+        '@google/genai', // Large AI library - load on demand
+      ],
+    },
+    // Performance improvements
+    esbuild: {
+      target: 'es2020',
+      drop: ['console', 'debugger'],
     },
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
