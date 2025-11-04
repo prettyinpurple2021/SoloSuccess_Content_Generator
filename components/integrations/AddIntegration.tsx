@@ -31,6 +31,12 @@ const AddIntegration: React.FC<AddIntegrationProps> = ({ onCreateIntegration, is
       { id: 'facebook', name: 'Facebook', icon: '📘', description: 'Post to pages and groups' },
       { id: 'instagram', name: 'Instagram', icon: '📷', description: 'Share photos and stories' },
       { id: 'tiktok', name: 'TikTok', icon: '🎵', description: 'Create and share short videos' },
+      {
+        id: 'blogger',
+        name: 'Blogger',
+        icon: '📝',
+        description: 'Publish blog posts to your Blogger account',
+      },
     ],
     analytics: [
       {

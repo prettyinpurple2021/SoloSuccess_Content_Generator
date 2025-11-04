@@ -19,13 +19,13 @@
   - Ensure database connections work with production credentials
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 8.1 Production environment setup
+- [x] 8.1 Production environment setup
   - Set up all environment variables in Vercel dashboard (DATABASE_URL, API_KEY, etc.)
   - Configure Vercel build settings and serverless function limits
   - Test deployment process and verify app loads correctly
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 8.2 Basic smoke testing in production
+- [x] 8.2 Basic smoke testing in production
   - Test user authentication flow works
   - Test content generation (topic → ideas → post) works
   - Test post saving and scheduling works

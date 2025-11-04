@@ -28,7 +28,7 @@ interface User {
 }
 import * as geminiService from './services/geminiService';
 // import * as schedulerService from './services/schedulerService';
-import * as bloggerService from './services/bloggerService';
+// Blogger integration now handled through Integration Manager
 import { postScheduler } from './services/postScheduler';
 import {
   CalendarIcon,
@@ -120,10 +120,7 @@ const App: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
 
-  // Blogger Integration State
-  const [isBloggerAuthenticated, setIsBloggerAuthenticated] = useState(false);
-  const [bloggerBlogs, setBloggerBlogs] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedBlogId, setSelectedBlogId] = useState<string>('');
+  // Blogger integration now handled through Integration Manager
 
   // Image Style State
   const [showImageStyleManager, setShowImageStyleManager] = useState(false);
@@ -249,26 +246,7 @@ const App: React.FC = () => {
       }
     }
 
-    const initializeBlogger = async () => {
-      if (bloggerService.isBloggerConfigured) {
-        try {
-          const isSignedIn = await bloggerService.initClient();
-          setIsBloggerAuthenticated(isSignedIn);
-          if (isSignedIn) {
-            const blogs = await bloggerService.listBlogs();
-            setBloggerBlogs(blogs);
-            if (blogs.length > 0) setSelectedBlogId(blogs[0].id);
-          }
-        } catch (error: unknown) {
-          console.error('Blogger integration error:', error);
-          setErrorMessage('Could not initialize Blogger integration. Ensure API keys are correct.');
-        }
-      } else {
-        console.log('Blogger integration skipped: missing configuration.');
-      }
-    };
-
-    initializeBlogger();
+    // Blogger integration now handled through Integration Manager
 
     return () => {};
   }, [stackUser]);
@@ -922,22 +900,7 @@ const App: React.FC = () => {
     setSuccessMessage(`${type} copied to clipboard!`);
   };
 
-  const handleBloggerAuth = withLoading('bloggerAuth', async () => {
-    await bloggerService.handleAuthClick();
-    setIsBloggerAuthenticated(true);
-    const blogs = await bloggerService.listBlogs();
-    setBloggerBlogs(blogs);
-    if (blogs.length > 0) setSelectedBlogId(blogs[0].id);
-  });
-
-  const handlePostToBlogger = withLoading('bloggerPost', async () => {
-    if (!selectedBlogId) {
-      setErrorMessage('Please select a blog to post to.');
-      return;
-    }
-    await bloggerService.createPost(selectedBlogId, selectedIdea, parsedMarkdown, selectedTags);
-    setSuccessMessage('Successfully posted to Blogger!');
-  });
+  // Blogger posting now handled through Integration Manager
 
   const getStatusPill = (status: string) => {
     const baseClasses = 'status-pill';
@@ -1920,46 +1883,38 @@ const App: React.FC = () => {
                       onClick={() => handleCopyToClipboard(parsedMarkdown, 'HTML')}
                       className="bg-secondary/80 hover:bg-secondary text-white font-bold py-2 px-4 rounded-lg w-full"
                     >
-                      Copy for Blogger (HTML)
+                      Copy HTML Content
                     </button>
+
                     <div className="border-t border-border pt-4">
                       <h4 className="font-semibold mb-2 text-primary-foreground">
-                        Post directly to Blogger
+                        Publishing Platforms
                       </h4>
-                      {isBloggerAuthenticated ? (
-                        bloggerBlogs.length > 0 ? (
-                          <div className="flex gap-2">
-                            <select
-                              value={selectedBlogId}
-                              onChange={(e) => setSelectedBlogId(e.target.value)}
-                              className="bg-muted border border-border rounded-lg px-2 py-1 w-full"
-                            >
-                              {bloggerBlogs.map((blog) => (
-                                <option key={blog.id} value={blog.id}>
-                                  {blog.name}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              onClick={handlePostToBlogger}
-                              disabled={isLoading.bloggerPost}
-                              className="flex items-center justify-center gap-2 bg-primary/80 hover:bg-primary text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
-                            >
-                              {isLoading.bloggerPost ? <Spinner /> : 'Post'}
-                            </button>
+                      <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-2xl">📝</span>
+                          <div>
+                            <h5 className="font-semibold text-blue-300">Blogger Integration</h5>
+                            <p className="text-sm text-blue-200">
+                              Connect your own Blogger account to publish posts directly
+                            </p>
                           </div>
-                        ) : (
-                          <p>No blogs found on your Blogger account.</p>
-                        )
-                      ) : (
+                        </div>
                         <button
-                          onClick={handleBloggerAuth}
-                          disabled={isLoading.bloggerAuth}
-                          className="w-full flex items-center justify-center gap-2 bg-red-600/80 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
+                          onClick={() => setShowIntegrationManager(true)}
+                          className="w-full bg-blue-600/80 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
                         >
-                          {isLoading.bloggerAuth ? <Spinner /> : 'Connect to Blogger'}
+                          Set Up Blogger Integration
                         </button>
-                      )}
+                      </div>
+
+                      <div className="text-sm text-white/60 mt-3">
+                        <p>
+                          💡 <strong>Tip:</strong> Use the Integration Manager to connect your own
+                          social media accounts and publishing platforms. Each user manages their
+                          own credentials securely.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
