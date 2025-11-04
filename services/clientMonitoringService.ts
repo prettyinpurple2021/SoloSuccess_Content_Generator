@@ -485,15 +485,39 @@ class ClientMonitoringService {
    * Generate session ID
    */
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `session_${Date.now()}_${this.secureRandomString(9)}`;
   }
 
   /**
    * Generate metric ID
    */
   private generateMetricId(): string {
-    return `metric_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `metric_${Date.now()}_${this.secureRandomString(9)}`;
   }
+    /**
+     * Generate a cryptographically secure random string.
+     */
+    private secureRandomString(length: number): string {
+      let randomStr = "";
+      if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
+        // Browser: use window.crypto
+        const arr = new Uint8Array(length);
+        window.crypto.getRandomValues(arr);
+        for (let i = 0; i < arr.length; i++) {
+          // Map byte to 0-35 to use in base36
+          randomStr += arr[i] % 36 .toString(36);
+        }
+      } else {
+        // Node.js or fallback (note: process.browser may be available)
+        // Import crypto only if not already declared; safe here since we are only editing this file
+        const crypto = require("crypto");
+        const buf = crypto.randomBytes(length);
+        for (let i = 0; i < buf.length; i++) {
+          randomStr += (buf[i] % 36).toString(36);
+        }
+      }
+      return randomStr;
+    }
 }
 
 // Create singleton instance
