@@ -3,6 +3,8 @@
  * Provides performance monitoring, optimization, and caching for React components
  */
 
+import React from 'react';
+
 interface PerformanceMetrics {
   componentRenderTime: number;
   memoryUsage: number;
@@ -555,7 +557,7 @@ class FrontendPerformanceService {
         this.trackPropsChange(componentName);
       }, [props]);
 
-      return React.createElement(Component, props);
+      return React.createElement(Component as React.ComponentType<any>, props);
     };
 
     ProfiledComponent.displayName = `Profiled(${componentName})`;

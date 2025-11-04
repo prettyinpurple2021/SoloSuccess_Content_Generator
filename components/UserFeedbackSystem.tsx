@@ -11,6 +11,7 @@ import {
   CheckCircle,
   User,
   Mail,
+  Bug,
 } from 'lucide-react';
 
 export type FeedbackType = 'bug' | 'feature' | 'improvement' | 'compliment' | 'question' | 'error';
