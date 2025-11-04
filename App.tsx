@@ -16,6 +16,7 @@ import {
   PerformanceReport,
   SchedulingSuggestion,
 } from './types';
+// Enhanced error handling is now handled in AppWithErrorHandling.tsx wrapper
 import { apiService as clientApi } from './services/clientApiService';
 import { campaignService } from './services/clientCampaignService';
 
@@ -270,7 +271,7 @@ const App: React.FC = () => {
     initializeBlogger();
 
     return () => {};
-  }, []);
+  }, [stackUser]);
 
   useEffect(() => {
     if (!isAuthReady || !user) {
@@ -323,7 +324,7 @@ const App: React.FC = () => {
     return () => {
       postScheduler.stop();
     };
-  }, [isAuthReady, user]);
+  }, [isAuthReady, user, selectedBrandVoice, selectedAudienceProfile]);
 
   useEffect(() => {
     if (successMessage || errorMessage) {

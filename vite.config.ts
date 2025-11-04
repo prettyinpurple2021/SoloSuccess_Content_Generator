@@ -17,7 +17,52 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         external: ['postgres', 'fs', 'os', 'net', 'tls', 'crypto', 'stream', 'perf_hooks'],
         output: {
-          manualChunks: undefined,
+          manualChunks: (id) => {
+            // Vendor chunks
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom')) {
+                return 'vendor-react';
+              }
+              if (id.includes('lucide-react') || id.includes('@stackframe/stack')) {
+                return 'vendor-ui';
+              }
+              if (id.includes('marked') || id.includes('uuid')) {
+                return 'vendor-utils';
+              }
+              return 'vendor';
+            }
+
+            // Error handling components
+            if (
+              id.includes('ErrorBoundary') ||
+              id.includes('LoadingStateManager') ||
+              id.includes('NotificationSystem') ||
+              id.includes('UserFeedbackSystem') ||
+              id.includes('ErrorReportingSystem') ||
+              id.includes('useErrorRecovery') ||
+              id.includes('useErrorState') ||
+              id.includes('errorUtils') ||
+              id.includes('errorHandlingService')
+            ) {
+              return 'error-handling';
+            }
+
+            // AI services
+            if (id.includes('geminiService') || id.includes('aiLearningService')) {
+              return 'ai-services';
+            }
+
+            // Heavy components
+            if (
+              id.includes('IntegrationManager') ||
+              id.includes('RepurposingWorkflow') ||
+              id.includes('AnalyticsDashboard') ||
+              id.includes('PerformanceInsights') ||
+              id.includes('DragDropContentBuilder')
+            ) {
+              return 'components-heavy';
+            }
+          },
         },
       },
     },
