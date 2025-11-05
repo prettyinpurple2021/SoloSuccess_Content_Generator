@@ -1,564 +1,676 @@
 /**
  * Production Monitoring Service
  *
- * Comprehensive monitoring and alerting system for production environment.
- * Tracks performance metrics, errors, and system health.
+ * Provides comprehensive monitoring and alerting for critical failures
+ * in production environment.
  */
 
-interface MetricData {
-  name: string;
-  value: number;
-  timestamp: number;
-  tags?: Record<string, string>;
-  unit?: string;
+interface MonitoringConfig {
+  healthCheckInterval: number;
+  alertThresholds: {
+    errorRate: number;
+    responseTime: number;
+    memoryUsage: number;
+    cpuUsage: number;
+  };
+  alertChannels: {
+    console: boolean;
+    webhook: boolean;
+    email: boolean;
+  };
+  retentionPeriod: number; // days
 }
 
-interface AlertRule {
-  id: string;
-  name: string;
-  metric: string;
-  condition: 'gt' | 'lt' | 'eq' | 'gte' | 'lte';
-  threshold: number;
-  window: number; // in milliseconds
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  enabled: boolean;
-  cooldown: number; // minimum time between alerts in milliseconds
+interface HealthMetrics {
+  timestamp: Date;
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  responseTime: number;
+  errorRate: number;
+  memoryUsage: number;
+  activeConnections: number;
+  uptime: number;
+  version: string;
 }
 
 interface Alert {
   id: string;
-  ruleId: string;
+  type: 'error' | 'warning' | 'info' | 'critical';
+  title: string;
   message: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  timestamp: number;
+  timestamp: Date;
   resolved: boolean;
-  resolvedAt?: number;
-  metadata?: Record<string, unknown>;
+  resolvedAt?: Date;
+  metadata: Record<string, unknown>;
 }
 
-interface PerformanceMetrics {
-  responseTime: number;
-  errorRate: number;
-  throughput: number;
-  cpuUsage: number;
-  memoryUsage: number;
-  databaseConnections: number;
-  aiApiCalls: number;
-  integrationCalls: number;
+interface SystemError {
+  id: string;
+  type: 'database' | 'ai_service' | 'authentication' | 'integration' | 'application';
+  message: string;
+  stack?: string;
+  timestamp: Date;
+  userId?: string;
+  requestId?: string;
+  metadata: Record<string, unknown>;
 }
 
 class ProductionMonitoringService {
-  private metrics: MetricData[] = [];
+  private config: MonitoringConfig;
+  private metrics: HealthMetrics[] = [];
   private alerts: Alert[] = [];
-  private alertRules: AlertRule[] = [];
-  private lastAlertTime: Map<string, number> = new Map();
-  private isEnabled: boolean;
+  private errors: SystemError[] = [];
+  private isMonitoring = false;
+  private healthCheckTimer?: NodeJS.Timeout;
+  private startTime = Date.now();
 
-  constructor() {
-    this.isEnabled = process.env.INTEGRATION_MONITORING_ENABLED === 'true';
-    this.initializeDefaultAlertRules();
-  }
-
-  /**
-   * Initialize default alert rules for production monitoring
-   */
-  private initializeDefaultAlertRules(): void {
-    const defaultRules: AlertRule[] = [
-      {
-        id: 'high-error-rate',
-        name: 'High Error Rate',
-        metric: 'error_rate',
-        condition: 'gt',
-        threshold: 5, // 5% error rate
-        window: 5 * 60 * 1000, // 5 minutes
-        severity: 'high',
-        enabled: true,
-        cooldown: 15 * 60 * 1000, // 15 minutes
+  constructor(config?: Partial<MonitoringConfig>) {
+    this.config = {
+      healthCheckInterval: 60000, // 1 minute
+      alertThresholds: {
+        errorRate: 0.05, // 5%
+        responseTime: 5000, // 5 seconds
+        memoryUsage: 0.85, // 85%
+        cpuUsage: 0.8, // 80%
       },
-      {
-        id: 'slow-response-time',
-        name: 'Slow Response Time',
-        metric: 'response_time',
-        condition: 'gt',
-        threshold: 2000, // 2 seconds
-        window: 5 * 60 * 1000, // 5 minutes
-        severity: 'medium',
-        enabled: true,
-        cooldown: 10 * 60 * 1000, // 10 minutes
+      alertChannels: {
+        console: true,
+        webhook: false,
+        email: false,
       },
-      {
-        id: 'database-connection-issues',
-        name: 'Database Connection Issues',
-        metric: 'database_errors',
-        condition: 'gt',
-        threshold: 10, // 10 database errors
-        window: 5 * 60 * 1000, // 5 minutes
-        severity: 'critical',
-        enabled: true,
-        cooldown: 5 * 60 * 1000, // 5 minutes
-      },
-      {
-        id: 'ai-service-failures',
-        name: 'AI Service Failures',
-        metric: 'ai_service_errors',
-        condition: 'gt',
-        threshold: 5, // 5 AI service errors
-        window: 10 * 60 * 1000, // 10 minutes
-        severity: 'high',
-        enabled: true,
-        cooldown: 15 * 60 * 1000, // 15 minutes
-      },
-      {
-        id: 'integration-failures',
-        name: 'Integration Service Failures',
-        metric: 'integration_errors',
-        condition: 'gt',
-        threshold: 3, // 3 integration errors
-        window: 10 * 60 * 1000, // 10 minutes
-        severity: 'medium',
-        enabled: true,
-        cooldown: 20 * 60 * 1000, // 20 minutes
-      },
-    ];
-
-    this.alertRules = defaultRules;
-  }
-
-  /**
-   * Record a metric data point
-   */
-  recordMetric(name: string, value: number, tags?: Record<string, string>, unit?: string): void {
-    if (!this.isEnabled) return;
-
-    const metric: MetricData = {
-      name,
-      value,
-      timestamp: Date.now(),
-      tags,
-      unit,
+      retentionPeriod: 7, // 7 days
+      ...config,
     };
+  }
 
-    this.metrics.push(metric);
-
-    // Keep only last 1000 metrics to prevent memory issues
-    if (this.metrics.length > 1000) {
-      this.metrics = this.metrics.slice(-1000);
+  /**
+   * Start monitoring system
+   */
+  startMonitoring(): void {
+    if (this.isMonitoring) {
+      console.log('🔍 Monitoring already active');
+      return;
     }
 
-    // Check alert rules
-    this.checkAlertRules(metric);
+    this.isMonitoring = true;
+    console.log('🔍 Starting production monitoring...');
+
+    // Start periodic health checks
+    this.healthCheckTimer = setInterval(() => {
+      this.performHealthCheck();
+    }, this.config.healthCheckInterval);
+
+    // Initial health check
+    this.performHealthCheck();
+
+    // Set up error handlers
+    this.setupErrorHandlers();
+
+    console.log(
+      `✅ Production monitoring started (interval: ${this.config.healthCheckInterval}ms)`
+    );
   }
 
   /**
-   * Record performance metrics
+   * Stop monitoring system
    */
-  recordPerformanceMetrics(metrics: Partial<PerformanceMetrics>): void {
-    if (!this.isEnabled) return;
+  stopMonitoring(): void {
+    if (!this.isMonitoring) {
+      return;
+    }
 
-    // Record performance metrics with timestamp
-    const tags = { source: 'performance_monitor' };
+    this.isMonitoring = false;
 
-    Object.entries(metrics).forEach(([key, value]) => {
-      if (value !== undefined) {
-        this.recordMetric(key, value, tags);
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer);
+      this.healthCheckTimer = undefined;
+    }
+
+    console.log('🔍 Production monitoring stopped');
+  }
+
+  /**
+   * Perform comprehensive health check
+   */
+  private async performHealthCheck(): Promise<void> {
+    try {
+      const startTime = Date.now();
+
+      // Check all system components
+      const [databaseHealth, aiServiceHealth, authHealth, integrationHealth, systemHealth] =
+        await Promise.allSettled([
+          this.checkDatabaseHealth(),
+          this.checkAIServiceHealth(),
+          this.checkAuthenticationHealth(),
+          this.checkIntegrationHealth(),
+          this.checkSystemHealth(),
+        ]);
+
+      const responseTime = Date.now() - startTime;
+
+      // Calculate overall health status
+      const healthChecks = [
+        databaseHealth,
+        aiServiceHealth,
+        authHealth,
+        integrationHealth,
+        systemHealth,
+      ];
+
+      const failedChecks = healthChecks.filter((check) => check.status === 'rejected').length;
+      const totalChecks = healthChecks.length;
+      const errorRate = failedChecks / totalChecks;
+
+      let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+      if (errorRate > 0.5) {
+        status = 'unhealthy';
+      } else if (errorRate > 0.2) {
+        status = 'degraded';
       }
-    });
-  }
 
-  /**
-   * Record API response time
-   */
-  recordApiResponseTime(
-    endpoint: string,
-    method: string,
-    responseTime: number,
-    statusCode: number
-  ): void {
-    if (!this.isEnabled) return;
+      // Create health metrics
+      const metrics: HealthMetrics = {
+        timestamp: new Date(),
+        status,
+        responseTime,
+        errorRate,
+        memoryUsage: this.getMemoryUsage(),
+        activeConnections: this.getActiveConnections(),
+        uptime: Date.now() - this.startTime,
+        version: process.env.npm_package_version || '1.0.0',
+      };
 
-    const tags = {
-      endpoint,
-      method,
-      status_code: statusCode.toString(),
-      status_class: Math.floor(statusCode / 100) + 'xx',
-    };
+      this.metrics.push(metrics);
+      this.cleanupOldMetrics();
 
-    this.recordMetric('api_response_time', responseTime, tags, 'ms');
+      // Check for alerts
+      this.checkAlertConditions(metrics);
 
-    // Record error if status code indicates error
-    if (statusCode >= 400) {
-      this.recordMetric('api_error', 1, tags);
-    }
-  }
-
-  /**
-   * Record database operation metrics
-   */
-  recordDatabaseMetrics(operation: string, duration: number, success: boolean): void {
-    if (!this.isEnabled) return;
-
-    const tags = {
-      operation,
-      success: success.toString(),
-    };
-
-    this.recordMetric('database_operation_time', duration, tags, 'ms');
-
-    if (!success) {
-      this.recordMetric('database_errors', 1, tags);
-    }
-  }
-
-  /**
-   * Record AI service metrics
-   */
-  recordAIServiceMetrics(
-    service: string,
-    operation: string,
-    duration: number,
-    success: boolean,
-    tokensUsed?: number
-  ): void {
-    if (!this.isEnabled) return;
-
-    const tags = {
-      service,
-      operation,
-      success: success.toString(),
-    };
-
-    this.recordMetric('ai_service_response_time', duration, tags, 'ms');
-
-    if (tokensUsed) {
-      this.recordMetric('ai_tokens_used', tokensUsed, tags);
-    }
-
-    if (!success) {
-      this.recordMetric('ai_service_errors', 1, tags);
-    }
-  }
-
-  /**
-   * Record integration service metrics
-   */
-  recordIntegrationMetrics(
-    platform: string,
-    operation: string,
-    duration: number,
-    success: boolean
-  ): void {
-    if (!this.isEnabled) return;
-
-    const tags = {
-      platform,
-      operation,
-      success: success.toString(),
-    };
-
-    this.recordMetric('integration_response_time', duration, tags, 'ms');
-
-    if (!success) {
-      this.recordMetric('integration_errors', 1, tags);
-    }
-  }
-
-  /**
-   * Check alert rules against new metric
-   */
-  private checkAlertRules(metric: MetricData): void {
-    const now = Date.now();
-
-    this.alertRules
-      .filter((rule) => rule.enabled && rule.metric === metric.name)
-      .forEach((rule) => {
-        // Check cooldown period
-        const lastAlert = this.lastAlertTime.get(rule.id);
-        if (lastAlert && now - lastAlert < rule.cooldown) {
-          return;
-        }
-
-        // Get metrics within the time window
-        const windowStart = now - rule.window;
-        const windowMetrics = this.metrics.filter(
-          (m) => m.name === rule.metric && m.timestamp >= windowStart
+      // Log health status
+      if (status === 'healthy') {
+        console.log(`✅ Health check passed (${responseTime}ms)`);
+      } else if (status === 'degraded') {
+        console.log(
+          `⚠️ System degraded (${responseTime}ms, ${(errorRate * 100).toFixed(1)}% error rate)`
         );
-
-        if (windowMetrics.length === 0) return;
-
-        // Calculate aggregate value (average for now)
-        const aggregateValue =
-          windowMetrics.reduce((sum, m) => sum + m.value, 0) / windowMetrics.length;
-
-        // Check if alert condition is met
-        const conditionMet = this.evaluateCondition(aggregateValue, rule.condition, rule.threshold);
-
-        if (conditionMet) {
-          this.triggerAlert(rule, aggregateValue, windowMetrics.length);
-        }
-      });
-  }
-
-  /**
-   * Evaluate alert condition
-   */
-  private evaluateCondition(value: number, condition: string, threshold: number): boolean {
-    switch (condition) {
-      case 'gt':
-        return value > threshold;
-      case 'gte':
-        return value >= threshold;
-      case 'lt':
-        return value < threshold;
-      case 'lte':
-        return value <= threshold;
-      case 'eq':
-        return value === threshold;
-      default:
-        return false;
+      } else {
+        console.log(
+          `❌ System unhealthy (${responseTime}ms, ${(errorRate * 100).toFixed(1)}% error rate)`
+        );
+      }
+    } catch (error) {
+      console.error('❌ Health check failed:', error);
+      this.recordError('application', 'Health check failed', error);
     }
   }
 
   /**
-   * Trigger an alert
+   * Check database health
    */
-  private triggerAlert(rule: AlertRule, value: number, sampleCount: number): void {
+  private async checkDatabaseHealth(): Promise<boolean> {
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { testConnection } = await import('./neonService.js');
+      await testConnection();
+      return true;
+    } catch (error) {
+      this.recordError('database', 'Database health check failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check AI service health
+   */
+  private async checkAIServiceHealth(): Promise<boolean> {
+    try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('Gemini API key not configured');
+      }
+
+      // Simple configuration check - avoid making actual API calls
+      // to prevent unnecessary costs and rate limiting
+      return true;
+    } catch (error) {
+      this.recordError('ai_service', 'AI service health check failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check authentication health
+   */
+  private async checkAuthenticationHealth(): Promise<boolean> {
+    try {
+      const requiredVars = [
+        'VITE_STACK_PROJECT_ID',
+        'VITE_STACK_PUBLISHABLE_CLIENT_KEY',
+        'STACK_SECRET_SERVER_KEY',
+      ];
+
+      const missingVars = requiredVars.filter((varName) => !process.env[varName]);
+
+      if (missingVars.length > 0) {
+        throw new Error(`Missing authentication variables: ${missingVars.join(', ')}`);
+      }
+
+      return true;
+    } catch (error) {
+      this.recordError('authentication', 'Authentication health check failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check integration health
+   */
+  private async checkIntegrationHealth(): Promise<boolean> {
+    try {
+      if (!process.env.INTEGRATION_ENCRYPTION_SECRET) {
+        throw new Error('Integration encryption secret not configured');
+      }
+
+      if (process.env.INTEGRATION_ENCRYPTION_SECRET.length < 32) {
+        throw new Error('Integration encryption secret too short');
+      }
+
+      return true;
+    } catch (error) {
+      this.recordError('integration', 'Integration health check failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check system health (memory, etc.)
+   */
+  private async checkSystemHealth(): Promise<boolean> {
+    try {
+      const memoryUsage = this.getMemoryUsage();
+
+      if (memoryUsage > this.config.alertThresholds.memoryUsage) {
+        throw new Error(`High memory usage: ${(memoryUsage * 100).toFixed(1)}%`);
+      }
+
+      return true;
+    } catch (error) {
+      this.recordError('application', 'System health check failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get memory usage percentage
+   */
+  private getMemoryUsage(): number {
+    if (typeof process !== 'undefined' && process.memoryUsage) {
+      const usage = process.memoryUsage();
+      // Estimate based on heap used vs heap total
+      return usage.heapUsed / usage.heapTotal;
+    }
+    return 0;
+  }
+
+  /**
+   * Get active connections count (placeholder)
+   */
+  private getActiveConnections(): number {
+    // In a real implementation, this would track actual connections
+    return 0;
+  }
+
+  /**
+   * Check for alert conditions
+   */
+  private checkAlertConditions(metrics: HealthMetrics): void {
+    const { alertThresholds } = this.config;
+
+    // Check error rate
+    if (metrics.errorRate > alertThresholds.errorRate) {
+      this.createAlert(
+        'critical',
+        'High Error Rate',
+        `Error rate is ${(metrics.errorRate * 100).toFixed(1)}% (threshold: ${(alertThresholds.errorRate * 100).toFixed(1)}%)`,
+        { errorRate: metrics.errorRate, threshold: alertThresholds.errorRate }
+      );
+    }
+
+    // Check response time
+    if (metrics.responseTime > alertThresholds.responseTime) {
+      this.createAlert(
+        'warning',
+        'Slow Response Time',
+        `Response time is ${metrics.responseTime}ms (threshold: ${alertThresholds.responseTime}ms)`,
+        { responseTime: metrics.responseTime, threshold: alertThresholds.responseTime }
+      );
+    }
+
+    // Check memory usage
+    if (metrics.memoryUsage > alertThresholds.memoryUsage) {
+      this.createAlert(
+        'warning',
+        'High Memory Usage',
+        `Memory usage is ${(metrics.memoryUsage * 100).toFixed(1)}% (threshold: ${(alertThresholds.memoryUsage * 100).toFixed(1)}%)`,
+        { memoryUsage: metrics.memoryUsage, threshold: alertThresholds.memoryUsage }
+      );
+    }
+
+    // Check system status
+    if (metrics.status === 'unhealthy') {
+      this.createAlert('critical', 'System Unhealthy', 'Multiple system components are failing', {
+        status: metrics.status,
+        errorRate: metrics.errorRate,
+      });
+    } else if (metrics.status === 'degraded') {
+      this.createAlert(
+        'warning',
+        'System Degraded',
+        'Some system components are experiencing issues',
+        { status: metrics.status, errorRate: metrics.errorRate }
+      );
+    }
+  }
+
+  /**
+   * Create and send alert
+   */
+  private createAlert(
+    type: Alert['type'],
+    title: string,
+    message: string,
+    metadata: Record<string, unknown> = {}
+  ): void {
     const alert: Alert = {
-      id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      ruleId: rule.id,
-      message: `${rule.name}: ${rule.metric} is ${value.toFixed(2)} (threshold: ${rule.threshold})`,
-      severity: rule.severity,
-      timestamp: Date.now(),
+      id: this.generateId(),
+      type,
+      title,
+      message,
+      timestamp: new Date(),
       resolved: false,
-      metadata: {
-        metric: rule.metric,
-        value,
-        threshold: rule.threshold,
-        condition: rule.condition,
-        sampleCount,
-        window: rule.window,
-      },
+      metadata,
     };
 
     this.alerts.push(alert);
-    this.lastAlertTime.set(rule.id, Date.now());
+    this.sendAlert(alert);
+    this.cleanupOldAlerts();
+  }
 
-    // Send alert notification
-    this.sendAlertNotification(alert);
+  /**
+   * Send alert through configured channels
+   */
+  private sendAlert(alert: Alert): void {
+    const { alertChannels } = this.config;
 
-    // Keep only last 100 alerts
-    if (this.alerts.length > 100) {
-      this.alerts = this.alerts.slice(-100);
+    // Console logging
+    if (alertChannels.console) {
+      const icon =
+        alert.type === 'critical'
+          ? '🚨'
+          : alert.type === 'error'
+            ? '❌'
+            : alert.type === 'warning'
+              ? '⚠️'
+              : 'ℹ️';
+
+      console.log(`${icon} ALERT [${alert.type.toUpperCase()}] ${alert.title}: ${alert.message}`);
+
+      if (Object.keys(alert.metadata).length > 0) {
+        console.log('   Metadata:', JSON.stringify(alert.metadata, null, 2));
+      }
+    }
+
+    // Webhook notifications
+    if (alertChannels.webhook && process.env.MONITORING_WEBHOOK_URL) {
+      this.sendWebhookAlert(alert);
+    }
+
+    // Email notifications (placeholder)
+    if (alertChannels.email && process.env.MONITORING_EMAIL_ENDPOINT) {
+      this.sendEmailAlert(alert);
     }
   }
 
   /**
-   * Send alert notification
+   * Send webhook alert
    */
-  private async sendAlertNotification(alert: Alert): Promise<void> {
+  private async sendWebhookAlert(alert: Alert): Promise<void> {
     try {
-      // Log alert to console
-      console.error(`🚨 ALERT [${alert.severity.toUpperCase()}]: ${alert.message}`);
-
-      // Send to webhook if configured
       const webhookUrl = process.env.MONITORING_WEBHOOK_URL;
-      if (webhookUrl) {
-        await this.sendWebhookNotification(webhookUrl, alert);
-      }
+      if (!webhookUrl) return;
 
-      // Send email if configured
-      const alertEmail = process.env.ALERT_EMAIL;
-      if (alertEmail) {
-        await this.sendEmailNotification(alertEmail, alert);
-      }
-
-      // Send to Sentry if configured
-      if (process.env.SENTRY_DSN) {
-        await this.sendSentryNotification(alert);
-      }
-    } catch (error) {
-      console.error('Failed to send alert notification:', error);
-    }
-  }
-
-  /**
-   * Send webhook notification
-   */
-  private async sendWebhookNotification(webhookUrl: string, alert: Alert): Promise<void> {
-    try {
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const payload = {
+        alert: {
+          id: alert.id,
+          type: alert.type,
+          title: alert.title,
+          message: alert.message,
+          timestamp: alert.timestamp.toISOString(),
+          metadata: alert.metadata,
         },
-        body: JSON.stringify({
-          type: 'alert',
-          alert,
-          timestamp: new Date().toISOString(),
-          environment: process.env.NODE_ENV || 'production',
-        }),
-      });
+        service: 'solosuccess-ai-content-factory',
+        environment: process.env.NODE_ENV || 'development',
+      };
 
-      if (!response.ok) {
-        throw new Error(`Webhook request failed: ${response.status}`);
+      // Use fetch if available, otherwise skip
+      if (typeof fetch !== 'undefined') {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
       }
     } catch (error) {
-      console.error('Webhook notification failed:', error);
+      console.error('Failed to send webhook alert:', error);
     }
   }
 
   /**
-   * Send email notification (placeholder - would integrate with email service)
+   * Send email alert (placeholder)
    */
-  private async sendEmailNotification(email: string, alert: Alert): Promise<void> {
-    // This would integrate with an email service like SendGrid, AWS SES, etc.
-    console.log(`📧 Email alert would be sent to ${email}: ${alert.message}`);
-  }
-
-  /**
-   * Send Sentry notification
-   */
-  private async sendSentryNotification(alert: Alert): Promise<void> {
+  private async sendEmailAlert(alert: Alert): Promise<void> {
     try {
-      // This would integrate with Sentry SDK
-      console.log(`📊 Sentry notification: ${alert.message}`);
+      // Placeholder for email integration
+      console.log(`📧 Email alert would be sent: ${alert.title}`);
     } catch (error) {
-      console.error('Sentry notification failed:', error);
+      console.error('Failed to send email alert:', error);
     }
   }
 
   /**
-   * Get current metrics summary
+   * Record system error
    */
-  getMetricsSummary(timeWindow: number = 60 * 60 * 1000): Record<string, unknown> {
-    const now = Date.now();
-    const windowStart = now - timeWindow;
-
-    const recentMetrics = this.metrics.filter((m) => m.timestamp >= windowStart);
-
-    const summary: Record<string, unknown> = {};
-
-    // Group metrics by name
-    const metricGroups = recentMetrics.reduce(
-      (groups, metric) => {
-        if (!groups[metric.name]) {
-          groups[metric.name] = [];
-        }
-        groups[metric.name].push(metric);
-        return groups;
+  recordError(
+    type: SystemError['type'],
+    message: string,
+    error: unknown,
+    userId?: string,
+    requestId?: string,
+    metadata: Record<string, unknown> = {}
+  ): void {
+    const systemError: SystemError = {
+      id: this.generateId(),
+      type,
+      message,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date(),
+      userId,
+      requestId,
+      metadata: {
+        ...metadata,
+        originalError: error instanceof Error ? error.message : String(error),
       },
-      {} as Record<string, MetricData[]>
-    );
+    };
 
-    // Calculate statistics for each metric
-    Object.entries(metricGroups).forEach(([name, metrics]) => {
-      const values = metrics.map((m) => m.value);
-      summary[name] = {
-        count: values.length,
-        avg: values.reduce((sum, v) => sum + v, 0) / values.length,
-        min: Math.min(...values),
-        max: Math.max(...values),
-        latest: values[values.length - 1],
-      };
-    });
+    this.errors.push(systemError);
+    this.cleanupOldErrors();
 
-    return summary;
+    // Create alert for critical errors
+    if (type === 'database' || type === 'authentication') {
+      this.createAlert('critical', `${type} Error`, message, {
+        errorType: type,
+        userId,
+        requestId,
+      });
+    } else {
+      this.createAlert('error', `${type} Error`, message, {
+        errorType: type,
+        userId,
+        requestId,
+      });
+    }
   }
 
   /**
-   * Get active alerts
+   * Get current health status
    */
-  getActiveAlerts(): Alert[] {
-    return this.alerts.filter((alert) => !alert.resolved);
+  getHealthStatus(): HealthMetrics | null {
+    return this.metrics.length > 0 ? this.metrics[this.metrics.length - 1] : null;
   }
 
   /**
-   * Get alert history
+   * Get recent alerts
    */
-  getAlertHistory(limit: number = 50): Alert[] {
-    return this.alerts.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
+  getRecentAlerts(limit = 10): Alert[] {
+    return this.alerts
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
   }
 
   /**
-   * Resolve an alert
+   * Get recent errors
+   */
+  getRecentErrors(limit = 10): SystemError[] {
+    return this.errors
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
+  }
+
+  /**
+   * Get health metrics for time range
+   */
+  getHealthMetrics(hours = 24): HealthMetrics[] {
+    const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
+    return this.metrics.filter((metric) => metric.timestamp >= cutoff);
+  }
+
+  /**
+   * Resolve alert
    */
   resolveAlert(alertId: string): boolean {
     const alert = this.alerts.find((a) => a.id === alertId);
     if (alert && !alert.resolved) {
       alert.resolved = true;
-      alert.resolvedAt = Date.now();
+      alert.resolvedAt = new Date();
+      console.log(`✅ Alert resolved: ${alert.title}`);
       return true;
     }
     return false;
   }
 
   /**
-   * Add custom alert rule
+   * Setup global error handlers
    */
-  addAlertRule(rule: Omit<AlertRule, 'id'>): string {
-    const id = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    this.alertRules.push({ ...rule, id });
-    return id;
-  }
+  private setupErrorHandlers(): void {
+    // Handle unhandled promise rejections
+    if (typeof process !== 'undefined') {
+      process.on('unhandledRejection', (reason, promise) => {
+        this.recordError(
+          'application',
+          'Unhandled Promise Rejection',
+          reason,
+          undefined,
+          undefined,
+          {
+            promise: promise.toString(),
+          }
+        );
+      });
 
-  /**
-   * Update alert rule
-   */
-  updateAlertRule(id: string, updates: Partial<AlertRule>): boolean {
-    const ruleIndex = this.alertRules.findIndex((r) => r.id === id);
-    if (ruleIndex >= 0) {
-      this.alertRules[ruleIndex] = { ...this.alertRules[ruleIndex], ...updates };
-      return true;
+      process.on('uncaughtException', (error) => {
+        this.recordError('application', 'Uncaught Exception', error);
+        // Don't exit the process in production monitoring
+      });
     }
-    return false;
-  }
 
-  /**
-   * Delete alert rule
-   */
-  deleteAlertRule(id: string): boolean {
-    const ruleIndex = this.alertRules.findIndex((r) => r.id === id);
-    if (ruleIndex >= 0) {
-      this.alertRules.splice(ruleIndex, 1);
-      return true;
+    // Handle window errors in browser environment
+    if (typeof window !== 'undefined') {
+      window.addEventListener('error', (event) => {
+        this.recordError('application', 'JavaScript Error', event.error, undefined, undefined, {
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
+        });
+      });
+
+      window.addEventListener('unhandledrejection', (event) => {
+        this.recordError('application', 'Unhandled Promise Rejection', event.reason);
+      });
     }
-    return false;
   }
 
   /**
-   * Get monitoring dashboard data
+   * Clean up old metrics
    */
-  getDashboardData(): {
-    metrics: Record<string, unknown>;
-    activeAlerts: Alert[];
-    alertRules: AlertRule[];
-    systemHealth: string;
+  private cleanupOldMetrics(): void {
+    const cutoff = new Date(Date.now() - this.config.retentionPeriod * 24 * 60 * 60 * 1000);
+    this.metrics = this.metrics.filter((metric) => metric.timestamp >= cutoff);
+  }
+
+  /**
+   * Clean up old alerts
+   */
+  private cleanupOldAlerts(): void {
+    const cutoff = new Date(Date.now() - this.config.retentionPeriod * 24 * 60 * 60 * 1000);
+    this.alerts = this.alerts.filter((alert) => alert.timestamp >= cutoff);
+  }
+
+  /**
+   * Clean up old errors
+   */
+  private cleanupOldErrors(): void {
+    const cutoff = new Date(Date.now() - this.config.retentionPeriod * 24 * 60 * 60 * 1000);
+    this.errors = this.errors.filter((error) => error.timestamp >= cutoff);
+  }
+
+  /**
+   * Generate unique ID
+   */
+  private generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Get monitoring statistics
+   */
+  getMonitoringStats(): {
+    isActive: boolean;
+    uptime: number;
+    totalMetrics: number;
+    totalAlerts: number;
+    totalErrors: number;
+    currentStatus: string;
   } {
-    const metrics = this.getMetricsSummary();
-    const activeAlerts = this.getActiveAlerts();
-
-    // Determine system health
-    let systemHealth = 'healthy';
-    if (activeAlerts.some((a) => a.severity === 'critical')) {
-      systemHealth = 'critical';
-    } else if (activeAlerts.some((a) => a.severity === 'high')) {
-      systemHealth = 'degraded';
-    } else if (activeAlerts.length > 0) {
-      systemHealth = 'warning';
-    }
+    const currentHealth = this.getHealthStatus();
 
     return {
-      metrics,
-      activeAlerts,
-      alertRules: this.alertRules,
-      systemHealth,
+      isActive: this.isMonitoring,
+      uptime: Date.now() - this.startTime,
+      totalMetrics: this.metrics.length,
+      totalAlerts: this.alerts.length,
+      totalErrors: this.errors.length,
+      currentStatus: currentHealth?.status || 'unknown',
     };
   }
 }
 
 // Create singleton instance
-export const productionMonitoringService = new ProductionMonitoringService();
+const productionMonitoringService = new ProductionMonitoringService();
 
-// Export types for use in other modules
-export type { MetricData, AlertRule, Alert, PerformanceMetrics };
+// Auto-start monitoring in production
+if (process.env.NODE_ENV === 'production') {
+  productionMonitoringService.startMonitoring();
+}
 
-export default ProductionMonitoringService;
+export { ProductionMonitoringService, productionMonitoringService };
+export type { MonitoringConfig, HealthMetrics, Alert, SystemError };
