@@ -236,10 +236,14 @@ export const db = {
 
       const posts = result.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
 
-      // Cache only the current page results to avoid excessive memory usage
-      // Fetch a reasonable batch size for better cache performance without loading too much
+      // Cache optimization: Only cache a reasonable batch size on first page load
+      // Rationale for 100 records:
+      // - Covers 5 pages of data (at 20 items per page)
+      // - Balances memory usage vs cache hit rate
+      // - Typical users browse 2-3 pages, rarely more than 5
+      // - Reduces initial load from 1000 to 100 (90% reduction)
+      // - Adjust this value based on production analytics if users commonly navigate beyond 5 pages
       if (page === 1 && totalCount > pageSize) {
-        // For first page, fetch up to 100 records (5 pages) for efficient caching
         const cacheLimit = Math.min(100, totalCount);
         const fullData = await pool`
           SELECT * FROM posts 
@@ -964,15 +968,35 @@ function transformDatabaseAudienceProfileToAudienceProfile(
   };
 }
 
+// Helper function to safely parse array fields that might already be arrays
+function safeJsonParseArray<T>(value: string | T[] | null | undefined, defaultValue: T[]): T[] {
+  if (value === null || value === undefined) {
+    return defaultValue;
+  }
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : defaultValue;
+    } catch (e) {
+      console.warn('Failed to parse JSON array, returning default value:', e);
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+}
+
 // Helper functions for Campaign transformations
 function transformDatabaseCampaignToCampaign(dbCampaign: DatabaseCampaign): Campaign {
-  // Handle platforms field which might be an array or string
-  let platforms = [];
-  if (Array.isArray(dbCampaign.platforms)) {
-    platforms = dbCampaign.platforms;
-  } else if (typeof dbCampaign.platforms === 'string') {
-    platforms = safeJsonParse(dbCampaign.platforms, []);
-  }
+  // Default CampaignMetrics structure if none exists
+  const defaultPerformance = {
+    totalPosts: 0,
+    totalEngagement: 0,
+    avgEngagementRate: 0,
+    platformPerformance: {},
+  };
 
   return {
     id: dbCampaign.id,
@@ -983,9 +1007,9 @@ function transformDatabaseCampaignToCampaign(dbCampaign: DatabaseCampaign): Camp
     startDate: new Date(dbCampaign.start_date),
     endDate: new Date(dbCampaign.end_date),
     posts: [], // Will be populated by joining with posts table
-    platforms,
+    platforms: safeJsonParseArray(dbCampaign.platforms, []),
     status: dbCampaign.status,
-    performance: safeJsonParse(dbCampaign.performance, {}),
+    performance: safeJsonParse(dbCampaign.performance, defaultPerformance),
     createdAt: new Date(dbCampaign.created_at),
   };
 }

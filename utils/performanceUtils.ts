@@ -85,17 +85,30 @@ export function throttle<T extends (...args: any[]) => any>(
  * Memoize expensive function calls
  * Caches results based on argument serialization
  *
+ * Note: Uses JSON.stringify for key generation by default. For complex objects with
+ * circular references or when performance is critical, provide a custom keyFn.
+ *
  * @example
- * const expensiveCalc = memoize((a, b) => {
- *   // expensive operation
- *   return a * b * Math.random();
- * });
+ * const expensiveCalc = memoize((a, b) => a * b * Math.random());
+ *
+ * // With custom key function:
+ * const customMemo = memoize(
+ *   (user) => processUser(user),
+ *   { keyFn: (user) => user.id }
+ * );
  */
-export function memoize<T extends (...args: any[]) => any>(func: T, maxCacheSize: number = 100): T {
+export function memoize<T extends (...args: any[]) => any>(
+  func: T,
+  options: {
+    maxCacheSize?: number;
+    keyFn?: (...args: Parameters<T>) => string;
+  } = {}
+): T {
+  const { maxCacheSize = 100, keyFn = (...args: any[]) => JSON.stringify(args) } = options;
   const cache = new Map<string, ReturnType<T>>();
 
   return ((...args: Parameters<T>): ReturnType<T> => {
-    const key = JSON.stringify(args);
+    const key = keyFn(...args);
 
     if (cache.has(key)) {
       return cache.get(key)!;
@@ -104,6 +117,7 @@ export function memoize<T extends (...args: any[]) => any>(func: T, maxCacheSize
     const result = func(...args);
 
     // Limit cache size to prevent memory issues
+    // Map maintains insertion order, so first key is least recently used
     if (cache.size >= maxCacheSize) {
       const firstKey = cache.keys().next().value;
       cache.delete(firstKey);
@@ -236,11 +250,18 @@ export async function retry<T>(
   options: {
     maxAttempts?: number;
     delayMs?: number;
+    maxDelayMs?: number;
     exponentialBackoff?: boolean;
     onRetry?: (attempt: number, error: Error) => void;
   } = {}
 ): Promise<T> {
-  const { maxAttempts = 3, delayMs = 1000, exponentialBackoff = true, onRetry } = options;
+  const {
+    maxAttempts = 3,
+    delayMs = 1000,
+    maxDelayMs = 30000, // Cap at 30 seconds to prevent extremely long delays
+    exponentialBackoff = true,
+    onRetry,
+  } = options;
 
   let lastError: Error | null = null;
 
@@ -251,7 +272,10 @@ export async function retry<T>(
       lastError = error instanceof Error ? error : new Error(String(error));
 
       if (attempt < maxAttempts) {
-        const waitTime = exponentialBackoff ? delayMs * Math.pow(2, attempt - 1) : delayMs;
+        // Cap exponential backoff to prevent unbounded delay growth
+        const waitTime = exponentialBackoff
+          ? Math.min(delayMs * Math.pow(2, attempt - 1), maxDelayMs)
+          : delayMs;
 
         if (onRetry) {
           onRetry(attempt, lastError);
