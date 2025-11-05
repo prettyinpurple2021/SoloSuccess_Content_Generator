@@ -1,11 +1,24 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 /**
  * Production Health Check Endpoint
  *
  * This endpoint provides comprehensive health status for the application,
  * including database connectivity, AI services, and integration services.
  */
+
+// Generic types for serverless function
+interface ApiRequest {
+  method?: string;
+  query: Record<string, string | string[] | undefined>;
+  body?: unknown;
+  headers?: Record<string, string>;
+}
+
+interface ApiResponse {
+  status: (code: number) => ApiResponse;
+  json: (data: unknown) => void;
+  end: () => void;
+  setHeader: (name: string, value: string) => void;
+}
 
 interface HealthCheck {
   service: string;
@@ -33,7 +46,7 @@ interface HealthResponse {
 // Track application start time for uptime calculation
 const startTime = Date.now();
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
     // Set CORS headers for health check access
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -130,9 +143,9 @@ async function checkDatabaseHealth(): Promise<HealthCheck> {
 
   try {
     // Import database service dynamically to avoid issues
-    const { testConnection } = await import('../../services/neonService');
+    const neonService = await import('../../services/neonService');
 
-    await testConnection();
+    const connectionTest = await neonService.testConnection();
 
     return {
       service: 'database',

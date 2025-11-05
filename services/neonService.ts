@@ -178,7 +178,7 @@ export const db = {
     try {
       // Build dynamic update query
       const updateEntries = Object.entries(updates).filter(([_, value]) => value !== undefined);
-      
+
       if (updateEntries.length === 0) {
         throw new Error('No updates provided');
       }
@@ -449,12 +449,12 @@ export const db = {
     }
   },
 
-         addIntegration: async (
-           integration: Omit<Integration, 'id' | 'user_id' | 'created_at'>,
-           userId: string
-         ): Promise<Integration> => {
-           try {
-             const result = await pool`
+  addIntegration: async (
+    integration: Omit<Integration, 'id' | 'user_id' | 'created_at'>,
+    userId: string
+  ): Promise<Integration> => {
+    try {
+      const result = await pool`
                INSERT INTO integrations (
                  user_id, name, type, platform, credentials, configuration, is_active,
                  last_sync, sync_frequency, status
@@ -467,20 +467,20 @@ export const db = {
                ) RETURNING *
              `;
 
-             return transformDatabaseIntegrationToIntegration(result[0]);
-           } catch (error) {
-             console.error('Error adding integration:', error);
-             throw error;
-           }
-         },
+      return transformDatabaseIntegrationToIntegration(result[0]);
+    } catch (error) {
+      console.error('Error adding integration:', error);
+      throw error;
+    }
+  },
 
-         updateIntegration: async (
-           id: string,
-           updates: Partial<Omit<Integration, 'id' | 'user_id'>>,
-           userId: string
-         ): Promise<Integration> => {
-           try {
-             const result = await pool`
+  updateIntegration: async (
+    id: string,
+    updates: Partial<Omit<Integration, 'id' | 'user_id'>>,
+    userId: string
+  ): Promise<Integration> => {
+    try {
+      const result = await pool`
                UPDATE integrations
                SET
                  name = COALESCE(${updates.name || null}, name),
@@ -497,16 +497,16 @@ export const db = {
                RETURNING *
              `;
 
-             if (result.length === 0) {
-               throw new Error('Integration not found or access denied');
-             }
+      if (result.length === 0) {
+        throw new Error('Integration not found or access denied');
+      }
 
-             return transformDatabaseIntegrationToIntegration(result[0]);
-           } catch (error) {
-             console.error('Error updating integration:', error);
-             throw error;
-           }
-         },
+      return transformDatabaseIntegrationToIntegration(result[0]);
+    } catch (error) {
+      console.error('Error updating integration:', error);
+      throw error;
+    }
+  },
 
   deleteIntegration: async (id: string, userId: string): Promise<void> => {
     try {
@@ -659,14 +659,14 @@ export const db = {
     try {
       let query = 'SELECT * FROM integration_alerts WHERE integration_id = $1';
       const params: any[] = [integrationId];
-      
+
       if (status) {
         query += ' AND status = $2';
         params.push(status);
       }
-      
+
       query += ' ORDER BY created_at DESC';
-      
+
       const result = await pool`
         SELECT * FROM integration_alerts 
         WHERE integration_id = ${integrationId}
@@ -724,7 +724,9 @@ function transformDatabasePostToPost(dbPost: any): Post {
     headlines: dbPost.headlines || [],
     socialMediaPosts: dbPost.social_media_posts ? JSON.parse(dbPost.social_media_posts) : {},
     socialMediaTones: dbPost.social_media_tones ? JSON.parse(dbPost.social_media_tones) : {},
-    socialMediaAudiences: dbPost.social_media_audiences ? JSON.parse(dbPost.social_media_audiences) : {},
+    socialMediaAudiences: dbPost.social_media_audiences
+      ? JSON.parse(dbPost.social_media_audiences)
+      : {},
     selectedImage: dbPost.selected_image,
     scheduleDate: dbPost.schedule_date,
     brandVoiceId: dbPost.brand_voice_id,
@@ -733,7 +735,9 @@ function transformDatabasePostToPost(dbPost: any): Post {
     seriesId: dbPost.series_id,
     templateId: dbPost.template_id,
     performanceScore: dbPost.performance_score,
-    optimizationSuggestions: dbPost.optimization_suggestions ? JSON.parse(dbPost.optimization_suggestions) : [],
+    optimizationSuggestions: dbPost.optimization_suggestions
+      ? JSON.parse(dbPost.optimization_suggestions)
+      : [],
     imageStyleId: dbPost.image_style_id,
     createdAt: dbPost.created_at,
   };
@@ -753,7 +757,9 @@ function transformDatabaseBrandVoiceToBrandVoice(dbBrandVoice: any): BrandVoice 
   };
 }
 
-function transformDatabaseAudienceProfileToAudienceProfile(dbAudienceProfile: any): AudienceProfile {
+function transformDatabaseAudienceProfileToAudienceProfile(
+  dbAudienceProfile: any
+): AudienceProfile {
   return {
     id: dbAudienceProfile.id,
     userId: dbAudienceProfile.user_id,
@@ -762,8 +768,12 @@ function transformDatabaseAudienceProfileToAudienceProfile(dbAudienceProfile: an
     industry: dbAudienceProfile.industry,
     interests: dbAudienceProfile.interests ? JSON.parse(dbAudienceProfile.interests) : [],
     painPoints: dbAudienceProfile.pain_points ? JSON.parse(dbAudienceProfile.pain_points) : [],
-    preferredContentTypes: dbAudienceProfile.preferred_content_types ? JSON.parse(dbAudienceProfile.preferred_content_types) : [],
-    engagementPatterns: dbAudienceProfile.engagement_patterns ? JSON.parse(dbAudienceProfile.engagement_patterns) : {},
+    preferredContentTypes: dbAudienceProfile.preferred_content_types
+      ? JSON.parse(dbAudienceProfile.preferred_content_types)
+      : [],
+    engagementPatterns: dbAudienceProfile.engagement_patterns
+      ? JSON.parse(dbAudienceProfile.engagement_patterns)
+      : {},
     createdAt: dbAudienceProfile.created_at,
   };
 }
@@ -785,5 +795,17 @@ function transformDatabaseIntegrationToIntegration(dbIntegration: any): Integrat
     updatedAt: dbIntegration.updated_at,
   };
 }
+
+// Test database connection for health checks
+export const testConnection = async (): Promise<boolean> => {
+  try {
+    // Simple query to test connection
+    await pool`SELECT 1 as test`;
+    return true;
+  } catch (error) {
+    console.error('Database connection test failed:', error);
+    return false;
+  }
+};
 
 export default db;

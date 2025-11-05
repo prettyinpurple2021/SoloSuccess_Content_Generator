@@ -37,12 +37,14 @@ console.log('Environment check:', {
 });
 
 // Additional debug info
-console.log('Full environment:', import.meta.env);
-console.log('Stack config check:', {
-  projectId: import.meta.env.VITE_STACK_PROJECT_ID,
-  publishableKey: import.meta.env.VITE_STACK_PUBLISHABLE_CLIENT_KEY,
-  secretKey: import.meta.env.STACK_SECRET_SERVER_KEY ? 'Present' : 'Missing',
-});
+// Only log client-safe environment variables in development
+if (import.meta.env.DEV) {
+  console.log('Stack client config:', {
+    projectId: import.meta.env.VITE_STACK_PROJECT_ID ? 'Present' : 'Missing',
+    publishableKey: import.meta.env.VITE_STACK_PUBLISHABLE_CLIENT_KEY ? 'Present' : 'Missing',
+    // Never log or reference server-side secrets in client code
+  });
+}
 
 // Stack Auth Handler Component
 function HandlerRoutes() {
