@@ -21,13 +21,15 @@ export class CachingService {
   private stats = { hits: 0, misses: 0 };
   private maxSize: number;
   private defaultTTL: number;
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(maxSize: number = 1000, defaultTTL: number = 5 * 60 * 1000) { // 5 minutes default
+  constructor(maxSize: number = 1000, defaultTTL: number = 5 * 60 * 1000) {
+    // 5 minutes default
     this.maxSize = maxSize;
     this.defaultTTL = defaultTTL;
-    
+
     // Clean up expired entries every minute
-    setInterval(() => this.cleanup(), 60 * 1000);
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60 * 1000);
   }
 
   /**
@@ -35,7 +37,7 @@ export class CachingService {
    */
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.stats.misses++;
       return null;
@@ -65,7 +67,7 @@ export class CachingService {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl: ttl || this.defaultTTL
+      ttl: ttl || this.defaultTTL,
     });
   }
 
@@ -85,31 +87,39 @@ export class CachingService {
   }
 
   /**
+   * Destroy the cache service and clean up resources
+   */
+  destroy(): void {
+    if (this.cleanupInterval !== null) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+    this.clear();
+  }
+
+  /**
    * Get cache statistics
    */
   getStats(): CacheStats {
-    const hitRate = this.stats.hits + this.stats.misses > 0 
-      ? (this.stats.hits / (this.stats.hits + this.stats.misses)) * 100 
-      : 0;
+    const hitRate =
+      this.stats.hits + this.stats.misses > 0
+        ? (this.stats.hits / (this.stats.hits + this.stats.misses)) * 100
+        : 0;
 
     return {
       hits: this.stats.hits,
       misses: this.stats.misses,
       size: this.cache.size,
-      hitRate: Math.round(hitRate * 100) / 100
+      hitRate: Math.round(hitRate * 100) / 100,
     };
   }
 
   /**
    * Get or set pattern - fetch data if not in cache
    */
-  async getOrSet<T>(
-    key: string, 
-    fetchFunction: () => Promise<T>, 
-    ttl?: number
-  ): Promise<T> {
+  async getOrSet<T>(key: string, fetchFunction: () => Promise<T>, ttl?: number): Promise<T> {
     const cached = this.get<T>(key);
-    
+
     if (cached !== null) {
       return cached;
     }
@@ -125,14 +135,14 @@ export class CachingService {
   invalidatePattern(pattern: string): number {
     let deletedCount = 0;
     const regex = new RegExp(pattern);
-    
+
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
         this.cache.delete(key);
         deletedCount++;
       }
     }
-    
+
     return deletedCount;
   }
 
@@ -141,7 +151,7 @@ export class CachingService {
    */
   private cleanup(): void {
     const now = Date.now();
-    
+
     for (const [key, entry] of this.cache.entries()) {
       if (now > entry.timestamp + entry.ttl) {
         this.cache.delete(key);
@@ -152,7 +162,9 @@ export class CachingService {
   /**
    * Preload frequently accessed data
    */
-  async preload(preloadFunctions: Array<{ key: string; fn: () => Promise<any>; ttl?: number }>): Promise<void> {
+  async preload(
+    preloadFunctions: Array<{ key: string; fn: () => Promise<any>; ttl?: number }>
+  ): Promise<void> {
     const promises = preloadFunctions.map(async ({ key, fn, ttl }) => {
       try {
         const data = await fn();
@@ -184,12 +196,12 @@ export class ContentCachingService extends CachingService {
     CONTENT_TEMPLATES: (userId: string) => `templates:user:${userId}`,
     PUBLIC_TEMPLATES: () => 'templates:public',
     PERFORMANCE_REPORT: (userId: string, timeframe: string) => `performance:${userId}:${timeframe}`,
-    TOP_CONTENT: (userId: string, timeframe: string, platform?: string) => 
+    TOP_CONTENT: (userId: string, timeframe: string, platform?: string) =>
       `top_content:${userId}:${timeframe}:${platform || 'all'}`,
-    OPTIMAL_TIMES: (userId: string, platform?: string) => 
+    OPTIMAL_TIMES: (userId: string, platform?: string) =>
       `optimal_times:${userId}:${platform || 'all'}`,
     DASHBOARD_DATA: (userId: string) => `dashboard:${userId}`,
-    ANALYTICS_SUMMARY: (userId: string, period: string) => `analytics_summary:${userId}:${period}`
+    ANALYTICS_SUMMARY: (userId: string, period: string) => `analytics_summary:${userId}:${period}`,
   };
 
   /**
@@ -262,8 +274,8 @@ export class ContentCachingService extends CachingService {
    * Cache performance reports with medium TTL
    */
   async cachePerformanceReport<T>(
-    userId: string, 
-    timeframe: string, 
+    userId: string,
+    timeframe: string,
     fetchFn: () => Promise<T>
   ): Promise<T> {
     return this.getOrSet(
@@ -277,8 +289,8 @@ export class ContentCachingService extends CachingService {
    * Cache top content with medium TTL
    */
   async cacheTopContent<T>(
-    userId: string, 
-    timeframe: string, 
+    userId: string,
+    timeframe: string,
     fetchFn: () => Promise<T>,
     platform?: string
   ): Promise<T> {
@@ -293,7 +305,7 @@ export class ContentCachingService extends CachingService {
    * Cache optimal posting times with long TTL
    */
   async cacheOptimalTimes<T>(
-    userId: string, 
+    userId: string,
     fetchFn: () => Promise<T>,
     platform?: string
   ): Promise<T> {
@@ -319,8 +331,8 @@ export class ContentCachingService extends CachingService {
    * Cache analytics summary with medium TTL
    */
   async cacheAnalyticsSummary<T>(
-    userId: string, 
-    period: string, 
+    userId: string,
+    period: string,
     fetchFn: () => Promise<T>
   ): Promise<T> {
     return this.getOrSet(
@@ -334,7 +346,9 @@ export class ContentCachingService extends CachingService {
    * Invalidate user-specific cache when data changes
    */
   invalidateUserCache(userId: string): number {
-    return this.invalidatePattern(`(posts|brand_voices|audience_profiles|templates|performance|dashboard|analytics_summary):.*${userId}`);
+    return this.invalidatePattern(
+      `(posts|brand_voices|audience_profiles|templates|performance|dashboard|analytics_summary):.*${userId}`
+    );
   }
 
   /**
@@ -370,7 +384,7 @@ export class ContentCachingService extends CachingService {
       preloadFunctions.push({
         key: ContentCachingService.KEYS.USER_POSTS(userId),
         fn: dataFetchers.posts,
-        ttl: 2 * 60 * 1000
+        ttl: 2 * 60 * 1000,
       });
     }
 
@@ -378,7 +392,7 @@ export class ContentCachingService extends CachingService {
       preloadFunctions.push({
         key: ContentCachingService.KEYS.BRAND_VOICES(userId),
         fn: dataFetchers.brandVoices,
-        ttl: 30 * 60 * 1000
+        ttl: 30 * 60 * 1000,
       });
     }
 
@@ -386,7 +400,7 @@ export class ContentCachingService extends CachingService {
       preloadFunctions.push({
         key: ContentCachingService.KEYS.AUDIENCE_PROFILES(userId),
         fn: dataFetchers.audienceProfiles,
-        ttl: 30 * 60 * 1000
+        ttl: 30 * 60 * 1000,
       });
     }
 
@@ -394,7 +408,7 @@ export class ContentCachingService extends CachingService {
       preloadFunctions.push({
         key: ContentCachingService.KEYS.CONTENT_TEMPLATES(userId),
         fn: dataFetchers.templates,
-        ttl: 60 * 60 * 1000
+        ttl: 60 * 60 * 1000,
       });
     }
 
@@ -402,7 +416,7 @@ export class ContentCachingService extends CachingService {
       preloadFunctions.push({
         key: ContentCachingService.KEYS.DASHBOARD_DATA(userId),
         fn: dataFetchers.dashboardData,
-        ttl: 3 * 60 * 1000
+        ttl: 3 * 60 * 1000,
       });
     }
 
@@ -414,7 +428,10 @@ export class ContentCachingService extends CachingService {
  * Pagination cache for large datasets
  */
 export class PaginationCache {
-  private cache = new Map<string, { data: any[]; totalCount: number; timestamp: number; ttl: number }>();
+  private cache = new Map<
+    string,
+    { data: any[]; totalCount: number; timestamp: number; ttl: number }
+  >();
   private readonly defaultTTL = 5 * 60 * 1000; // 5 minutes
 
   /**
@@ -425,7 +442,7 @@ export class PaginationCache {
       data,
       totalCount,
       timestamp: Date.now(),
-      ttl: ttl || this.defaultTTL
+      ttl: ttl || this.defaultTTL,
     });
   }
 
@@ -434,7 +451,7 @@ export class PaginationCache {
    */
   get(key: string, page: number, pageSize: number): { data: any[]; totalCount: number } | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry || Date.now() > entry.timestamp + entry.ttl) {
       if (entry) this.cache.delete(key);
       return null;
@@ -442,10 +459,10 @@ export class PaginationCache {
 
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    
+
     return {
       data: entry.data.slice(startIndex, endIndex),
-      totalCount: entry.totalCount
+      totalCount: entry.totalCount,
     };
   }
 
@@ -475,4 +492,11 @@ export const contentCache = new ContentCachingService();
 export const paginationCache = new PaginationCache();
 
 // Clean up pagination cache every 5 minutes
-setInterval(() => paginationCache.cleanup(), 5 * 60 * 1000);
+// Store interval reference for potential cleanup
+const paginationCleanupInterval = setInterval(() => paginationCache.cleanup(), 5 * 60 * 1000);
+
+// Export cleanup function for proper resource management
+export const cleanupCacheServices = () => {
+  contentCache.destroy();
+  clearInterval(paginationCleanupInterval);
+};

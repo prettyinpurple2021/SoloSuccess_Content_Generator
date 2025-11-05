@@ -236,14 +236,20 @@ export const db = {
 
       const posts = result.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
 
-      // Cache the full result set for this filter combination
-      if (page === 1) {
-        // For first page, fetch more data to cache
+      // Cache optimization: Only cache a reasonable batch size on first page load
+      // Rationale for 100 records:
+      // - Covers 5 pages of data (at 20 items per page)
+      // - Balances memory usage vs cache hit rate
+      // - Typical users browse 2-3 pages, rarely more than 5
+      // - Reduces initial load from 1000 to 100 (90% reduction)
+      // - Adjust this value based on production analytics if users commonly navigate beyond 5 pages
+      if (page === 1 && totalCount > pageSize) {
+        const cacheLimit = Math.min(100, totalCount);
         const fullData = await pool`
           SELECT * FROM posts 
           WHERE user_id = ${userId}
           ORDER BY created_at DESC
-          LIMIT ${Math.min(1000, totalCount)}
+          LIMIT ${cacheLimit}
         `;
 
         const fullPosts = fullData.map((row: any) =>
@@ -881,6 +887,22 @@ export const db = {
   },
 };
 
+// Helper function to safely parse JSON fields
+function safeJsonParse<T>(value: string | T | null | undefined, defaultValue: T): T {
+  if (value === null || value === undefined) {
+    return defaultValue;
+  }
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      console.warn('Failed to parse JSON, returning default value:', e);
+      return defaultValue;
+    }
+  }
+  return value as T;
+}
+
 // Helper function to transform database post to app post format
 function transformDatabasePostToPost(dbPost: DatabasePost): Post {
   return {
@@ -891,18 +913,9 @@ function transformDatabasePostToPost(dbPost: DatabasePost): Post {
     content: dbPost.content,
     status: dbPost.status,
     tags: dbPost.tags || [],
-    socialMediaPosts:
-      typeof dbPost.social_media_posts === 'string'
-        ? JSON.parse(dbPost.social_media_posts)
-        : dbPost.social_media_posts || {},
-    socialMediaTones:
-      typeof dbPost.social_media_tones === 'string'
-        ? JSON.parse(dbPost.social_media_tones)
-        : dbPost.social_media_tones || {},
-    socialMediaAudiences:
-      typeof dbPost.social_media_audiences === 'string'
-        ? JSON.parse(dbPost.social_media_audiences)
-        : dbPost.social_media_audiences || {},
+    socialMediaPosts: safeJsonParse(dbPost.social_media_posts, {}),
+    socialMediaTones: safeJsonParse(dbPost.social_media_tones, {}),
+    socialMediaAudiences: safeJsonParse(dbPost.social_media_audiences, {}),
     scheduleDate: dbPost.schedule_date ? new Date(dbPost.schedule_date) : undefined,
     createdAt: dbPost.created_at ? new Date(dbPost.created_at) : undefined,
     postedAt: dbPost.posted_at ? new Date(dbPost.posted_at) : undefined,
@@ -917,10 +930,7 @@ function transformDatabasePostToPost(dbPost: DatabasePost): Post {
     performanceScore: dbPost.performance_score
       ? parseFloat(dbPost.performance_score.toString())
       : undefined,
-    optimizationSuggestions:
-      typeof dbPost.optimization_suggestions === 'string'
-        ? JSON.parse(dbPost.optimization_suggestions)
-        : dbPost.optimization_suggestions || [],
+    optimizationSuggestions: safeJsonParse(dbPost.optimization_suggestions, []),
     imageStyleId: dbPost.image_style_id,
   };
 }
@@ -932,16 +942,10 @@ function transformDatabaseBrandVoiceToBrandVoice(dbBrandVoice: DatabaseBrandVoic
     userId: dbBrandVoice.user_id,
     name: dbBrandVoice.name,
     tone: dbBrandVoice.tone,
-    vocabulary:
-      typeof dbBrandVoice.vocabulary === 'string'
-        ? JSON.parse(dbBrandVoice.vocabulary)
-        : dbBrandVoice.vocabulary || [],
+    vocabulary: safeJsonParse(dbBrandVoice.vocabulary, []),
     writingStyle: dbBrandVoice.writing_style,
     targetAudience: dbBrandVoice.target_audience,
-    sampleContent:
-      typeof dbBrandVoice.sample_content === 'string'
-        ? JSON.parse(dbBrandVoice.sample_content)
-        : dbBrandVoice.sample_content || [],
+    sampleContent: safeJsonParse(dbBrandVoice.sample_content, []),
     createdAt: new Date(dbBrandVoice.created_at),
   };
 }
@@ -956,28 +960,44 @@ function transformDatabaseAudienceProfileToAudienceProfile(
     name: dbProfile.name,
     ageRange: dbProfile.age_range,
     industry: dbProfile.industry,
-    interests:
-      typeof dbProfile.interests === 'string'
-        ? JSON.parse(dbProfile.interests)
-        : dbProfile.interests || [],
-    painPoints:
-      typeof dbProfile.pain_points === 'string'
-        ? JSON.parse(dbProfile.pain_points)
-        : dbProfile.pain_points || [],
-    preferredContentTypes:
-      typeof dbProfile.preferred_content_types === 'string'
-        ? JSON.parse(dbProfile.preferred_content_types)
-        : dbProfile.preferred_content_types || [],
-    engagementPatterns:
-      typeof dbProfile.engagement_patterns === 'string'
-        ? JSON.parse(dbProfile.engagement_patterns)
-        : dbProfile.engagement_patterns || {},
+    interests: safeJsonParse(dbProfile.interests, []),
+    painPoints: safeJsonParse(dbProfile.pain_points, []),
+    preferredContentTypes: safeJsonParse(dbProfile.preferred_content_types, []),
+    engagementPatterns: safeJsonParse(dbProfile.engagement_patterns, {}),
     createdAt: new Date(dbProfile.created_at),
   };
 }
 
+// Helper function to safely parse array fields that might already be arrays
+function safeJsonParseArray<T>(value: string | T[] | null | undefined, defaultValue: T[]): T[] {
+  if (value === null || value === undefined) {
+    return defaultValue;
+  }
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : defaultValue;
+    } catch (e) {
+      console.warn('Failed to parse JSON array, returning default value:', e);
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+}
+
 // Helper functions for Campaign transformations
 function transformDatabaseCampaignToCampaign(dbCampaign: DatabaseCampaign): Campaign {
+  // Default CampaignMetrics structure if none exists
+  const defaultPerformance = {
+    totalPosts: 0,
+    totalEngagement: 0,
+    avgEngagementRate: 0,
+    platformPerformance: {},
+  };
+
   return {
     id: dbCampaign.id,
     userId: dbCampaign.user_id,
@@ -987,16 +1007,9 @@ function transformDatabaseCampaignToCampaign(dbCampaign: DatabaseCampaign): Camp
     startDate: new Date(dbCampaign.start_date),
     endDate: new Date(dbCampaign.end_date),
     posts: [], // Will be populated by joining with posts table
-    platforms: Array.isArray(dbCampaign.platforms)
-      ? dbCampaign.platforms
-      : typeof dbCampaign.platforms === 'string'
-        ? JSON.parse(dbCampaign.platforms)
-        : [],
+    platforms: safeJsonParseArray(dbCampaign.platforms, []),
     status: dbCampaign.status,
-    performance:
-      typeof dbCampaign.performance === 'string'
-        ? JSON.parse(dbCampaign.performance)
-        : dbCampaign.performance,
+    performance: safeJsonParse(dbCampaign.performance, defaultPerformance),
     createdAt: new Date(dbCampaign.created_at),
   };
 }

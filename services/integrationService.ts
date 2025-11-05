@@ -385,11 +385,22 @@ export class IntegrationService {
   async stopSync(id: string): Promise<void> {
     const syncJob = this.syncJobs.get(id);
     if (syncJob) {
-      globalThis.clearInterval(syncJob);
+      clearInterval(syncJob);
       this.syncJobs.delete(id);
 
       await this.logIntegrationActivity(id, 'info', 'Automatic sync stopped');
     }
+  }
+
+  /**
+   * Stops all sync jobs - useful for cleanup
+   */
+  async stopAllSyncs(): Promise<void> {
+    for (const [id, syncJob] of this.syncJobs.entries()) {
+      clearInterval(syncJob);
+      await this.logIntegrationActivity(id, 'info', 'Automatic sync stopped during cleanup');
+    }
+    this.syncJobs.clear();
   }
 
   /**
