@@ -3,7 +3,7 @@
  * Handles connection lifecycle, health monitoring, and automatic recovery
  */
 
-import postgres from 'postgres';
+import postgres, { Sql, ParameterOrJSON } from 'postgres';
 import { errorHandler } from './errorHandlingService';
 import { databasePerformanceService } from './databasePerformanceService';
 
@@ -44,7 +44,7 @@ export interface PoolStatus {
 
 export class DatabaseConnectionManager {
   private static instance: DatabaseConnectionManager;
-  private pool: unknown;
+  private pool: Sql<Record<string, unknown>> | null = null;
   private config: ConnectionConfig;
   private metrics: ConnectionMetrics;
   private startTime: Date;
@@ -81,7 +81,7 @@ export class DatabaseConnectionManager {
   /**
    * Gets the database connection pool
    */
-  getPool(): unknown {
+  getPool(): Sql<Record<string, unknown>> {
     if (!this.pool) {
       throw new Error('Database pool not initialized');
     }
@@ -92,7 +92,7 @@ export class DatabaseConnectionManager {
    * Executes a query with connection management and metrics tracking
    */
   async executeQuery<T>(
-    queryFn: (sql: unknown) => Promise<T>,
+    queryFn: (sql: Sql<Record<string, unknown>>) => Promise<T>,
     context?: { operation?: string; userId?: string }
   ): Promise<T> {
     const startTime = Date.now();
@@ -104,7 +104,8 @@ export class DatabaseConnectionManager {
         await this.reconnect();
       }
 
-      const result = await queryFn(this.pool);
+      const pool = this.getPool();
+      const result = await queryFn(pool);
 
       // Update metrics
       const responseTime = Date.now() - startTime;
@@ -163,12 +164,12 @@ export class DatabaseConnectionManager {
    */
   async executeOptimizedQuery<T>(
     query: string,
-    params: unknown[],
+    params: ReadonlyArray<ParameterOrJSON<Record<string, unknown>>>,
     operation: string,
     userId?: string
   ): Promise<T> {
     return await databasePerformanceService.executeWithMonitoring<T>(
-      this.pool,
+      this.getPool(),
       query,
       params,
       operation,
@@ -182,13 +183,13 @@ export class DatabaseConnectionManager {
   async executeBatch<T>(
     operations: Array<{
       query: string;
-      params: unknown[];
+      params: ReadonlyArray<ParameterOrJSON<Record<string, unknown>>>;
       operation: string;
     }>,
     userId?: string
-  ): Promise<T[]> {
+  ): Promise<Array<Awaited<T>>> {
     return await databasePerformanceService.executeBatchWithOptimization<T>(
-      this.pool,
+      this.getPool(),
       operations,
       userId
     );
@@ -203,7 +204,8 @@ export class DatabaseConnectionManager {
         return false;
       }
 
-      await this.pool`SELECT 1 as test`;
+      const pool = this.getPool();
+      await pool`SELECT 1 as test`;
       return true;
     } catch (error) {
       errorHandler.logError(

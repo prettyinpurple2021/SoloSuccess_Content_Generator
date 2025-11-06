@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { db, query } from '../../services/databaseService';
+import { query } from '../../../services/databaseService';
 
 interface ApiRequest {
   method?: string;
@@ -16,52 +16,12 @@ interface ApiResponse {
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
-    const id = req.query.id
-      ? z
-          .string()
-          .min(1)
-          .parse(req.query.id as string)
-      : undefined;
-    if (req.method === 'GET') {
-      const userId = z
-        .string()
-        .optional()
-        .parse(req.query.userId as string | undefined);
-      const templates = await db.getContentTemplates(userId);
-      return res.status(200).json(templates);
-    }
-    if (req.method === 'POST') {
-      const body = z
-        .object({
-          userId: z.string().min(1),
-          name: z.string().min(1),
-          category: z.string().default('general'),
-          industry: z.string().default('general'),
-          content_type: z.string().min(1),
-          structure: z.array(z.any()).default([]),
-          customizable_fields: z.array(z.any()).default([]),
-          is_public: z.boolean().default(false),
-        })
-        .parse(req.body || {});
+    const id = z
+      .string()
+      .min(1)
+      .parse(req.query.id as string);
 
-      const result = await query(
-        `INSERT INTO content_templates (user_id, name, category, industry, content_type, structure, customizable_fields, is_public)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         RETURNING *`,
-        [
-          body.userId,
-          body.name,
-          body.category,
-          body.industry,
-          body.content_type,
-          JSON.stringify(body.structure),
-          JSON.stringify(body.customizable_fields),
-          body.is_public,
-        ]
-      );
-      return res.status(201).json(result[0]);
-    }
-    if (req.method === 'PUT' && id) {
+    if (req.method === 'PUT') {
       const body = z
         .object({
           userId: z.string().min(1),
@@ -102,7 +62,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(200).json(result[0]);
     }
 
-    if (req.method === 'DELETE' && id) {
+    if (req.method === 'DELETE') {
       const body = z.object({ userId: z.string().min(1) }).parse(req.body || {});
       const result = await query(
         `DELETE FROM content_templates WHERE id = $1 AND user_id = $2 RETURNING id`,
@@ -112,10 +72,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(204).end();
     }
 
-    res.setHeader('Allow', 'GET, POST, PUT, DELETE');
+    res.setHeader('Allow', 'PUT, DELETE');
     return res.status(405).json({ error: 'Method Not Allowed' });
   } catch (error) {
-    console.error('TEMPLATES error:', error);
+    console.error('TEMPLATES [id] error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }

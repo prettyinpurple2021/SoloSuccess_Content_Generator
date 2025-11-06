@@ -3,11 +3,11 @@
  * Provides detailed database health status and metrics
  */
 
-import { enhancedDb } from '../../services/enhancedDatabaseService';
-import { connectionManager } from '../../services/databaseConnectionManager';
-import { migrationService } from '../../services/databaseMigrationService';
-import { apiErrorHandler } from '../../services/apiErrorHandler';
-import { errorHandler } from '../../services/errorHandlingService';
+import { enhancedDb } from '../../../services/enhancedDatabaseService';
+import { connectionManager } from '../../../services/databaseConnectionManager';
+import { migrationService } from '../../../services/databaseMigrationService';
+import { apiErrorHandler } from '../../../services/apiErrorHandler';
+import { errorHandler } from '../../../services/errorHandlingService';
 
 interface ApiRequest {
   method?: string;

@@ -143,7 +143,7 @@ async function checkDatabaseHealth(): Promise<HealthCheck> {
 
   try {
     // Import database service dynamically to avoid issues
-    const neonService = await import('../../services/neonService');
+    const neonService = await import('../../../services/neonService');
 
     const connectionTest = await neonService.testConnection();
 

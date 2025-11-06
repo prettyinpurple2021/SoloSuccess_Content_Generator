@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { productionMonitoringService } from '../../services/productionMonitoringService';
+import { productionMonitoringService } from '../../../services/productionMonitoringService';
 
 /**
  * Monitoring Dashboard API

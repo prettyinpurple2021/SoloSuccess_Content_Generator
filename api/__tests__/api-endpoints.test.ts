@@ -100,7 +100,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.getPosts.mockResolvedValue(mockPosts);
 
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: { userId: 'user1' },
@@ -129,7 +129,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.addPost.mockResolvedValue(mockPost);
 
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -166,7 +166,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.updatePost.mockResolvedValue(mockUpdatedPost);
 
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'PUT',
         query: { id: '1' },
@@ -188,7 +188,7 @@ describe('API Endpoints Validation', () => {
     it('should handle DELETE requests correctly', async () => {
       mockDb.deletePost.mockResolvedValue(undefined);
 
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'DELETE',
         query: { id: '1' },
@@ -204,7 +204,7 @@ describe('API Endpoints Validation', () => {
     });
 
     it('should return 405 for unsupported methods', async () => {
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'PATCH',
         query: {},
@@ -219,7 +219,7 @@ describe('API Endpoints Validation', () => {
     });
 
     it('should handle validation errors', async () => {
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -255,7 +255,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.getBrandVoices.mockResolvedValue(mockBrandVoices);
 
-      const { default: handler } = await import('../brand-voices/index');
+      const { default: handler } = await import('../../server/apiRoutes/brand-voices/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: { userId: 'user1' },
@@ -284,7 +284,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.addBrandVoice.mockResolvedValue(mockBrandVoice);
 
-      const { default: handler } = await import('../brand-voices/index');
+      const { default: handler } = await import('../../server/apiRoutes/brand-voices/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -333,7 +333,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.getCampaigns.mockResolvedValue(mockCampaigns);
 
-      const { default: handler } = await import('../campaigns/index');
+      const { default: handler } = await import('../../server/apiRoutes/campaigns/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: { userId: 'user1' },
@@ -369,7 +369,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.addCampaign.mockResolvedValue(mockCampaign);
 
-      const { default: handler } = await import('../campaigns/index');
+      const { default: handler } = await import('../../server/apiRoutes/campaigns/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -413,7 +413,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.getAudienceProfiles.mockResolvedValue(mockProfiles);
 
-      const { default: handler } = await import('../audience-profiles/index');
+      const { default: handler } = await import('../../server/apiRoutes/audience-profiles/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: { userId: 'user1' },
@@ -447,7 +447,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.getAnalyticsByTimeframe.mockResolvedValue(mockAnalytics);
 
-      const { default: handler } = await import('../analytics/index');
+      const { default: handler } = await import('../../server/apiRoutes/analytics/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: {
@@ -465,7 +465,7 @@ describe('API Endpoints Validation', () => {
     });
 
     it('should return 405 for non-GET methods', async () => {
-      const { default: handler } = await import('../analytics/index');
+      const { default: handler } = await import('../../server/apiRoutes/analytics/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -498,7 +498,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.getContentSeries.mockResolvedValue(mockSeries);
 
-      const { default: handler } = await import('../content-series/index');
+      const { default: handler } = await import('../../server/apiRoutes/content-series/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: { userId: 'user1' },
@@ -513,7 +513,7 @@ describe('API Endpoints Validation', () => {
     });
 
     it('should return 405 for non-GET methods', async () => {
-      const { default: handler } = await import('../content-series/index');
+      const { default: handler } = await import('../../server/apiRoutes/content-series/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -544,7 +544,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.getImageStyles.mockResolvedValue(mockStyles);
 
-      const { default: handler } = await import('../image-styles/index');
+      const { default: handler } = await import('../../server/apiRoutes/image-styles/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: { userId: 'user1' },
@@ -559,7 +559,7 @@ describe('API Endpoints Validation', () => {
     });
 
     it('should return 405 for non-GET methods', async () => {
-      const { default: handler } = await import('../image-styles/index');
+      const { default: handler } = await import('../../server/apiRoutes/image-styles/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -594,7 +594,7 @@ describe('API Endpoints Validation', () => {
 
       mockDb.getContentTemplates.mockResolvedValue(mockTemplates);
 
-      const { default: handler } = await import('../templates/index');
+      const { default: handler } = await import('../../server/apiRoutes/templates/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: { userId: 'user1' },
@@ -623,7 +623,7 @@ describe('API Endpoints Validation', () => {
 
       mockQuery.mockResolvedValue([mockTemplate]);
 
-      const { default: handler } = await import('../templates/index');
+      const { default: handler } = await import('../../server/apiRoutes/templates/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -662,7 +662,7 @@ describe('API Endpoints Validation', () => {
 
       mockQuery.mockResolvedValue([mockTemplate]);
 
-      const { default: handler } = await import('../templates/index');
+      const { default: handler } = await import('../../server/apiRoutes/templates/index');
       const req: MockApiRequest = {
         method: 'PUT',
         query: { id: '1' },
@@ -683,7 +683,7 @@ describe('API Endpoints Validation', () => {
     it('should handle DELETE requests correctly', async () => {
       mockQuery.mockResolvedValue([{ id: '1' }]);
 
-      const { default: handler } = await import('../templates/index');
+      const { default: handler } = await import('../../server/apiRoutes/templates/index');
       const req: MockApiRequest = {
         method: 'DELETE',
         query: { id: '1' },
@@ -701,7 +701,7 @@ describe('API Endpoints Validation', () => {
     it('should return 404 for non-existent template on PUT', async () => {
       mockQuery.mockResolvedValue([]);
 
-      const { default: handler } = await import('../templates/index');
+      const { default: handler } = await import('../../server/apiRoutes/templates/index');
       const req: MockApiRequest = {
         method: 'PUT',
         query: { id: 'nonexistent' },
@@ -721,7 +721,7 @@ describe('API Endpoints Validation', () => {
     it('should return 404 for non-existent template on DELETE', async () => {
       mockQuery.mockResolvedValue([]);
 
-      const { default: handler } = await import('../templates/index');
+      const { default: handler } = await import('../../server/apiRoutes/templates/index');
       const req: MockApiRequest = {
         method: 'DELETE',
         query: { id: 'nonexistent' },
@@ -740,7 +740,7 @@ describe('API Endpoints Validation', () => {
     it('should handle database errors gracefully', async () => {
       mockDb.getPosts.mockRejectedValue(new Error('Database connection failed'));
 
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: { userId: 'user1' },
@@ -754,7 +754,7 @@ describe('API Endpoints Validation', () => {
     });
 
     it('should handle validation errors for missing required fields', async () => {
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'GET',
         query: {}, // Missing userId
@@ -770,7 +770,7 @@ describe('API Endpoints Validation', () => {
 
   describe('Input Validation', () => {
     it('should validate POST request data for posts', async () => {
-      const { default: handler } = await import('../posts/index');
+      const { default: handler } = await import('../../server/apiRoutes/posts/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -788,7 +788,7 @@ describe('API Endpoints Validation', () => {
     });
 
     it('should validate POST request data for brand voices', async () => {
-      const { default: handler } = await import('../brand-voices/index');
+      const { default: handler } = await import('../../server/apiRoutes/brand-voices/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},
@@ -806,7 +806,7 @@ describe('API Endpoints Validation', () => {
     });
 
     it('should validate POST request data for campaigns', async () => {
-      const { default: handler } = await import('../campaigns/index');
+      const { default: handler } = await import('../../server/apiRoutes/campaigns/index');
       const req: MockApiRequest = {
         method: 'POST',
         query: {},

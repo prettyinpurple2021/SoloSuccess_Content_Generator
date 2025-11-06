@@ -19,7 +19,6 @@
     "test:neon": "node scripts/test-neon-integration.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "validate:production": "node scripts/production-deployment-validation.js",
     "validate:env": "node -e \"console.log('Environment validation passed')\"",
     "test:production": "NODE_ENV=production npm run test",
     "build:analyze": "npm run build && npx vite-bundle-analyzer dist",

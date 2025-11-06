@@ -54,6 +54,64 @@ interface SystemError {
   metadata: Record<string, unknown>;
 }
 
+interface MetricPoint {
+  timestamp: number;
+  value: number;
+  tags?: Record<string, string>;
+  unit?: string;
+}
+
+interface MetricSummary {
+  count: number;
+  avg: number;
+  min: number;
+  max: number;
+  p95: number;
+  unit?: string;
+}
+
+interface ApiMetricRecord {
+  timestamp: number;
+  endpoint: string;
+  method: string;
+  responseTime: number;
+  statusCode: number;
+}
+
+interface DatabaseMetricRecord {
+  timestamp: number;
+  operation: string;
+  duration: number;
+  success: boolean;
+}
+
+interface AiServiceMetricRecord {
+  timestamp: number;
+  service: string;
+  operation: string;
+  duration: number;
+  success: boolean;
+  tokensUsed?: number;
+}
+
+interface IntegrationMetricRecord {
+  timestamp: number;
+  platform: string;
+  operation: string;
+  duration: number;
+  success: boolean;
+}
+
+interface AlertRule {
+  id: string;
+  name: string;
+  targetMetric: string;
+  threshold: number;
+  comparison: 'gt' | 'gte' | 'lt' | 'lte';
+  windowMs: number;
+  createdAt: Date;
+}
+
 class ProductionMonitoringService {
   private config: MonitoringConfig;
   private metrics: HealthMetrics[] = [];
@@ -62,6 +120,13 @@ class ProductionMonitoringService {
   private isMonitoring = false;
   private healthCheckTimer?: NodeJS.Timeout;
   private startTime = Date.now();
+  private metricStore = new Map<string, MetricPoint[]>();
+  private apiMetrics: ApiMetricRecord[] = [];
+  private databaseMetrics: DatabaseMetricRecord[] = [];
+  private aiServiceMetrics: AiServiceMetricRecord[] = [];
+  private integrationMetrics: IntegrationMetricRecord[] = [];
+  private alertRules = new Map<string, AlertRule>();
+  private readonly maxMetricEntries = 5000;
 
   constructor(config?: Partial<MonitoringConfig>) {
     this.config = {
@@ -566,6 +631,615 @@ class ProductionMonitoringService {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Aggregate key monitoring data for dashboard consumption
+   */
+  getDashboardData(windowMs: number = 60 * 60 * 1000) {
+    const healthStatus = this.getHealthStatus();
+    const metricsSummary = this.getMetricsSummary(windowMs);
+    const apiOverview = this.aggregateApiMetrics(windowMs);
+    const databaseOverview = this.aggregateDatabaseMetrics(windowMs);
+    const aiOverview = this.aggregateAiMetrics(windowMs);
+    const integrationOverview = this.aggregateIntegrationMetrics(windowMs);
+
+    return {
+      generatedAt: Date.now(),
+      windowMs,
+      healthStatus,
+      monitoringStats: this.getMonitoringStats(),
+      metricsSummary,
+      apiOverview,
+      databaseOverview,
+      aiOverview,
+      integrationOverview,
+      recentAlerts: this.getRecentAlerts(10),
+      recentErrors: this.getRecentErrors(10),
+    };
+  }
+
+  /**
+   * Summarize collected custom metrics within a timeframe
+   */
+  getMetricsSummary(windowMs: number): {
+    totalMetrics: number;
+    generatedAt: number;
+    metrics: Record<string, MetricSummary>;
+  } {
+    const summaries: Record<string, MetricSummary> = {};
+    let total = 0;
+    const cutoff = Date.now() - windowMs;
+
+    this.metricStore.forEach((series, name) => {
+      const relevant = series.filter((point) => point.timestamp >= cutoff);
+      if (relevant.length === 0) {
+        return;
+      }
+
+      const summary = this.summarizeMetricPoints(relevant);
+      summaries[name] = summary;
+      total += summary.count;
+    });
+
+    return {
+      totalMetrics: total,
+      generatedAt: Date.now(),
+      metrics: summaries,
+    };
+  }
+
+  /**
+   * Get recent alert history with optional limit
+   */
+  getAlertHistory(limit: number = 50): Alert[] {
+    const sorted = [...this.alerts].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return sorted.slice(0, limit);
+  }
+
+  /**
+   * Record arbitrary metric values for custom dashboards
+   */
+  recordMetric(name: string, value: number, tags?: Record<string, string>, unit?: string): void {
+    const normalizedTags = tags
+      ? Object.fromEntries(
+          Object.entries(tags).map(([key, tagValue]) => [key, String(tagValue ?? 'unknown')])
+        )
+      : undefined;
+
+    const point: MetricPoint = {
+      timestamp: Date.now(),
+      value,
+      tags: normalizedTags,
+      unit,
+    };
+
+    const series = this.metricStore.get(name) ?? [];
+    series.push(point);
+    this.pruneMetricSeries(series);
+    this.metricStore.set(name, series);
+  }
+
+  /**
+   * Record API response metrics
+   */
+  recordApiResponseTime(
+    endpoint: string,
+    method: string,
+    responseTime: number,
+    statusCode: number
+  ): void {
+    const record: ApiMetricRecord = {
+      timestamp: Date.now(),
+      endpoint,
+      method: method.toUpperCase(),
+      responseTime,
+      statusCode,
+    };
+
+    this.apiMetrics.push(record);
+    this.pruneTimedRecords(this.apiMetrics);
+
+    this.recordMetric(
+      'api_response_time',
+      responseTime,
+      {
+        endpoint,
+        method: record.method,
+        status: String(statusCode),
+      },
+      'ms'
+    );
+
+    this.recordMetric('api_request_count', 1, {
+      endpoint,
+      method: record.method,
+      status: String(statusCode),
+      success: String(statusCode < 400),
+    });
+  }
+
+  /**
+   * Record database performance metrics
+   */
+  recordDatabaseMetrics(operation: string, duration: number, success: boolean): void {
+    const record: DatabaseMetricRecord = {
+      timestamp: Date.now(),
+      operation,
+      duration,
+      success,
+    };
+
+    this.databaseMetrics.push(record);
+    this.pruneTimedRecords(this.databaseMetrics);
+
+    this.recordMetric(
+      'database_operation_duration',
+      duration,
+      {
+        operation,
+        success: String(success),
+      },
+      'ms'
+    );
+
+    if (!success) {
+      this.recordMetric('database_operation_error', 1, { operation });
+    }
+  }
+
+  /**
+   * Record AI service usage metrics
+   */
+  recordAIServiceMetrics(
+    service: string,
+    operation: string,
+    duration: number,
+    success: boolean,
+    tokensUsed?: number
+  ): void {
+    const record: AiServiceMetricRecord = {
+      timestamp: Date.now(),
+      service,
+      operation,
+      duration,
+      success,
+      tokensUsed,
+    };
+
+    this.aiServiceMetrics.push(record);
+    this.pruneTimedRecords(this.aiServiceMetrics);
+
+    this.recordMetric(
+      'ai_service_duration',
+      duration,
+      {
+        service,
+        operation,
+        success: String(success),
+      },
+      'ms'
+    );
+
+    if (typeof tokensUsed === 'number') {
+      this.recordMetric('ai_tokens_used', tokensUsed, { service, operation });
+    }
+
+    if (!success) {
+      this.recordMetric('ai_service_error', 1, { service, operation });
+    }
+  }
+
+  /**
+   * Record integration performance metrics
+   */
+  recordIntegrationMetrics(
+    platform: string,
+    operation: string,
+    duration: number,
+    success: boolean
+  ): void {
+    const record: IntegrationMetricRecord = {
+      timestamp: Date.now(),
+      platform,
+      operation,
+      duration,
+      success,
+    };
+
+    this.integrationMetrics.push(record);
+    this.pruneTimedRecords(this.integrationMetrics);
+
+    this.recordMetric(
+      'integration_operation_duration',
+      duration,
+      {
+        platform,
+        operation,
+        success: String(success),
+      },
+      'ms'
+    );
+
+    if (!success) {
+      this.recordMetric('integration_operation_error', 1, { platform, operation });
+    }
+  }
+
+  /**
+   * Delete stored alert rule configuration
+   */
+  deleteAlertRule(ruleId: string): boolean {
+    return this.alertRules.delete(ruleId);
+  }
+
+  /**
+   * Register an alert rule (used by tests and future configuration APIs)
+   */
+  registerAlertRule(rule: Omit<AlertRule, 'createdAt'> & { createdAt?: Date }): AlertRule {
+    const stored: AlertRule = {
+      ...rule,
+      createdAt: rule.createdAt ?? new Date(),
+    };
+    this.alertRules.set(stored.id, stored);
+    return stored;
+  }
+
+  private summarizeMetricPoints(points: MetricPoint[]): MetricSummary {
+    const values = points.map((point) => point.value).sort((a, b) => a - b);
+    const count = values.length;
+    const sum = values.reduce((acc, value) => acc + value, 0);
+    const unit = points.find((point) => point.unit)?.unit;
+
+    return {
+      count,
+      avg: count > 0 ? sum / count : 0,
+      min: count > 0 ? values[0] : 0,
+      max: count > 0 ? values[count - 1] : 0,
+      p95: this.computePercentile(values, 0.95),
+      unit,
+    };
+  }
+
+  private pruneMetricSeries(series: MetricPoint[]): void {
+    const cutoff = Date.now() - this.getRetentionMs();
+    while (series.length && series[0].timestamp < cutoff) {
+      series.shift();
+    }
+    if (series.length > this.maxMetricEntries) {
+      series.splice(0, series.length - this.maxMetricEntries);
+    }
+  }
+
+  private pruneTimedRecords<T extends { timestamp: number }>(records: T[]): void {
+    const cutoff = Date.now() - this.getRetentionMs();
+    while (records.length && records[0].timestamp < cutoff) {
+      records.shift();
+    }
+    if (records.length > this.maxMetricEntries) {
+      records.splice(0, records.length - this.maxMetricEntries);
+    }
+  }
+
+  private filterByWindow<T extends { timestamp: number }>(records: T[], windowMs: number): T[] {
+    const cutoff = Date.now() - windowMs;
+    return records.filter((record) => record.timestamp >= cutoff);
+  }
+
+  private aggregateApiMetrics(windowMs: number) {
+    const records = this.filterByWindow(this.apiMetrics, windowMs);
+    if (records.length === 0) {
+      return {
+        count: 0,
+        avgResponseTime: 0,
+        p95ResponseTime: 0,
+        successRate: 100,
+        errorRate: 0,
+        byEndpoint: [] as Array<{
+          endpoint: string;
+          count: number;
+          avgResponseTime: number;
+          errorRate: number;
+          methods: Array<{ method: string; count: number; avgResponseTime: number }>;
+        }>,
+      };
+    }
+
+    const responseTimes = records.map((record) => record.responseTime).sort((a, b) => a - b);
+    const count = responseTimes.length;
+    const sum = responseTimes.reduce((acc, value) => acc + value, 0);
+    const avg = sum / count;
+    const p95 = this.computePercentile(responseTimes, 0.95);
+    const successCount = records.filter((record) => record.statusCode < 400).length;
+    const errorCount = count - successCount;
+
+    const endpoints = new Map<
+      string,
+      {
+        count: number;
+        totalResponseTime: number;
+        errorCount: number;
+        methods: Map<
+          string,
+          {
+            count: number;
+            totalResponseTime: number;
+            errorCount: number;
+          }
+        >;
+      }
+    >();
+
+    records.forEach((record) => {
+      const endpointEntry = endpoints.get(record.endpoint) ?? {
+        count: 0,
+        totalResponseTime: 0,
+        errorCount: 0,
+        methods: new Map<
+          string,
+          {
+            count: number;
+            totalResponseTime: number;
+            errorCount: number;
+          }
+        >(),
+      };
+
+      endpointEntry.count += 1;
+      endpointEntry.totalResponseTime += record.responseTime;
+      if (record.statusCode >= 400) {
+        endpointEntry.errorCount += 1;
+      }
+
+      const methodKey = record.method;
+      const methodEntry = endpointEntry.methods.get(methodKey) ?? {
+        count: 0,
+        totalResponseTime: 0,
+        errorCount: 0,
+      };
+      methodEntry.count += 1;
+      methodEntry.totalResponseTime += record.responseTime;
+      if (record.statusCode >= 400) {
+        methodEntry.errorCount += 1;
+      }
+      endpointEntry.methods.set(methodKey, methodEntry);
+
+      endpoints.set(record.endpoint, endpointEntry);
+    });
+
+    const byEndpoint = Array.from(endpoints.entries()).map(([endpoint, data]) => {
+      const methods = Array.from(data.methods.entries()).map(([method, stats]) => ({
+        method,
+        count: stats.count,
+        avgResponseTime: stats.count ? stats.totalResponseTime / stats.count : 0,
+      }));
+
+      return {
+        endpoint,
+        count: data.count,
+        avgResponseTime: data.count ? data.totalResponseTime / data.count : 0,
+        errorRate: data.count ? (data.errorCount / data.count) * 100 : 0,
+        methods,
+      };
+    });
+
+    return {
+      count,
+      avgResponseTime: avg,
+      p95ResponseTime: p95,
+      successRate: (successCount / count) * 100,
+      errorRate: (errorCount / count) * 100,
+      byEndpoint,
+    };
+  }
+
+  private aggregateDatabaseMetrics(windowMs: number) {
+    const records = this.filterByWindow(this.databaseMetrics, windowMs);
+    if (records.length === 0) {
+      return {
+        count: 0,
+        avgDuration: 0,
+        p95Duration: 0,
+        errorRate: 0,
+        operations: [] as Array<{
+          operation: string;
+          count: number;
+          avgDuration: number;
+          errorRate: number;
+        }>,
+      };
+    }
+
+    const durations = records.map((record) => record.duration).sort((a, b) => a - b);
+    const count = durations.length;
+    const sum = durations.reduce((acc, value) => acc + value, 0);
+    const avg = sum / count;
+    const p95 = this.computePercentile(durations, 0.95);
+    const errorCount = records.filter((record) => !record.success).length;
+
+    const operations = new Map<
+      string,
+      { count: number; totalDuration: number; errorCount: number }
+    >();
+
+    records.forEach((record) => {
+      const opEntry = operations.get(record.operation) ?? {
+        count: 0,
+        totalDuration: 0,
+        errorCount: 0,
+      };
+      opEntry.count += 1;
+      opEntry.totalDuration += record.duration;
+      if (!record.success) {
+        opEntry.errorCount += 1;
+      }
+      operations.set(record.operation, opEntry);
+    });
+
+    const operationStats = Array.from(operations.entries()).map(([operation, data]) => ({
+      operation,
+      count: data.count,
+      avgDuration: data.count ? data.totalDuration / data.count : 0,
+      errorRate: data.count ? (data.errorCount / data.count) * 100 : 0,
+    }));
+
+    return {
+      count,
+      avgDuration: avg,
+      p95Duration: p95,
+      errorRate: (errorCount / count) * 100,
+      operations: operationStats,
+    };
+  }
+
+  private aggregateAiMetrics(windowMs: number) {
+    const records = this.filterByWindow(this.aiServiceMetrics, windowMs);
+    if (records.length === 0) {
+      return {
+        count: 0,
+        avgDuration: 0,
+        p95Duration: 0,
+        successRate: 100,
+        services: [] as Array<{
+          service: string;
+          count: number;
+          avgDuration: number;
+          successRate: number;
+          avgTokens?: number;
+        }>,
+      };
+    }
+
+    const durations = records.map((record) => record.duration).sort((a, b) => a - b);
+    const count = durations.length;
+    const sum = durations.reduce((acc, value) => acc + value, 0);
+    const avg = sum / count;
+    const p95 = this.computePercentile(durations, 0.95);
+    const successCount = records.filter((record) => record.success).length;
+
+    const services = new Map<
+      string,
+      {
+        count: number;
+        totalDuration: number;
+        successCount: number;
+        totalTokens: number;
+        tokenSamples: number;
+      }
+    >();
+
+    records.forEach((record) => {
+      const serviceEntry = services.get(record.service) ?? {
+        count: 0,
+        totalDuration: 0,
+        successCount: 0,
+        totalTokens: 0,
+        tokenSamples: 0,
+      };
+      serviceEntry.count += 1;
+      serviceEntry.totalDuration += record.duration;
+      if (record.success) {
+        serviceEntry.successCount += 1;
+      }
+      if (typeof record.tokensUsed === 'number') {
+        serviceEntry.totalTokens += record.tokensUsed;
+        serviceEntry.tokenSamples += 1;
+      }
+      services.set(record.service, serviceEntry);
+    });
+
+    const serviceStats = Array.from(services.entries()).map(([service, data]) => ({
+      service,
+      count: data.count,
+      avgDuration: data.count ? data.totalDuration / data.count : 0,
+      successRate: data.count ? (data.successCount / data.count) * 100 : 0,
+      avgTokens: data.tokenSamples > 0 ? data.totalTokens / data.tokenSamples : undefined,
+    }));
+
+    return {
+      count,
+      avgDuration: avg,
+      p95Duration: p95,
+      successRate: (successCount / count) * 100,
+      services: serviceStats,
+    };
+  }
+
+  private aggregateIntegrationMetrics(windowMs: number) {
+    const records = this.filterByWindow(this.integrationMetrics, windowMs);
+    if (records.length === 0) {
+      return {
+        count: 0,
+        avgDuration: 0,
+        p95Duration: 0,
+        successRate: 100,
+        platforms: [] as Array<{
+          platform: string;
+          count: number;
+          avgDuration: number;
+          successRate: number;
+        }>,
+      };
+    }
+
+    const durations = records.map((record) => record.duration).sort((a, b) => a - b);
+    const count = durations.length;
+    const sum = durations.reduce((acc, value) => acc + value, 0);
+    const avg = sum / count;
+    const p95 = this.computePercentile(durations, 0.95);
+    const successCount = records.filter((record) => record.success).length;
+
+    const platforms = new Map<
+      string,
+      { count: number; totalDuration: number; successCount: number }
+    >();
+
+    records.forEach((record) => {
+      const platformEntry = platforms.get(record.platform) ?? {
+        count: 0,
+        totalDuration: 0,
+        successCount: 0,
+      };
+      platformEntry.count += 1;
+      platformEntry.totalDuration += record.duration;
+      if (record.success) {
+        platformEntry.successCount += 1;
+      }
+      platforms.set(record.platform, platformEntry);
+    });
+
+    const platformStats = Array.from(platforms.entries()).map(([platform, data]) => ({
+      platform,
+      count: data.count,
+      avgDuration: data.count ? data.totalDuration / data.count : 0,
+      successRate: data.count ? (data.successCount / data.count) * 100 : 0,
+    }));
+
+    return {
+      count,
+      avgDuration: avg,
+      p95Duration: p95,
+      successRate: (successCount / count) * 100,
+      platforms: platformStats,
+    };
+  }
+
+  private computePercentile(values: number[], percentile: number): number {
+    if (values.length === 0) {
+      return 0;
+    }
+    if (values.length === 1) {
+      return values[0];
+    }
+    const index = Math.min(
+      values.length - 1,
+      Math.max(0, Math.floor(percentile * values.length) - 1)
+    );
+    return values[index];
+  }
+
+  private getRetentionMs(): number {
+    return this.config.retentionPeriod * 24 * 60 * 60 * 1000;
   }
 
   /**

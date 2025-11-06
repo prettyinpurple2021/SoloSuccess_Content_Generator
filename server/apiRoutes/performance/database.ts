@@ -4,9 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { connectionManager } from '../../services/databaseConnectionManager';
-import { databasePerformanceService } from '../../services/databasePerformanceService';
-import { errorHandler } from '../../services/errorHandlingService';
+import { connectionManager } from '../../../services/databaseConnectionManager';
+import { databasePerformanceService } from '../../../services/databasePerformanceService';
+import { errorHandler } from '../../../services/errorHandlingService';
 
 export async function GET(request: NextRequest) {
   try {

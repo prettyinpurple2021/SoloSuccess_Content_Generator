@@ -107,13 +107,20 @@ async function checkAllServices(): Promise<ServiceStatus[]> {
   const serviceChecks = servicesToCheck.map(async (service) => {
     try {
       const startTime = Date.now();
-      const response = await fetch(`${service.url}${service.endpoint}`, {
-        method: 'GET',
-        timeout: 10000, // 10 second timeout
-        headers: {
-          'User-Agent': 'Uptime-Monitor/1.0',
-        },
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      let response: Response;
+      try {
+        response = await fetch(`${service.url}${service.endpoint}`, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Uptime-Monitor/1.0',
+          },
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       const responseTime = Date.now() - startTime;
       const isHealthy = response.ok;

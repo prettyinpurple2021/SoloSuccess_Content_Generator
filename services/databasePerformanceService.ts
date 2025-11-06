@@ -3,7 +3,7 @@
  * Provides query optimization, indexing, connection pooling, and performance monitoring
  */
 
-import postgres from 'postgres';
+import type { Sql, ParameterOrJSON } from 'postgres';
 import { errorHandler } from './errorHandlingService';
 
 // Performance monitoring interface
@@ -70,9 +70,9 @@ class DatabasePerformanceService {
       limit?: number;
       offset?: number;
     }
-  ): { query: string; params: unknown[] } {
+  ): { query: string; params: ParameterOrJSON<Record<string, unknown>>[] } {
     let whereConditions = ['user_id = $1'];
-    const params: unknown[] = [userId];
+    const params: ParameterOrJSON<Record<string, unknown>>[] = [userId];
     let paramIndex = 2;
 
     // Add filters with proper indexing
@@ -140,9 +140,9 @@ class DatabasePerformanceService {
       seriesId?: string;
       dateRange?: { start: Date; end: Date };
     }
-  ): { query: string; params: unknown[] } {
+  ): { query: string; params: ParameterOrJSON<Record<string, unknown>>[] } {
     let whereConditions = ['user_id = $1'];
-    const params: unknown[] = [userId];
+    const params: ParameterOrJSON<Record<string, unknown>>[] = [userId];
     let paramIndex = 2;
 
     if (filters?.status) {
@@ -185,9 +185,9 @@ class DatabasePerformanceService {
    * Execute query with performance monitoring
    */
   async executeWithMonitoring<T>(
-    pool: postgres.Sql,
+    pool: Sql<Record<string, unknown>>,
     query: string,
-    params: unknown[],
+    params: ReadonlyArray<ParameterOrJSON<Record<string, unknown>>>,
     operation: string,
     userId?: string
   ): Promise<T> {
@@ -236,19 +236,19 @@ class DatabasePerformanceService {
    * Batch operations with transaction optimization
    */
   async executeBatchWithOptimization<T>(
-    pool: postgres.Sql,
+    pool: Sql<Record<string, unknown>>,
     operations: Array<{
       query: string;
-      params: unknown[];
+      params: ReadonlyArray<ParameterOrJSON<Record<string, unknown>>>;
       operation: string;
     }>,
     userId?: string
-  ): Promise<T[]> {
+  ): Promise<Array<Awaited<T>>> {
     const startTime = Date.now();
 
     try {
       const results = await pool.begin(async (sql) => {
-        const batchResults: T[] = [];
+        const batchResults: Array<Awaited<T>> = [];
 
         for (const op of operations) {
           const result = await this.executeWithMonitoring<T>(
@@ -301,7 +301,7 @@ class DatabasePerformanceService {
   /**
    * Database index optimization recommendations
    */
-  async analyzeIndexUsage(pool: postgres.Sql): Promise<{
+  async analyzeIndexUsage(pool: Sql<Record<string, unknown>>): Promise<{
     recommendations: string[];
     currentIndexes: Array<Record<string, unknown>>;
     missingIndexes: string[];

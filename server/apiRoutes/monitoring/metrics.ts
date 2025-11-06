@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { productionMonitoringService } from '../../services/productionMonitoringService';
+import { productionMonitoringService } from '../../../services/productionMonitoringService';
 
 /**
  * Metrics Collection API
@@ -108,10 +108,12 @@ function handleApiPerformanceMetrics(data: {
   );
 
   // Record additional context
-  if (userAgent) {
-    const tags = { endpoint, method, user_agent: userAgent };
-    productionMonitoringService.recordMetric('api_request', 1, tags);
-  }
+  const requestTags = {
+    endpoint: endpoint || 'unknown',
+    method: method || 'GET',
+    user_agent: userAgent || 'unknown',
+  };
+  productionMonitoringService.recordMetric('api_request', 1, requestTags);
 }
 
 function handleDatabasePerformanceMetrics(data: {
@@ -131,12 +133,12 @@ function handleDatabasePerformanceMetrics(data: {
 
   // Record additional database metrics
   if (rowCount !== undefined) {
-    const tags = { operation };
+    const tags = { operation: operation || 'unknown' };
     productionMonitoringService.recordMetric('database_rows_affected', rowCount, tags);
   }
 
   if (query) {
-    const tags = { operation, query_type: getQueryType(query) };
+    const tags = { operation: operation || 'unknown', query_type: getQueryType(query) };
     productionMonitoringService.recordMetric('database_query', 1, tags);
   }
 }
@@ -162,12 +164,12 @@ function handleAIServicePerformanceMetrics(data: {
 
   // Record additional AI metrics
   if (model) {
-    const tags = { service, operation, model };
+    const tags = { service: service || 'unknown', operation: operation || 'unknown', model };
     productionMonitoringService.recordMetric('ai_model_usage', 1, tags);
   }
 
   if (cost !== undefined) {
-    const tags = { service, operation };
+    const tags = { service: service || 'unknown', operation: operation || 'unknown' };
     productionMonitoringService.recordMetric('ai_service_cost', cost, tags, 'usd');
   }
 }
@@ -191,7 +193,7 @@ function handleIntegrationPerformanceMetrics(data: {
 
   // Record additional integration metrics
   if (rateLimitRemaining !== undefined) {
-    const tags = { platform, operation };
+    const tags = { platform: platform || 'unknown', operation: operation || 'unknown' };
     productionMonitoringService.recordMetric(
       'integration_rate_limit_remaining',
       rateLimitRemaining,
@@ -200,7 +202,7 @@ function handleIntegrationPerformanceMetrics(data: {
   }
 
   if (dataSize !== undefined) {
-    const tags = { platform, operation };
+    const tags = { platform: platform || 'unknown', operation: operation || 'unknown' };
     productionMonitoringService.recordMetric('integration_data_size', dataSize, tags, 'bytes');
   }
 }

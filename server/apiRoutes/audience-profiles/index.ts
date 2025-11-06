@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { db } from '../../services/databaseService';
+import { db } from '../../../services/databaseService';
 
 interface ApiRequest {
   method?: string;

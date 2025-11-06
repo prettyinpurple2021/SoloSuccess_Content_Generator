@@ -59,11 +59,11 @@ class MockApiResponse {
 }
 
 // Import API handlers
-import postsHandler from '../posts/index';
-import brandVoicesHandler from '../brand-voices/index';
-import campaignsHandler from '../campaigns/index';
-import audienceProfilesHandler from '../audience-profiles/index';
-import analyticsHandler from '../analytics/index';
+import postsHandler from '../../server/apiRoutes/posts/index';
+import brandVoicesHandler from '../../server/apiRoutes/brand-voices/index';
+import campaignsHandler from '../../server/apiRoutes/campaigns/index';
+import audienceProfilesHandler from '../../server/apiRoutes/audience-profiles/index';
+import analyticsHandler from '../../server/apiRoutes/analytics/index';
 
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 

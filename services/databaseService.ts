@@ -269,6 +269,36 @@ export const db = {
     }
   },
 
+  // Content Series (read-only for client)
+  getContentSeries: async (userId: string): Promise<ContentSeries[]> => {
+    try {
+      const result = await pool`
+      SELECT * FROM content_series
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `;
+
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            campaignId: row.campaign_id,
+            name: row.name,
+            theme: row.theme,
+            totalPosts: row.total_posts,
+            frequency: row.frequency,
+            currentPost: row.current_post,
+            posts: [],
+            createdAt: new Date(row.created_at),
+          }) as ContentSeries
+      );
+    } catch (error) {
+      console.error('Error fetching content series:', error);
+      throw error;
+    }
+  },
+
   // Add new post
   addPost: async (
     post: Omit<DatabasePost, 'id' | 'user_id' | 'created_at'>,
@@ -578,6 +608,38 @@ export const db = {
     }
   },
 
+  // Content Templates (read-only for client)
+  getContentTemplates: async (userId?: string): Promise<ContentTemplate[]> => {
+    try {
+      const result = await pool`
+        SELECT * FROM content_templates
+        ${userId ? pool`WHERE user_id = ${userId} OR is_public = true` : pool``}
+        ORDER BY created_at DESC
+      `;
+
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            category: row.category,
+            industry: row.industry,
+            contentType: row.content_type,
+            structure: row.structure,
+            customizableFields: row.customizable_fields,
+            usageCount: row.usage_count,
+            rating: row.rating,
+            isPublic: row.is_public,
+            createdAt: new Date(row.created_at),
+          }) as ContentTemplate
+      );
+    } catch (error) {
+      console.error('Error fetching content templates:', error);
+      throw error;
+    }
+  },
+
   // Campaigns CRUD operations
   getCampaigns: async (userId: string): Promise<Campaign[]> => {
     try {
@@ -871,6 +933,34 @@ export const db = {
       }
     } catch (error) {
       console.error('Error deleting integration:', error);
+      throw error;
+    }
+  },
+
+  // Image Styles (read-only for client)
+  getImageStyles: async (userId?: string): Promise<ImageStyle[]> => {
+    try {
+      const result = await pool`
+        SELECT * FROM image_styles
+        ${userId ? pool`WHERE user_id = ${userId}` : pool``}
+        ORDER BY created_at DESC
+      `;
+
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            stylePrompt: row.style_prompt,
+            colorPalette: row.color_palette,
+            visualElements: row.visual_elements,
+            brandAssets: row.brand_assets,
+            createdAt: new Date(row.created_at),
+          }) as ImageStyle
+      );
+    } catch (error) {
+      console.error('Error fetching image styles:', error);
       throw error;
     }
   },

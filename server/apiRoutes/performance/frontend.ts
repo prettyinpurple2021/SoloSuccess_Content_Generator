@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { errorHandler } from '../../services/errorHandlingService';
+import { errorHandler } from '../../../services/errorHandlingService';
 
 export async function GET(request: NextRequest) {
   try {
@@ -324,6 +324,8 @@ async function trackPerformanceMetric(data: {
 }) {
   // In a real implementation, this would store metrics in a database
   const { metric, value, component, timestamp } = data;
+  const parsedTimestamp = timestamp ? new Date(timestamp) : new Date();
+  const metricTimestamp = Number.isNaN(parsedTimestamp.getTime()) ? new Date() : parsedTimestamp;
 
   // Log the metric for now
   errorHandler.logError(
@@ -334,7 +336,8 @@ async function trackPerformanceMetric(data: {
       metric,
       value,
       component,
-      timestamp,
+      originalTimestamp: timestamp,
+      timestamp: metricTimestamp,
     },
     'info'
   );
