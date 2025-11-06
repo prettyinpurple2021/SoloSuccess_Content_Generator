@@ -13,7 +13,6 @@ import {
   Smartphone,
   Monitor,
 } from 'lucide-react';
-import { error } from 'better-auth/api';
 
 export interface ErrorReport {
   id: string;
@@ -64,7 +63,7 @@ export const ErrorReportingSystem: React.FC<ErrorReportingSystemProps> = ({
           }))
         );
       } catch (_error) {
-        console.error('Failed to load error reports:', error);
+        console.error('Failed to load error reports:', _error);
       }
     }
   }, []);
