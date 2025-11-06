@@ -61,7 +61,9 @@ export class CachingService {
     // If cache is at max size, remove oldest entry
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey);
+      }
     }
 
     this.cache.set(key, {
@@ -163,7 +165,7 @@ export class CachingService {
    * Preload frequently accessed data
    */
   async preload(
-    preloadFunctions: Array<{ key: string; fn: () => Promise<any>; ttl?: number }>
+    preloadFunctions: Array<{ key: string; fn: () => Promise<unknown>; ttl?: number }>
   ): Promise<void> {
     const promises = preloadFunctions.map(async ({ key, fn, ttl }) => {
       try {
@@ -371,14 +373,14 @@ export class ContentCachingService extends CachingService {
   async preloadUserData(
     userId: string,
     dataFetchers: {
-      posts?: () => Promise<any>;
-      brandVoices?: () => Promise<any>;
-      audienceProfiles?: () => Promise<any>;
-      templates?: () => Promise<any>;
-      dashboardData?: () => Promise<any>;
+      posts?: () => Promise<unknown>;
+      brandVoices?: () => Promise<unknown>;
+      audienceProfiles?: () => Promise<unknown>;
+      templates?: () => Promise<unknown>;
+      dashboardData?: () => Promise<unknown>;
     }
   ): Promise<void> {
-    const preloadFunctions = [];
+    const preloadFunctions: Array<{ key: string; fn: () => Promise<unknown>; ttl?: number }> = [];
 
     if (dataFetchers.posts) {
       preloadFunctions.push({
