@@ -61,7 +61,7 @@ interface MetricPoint {
   unit?: string;
 }
 
-interface MetricSummary {
+export interface MetricSummary {
   count: number;
   avg: number;
   min: number;

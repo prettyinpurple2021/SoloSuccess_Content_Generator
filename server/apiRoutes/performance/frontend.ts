@@ -5,24 +5,31 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { errorHandler } from '../../../services/errorHandlingService';
+import { productionMonitoringService } from '../../../services/productionMonitoringService';
+import type { MetricSummary } from '../../../services/productionMonitoringService';
+
+const DEFAULT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'metrics';
+    const windowParam = Number(searchParams.get('windowMs'));
+    const windowMs =
+      Number.isFinite(windowParam) && windowParam > 0 ? windowParam : DEFAULT_WINDOW_MS;
 
     switch (action) {
       case 'metrics':
-        return await getFrontendMetrics();
+        return await getFrontendMetrics(windowMs);
 
       case 'report':
-        return await getPerformanceReport();
+        return await getPerformanceReport(windowMs);
 
       case 'recommendations':
-        return await getOptimizationRecommendations();
+        return await getOptimizationRecommendations(windowMs);
 
       case 'vitals':
-        return await getWebVitals();
+        return await getWebVitals(windowMs);
 
       default:
         return NextResponse.json({ error: 'Invalid action parameter' }, { status: 400 });
@@ -55,7 +62,7 @@ export async function POST(request: NextRequest) {
         return await recordPerformanceError(body);
 
       case 'optimize':
-        return await applyOptimizations();
+        return await applyOptimizations(DEFAULT_WINDOW_MS);
 
       default:
         return NextResponse.json({ error: 'Invalid action parameter' }, { status: 400 });
@@ -74,57 +81,43 @@ export async function POST(request: NextRequest) {
 /**
  * Get frontend performance metrics
  */
-async function getFrontendMetrics() {
-  // In a real implementation, this would aggregate metrics from a database
-  // For now, we'll return mock data structure
+async function getFrontendMetrics(windowMs: number) {
+  const dashboard = productionMonitoringService.getDashboardData(windowMs);
+  const metricsSummary = dashboard.metricsSummary.metrics;
+
+  const lcp = metricsSummary['web_vitals_lcp']?.avg ?? null;
+  const fcp = metricsSummary['web_vitals_fcp']?.avg ?? null;
+  const cls = metricsSummary['web_vitals_cls']?.avg ?? null;
+  const fid = metricsSummary['web_vitals_fid']?.avg ?? null;
+  const tti = metricsSummary['web_vitals_tti']?.avg ?? null;
+  const tbt = metricsSummary['web_vitals_total_blocking_time']?.avg ?? null;
+
   const metrics = {
-    pageLoadTime: 1200,
-    firstContentfulPaint: 800,
-    largestContentfulPaint: 1500,
-    cumulativeLayoutShift: 0.05,
-    firstInputDelay: 50,
-    timeToInteractive: 2000,
-    totalBlockingTime: 150,
-    componentMetrics: [
-      {
-        name: 'App',
-        renderCount: 45,
-        averageRenderTime: 12.5,
-        lastRenderTime: 8.2,
-        propsChanges: 23,
-        memoryLeaks: false,
-      },
-      {
-        name: 'IntegrationManager',
-        renderCount: 8,
-        averageRenderTime: 45.3,
-        lastRenderTime: 52.1,
-        propsChanges: 12,
-        memoryLeaks: false,
-      },
-    ],
-    memoryUsage: {
-      usedJSHeapSize: 25 * 1024 * 1024, // 25MB
-      totalJSHeapSize: 50 * 1024 * 1024, // 50MB
-      jsHeapSizeLimit: 2 * 1024 * 1024 * 1024, // 2GB
-    },
-    bundleSize: {
-      main: 245 * 1024, // 245KB
-      vendor: 890 * 1024, // 890KB
-      chunks: 156 * 1024, // 156KB
-      total: 1291 * 1024, // 1.3MB
-    },
+    pageLoadTime: metricsSummary['page_load_time']?.avg ?? null,
+    firstContentfulPaint: fcp,
+    largestContentfulPaint: lcp,
+    cumulativeLayoutShift: cls,
+    firstInputDelay: fid,
+    timeToInteractive: tti,
+    totalBlockingTime: tbt,
+    memoryUsage: metricsSummary['memory_usage'] ?? null,
+    bundleSize: metricsSummary['bundle_size'] ?? null,
     cacheStats: {
-      size: 45,
-      hitRate: 78.5,
-      totalHits: 234,
+      size: metricsSummary['cache_size']?.avg ?? null,
+      hitRate: metricsSummary['cache_hit_rate']?.avg ?? null,
+      totalHits: metricsSummary['cache_hits']?.avg ?? null,
     },
+    apiOverview: dashboard.apiOverview,
+    databaseOverview: dashboard.databaseOverview,
+    aiOverview: dashboard.aiOverview,
+    integrationOverview: dashboard.integrationOverview,
   };
 
   return NextResponse.json({
     success: true,
     data: {
       metrics,
+      windowMs,
       timestamp: new Date().toISOString(),
     },
   });
@@ -133,65 +126,33 @@ async function getFrontendMetrics() {
 /**
  * Get comprehensive performance report
  */
-async function getPerformanceReport() {
+async function getPerformanceReport(windowMs: number) {
+  const dashboard = productionMonitoringService.getDashboardData(windowMs);
+  const metricsSummary = dashboard.metricsSummary.metrics;
+
+  const score = calculatePerformanceScore(metricsSummary);
+
   const report = {
-    score: 85,
-    grade: 'B+',
+    score,
+    grade: scoreToGrade(score),
     metrics: {
-      performance: 82,
-      accessibility: 95,
-      bestPractices: 88,
-      seo: 92,
+      performance: score,
+      accessibility: metricsSummary['accessibility_score']?.avg ?? null,
+      bestPractices: metricsSummary['best_practices_score']?.avg ?? null,
+      seo: metricsSummary['seo_score']?.avg ?? null,
     },
-    webVitals: {
-      lcp: { value: 1.8, rating: 'good' },
-      fid: { value: 45, rating: 'good' },
-      cls: { value: 0.08, rating: 'good' },
-      fcp: { value: 1.2, rating: 'good' },
-      ttfb: { value: 350, rating: 'good' },
-    },
-    recommendations: [
-      {
-        category: 'Performance',
-        priority: 'high',
-        title: 'Optimize images',
-        description: 'Use next-gen image formats and proper sizing',
-        impact: 'Could save 200KB',
-      },
-      {
-        category: 'Performance',
-        priority: 'medium',
-        title: 'Reduce JavaScript bundle size',
-        description: 'Consider code splitting for heavy components',
-        impact: 'Could improve load time by 300ms',
-      },
-      {
-        category: 'Performance',
-        priority: 'low',
-        title: 'Enable text compression',
-        description: 'Use gzip or brotli compression for text assets',
-        impact: 'Could save 50KB',
-      },
-    ],
-    criticalIssues: [],
-    opportunities: [
-      {
-        title: 'Implement lazy loading',
-        description: 'Defer loading of off-screen images',
-        savings: '150KB',
-      },
-      {
-        title: 'Preload critical resources',
-        description: 'Preload fonts and critical CSS',
-        savings: '200ms',
-      },
-    ],
+    webVitals: extractWebVitals(metricsSummary),
+    apiOverview: dashboard.apiOverview,
+    databaseOverview: dashboard.databaseOverview,
+    aiOverview: dashboard.aiOverview,
+    integrationOverview: dashboard.integrationOverview,
   };
 
   return NextResponse.json({
     success: true,
     data: {
       report,
+      windowMs,
       timestamp: new Date().toISOString(),
     },
   });
@@ -200,68 +161,18 @@ async function getPerformanceReport() {
 /**
  * Get optimization recommendations
  */
-async function getOptimizationRecommendations() {
-  const recommendations = {
-    immediate: [
-      {
-        type: 'code_splitting',
-        title: 'Implement code splitting for heavy components',
-        description: 'Split IntegrationManager and AnalyticsDashboard into separate chunks',
-        effort: 'medium',
-        impact: 'high',
-        implementation: 'Use React.lazy() and dynamic imports',
-      },
-      {
-        type: 'image_optimization',
-        title: 'Optimize image loading',
-        description: 'Implement lazy loading and WebP format for images',
-        effort: 'low',
-        impact: 'medium',
-        implementation: 'Use OptimizedImage component',
-      },
-    ],
-    shortTerm: [
-      {
-        type: 'caching',
-        title: 'Implement intelligent caching',
-        description: 'Cache API responses and computed values',
-        effort: 'medium',
-        impact: 'medium',
-        implementation: 'Use service worker or memory cache',
-      },
-      {
-        type: 'preloading',
-        title: 'Preload critical resources',
-        description: 'Preload fonts, critical CSS, and above-fold images',
-        effort: 'low',
-        impact: 'medium',
-        implementation: 'Add <link rel="preload"> tags',
-      },
-    ],
-    longTerm: [
-      {
-        type: 'service_worker',
-        title: 'Implement service worker',
-        description: 'Add offline support and background sync',
-        effort: 'high',
-        impact: 'high',
-        implementation: 'Use Workbox or custom service worker',
-      },
-      {
-        type: 'performance_budget',
-        title: 'Establish performance budget',
-        description: 'Set limits for bundle size and loading times',
-        effort: 'low',
-        impact: 'high',
-        implementation: 'Configure webpack-bundle-analyzer',
-      },
-    ],
-  };
+async function getOptimizationRecommendations(windowMs: number) {
+  const dashboard = productionMonitoringService.getDashboardData(windowMs);
+  const metricsSummary = dashboard.metricsSummary.metrics;
+  const vitals = extractWebVitals(metricsSummary);
+
+  const recommendations = buildRecommendations(vitals, metricsSummary);
 
   return NextResponse.json({
     success: true,
     data: {
       recommendations,
+      windowMs,
       timestamp: new Date().toISOString(),
     },
   });
@@ -270,44 +181,15 @@ async function getOptimizationRecommendations() {
 /**
  * Get Web Vitals metrics
  */
-async function getWebVitals() {
-  const vitals = {
-    lcp: {
-      value: 1800,
-      rating: 'good',
-      threshold: { good: 2500, needsImprovement: 4000 },
-      description: 'Largest Contentful Paint measures loading performance',
-    },
-    fid: {
-      value: 45,
-      rating: 'good',
-      threshold: { good: 100, needsImprovement: 300 },
-      description: 'First Input Delay measures interactivity',
-    },
-    cls: {
-      value: 0.08,
-      rating: 'good',
-      threshold: { good: 0.1, needsImprovement: 0.25 },
-      description: 'Cumulative Layout Shift measures visual stability',
-    },
-    fcp: {
-      value: 1200,
-      rating: 'good',
-      threshold: { good: 1800, needsImprovement: 3000 },
-      description: 'First Contentful Paint measures perceived loading speed',
-    },
-    ttfb: {
-      value: 350,
-      rating: 'good',
-      threshold: { good: 800, needsImprovement: 1800 },
-      description: 'Time to First Byte measures server responsiveness',
-    },
-  };
+async function getWebVitals(windowMs: number) {
+  const dashboard = productionMonitoringService.getDashboardData(windowMs);
+  const vitals = extractWebVitals(dashboard.metricsSummary.metrics);
 
   return NextResponse.json({
     success: true,
     data: {
       vitals,
+      windowMs,
       timestamp: new Date().toISOString(),
     },
   });
@@ -322,25 +204,14 @@ async function trackPerformanceMetric(data: {
   component: string;
   timestamp: string;
 }) {
-  // In a real implementation, this would store metrics in a database
   const { metric, value, component, timestamp } = data;
   const parsedTimestamp = timestamp ? new Date(timestamp) : new Date();
   const metricTimestamp = Number.isNaN(parsedTimestamp.getTime()) ? new Date() : parsedTimestamp;
 
-  // Log the metric for now
-  errorHandler.logError(
-    `Performance metric tracked: ${metric}`,
-    undefined,
-    {
-      operation: 'track_performance_metric',
-      metric,
-      value,
-      component,
-      originalTimestamp: timestamp,
-      timestamp: metricTimestamp,
-    },
-    'info'
-  );
+  productionMonitoringService.recordMetric(metric, value, {
+    component,
+    source: 'frontend-track',
+  });
 
   return NextResponse.json({
     success: true,
@@ -359,16 +230,23 @@ async function trackPerformanceMetric(data: {
 async function recordWebVitals(data: { vitals: Record<string, unknown> }) {
   const { vitals } = data;
 
-  // Log Web Vitals
-  errorHandler.logError(
-    'Web Vitals recorded',
-    undefined,
-    {
-      operation: 'record_web_vitals',
-      vitals,
-    },
-    'info'
-  );
+  Object.entries(vitals || {}).forEach(([name, value]) => {
+    if (typeof value === 'object' && value !== null) {
+      const metric = value as { value?: number; rating?: string; unit?: string };
+      if (typeof metric.value === 'number') {
+        productionMonitoringService.recordMetric(
+          `web_vitals_${name.toLowerCase()}`,
+          metric.value,
+          {
+            rating: metric.rating ?? 'unknown',
+          },
+          metric.unit
+        );
+      }
+    } else if (typeof value === 'number') {
+      productionMonitoringService.recordMetric(`web_vitals_${name.toLowerCase()}`, value);
+    }
+  });
 
   return NextResponse.json({
     success: true,
@@ -389,10 +267,9 @@ async function recordPerformanceError(data: {
 }) {
   const { error, component, context } = data;
 
-  errorHandler.logError(`Performance error in ${component}`, new Error(error), {
-    operation: 'performance_error',
+  productionMonitoringService.recordMetric('frontend_performance_error', 1, {
     component,
-    context,
+    message: error,
   });
 
   return NextResponse.json({
@@ -407,27 +284,149 @@ async function recordPerformanceError(data: {
 /**
  * Apply performance optimizations
  */
-async function applyOptimizations() {
-  const optimizations = {
-    applied: [
-      'Enabled lazy loading for images',
-      'Implemented code splitting for heavy components',
-      'Added preloading for critical resources',
-      'Optimized bundle size with tree shaking',
-    ],
-    failed: [],
-    recommendations: [
-      'Consider implementing service worker for offline support',
-      'Add performance monitoring to production build',
-      'Set up performance budget alerts',
-    ],
-  };
+async function applyOptimizations(windowMs: number) {
+  const dashboard = productionMonitoringService.getDashboardData(windowMs);
+  const metricsSummary = dashboard.metricsSummary.metrics;
+  const vitals = extractWebVitals(metricsSummary);
+
+  const optimizationActions = deriveOptimizationActions(vitals, metricsSummary);
 
   return NextResponse.json({
     success: true,
     data: {
-      optimizations,
+      optimizations: optimizationActions,
+      windowMs,
       timestamp: new Date().toISOString(),
     },
   });
+}
+
+function extractWebVitals(metrics: Record<string, MetricSummary>): Record<string, any> {
+  const map: Record<string, any> = {};
+  const thresholds: Record<string, { good: number; needsImprovement: number; unit?: string }> = {
+    lcp: { good: 2500, needsImprovement: 4000, unit: 'ms' },
+    fcp: { good: 1800, needsImprovement: 3000, unit: 'ms' },
+    cls: { good: 0.1, needsImprovement: 0.25 },
+    fid: { good: 100, needsImprovement: 300, unit: 'ms' },
+    ttfb: { good: 800, needsImprovement: 1800, unit: 'ms' },
+    tti: { good: 3800, needsImprovement: 7300, unit: 'ms' },
+  };
+
+  Object.entries(metrics).forEach(([name, summary]) => {
+    if (!name.startsWith('web_vitals_')) return;
+    const key = name.replace('web_vitals_', '') as keyof typeof thresholds;
+    const threshold = thresholds[key];
+    const value = summary?.avg ?? null;
+    if (threshold && value !== null) {
+      const rating =
+        value <= threshold.good
+          ? 'good'
+          : value <= threshold.needsImprovement
+            ? 'needs-improvement'
+            : 'poor';
+      map[key] = {
+        value,
+        rating,
+        threshold,
+        unit: threshold.unit ?? 'ms',
+      };
+    }
+  });
+
+  return map;
+}
+
+function buildRecommendations(vitals: Record<string, any>, metrics: Record<string, MetricSummary>) {
+  const immediate: any[] = [];
+  const shortTerm: any[] = [];
+  const longTerm: any[] = [];
+
+  const lcp = vitals.lcp?.value;
+  if (typeof lcp === 'number' && lcp > 2500) {
+    immediate.push({
+      type: 'rendering',
+      title: 'Improve Largest Contentful Paint',
+      description:
+        'Prioritise critical content, optimise hero assets, and defer non-essential scripts.',
+      impact: 'high',
+    });
+  }
+
+  const cls = vitals.cls?.value;
+  if (typeof cls === 'number' && cls > 0.1) {
+    immediate.push({
+      type: 'layout',
+      title: 'Reduce layout shifts',
+      description:
+        'Reserve space for async content, use aspect ratios, and avoid inserting DOM elements above existing content.',
+      impact: 'medium',
+    });
+  }
+
+  const bundleSize = metrics['bundle_size']?.avg;
+  if (typeof bundleSize === 'number' && bundleSize > 1024 * 400) {
+    shortTerm.push({
+      type: 'bundle',
+      title: 'Reduce bundle size',
+      description:
+        'Analyse bundle with Vite analyzer, remove unused dependencies, and apply code splitting.',
+      impact: 'high',
+    });
+  }
+
+  const apiLatency = dashboardLatency(metrics);
+  if (apiLatency && apiLatency > 1000) {
+    shortTerm.push({
+      type: 'backend',
+      title: 'Optimise slow API endpoints',
+      description:
+        'Investigate routes with high response time and cache frequently requested data.',
+      impact: 'medium',
+    });
+  }
+
+  longTerm.push({
+    type: 'observability',
+    title: 'Automate performance regression alerts',
+    description: 'Set up alert rules in monitoring dashboard for key Web Vitals thresholds.',
+    impact: 'medium',
+  });
+
+  return { immediate, shortTerm, longTerm };
+}
+
+function deriveOptimizationActions(
+  vitals: Record<string, any>,
+  metrics: Record<string, MetricSummary>
+) {
+  const recommendations = buildRecommendations(vitals, metrics);
+  return {
+    applied: [],
+    failed: [],
+    recommendations,
+  };
+}
+
+function calculatePerformanceScore(metrics: Record<string, MetricSummary>): number {
+  const lcp = metrics['web_vitals_lcp']?.avg ?? 0;
+  const cls = metrics['web_vitals_cls']?.avg ?? 0;
+  const fid = metrics['web_vitals_fid']?.avg ?? 0;
+
+  const lcpScore = lcp ? Math.max(0, 100 - (lcp - 2400) / 16) : 100;
+  const clsScore = cls ? Math.max(0, 100 - cls * 400) : 100;
+  const fidScore = fid ? Math.max(0, 100 - (fid - 100) / 2) : 100;
+
+  return Math.round((lcpScore * 0.4 + clsScore * 0.3 + fidScore * 0.3) / 1.0);
+}
+
+function scoreToGrade(score: number): string {
+  if (score >= 90) return 'A';
+  if (score >= 80) return 'B';
+  if (score >= 70) return 'C';
+  if (score >= 60) return 'D';
+  return 'F';
+}
+
+function dashboardLatency(metrics: Record<string, MetricSummary>): number | null {
+  return metrics['api_response_time']?.avg ?? null;
 }
