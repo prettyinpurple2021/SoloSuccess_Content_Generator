@@ -3,7 +3,7 @@
  * Provides detailed database health status and metrics
  */
 
-import { enhancedDb } from '../../services/enhancedDatabaseService';
+import { enhancedDb } from '../../services/enhancedDb';
 import { connectionManager } from '../../services/databaseConnectionManager';
 import { migrationService } from '../../services/databaseMigrationService';
 import { apiErrorHandler } from '../../services/apiErrorHandler';

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { enhancedDb } from '../../services/enhancedDatabaseService';
+import { enhancedDb } from '../../services/enhancedDb';
 import { apiErrorHandler, commonSchemas } from '../../services/apiErrorHandler';
 import { errorHandler } from '../../services/errorHandlingService';
 
