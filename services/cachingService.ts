@@ -164,8 +164,8 @@ export class CachingService {
   /**
    * Preload frequently accessed data
    */
-  async preload(
-    preloadFunctions: Array<{ key: string; fn: () => Promise<unknown>; ttl?: number }>
+  async preload<T = unknown>(
+    preloadFunctions: Array<{ key: string; fn: () => Promise<T>; ttl?: number }>
   ): Promise<void> {
     const promises = preloadFunctions.map(async ({ key, fn, ttl }) => {
       try {

@@ -107,7 +107,8 @@ class PerformanceMonitor {
       return; // Already monitoring
     }
 
-    this.memoryCheckInterval = window.setInterval(() => {
+    // Use global setInterval for better cross-environment compatibility
+    this.memoryCheckInterval = setInterval(() => {
       const memory = this.checkMemoryUsage();
       if (memory && memory.usedJSHeapSize && memory.jsHeapSizeLimit) {
         const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
@@ -118,7 +119,7 @@ class PerformanceMonitor {
           );
         }
       }
-    }, intervalMs);
+    }, intervalMs) as unknown as number;
   }
 
   /**
@@ -193,7 +194,8 @@ export const performanceMonitor = new PerformanceMonitor();
 
 // Expose performance monitor globally in development
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-  (window as unknown as Record<string, unknown>).__PERF_MONITOR__ = performanceMonitor;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__PERF_MONITOR__ = performanceMonitor;
   console.log('💡 Performance monitor available at window.__PERF_MONITOR__');
   console.log('   Run __PERF_MONITOR__.logReport() to see performance metrics');
 }
