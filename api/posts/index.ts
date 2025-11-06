@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { enhancedDatabaseService } from '../../services/enhancedDatabaseService';
+import { enhancedDb } from '../../services/enhancedDatabaseService';
 import { apiErrorHandler, commonSchemas } from '../../services/apiErrorHandler';
 import { errorHandler } from '../../services/errorHandlingService';
 import { databaseErrorHandler } from '../../services/databaseErrorHandler';
@@ -71,11 +71,11 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      const posts = await enhancedDatabaseService.getPosts(userId);
+      const posts = await enhancedDb.getPosts(userId);
       return res.status(200).json(posts);
     } catch (error) {
       // Enhanced error handling with graceful degradation
-      const healthStatus = await enhancedDatabaseService.getHealthStatus();
+      const healthStatus = await enhancedDb.getHealthStatus();
 
       if (!healthStatus.isHealthy) {
         errorHandler.logError(
@@ -102,7 +102,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
-      const created = await enhancedDatabaseService.addPost(
+      const created = await enhancedDb.addPost(
         {
           topic: sanitizedData.topic || null,
           idea: sanitizedData.idea || null,
@@ -161,7 +161,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
-      const updated = await enhancedDatabaseService.updatePost(
+      const updated = await enhancedDb.updatePost(
         id,
         {
           topic: sanitizedData.topic,
@@ -219,7 +219,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      await enhancedDatabaseService.deletePost(id, userId);
+      await enhancedDb.deletePost(id, userId);
       return res.status(204).end();
     } catch (error) {
       // Enhanced error handling for post deletion

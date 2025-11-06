@@ -600,5 +600,40 @@ if (typeof process !== 'undefined') {
   process.on('SIGINT', () => enhancedDatabaseService.shutdown());
 }
 
+// Import databaseService to provide compatibility layer
+import { db } from './databaseService';
+
+// Create enhancedDb as a compatibility layer that includes both 
+// low-level connection management and high-level database operations
+export const enhancedDb = {
+  // High-level database operations from db
+  ...db,
+  
+  // Override/add connection management methods
+  forceReconnect: () => enhancedDatabaseService.forceReconnect(),
+  shutdown: () => enhancedDatabaseService.shutdown(),
+  executeQuery: <T = unknown[]>(query: TemplateStringsArray, ...params: unknown[]) => 
+    enhancedDatabaseService.executeQuery<T>(query, ...params),
+  
+  // Health check methods with proper return types
+  performHealthCheck: async () => {
+    const isConnected = await enhancedDatabaseService.testConnection();
+    return {
+      database: isConnected,
+      connectionPool: { active: 0, idle: 0, total: 0 },
+      responseTime: 0,
+    };
+  },
+  getHealthStatus: async () => {
+    const isHealthy = await enhancedDatabaseService.testConnection();
+    return {
+      isHealthy,
+      status: isHealthy ? 'healthy' : 'unhealthy',
+      circuitBreakerOpen: false,
+      activeTransactions: 0,
+    };
+  },
+};
+
 export { EnhancedDatabaseService, enhancedDatabaseService };
 export type { ConnectionPoolConfig, HealthMetrics, QueryMetrics };
