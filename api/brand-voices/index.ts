@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { enhancedDb } from '../../services/enhancedDatabaseService';
+import { enhancedDatabaseService } from '../../services/enhancedDatabaseService';
 import { apiErrorHandler, commonSchemas } from '../../services/apiErrorHandler';
 import { errorHandler } from '../../services/errorHandlingService';
 
@@ -54,11 +54,11 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      const items = await enhancedDb.getBrandVoices(userId);
+      const items = await enhancedDatabaseService.getBrandVoices(userId);
       return res.status(200).json(items);
     } catch (error) {
       // Enhanced error handling with graceful degradation
-      const healthStatus = await enhancedDb.getHealthStatus();
+      const healthStatus = await enhancedDatabaseService.getHealthStatus();
 
       if (!healthStatus.isHealthy) {
         errorHandler.logError(
@@ -85,7 +85,7 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
-      const created = await enhancedDb.addBrandVoice(
+      const created = await enhancedDatabaseService.addBrandVoice(
         {
           name: sanitizedData.name,
           tone: sanitizedData.tone,
@@ -128,7 +128,7 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
-      const updated = await enhancedDb.updateBrandVoice(
+      const updated = await enhancedDatabaseService.updateBrandVoice(
         id,
         {
           name: sanitizedData.name,
@@ -164,7 +164,7 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      await enhancedDb.deleteBrandVoice(id, userId);
+      await enhancedDatabaseService.deleteBrandVoice(id, userId);
       return res.status(204).end();
     } catch (error) {
       // Enhanced error handling for brand voice deletion

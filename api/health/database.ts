@@ -3,7 +3,7 @@
  * Provides detailed database health status and metrics
  */
 
-import { enhancedDb } from '../../services/enhancedDatabaseService';
+import { enhancedDatabaseService } from '../../services/enhancedDatabaseService';
 import { connectionManager } from '../../services/databaseConnectionManager';
 import { migrationService } from '../../services/databaseMigrationService';
 import { apiErrorHandler } from '../../services/apiErrorHandler';
@@ -36,8 +36,8 @@ async function databaseHealthHandler(req: ApiRequest, res: ApiResponse) {
       // Get comprehensive health status
       const [basicHealth, connectionStatus, connectionMetrics, schemaValidation, integrityCheck] =
         await Promise.allSettled([
-          enhancedDb.performHealthCheck(),
-          enhancedDb.getHealthStatus(),
+          enhancedDatabaseService.performHealthCheck(),
+          enhancedDatabaseService.getHealthStatus(),
           connectionManager.getDetailedMetrics(),
           migrationService.validateSchema(),
           migrationService.performIntegrityCheck(),
@@ -218,7 +218,7 @@ async function databaseHealthHandler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'POST') {
     // Force health check refresh
     try {
-      const healthCheck = await enhancedDb.performHealthCheck();
+      const healthCheck = await enhancedDatabaseService.performHealthCheck();
 
       errorHandler.logError(
         'Forced database health check completed',
