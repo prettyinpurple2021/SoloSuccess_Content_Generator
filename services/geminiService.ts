@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, GenerateContentResponse } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 
 if (!process.env.GEMINI_API_KEY) {
   console.error('GEMINI_API_KEY environment variable not set.');
@@ -1240,15 +1240,17 @@ export const batchRepurposeContent = async (
     targetAudience?: string;
     brandVoice?: { tone: string; writingStyle: string };
     platformSpecific?: { [format: string]: { platform?: string; duration?: string } };
+    concurrencyLimit?: number; // Maximum number of parallel requests
   }
 ): Promise<{ [format: string]: string }> => {
   const results: { [format: string]: string } = {};
+  const { concurrencyLimit = 3, ...otherOptions } = options || {}; // Default to 3 concurrent requests
 
-  // Process formats in parallel for better performance
-  const promises = formats.map(async (format) => {
+  // Process formats with concurrency control to avoid rate limits
+  const processFormat = async (format: string): Promise<{ format: string; content: string }> => {
     const formatOptions = {
-      ...options,
-      ...options?.platformSpecific?.[format],
+      ...otherOptions,
+      ...otherOptions?.platformSpecific?.[format],
     };
 
     try {
@@ -1258,12 +1260,18 @@ export const batchRepurposeContent = async (
       console.error(`Error repurposing to ${format}:`, error);
       return { format, content: `Error: Could not repurpose to ${format}` };
     }
-  });
+  };
 
-  const completedResults = await Promise.all(promises);
-  completedResults.forEach(({ format, content }) => {
-    results[format] = content;
-  });
+  // Process in batches to control concurrency
+  for (let i = 0; i < formats.length; i += concurrencyLimit) {
+    const batch = formats.slice(i, i + concurrencyLimit);
+    const batchPromises = batch.map(processFormat);
+    const batchResults = await Promise.all(batchPromises);
+
+    batchResults.forEach(({ format, content }) => {
+      results[format] = content;
+    });
+  }
 
   return results;
 };

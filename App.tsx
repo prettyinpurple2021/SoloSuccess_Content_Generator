@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@stackframe/react';
 // FIX: Import Timestamp type and rename Timestamp value to avoid name collision.
 import {
@@ -19,6 +19,7 @@ import {
 // Enhanced error handling is now handled in AppWithErrorHandling.tsx wrapper
 import { apiService as clientApi } from './services/clientApiService';
 import { campaignService } from './services/clientCampaignService';
+import { debounce } from './utils/performanceUtils';
 
 // User type for Stack Auth
 interface User {
@@ -280,14 +281,6 @@ const App: React.FC = () => {
         setCampaigns(campaignsList);
         setContentSeries(seriesList);
         setContentTemplates(templates);
-
-        // Set default selections if available
-        if (voices.length > 0 && !selectedBrandVoice) {
-          setSelectedBrandVoice(voices[0]);
-        }
-        if (profiles.length > 0 && !selectedAudienceProfile) {
-          setSelectedAudienceProfile(profiles[0]);
-        }
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : 'Unknown error';
         setErrorMessage(`Failed to load data: ${msg}`);
@@ -302,7 +295,21 @@ const App: React.FC = () => {
     return () => {
       postScheduler.stop();
     };
-  }, [isAuthReady, user, selectedBrandVoice, selectedAudienceProfile]);
+    // Only reload data when user or auth status changes, not when selections change
+  }, [isAuthReady, user]);
+
+  // Separate effect to set default selections when data loads
+  useEffect(() => {
+    if (brandVoices.length > 0 && !selectedBrandVoice) {
+      setSelectedBrandVoice(brandVoices[0]);
+    }
+  }, [brandVoices, selectedBrandVoice]);
+
+  useEffect(() => {
+    if (audienceProfiles.length > 0 && !selectedAudienceProfile) {
+      setSelectedAudienceProfile(audienceProfiles[0]);
+    }
+  }, [audienceProfiles, selectedAudienceProfile]);
 
   useEffect(() => {
     if (successMessage || errorMessage) {
@@ -314,23 +321,28 @@ const App: React.FC = () => {
     }
   }, [successMessage, errorMessage]);
 
-  useEffect(() => {
-    if (blogPost) {
-      Promise.resolve(marked.parse(blogPost)).then((html) => setParsedMarkdown(html as string));
-    } else {
-      setParsedMarkdown('');
-    }
-  }, [blogPost]);
+  // Debounced markdown parser for better performance during typing
+  const debouncedMarkdownParse = useMemo(
+    () =>
+      debounce(async (content: string, setter: (html: string) => void) => {
+        if (content) {
+          const html = await marked.parse(content);
+          setter(html as string);
+        } else {
+          setter('');
+        }
+      }, 300),
+    []
+  );
 
   useEffect(() => {
-    if (selectedPostForDetails?.content) {
-      Promise.resolve(marked.parse(selectedPostForDetails.content)).then((html) =>
-        setParsedDetailsContent(html as string)
-      );
-    } else {
-      setParsedDetailsContent('');
-    }
-  }, [selectedPostForDetails]);
+    debouncedMarkdownParse(blogPost, setParsedMarkdown);
+  }, [blogPost, debouncedMarkdownParse]);
+
+  useEffect(() => {
+    const content = selectedPostForDetails?.content || '';
+    debouncedMarkdownParse(content, setParsedDetailsContent);
+  }, [selectedPostForDetails, debouncedMarkdownParse]);
 
   const clearWorkflow = () => {
     setCurrentBlogTopic('');

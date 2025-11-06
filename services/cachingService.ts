@@ -433,6 +433,12 @@ export class PaginationCache {
     { data: any[]; totalCount: number; timestamp: number; ttl: number }
   >();
   private readonly defaultTTL = 5 * 60 * 1000; // 5 minutes
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    // Automatically clean up expired entries every 5 minutes
+    this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000);
+  }
 
   /**
    * Cache paginated results
@@ -485,18 +491,25 @@ export class PaginationCache {
       }
     }
   }
+
+  /**
+   * Destroy the cache and clean up resources
+   */
+  destroy(): void {
+    if (this.cleanupInterval !== null) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+    this.cache.clear();
+  }
 }
 
 // Export singleton instances
 export const contentCache = new ContentCachingService();
 export const paginationCache = new PaginationCache();
 
-// Clean up pagination cache every 5 minutes
-// Store interval reference for potential cleanup
-const paginationCleanupInterval = setInterval(() => paginationCache.cleanup(), 5 * 60 * 1000);
-
 // Export cleanup function for proper resource management
 export const cleanupCacheServices = () => {
   contentCache.destroy();
-  clearInterval(paginationCleanupInterval);
+  paginationCache.destroy();
 };

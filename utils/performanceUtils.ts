@@ -120,7 +120,9 @@ export function memoize<T extends (...args: any[]) => any>(
     // Map maintains insertion order, so first key is least recently used
     if (cache.size >= maxCacheSize) {
       const firstKey = cache.keys().next().value;
-      cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        cache.delete(firstKey);
+      }
     }
 
     cache.set(key, result);
@@ -364,7 +366,9 @@ export class LRUCache<K, V> {
     // Evict oldest if at capacity
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey);
+      }
     }
 
     this.cache.set(key, value);
