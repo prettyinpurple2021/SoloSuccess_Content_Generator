@@ -3,29 +3,67 @@
  * Provides endpoints for monitoring frontend performance metrics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { errorHandler } from '../../services/errorHandlingService';
 
-export async function GET(request: NextRequest) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const { searchParams } = new URL(request.url);
-    const action = searchParams.get('action') || 'metrics';
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    switch (action) {
-      case 'metrics':
-        return await getFrontendMetrics();
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
 
-      case 'report':
-        return await getPerformanceReport();
+    const action =
+      typeof req.query?.action === 'string'
+        ? req.query.action
+        : req.query?.action?.[0] || 'metrics';
 
-      case 'recommendations':
-        return await getOptimizationRecommendations();
+    if (req.method === 'GET') {
+      switch (action) {
+        case 'metrics':
+          return await getFrontendMetrics(res);
 
-      case 'vitals':
-        return await getWebVitals();
+        case 'report':
+          return await getPerformanceReport(res);
 
-      default:
-        return NextResponse.json({ error: 'Invalid action parameter' }, { status: 400 });
+        case 'recommendations':
+          return await getOptimizationRecommendations(res);
+
+        case 'vitals':
+          return await getWebVitals(res);
+
+        default:
+          return res.status(400).json({ error: 'Invalid action parameter' });
+      }
+    } else if (req.method === 'POST') {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const postAction =
+        typeof req.query?.action === 'string'
+          ? req.query.action
+          : req.query?.action?.[0] || body?.action;
+
+      switch (postAction) {
+        case 'track':
+          return await trackPerformanceMetric(body, res);
+
+        case 'vitals':
+          return await recordWebVitals(body, res);
+
+        case 'error':
+          return await recordPerformanceError(body, res);
+
+        case 'optimize':
+          return await applyOptimizations(res);
+
+        default:
+          return res.status(400).json({ error: 'Invalid action parameter' });
+      }
+    } else {
+      return res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {
     errorHandler.logError(
@@ -34,47 +72,14 @@ export async function GET(request: NextRequest) {
       { operation: 'frontend_performance_api' }
     );
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const action = searchParams.get('action');
-    const body = await request.json();
-
-    switch (action) {
-      case 'track':
-        return await trackPerformanceMetric(body);
-
-      case 'vitals':
-        return await recordWebVitals(body);
-
-      case 'error':
-        return await recordPerformanceError(body);
-
-      case 'optimize':
-        return await applyOptimizations();
-
-      default:
-        return NextResponse.json({ error: 'Invalid action parameter' }, { status: 400 });
-    }
-  } catch (error) {
-    errorHandler.logError(
-      'Frontend performance API POST error',
-      error instanceof Error ? error : new Error(String(error)),
-      { operation: 'frontend_performance_api_post' }
-    );
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 /**
  * Get frontend performance metrics
  */
-async function getFrontendMetrics() {
+async function getFrontendMetrics(res: VercelResponse) {
   // In a real implementation, this would aggregate metrics from a database
   // For now, we'll return mock data structure
   const metrics = {
@@ -121,7 +126,7 @@ async function getFrontendMetrics() {
     },
   };
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       metrics,
@@ -133,7 +138,7 @@ async function getFrontendMetrics() {
 /**
  * Get comprehensive performance report
  */
-async function getPerformanceReport() {
+async function getPerformanceReport(res: VercelResponse) {
   const report = {
     score: 85,
     grade: 'B+',
@@ -188,7 +193,7 @@ async function getPerformanceReport() {
     ],
   };
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       report,
@@ -200,7 +205,7 @@ async function getPerformanceReport() {
 /**
  * Get optimization recommendations
  */
-async function getOptimizationRecommendations() {
+async function getOptimizationRecommendations(res: VercelResponse) {
   const recommendations = {
     immediate: [
       {
@@ -258,7 +263,7 @@ async function getOptimizationRecommendations() {
     ],
   };
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       recommendations,
@@ -270,7 +275,7 @@ async function getOptimizationRecommendations() {
 /**
  * Get Web Vitals metrics
  */
-async function getWebVitals() {
+async function getWebVitals(res: VercelResponse) {
   const vitals = {
     lcp: {
       value: 1800,
@@ -304,7 +309,7 @@ async function getWebVitals() {
     },
   };
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       vitals,
@@ -316,12 +321,15 @@ async function getWebVitals() {
 /**
  * Track performance metric
  */
-async function trackPerformanceMetric(data: {
-  metric: string;
-  value: number;
-  component: string;
-  timestamp: string;
-}) {
+async function trackPerformanceMetric(
+  data: {
+    metric: string;
+    value: number;
+    component: string;
+    timestamp: string;
+  },
+  res: VercelResponse
+) {
   // In a real implementation, this would store metrics in a database
   const { metric, value, component, timestamp } = data;
 
@@ -339,7 +347,7 @@ async function trackPerformanceMetric(data: {
     'info'
   );
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       message: 'Metric tracked successfully',
@@ -353,7 +361,7 @@ async function trackPerformanceMetric(data: {
 /**
  * Record Web Vitals
  */
-async function recordWebVitals(data: { vitals: Record<string, unknown> }) {
+async function recordWebVitals(data: { vitals: Record<string, unknown> }, res: VercelResponse) {
   const { vitals } = data;
 
   // Log Web Vitals
@@ -367,7 +375,7 @@ async function recordWebVitals(data: { vitals: Record<string, unknown> }) {
     'info'
   );
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       message: 'Web Vitals recorded successfully',
@@ -379,11 +387,14 @@ async function recordWebVitals(data: { vitals: Record<string, unknown> }) {
 /**
  * Record performance error
  */
-async function recordPerformanceError(data: {
-  error: string;
-  component: string;
-  context: Record<string, unknown>;
-}) {
+async function recordPerformanceError(
+  data: {
+    error: string;
+    component: string;
+    context: Record<string, unknown>;
+  },
+  res: VercelResponse
+) {
   const { error, component, context } = data;
 
   errorHandler.logError(`Performance error in ${component}`, new Error(error), {
@@ -392,7 +403,7 @@ async function recordPerformanceError(data: {
     context,
   });
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       message: 'Performance error recorded',
@@ -404,7 +415,7 @@ async function recordPerformanceError(data: {
 /**
  * Apply performance optimizations
  */
-async function applyOptimizations() {
+async function applyOptimizations(res: VercelResponse) {
   const optimizations = {
     applied: [
       'Enabled lazy loading for images',
@@ -420,7 +431,7 @@ async function applyOptimizations() {
     ],
   };
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       optimizations,

@@ -3,34 +3,66 @@
  * Provides endpoints for monitoring database performance and applying optimizations
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { connectionManager } from '../../services/databaseConnectionManager';
 import { databasePerformanceService } from '../../services/databasePerformanceService';
 import { errorHandler } from '../../services/errorHandlingService';
 
-export async function GET(request: NextRequest) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const { searchParams } = new URL(request.url);
-    const action = searchParams.get('action') || 'metrics';
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    switch (action) {
-      case 'metrics':
-        return await getPerformanceMetrics();
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
 
-      case 'health':
-        return await getDatabaseHealth();
+    const action =
+      typeof req.query?.action === 'string'
+        ? req.query.action
+        : req.query?.action?.[0] || 'metrics';
 
-      case 'analysis':
-        return await getPerformanceAnalysis();
+    if (req.method === 'GET') {
+      switch (action) {
+        case 'metrics':
+          return await getPerformanceMetrics(res);
 
-      case 'recommendations':
-        return await getOptimizationRecommendations();
+        case 'health':
+          return await getDatabaseHealth(res);
 
-      case 'alerts':
-        return await getPerformanceAlerts();
+        case 'analysis':
+          return await getPerformanceAnalysis(res);
 
-      default:
-        return NextResponse.json({ error: 'Invalid action parameter' }, { status: 400 });
+        case 'recommendations':
+          return await getOptimizationRecommendations(res);
+
+        case 'alerts':
+          return await getPerformanceAlerts(res);
+
+        default:
+          return res.status(400).json({ error: 'Invalid action parameter' });
+      }
+    } else if (req.method === 'POST') {
+      switch (action) {
+        case 'optimize':
+          return await applyOptimizations(res);
+
+        case 'analyze':
+          return await analyzeIndexUsage(res);
+
+        case 'cleanup':
+          return await cleanupOldData(res);
+
+        case 'reindex':
+          return await reindexTables(res);
+
+        default:
+          return res.status(400).json({ error: 'Invalid action parameter' });
+      }
+    } else {
+      return res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {
     errorHandler.logError(
@@ -39,51 +71,19 @@ export async function GET(request: NextRequest) {
       { operation: 'performance_api' }
     );
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const action = searchParams.get('action');
-
-    switch (action) {
-      case 'optimize':
-        return await applyOptimizations();
-
-      case 'analyze':
-        return await analyzeIndexUsage();
-
-      case 'cleanup':
-        return await cleanupOldData();
-
-      case 'reindex':
-        return await reindexTables();
-
-      default:
-        return NextResponse.json({ error: 'Invalid action parameter' }, { status: 400 });
-    }
-  } catch (error) {
-    errorHandler.logError(
-      'Database performance API POST error',
-      error instanceof Error ? error : new Error(String(error)),
-      { operation: 'performance_api_post' }
-    );
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 /**
  * Get current performance metrics
  */
-async function getPerformanceMetrics() {
+async function getPerformanceMetrics(res: VercelResponse) {
   const performanceMetrics = databasePerformanceService.getPerformanceMetrics();
   const connectionMetrics = connectionManager.getDetailedMetrics();
   const poolStatus = connectionManager.getStatus();
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       performance: performanceMetrics,
@@ -97,11 +97,11 @@ async function getPerformanceMetrics() {
 /**
  * Get database health status
  */
-async function getDatabaseHealth() {
+async function getDatabaseHealth(res: VercelResponse) {
   const healthCheck = await connectionManager.testConnection();
   const poolStatus = connectionManager.getStatus();
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       health: healthCheck,
@@ -114,11 +114,11 @@ async function getDatabaseHealth() {
 /**
  * Get performance analysis and index usage
  */
-async function getPerformanceAnalysis() {
+async function getPerformanceAnalysis(res: VercelResponse) {
   const pool = connectionManager.getPool();
   const analysis = await databasePerformanceService.analyzeIndexUsage(pool);
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       analysis,
@@ -130,7 +130,7 @@ async function getPerformanceAnalysis() {
 /**
  * Get optimization recommendations
  */
-async function getOptimizationRecommendations() {
+async function getOptimizationRecommendations(res: VercelResponse) {
   // Get performance recommendations from database
   const recommendations = await connectionManager.executeOptimizedQuery(
     'SELECT * FROM get_performance_recommendations()',
@@ -145,7 +145,7 @@ async function getOptimizationRecommendations() {
     'health_check'
   );
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       recommendations,
@@ -158,10 +158,10 @@ async function getOptimizationRecommendations() {
 /**
  * Get performance alerts
  */
-async function getPerformanceAlerts() {
+async function getPerformanceAlerts(res: VercelResponse) {
   const alerts = databasePerformanceService.getPerformanceAlerts();
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       alerts,
@@ -174,11 +174,11 @@ async function getPerformanceAlerts() {
 /**
  * Apply database optimizations
  */
-async function applyOptimizations() {
+async function applyOptimizations(res: VercelResponse) {
   const pool = connectionManager.getPool();
   const result = await databasePerformanceService.applyOptimizations(pool);
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       applied: result.applied,
@@ -191,11 +191,11 @@ async function applyOptimizations() {
 /**
  * Analyze index usage
  */
-async function analyzeIndexUsage() {
+async function analyzeIndexUsage(res: VercelResponse) {
   const pool = connectionManager.getPool();
   const analysis = await databasePerformanceService.analyzeIndexUsage(pool);
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       analysis,
@@ -207,14 +207,14 @@ async function analyzeIndexUsage() {
 /**
  * Clean up old data
  */
-async function cleanupOldData() {
+async function cleanupOldData(res: VercelResponse) {
   const result = (await connectionManager.executeOptimizedQuery(
     'SELECT cleanup_old_analytics_data($1)',
     [90], // Keep 90 days of data
     'cleanup_old_data'
   )) as Array<{ cleanup_old_analytics_data?: string }>;
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       result: result[0]?.cleanup_old_analytics_data || 'Cleanup completed',
@@ -226,14 +226,14 @@ async function cleanupOldData() {
 /**
  * Reindex performance critical tables
  */
-async function reindexTables() {
+async function reindexTables(res: VercelResponse) {
   const result = (await connectionManager.executeOptimizedQuery(
     'SELECT reindex_performance_critical_tables()',
     [],
     'reindex_tables'
   )) as Array<{ reindex_performance_critical_tables?: string }>;
 
-  return NextResponse.json({
+  return res.status(200).json({
     success: true,
     data: {
       result: result[0]?.reindex_performance_critical_tables || 'Reindex completed',
