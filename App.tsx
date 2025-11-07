@@ -262,6 +262,14 @@ const App: React.FC = () => {
     // Initial load of posts and enhanced features data
     const loadData = async () => {
       try {
+        // Lightweight check for overdue posts (non-blocking, fire and forget)
+        fetch('/api/scheduled-posts/process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        }).catch(() => {
+          // Silently fail - this is just a background check
+        });
+
         const [posts, voices, profiles, campaignsList, styles, seriesList, templates] =
           await Promise.all([
             clientApi.getPosts(user.id),

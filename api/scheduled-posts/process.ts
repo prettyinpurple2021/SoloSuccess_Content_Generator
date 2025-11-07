@@ -42,16 +42,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  // Verify this is called by Vercel Cron or has proper auth
-  const authHeader = req.headers.authorization;
-  const cronSecret = process.env.CRON_SECRET || 'default-cron-secret-change-in-production';
-
-  if (req.method === 'POST' && authHeader !== `Bearer ${cronSecret}`) {
-    // Allow GET for manual testing, but POST requires auth
-    if (req.method === 'POST') {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-  }
+  // This endpoint is now on-demand only (no cron)
+  // It can be called from the client when needed
+  // Optional: Add a simple check to prevent abuse (e.g., rate limiting)
 
   try {
     const now = new Date().toISOString();

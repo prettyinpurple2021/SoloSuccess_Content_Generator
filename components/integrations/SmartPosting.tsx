@@ -13,7 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentAdaptationService } from '../../services/contentAdaptationService';
-// import { schedulePost } from '../../services/schedulerService';
+import { schedulePost } from '../../services/schedulerService';
 import ContentPreview from './ContentPreview';
 
 interface SmartPostingProps {
