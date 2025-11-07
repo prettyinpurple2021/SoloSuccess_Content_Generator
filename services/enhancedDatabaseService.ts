@@ -593,6 +593,7 @@ class EnhancedDatabaseService {
 
 // Create singleton instance
 const enhancedDatabaseService = new EnhancedDatabaseService();
+const enhancedDb = enhancedDatabaseService;
 
 // Graceful shutdown handling
 if (typeof process !== 'undefined') {
@@ -600,5 +601,5 @@ if (typeof process !== 'undefined') {
   process.on('SIGINT', () => enhancedDatabaseService.shutdown());
 }
 
-export { EnhancedDatabaseService, enhancedDatabaseService };
+export { EnhancedDatabaseService, enhancedDatabaseService, enhancedDb };
 export type { ConnectionPoolConfig, HealthMetrics, QueryMetrics };
