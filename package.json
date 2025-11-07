@@ -49,7 +49,7 @@
     "@stackframe/stack": "^2.8.44",
     "@tailwindcss/cli": "^4.1.14",
     "@vercel/analytics": "^1.5.0",
-    "@vercel/node": "^5.5.4",
+    "@vercel/node": "^5.5.5",
     "dotenv": "^16.6.1",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
@@ -109,6 +109,9 @@
     "react-dom": "18.3.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "cookie": "^0.7.0"
+    "cookie": "^0.7.0",
+    "esbuild": "^0.25.12",
+    "path-to-regexp": "^8.3.0",
+    "undici": "^7.16.0"
   }
 }
