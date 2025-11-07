@@ -1,4 +1,4 @@
-/**
+    /**
  * Caching Service for Enhanced Content Features
  * Implements efficient caching strategies for frequently accessed data
  */
@@ -61,7 +61,9 @@ export class CachingService {
     // If cache is at max size, remove oldest entry
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey);
+      }
     }
 
     this.cache.set(key, {
@@ -378,7 +380,7 @@ export class ContentCachingService extends CachingService {
       dashboardData?: () => Promise<any>;
     }
   ): Promise<void> {
-    const preloadFunctions = [];
+    const preloadFunctions: Array<{ key: string; fn: () => Promise<any>; ttl?: number }> = [];
 
     if (dataFetchers.posts) {
       preloadFunctions.push({

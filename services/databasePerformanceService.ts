@@ -243,12 +243,12 @@ class DatabasePerformanceService {
       operation: string;
     }>,
     userId?: string
-  ): Promise<Array<Awaited<T>>> {
+  ): Promise<T[]> {
     const startTime = Date.now();
 
     try {
       const results = await pool.begin(async (sql) => {
-        const batchResults: Array<Awaited<T>> = [];
+        const batchResults: T[] = [];
 
         for (const op of operations) {
           const result = await this.executeWithMonitoring<T>(
@@ -417,7 +417,7 @@ class DatabasePerformanceService {
   /**
    * Apply recommended database optimizations
    */
-  async applyOptimizations(pool: postgres.Sql): Promise<{
+  async applyOptimizations(pool: Sql<Record<string, unknown>>): Promise<{
     applied: string[];
     failed: string[];
   }> {
