@@ -13,7 +13,6 @@ import {
   Smartphone,
   Monitor,
 } from 'lucide-react';
-import { error } from 'better-auth/api';
 
 export interface ErrorReport {
   id: string;
@@ -63,8 +62,8 @@ export const ErrorReportingSystem: React.FC<ErrorReportingSystemProps> = ({
             timestamp: new Date(report.timestamp),
           }))
         );
-      } catch (_error) {
-        console.error('Failed to load error reports:', error);
+      } catch (loadError) {
+        console.error('Failed to load error reports:', loadError);
       }
     }
   }, []);
@@ -561,7 +560,9 @@ ${JSON.stringify(report.context, null, 2)}
 function generateSecureRandomString(length: number = 12): string {
   const array = new Uint8Array(length);
   window.crypto.getRandomValues(array);
-  return Array.from(array, (dec) => dec.toString(16).padStart(2, '0')).join('').slice(0, length);
+  return Array.from(array, (dec) => dec.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, length);
 }
 
 // Helper function to get or create session ID

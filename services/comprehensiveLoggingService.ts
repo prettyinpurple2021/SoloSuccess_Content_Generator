@@ -89,7 +89,7 @@ export class ComprehensiveLoggingService {
       // Add to buffer for batch processing
       this.addToLogBuffer(integrationId, logEntry);
 
-      // Also push immediately to monitoring so external sinks/mocks observe writes
+      // Also push immediately to monitoring so downstream sinks and telemetry observers see writes in real time
       try {
         await monitoringService.logEvent(integrationId, level as any, message, logEntry.details);
       } catch {

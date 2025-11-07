@@ -142,8 +142,8 @@ class SocialPlatformService {
         case 'instagram':
           return await this.fetchInstagramEngagement(postIds, config);
         default:
-          // For platforms without direct API access, return mock data or cached data
-          return await this.getMockEngagementData(platform, postIds);
+          // For platforms without direct API access, fall back to cached analytics collected from the database
+          return await this.getCachedEngagementData(platform, postIds);
       }
     } catch (error) {
       console.error(`Error fetching engagement data for ${platform}:`, error);
@@ -517,14 +517,66 @@ class SocialPlatformService {
     }
   }
 
-  private async getMockEngagementData(
+  private async getCachedEngagementData(
     platform: string,
     postIds: string[]
   ): Promise<EngagementData[]> {
-    // For platforms without API access, return empty array
-    // User should connect the platform first
-    console.warn(`Platform ${platform} requires API connection. Please configure credentials.`);
-    return [];
+    const engagementData: EngagementData[] = [];
+
+    for (const postId of postIds) {
+      try {
+        const analytics = await db.getPostAnalytics(postId);
+        const platformAnalytics = analytics.filter((item) => item.platform === platform);
+
+        if (platformAnalytics.length === 0) {
+          continue;
+        }
+
+        const aggregated = platformAnalytics.reduce(
+          (acc, item) => {
+            acc.likes += item.likes || 0;
+            acc.shares += item.shares || 0;
+            acc.comments += item.comments || 0;
+            acc.clicks += item.clicks || 0;
+            acc.impressions += item.impressions || 0;
+            acc.reach += item.reach || 0;
+            acc.samples += 1;
+            return acc;
+          },
+          { likes: 0, shares: 0, comments: 0, clicks: 0, impressions: 0, reach: 0, samples: 0 }
+        );
+
+        const engagementRate = aggregated.impressions
+          ? (aggregated.likes + aggregated.shares + aggregated.comments) / aggregated.impressions
+          : 0;
+
+        engagementData.push({
+          platform,
+          postId,
+          likes: aggregated.likes,
+          shares: aggregated.shares,
+          comments: aggregated.comments,
+          clicks: aggregated.clicks,
+          impressions: aggregated.impressions,
+          reach: aggregated.reach,
+          engagementRate,
+          timestamp: new Date(),
+        });
+      } catch (error) {
+        console.error(
+          `Failed to load cached engagement data for ${platform} post ${postId}:`,
+          error
+        );
+      }
+    }
+
+    if (engagementData.length === 0) {
+      console.warn(
+        `No cached engagement data available for ${platform}. Connect the platform or enable analytics tracking to populate insights.`
+      );
+    }
+
+    return engagementData;
   }
 
   private async fetchHashtagMetrics(

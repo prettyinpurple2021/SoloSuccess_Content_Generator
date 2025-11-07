@@ -499,13 +499,14 @@ class ReliableImageGenerationService {
 
     for (const [sourceId, source] of this.stockSources) {
       try {
-        // This would implement actual API calls to stock image services
-        // For now, we'll simulate the search
-        console.log(`🔍 Searching ${source.name} for: ${searchTerms.join(', ')}`);
+        const apiKey = this.getStockSourceApiKey(sourceId);
+        if (!apiKey) {
+          console.warn(`Skipping ${source.name} search – missing API key environment variable.`);
+          continue;
+        }
 
-        // Simulate API response
-        const mockResults = await this.simulateStockImageSearch(source, searchTerms);
-        images.push(...mockResults);
+        const results = await this.fetchStockImageResults(source, searchTerms, apiKey);
+        images.push(...results);
 
         if (images.length >= 3) break; // Limit results
       } catch (error) {
@@ -628,19 +629,74 @@ class ReliableImageGenerationService {
     return this.extractSearchTerms(prompt).slice(0, 3);
   }
 
-  private simulateStockImageSearch(source: StockImageSource, terms: string[]): Promise<string[]> {
-    // Simulate stock image API response
-    return new Promise((resolve) => {
-      setTimeout(
-        () => {
-          const mockUrls = terms.map(
-            (term, index) => `https://images.${source.id}.com/${term}-${index + 1}.jpg`
-          );
-          resolve(mockUrls);
+  private async fetchStockImageResults(
+    source: StockImageSource,
+    terms: string[],
+    apiKey: string
+  ): Promise<string[]> {
+    const query = encodeURIComponent(terms.join(' '));
+
+    if (source.id === 'unsplash') {
+      const url = `${source.apiUrl}${source.searchEndpoint}?query=${query}&per_page=5&orientation=landscape`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Client-ID ${apiKey}`,
         },
-        Math.random() * 1000 + 500
-      );
-    });
+      });
+      if (!response.ok) {
+        throw new Error(`Unsplash request failed with status ${response.status}`);
+      }
+      const data = await response.json();
+      return (data.results || [])
+        .map((item: any) => item?.urls?.regular || item?.urls?.full)
+        .filter(Boolean)
+        .slice(0, 3);
+    }
+
+    if (source.id === 'pexels') {
+      const url = `${source.apiUrl}${source.searchEndpoint}?query=${query}&per_page=5`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: apiKey,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Pexels request failed with status ${response.status}`);
+      }
+      const data = await response.json();
+      return (data.photos || [])
+        .map((item: any) => item?.src?.large2x || item?.src?.large || item?.src?.medium)
+        .filter(Boolean)
+        .slice(0, 3);
+    }
+
+    if (source.id === 'pixabay') {
+      const url = `${source.apiUrl}?key=${apiKey}&q=${query}&image_type=photo&per_page=5`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Pixabay request failed with status ${response.status}`);
+      }
+      const data = await response.json();
+      return (data.hits || [])
+        .map((item: any) => item?.largeImageURL || item?.webformatURL)
+        .filter(Boolean)
+        .slice(0, 3);
+    }
+
+    throw new Error(`Unsupported stock image source: ${source.id}`);
+  }
+
+  private getStockSourceApiKey(sourceId: string): string | undefined {
+    switch (sourceId) {
+      case 'unsplash':
+        return process.env.UNSPLASH_ACCESS_KEY;
+      case 'pexels':
+        return process.env.PEXELS_API_KEY;
+      case 'pixabay':
+        return process.env.PIXABAY_API_KEY;
+      default:
+        return undefined;
+    }
   }
 
   private getHealthyProviders(): ImageProvider[] {
