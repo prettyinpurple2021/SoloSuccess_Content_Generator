@@ -66,41 +66,22 @@ INTEGRATION_MONITORING_ENABLED=true
 INTEGRATION_LOG_LEVEL=info
 ```
 
-### Optional Social Media Integration Variables
+### Optional: Additional AI Services
 
 ```bash
-# Twitter/X API v2
-TWITTER_API_KEY=your_twitter_api_key
-TWITTER_API_SECRET=your_twitter_api_secret
-TWITTER_ACCESS_TOKEN=your_twitter_access_token
-TWITTER_ACCESS_TOKEN_SECRET=your_twitter_access_token_secret
-TWITTER_BEARER_TOKEN=your_twitter_bearer_token
-
-# LinkedIn API
-LINKEDIN_CLIENT_ID=your_linkedin_client_id
-LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
-
-# Facebook/Instagram Graph API
-FACEBOOK_APP_ID=your_facebook_app_id
-FACEBOOK_APP_SECRET=your_facebook_app_secret
-
-# Reddit API
-REDDIT_CLIENT_ID=your_reddit_client_id
-REDDIT_CLIENT_SECRET=your_reddit_client_secret
-REDDIT_USER_AGENT=YourApp/1.0.0 (by /u/yourusername)
-
-# Pinterest API
-PINTEREST_APP_ID=your_pinterest_app_id
-PINTEREST_APP_SECRET=your_pinterest_app_secret
-
-# Analytics Platforms
-GOOGLE_ANALYTICS_CLIENT_ID=your_ga_client_id
-GOOGLE_ANALYTICS_CLIENT_SECRET=your_ga_client_secret
-
-# Additional AI Services
+# OpenAI Configuration
 OPENAI_API_KEY=your_openai_api_key
+OPENAI_ORGANIZATION_ID=your_openai_org_id_optional
+
+# Anthropic Claude Configuration
 ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
+
+### Note: Social Media & Analytics Integrations
+
+Users connect their own social media accounts through OAuth flows in the app. You do NOT need to provide social media API credentials. Each user will authenticate with their own accounts (Twitter, LinkedIn, Facebook, Instagram, Reddit, Pinterest, etc.) through the Integration Manager in the app UI.
+
+Same applies to analytics platforms - users connect their own Google Analytics, etc. accounts if they want to track their content performance.
 
 ## Deployment Process
 

@@ -121,16 +121,20 @@ This document provides a comprehensive summary of the SoloSuccess AI Content Fac
 VITE_STACK_PROJECT_ID=your-stack-project-id
 VITE_STACK_PUBLISHABLE_CLIENT_KEY=your-stack-client-key
 STACK_SECRET_SERVER_KEY=your-stack-server-key
-DATABASE_URL=postgresql://user:pass@host:port/db
+DATABASE_URL=postgresql://user:pass@host:port/db?sslmode=require
 GEMINI_API_KEY=your-gemini-api-key
-INTEGRATION_ENCRYPTION_SECRET=your-32-char-secret
+INTEGRATION_ENCRYPTION_SECRET=your-64-char-hex-secret
 
-# Optional Integration Variables
+# Optional AI Services
+OPENAI_API_KEY=your-openai-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# Optional: Google Services (for Blogger integration)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_API_KEY=your-google-api-key
-TWITTER_API_KEY=your-twitter-api-key
-LINKEDIN_CLIENT_ID=your-linkedin-client-id
-FACEBOOK_APP_ID=your-facebook-app-id
+
+# Note: Users connect their own social media accounts through OAuth.
+# You do NOT need to provide social media API credentials.
 ```
 
 ### Monitoring & Alerting

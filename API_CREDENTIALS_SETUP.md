@@ -1,217 +1,205 @@
-# API Credentials Setup Guide
+# User Integration Setup Guide
 
-This document provides instructions for obtaining and configuring API credentials for all integrations in the SoloBoss AI Content Planner.
+This guide helps **users of the app** set up their own social media and blog integrations. Each user connects their own personal accounts through OAuth flows in the app.
+
+> **Note for App Owners**: You only need to provide AI API keys (Gemini, OpenAI, etc.) for content generation. Users handle their own social media account connections.
+
+---
 
 ## 📋 Table of Contents
 
+- [How Integrations Work](#how-integrations-work)
 - [Social Media Platforms](#social-media-platforms)
-  - [Twitter/X API](#twitterx-api)
-  - [LinkedIn API](#linkedin-api)
-  - [Facebook/Instagram API](#facebookinstagram-api)
-  - [Reddit API](#reddit-api)
-  - [Pinterest API](#pinterest-api)
+  - [Twitter/X](#twitterx)
+  - [LinkedIn](#linkedin)
+  - [Facebook/Instagram](#facebookinstagram)
+  - [Reddit](#reddit)
+  - [Pinterest](#pinterest)
+- [Blog Platforms](#blog-platforms)
+  - [Blogger](#blogger)
 - [Analytics Platforms](#analytics-platforms)
   - [Google Analytics](#google-analytics)
-- [AI Services](#ai-services)
-  - [OpenAI](#openai)
-  - [Anthropic Claude](#anthropic-claude)
-- [Configuration](#configuration)
+- [Security & Privacy](#security--privacy)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## How Integrations Work
+
+1. **You create your account** in the SoloBoss AI Content Planner
+2. **Navigate to Integration Manager** in the app
+3. **Click "Connect"** on the platform you want to use
+4. **Authenticate with OAuth** - you'll be redirected to the platform to sign in
+5. **Grant permissions** - the app requests the minimum permissions needed
+6. **Your credentials are encrypted** and stored securely (only you can access them)
+7. **Start posting** - you can now create and schedule content to your connected accounts
+
+### Security Features
+
+- ✅ All credentials are encrypted using AES-256-GCM encryption
+- ✅ Credentials are stored per-user in the database
+- ✅ Each user can only access their own integrations
+- ✅ OAuth tokens are automatically refreshed when needed
+- ✅ You can disconnect integrations at any time
 
 ---
 
 ## Social Media Platforms
 
-### Twitter/X API
+### Twitter/X
 
-**Required Credentials:**
+**How to Connect:**
 
-- API Key
-- API Secret
-- Access Token
-- Access Token Secret
-- Bearer Token
-
-**How to Obtain:**
-
-1. Go to the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
-2. Create a new project and app (or use existing)
-3. Navigate to your app's "Keys and tokens" tab
-4. Generate/copy the following:
-   - API Key and Secret (Consumer Keys)
-   - Access Token and Secret
-   - Bearer Token
-
-**Environment Variables:**
-
-```bash
-TWITTER_API_KEY=eaendzPGLmUcckZ4lFqUFtKlo 
-TWITTER_API_SECRET=lNbhAf1CiXyQvy9BUktgAAxiNXsHdrYGzPGMyOobx5wafJTLSh
-TWITTER_ACCESS_TOKEN=1916358481201733632-3kzeckAyISiR5l4cuYxxhj8H4reutj
-TWITTER_ACCESS_TOKEN_SECRET=Ah3xCjkCfZS7nTyFmVYit5RP3fnKggG1d0qJqeGH1EggJ
-TWITTER_BEARER_TOKEN=AAAAAAAAAAAAAAAAAAAAAEFw4gEAAAAAgzGeAU0D1lmfg2N7qmPyEl1jx88%3DtfYZ6G2bJX08KlIOFffyJMeMFKTj0eCOPV8eGYenslv7LMbyxj
-```
+1. Go to the Integration Manager in the app
+2. Click "Connect" next to Twitter/X
+3. You'll be redirected to Twitter to authorize the app
+4. Sign in with your Twitter account
+5. Grant the requested permissions
+6. You'll be redirected back to the app
 
 **Required Permissions:**
-
 - Read and write tweets
-- Read users
+- Read user profile
 - Access tweet metrics
 
-**API Version:** v2
+**Platform Limits:**
+- Character limit: 280 characters
+- Rate limit: 300 tweets per 3 hours (per account)
+- Media: Up to 4 images per tweet
+
+**Troubleshooting:**
+- If you get an error, make sure you're signed in to the correct Twitter account
+- Ensure your Twitter account has developer access enabled (if required)
+- Check that the app has the necessary permissions
 
 ---
 
-### LinkedIn API
+### LinkedIn
 
-**Required Credentials:**
+**How to Connect:**
 
-- Client ID
-- Client Secret
-- Access Token (obtained via OAuth 2.0)
-
-**How to Obtain:**
-
-1. Go to [LinkedIn Developers](https://www.linkedin.com/developers/apps)
-2. Create a new app
-3. Under "Auth" tab, note your Client ID and Client Secret
-4. Add authorized redirect URLs for OAuth
-5. Request access to the following products:
-   - Share on LinkedIn
-   - Sign In with LinkedIn
-   - Marketing Developer Platform (for analytics)
-
-**Environment Variables:**
-
-```bash
-LINKEDIN_CLIENT_ID=867mjzr8zq2zn1
-LINKEDIN_CLIENT_SECRET=
-```
-
-**OAuth Flow:**
-
-- The access token is obtained through OAuth 2.0 flow
-- Users will authenticate through the app
-- Tokens are stored encrypted in the database
-
-**Required Scopes:**
-
-- `r_liteprofile`
-- `r_emailaddress`
-- `w_member_social`
-- `r_organization_social` (for company pages)
-
----
-
-### Facebook/Instagram API
-
-**Required Credentials:**
-
-- App ID
-- App Secret
-- Access Token (obtained via OAuth 2.0)
-- Page ID (for posting to pages)
-
-**How to Obtain:**
-
-1. Go to [Facebook Developers](https://developers.facebook.com/apps)
-2. Create a new app (select "Business" type)
-3. Add Facebook Login and Instagram Basic Display products
-4. Under "Settings > Basic", copy App ID and App Secret
-5. Set up OAuth redirect URLs
-6. Request app review for:
-   - `pages_manage_posts`
-   - `pages_read_engagement`
-   - `instagram_basic`
-   - `instagram_content_publish`
-
-**Environment Variables:**
-
-```bash
-FACEBOOK_APP_ID=2272708543228428
-FACEBOOK_APP_SECRET=355c1f926696ae2b3f528d5d763bf1a7
-THREADS_APP_ID=1359918955662619
-THREADS_APP_SECRET=551a98fb4ac3eaa4734f464d57bf6c62
-INSTAGRAM_APP_ID=1329680698625695
-INSTAGRAM_APP_SECRET=e4e52b3422fc202975509e8cefbb613a
-```
+1. Go to the Integration Manager in the app
+2. Click "Connect" next to LinkedIn
+3. You'll be redirected to LinkedIn to authorize the app
+4. Sign in with your LinkedIn account
+5. Grant the requested permissions (Share on LinkedIn, etc.)
+6. You'll be redirected back to the app
 
 **Required Permissions:**
+- Share on LinkedIn
+- Read basic profile
+- Read email address
 
-- `pages_show_list`
-- `pages_manage_posts`
-- `pages_read_engagement`
-- `instagram_basic`
-- `instagram_content_publish`
-- `instagram_manage_insights`
+**For Company Pages:**
+- You need admin access to the company page
+- The app will list your available pages after connection
 
-**API Version:** v18.0
+**Platform Limits:**
+- Character limit: 1,300 characters for posts
+- Rate limits vary by endpoint
+- Media: Images and videos supported
 
 ---
 
-### Reddit API
+### Facebook/Instagram
 
-**Required Credentials:**
+**How to Connect:**
 
-- Client ID
-- Client Secret
-- Username
-- Password
-- User Agent
+1. Go to the Integration Manager in the app
+2. Click "Connect" next to Facebook or Instagram
+3. You'll be redirected to Facebook to authorize the app
+4. Sign in with your Facebook account
+5. Grant permissions for:
+   - Managing posts on your pages
+   - Publishing to Instagram (if connecting Instagram)
+6. Select which pages/accounts you want to connect
+7. You'll be redirected back to the app
 
-**How to Obtain:**
+**Required Permissions:**
+- `pages_manage_posts` - Post to your Facebook pages
+- `pages_read_engagement` - Read engagement metrics
+- `instagram_basic` - Access Instagram profile
+- `instagram_content_publish` - Publish to Instagram
+
+**Platform Limits:**
+- Facebook: 63,206 characters per post
+- Instagram: 2,200 characters per caption
+- Rate limits: 200 API calls per hour per user
+
+**Note:** Instagram requires a Facebook Business account connected to your Instagram Business or Creator account.
+
+---
+
+### Reddit
+
+**How to Connect:**
 
 1. Go to [Reddit Apps](https://www.reddit.com/prefs/apps)
-2. Scroll down and click "create app" or "create another app"
-3. Select "script" as the app type
-4. Fill in the required fields
-5. Copy the Client ID (under the app name) and Client Secret
+2. Create a new app (select "script" type)
+3. Note your Client ID and Client Secret
+4. In the Integration Manager, click "Connect" next to Reddit
+5. Enter your Client ID, Client Secret, and User Agent
+6. The app will handle OAuth authentication
 
-**Environment Variables:**
+**Required Information:**
+- Client ID (from Reddit app settings)
+- Client Secret (from Reddit app settings)
+- User Agent (format: `YourAppName/1.0.0 (by /u/yourusername)`)
 
-```bash
-REDDIT_CLIENT_ID=your_client_id_here
-REDDIT_CLIENT_SECRET=your_client_secret_here
-REDDIT_USER_AGENT=YourAppName/1.0.0 (by /u/yourusername)
-```
-
-**Note:** User Agent format is important - follow the format: `AppName/Version (by /u/username)`
+**Platform Limits:**
+- Character limit: 40,000 characters per post
+- Rate limits: 60 requests per minute
+- Subreddit-specific rules may apply
 
 ---
 
-### Pinterest API
+### Pinterest
 
-**Required Credentials:**
+**How to Connect:**
 
-- App ID
-- App Secret
-- Access Token (obtained via OAuth 2.0)
+1. Go to the Integration Manager in the app
+2. Click "Connect" next to Pinterest
+3. You'll be redirected to Pinterest to authorize the app
+4. Sign in with your Pinterest account
+5. Grant permissions to read and write pins
+6. You'll be redirected back to the app
 
-**How to Obtain:**
+**Required Permissions:**
+- `boards:read` - Read your boards
+- `boards:write` - Create and update boards
+- `pins:read` - Read your pins
+- `pins:write` - Create and update pins
+- `user_accounts:read` - Read your account info
 
-1. Go to [Pinterest Developers](https://developers.pinterest.com/apps/)
-2. Create a new app
-3. Copy App ID and App Secret
-4. Set up OAuth redirect URLs
-5. Request access to:
-   - Read public boards
-   - Write public boards
-   - Read public pins
-   - Write public pins
+**Platform Limits:**
+- Character limit: 500 characters per pin description
+- Media: Images required for pins
+- Rate limits vary by endpoint
 
-**Environment Variables:**
+---
 
-```bash
-PINTEREST_APP_ID=your_app_id_here
-PINTEREST_APP_SECRET=your_app_secret_here
-```
+## Blog Platforms
 
-**Required Scopes:**
+### Blogger
 
-- `boards:read`
-- `boards:write`
-- `pins:read`
-- `pins:write`
-- `user_accounts:read`
+**How to Connect:**
+
+1. Go to the Integration Manager in the app
+2. Click "Connect" next to Blogger
+3. You'll be redirected to Google to authorize the app
+4. Sign in with your Google account (the one connected to Blogger)
+5. Grant permissions to manage your Blogger blogs
+6. Select which blog you want to connect
+7. You'll be redirected back to the app
+
+**Required Permissions:**
+- Access to Blogger API
+- Read and write blog posts
+
+**Platform Limits:**
+- No specific character limits
+- Media: Images and videos supported
+- HTML formatting supported in posts
 
 ---
 
@@ -219,183 +207,146 @@ PINTEREST_APP_SECRET=your_app_secret_here
 
 ### Google Analytics
 
-**Required Credentials:**
+**How to Connect:**
 
-- Client ID
-- Client Secret
-- View ID
-- Refresh Token (obtained via OAuth 2.0)
+1. Go to the Integration Manager in the app
+2. Click "Connect" next to Google Analytics
+3. You'll be redirected to Google to authorize the app
+4. Sign in with your Google account (the one with Analytics access)
+5. Grant permissions to read Analytics data
+6. Select which Analytics property you want to connect
+7. You'll be redirected back to the app
 
-**How to Obtain:**
+**Required Permissions:**
+- Read Google Analytics data
+- Access to Analytics reporting API
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing
-3. Enable Google Analytics Data API
-4. Go to "APIs & Services > Credentials"
-5. Create OAuth 2.0 Client ID
-6. Download the credentials JSON
-7. Find your Analytics View ID in Google Analytics Admin
-
-**Environment Variables:**
-
-```bash
-GOOGLE_ANALYTICS_CLIENT_ID=your_client_id_here
-GOOGLE_ANALYTICS_CLIENT_SECRET=your_client_secret_here
-```
-
-**Required APIs:**
-
-- Google Analytics Data API (GA4)
-- Google Analytics Reporting API (Universal Analytics)
+**Note:** You need a Google Analytics 4 (GA4) property to use this integration.
 
 ---
 
-## AI Services
+## Security & Privacy
 
-### OpenAI
+### How Your Credentials Are Protected
 
-**Required Credentials:**
+1. **Encryption**: All credentials are encrypted before storage using AES-256-GCM
+2. **User Isolation**: Each user's credentials are stored separately - you can only access your own
+3. **OAuth Tokens**: Access tokens are refreshed automatically when they expire
+4. **Secure Storage**: Credentials are stored in a secure database with row-level security
+5. **No Sharing**: Your credentials are never shared with other users or the app owner
 
-- API Key
-- Organization ID (optional)
+### What the App Can Do
 
-**How to Obtain:**
+- ✅ Post content to your connected accounts
+- ✅ Read engagement metrics (if you grant permission)
+- ✅ Schedule posts for future publication
+- ✅ Adapt content format for each platform
 
-1. Go to [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Sign in or create an account
-3. Navigate to API keys section
-4. Click "Create new secret key"
-5. Copy the key immediately (it won't be shown again)
-6. (Optional) Copy your Organization ID from Settings
+### What the App Cannot Do
 
-**Environment Variables:**
+- ❌ Access your account without your permission
+- ❌ Share your credentials with anyone
+- ❌ Post to accounts you haven't connected
+- ❌ Modify your account settings
+- ❌ Delete your account or content
 
-```bash
-OPENAI_API_KEY=sk-...your_api_key_here
-OPENAI_ORGANIZATION_ID=org-...your_org_id_here
-```
+### Revoking Access
 
-**Note:** Keep track of usage limits and billing
+You can disconnect any integration at any time:
+1. Go to Integration Manager
+2. Find the integration you want to disconnect
+3. Click "Disconnect"
+4. Your credentials will be deleted from the system
 
----
-
-### Anthropic Claude
-
-**Required Credentials:**
-
-- API Key
-
-**How to Obtain:**
-
-1. Go to [Anthropic Console](https://console.anthropic.com/)
-2. Sign in or create an account
-3. Navigate to API Keys section
-4. Generate a new API key
-5. Copy the key immediately
-
-**Environment Variables:**
-
-```bash
-ANTHROPIC_API_KEY=sk-ant-...your_api_key_here
-```
-
-**Available Models:**
-
-- Claude 3 Opus
-- Claude 3 Sonnet
-- Claude 3 Haiku
-
----
-
-## Configuration
-
-### Step 1: Copy Environment Template
-
-```bash
-cp .env.local.example .env
-```
-
-### Step 2: Add Your Credentials
-
-Edit the `.env` file and replace placeholder values with your actual credentials.
-
-### Step 3: Verify Configuration
-
-The app will automatically validate credentials when you try to connect each integration through the UI.
-
-### Step 4: Security Best Practices
-
-- ✅ Never commit `.env` files to version control
-- ✅ Use strong, unique secrets for encryption keys
-- ✅ Rotate API keys periodically
-- ✅ Monitor API usage and set up billing alerts
-- ✅ Use environment-specific credentials (dev/staging/prod)
-- ✅ Enable 2FA on all developer accounts
-- ✅ Review and audit API permissions regularly
-
-### Integration Encryption
-
-All credentials are encrypted before being stored in the database using AES-256-GCM encryption with the `INTEGRATION_ENCRYPTION_SECRET`.
-
-Generate a secure encryption secret:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+You can also revoke access directly from the platform (e.g., in your Twitter or Facebook app settings).
 
 ---
 
 ## Troubleshooting
 
-### Rate Limiting
+### Connection Issues
 
-Each platform has different rate limits. The app implements automatic rate limiting and retry logic, but be aware of:
+**"Authorization failed"**
+- Make sure you're signed in to the correct account
+- Check that you granted all requested permissions
+- Try disconnecting and reconnecting the integration
 
-- **Twitter**: 300 tweets per 3 hours (user context)
-- **LinkedIn**: Varies by endpoint
-- **Facebook**: 200 calls per hour per user
-- **Instagram**: 200 calls per hour
-- **OpenAI**: Depends on your plan (TPM/RPM limits)
+**"Invalid credentials"**
+- Your OAuth token may have expired
+- Try disconnecting and reconnecting the integration
+- Check that your account still has the necessary permissions
 
-### Common Issues
+**"Rate limit exceeded"**
+- You've hit the platform's rate limit
+- Wait for the rate limit window to reset
+- Consider reducing the frequency of automated posts
 
-**401 Unauthorized:**
+### Platform-Specific Issues
 
-- Check that API keys are correctly copied
-- Verify OAuth tokens haven't expired
-- Ensure required permissions/scopes are granted
+**Twitter:**
+- Ensure your account has developer access if required
+- Check that 2FA is not blocking API access
+- Verify your account is not suspended
 
-**403 Forbidden:**
+**LinkedIn:**
+- Make sure you're connecting a personal profile (company pages require additional setup)
+- Verify your LinkedIn app has the necessary permissions approved
 
-- App may need approval from the platform
-- Ensure all required permissions are requested
-- Check if the app is in development/sandbox mode
+**Facebook/Instagram:**
+- Ensure your Instagram account is a Business or Creator account
+- Verify it's connected to a Facebook Business account
+- Check that your Facebook app has been approved for the required permissions
 
-**429 Too Many Requests:**
+**Reddit:**
+- Make sure your User Agent string follows the correct format
+- Verify your Reddit app is set up as a "script" type
+- Check that you're using the correct Client ID and Secret
 
-- You've hit the rate limit
-- The app will automatically retry after the limit resets
+### Getting Help
 
-### Support
-
-For platform-specific issues, refer to:
-
-- [Twitter API Docs](https://developer.twitter.com/en/docs)
-- [LinkedIn API Docs](https://docs.microsoft.com/en-us/linkedin/)
-- [Facebook API Docs](https://developers.facebook.com/docs)
-- [OpenAI API Docs](https://platform.openai.com/docs)
-- [Anthropic API Docs](https://docs.anthropic.com/)
+If you continue to experience issues:
+1. Check the platform's API documentation
+2. Verify your account status on the platform
+3. Try disconnecting and reconnecting the integration
+4. Contact support through the app's help system
 
 ---
 
 ## Next Steps
 
-After setting up your credentials:
+After setting up your integrations:
 
-1. Start the app: `npm run dev`
-2. Navigate to Integration Manager
-3. Click "Connect" on each platform you've configured
-4. Follow the OAuth flow for platforms that require it
-5. Test the connection to verify credentials
+1. **Test the connection** - Try creating a test post to verify everything works
+2. **Configure posting preferences** - Set up default scheduling and formatting options
+3. **Create your first content** - Use the AI content generator to create posts
+4. **Schedule posts** - Set up a content calendar with scheduled posts
+5. **Monitor performance** - Check analytics to see how your content performs
 
-The app will guide you through any additional setup steps specific to each integration.
+---
+
+## App Owner Requirements
+
+**For the app owner/administrator**, you only need to configure:
+
+1. **AI API Keys** (for content generation):
+   - Gemini API Key (required)
+   - OpenAI API Key (optional)
+   - Anthropic API Key (optional)
+
+2. **Database Configuration**:
+   - Neon PostgreSQL connection string
+   - Integration encryption secret
+
+3. **Authentication**:
+   - Stack Auth project credentials
+
+**You do NOT need:**
+- Social media API credentials (users provide their own)
+- Platform-specific OAuth apps (users authenticate directly)
+- Analytics API keys (users connect their own analytics)
+
+See the main README.md and .env.example file for setup instructions.
+
+---
+
+**Ready to connect your accounts and start creating amazing content!** 🚀

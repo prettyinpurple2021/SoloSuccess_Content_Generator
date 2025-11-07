@@ -10,31 +10,52 @@
  * - Performance tracking
  */
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { contentAdaptationService } from '../../services/contentAdaptationService';
 import { schedulePost } from '../../services/schedulerService';
 import ContentPreview from './ContentPreview';
 
+type Platform =
+  | 'twitter'
+  | 'linkedin'
+  | 'facebook'
+  | 'instagram'
+  | 'bluesky'
+  | 'reddit'
+  | 'pinterest'
+  | 'blogger';
+
+interface Integration {
+  id: string;
+  name: string;
+  platform: string;
+  status: 'connected' | 'disconnected' | 'error';
+  credentials?: Record<string, unknown>;
+}
+
+interface PostResult {
+  success: boolean;
+  queued?: boolean;
+  url?: string;
+  error?: string;
+}
+
 interface SmartPostingProps {
-  availableIntegrations: Array<{
-    id: string;
-    name: string;
-    platform: string;
-    status: 'connected' | 'disconnected' | 'error';
-    credentials?: any;
-  }>;
-  onPostSuccess?: (results: Record<string, any>) => void;
+  availableIntegrations: Integration[];
+  userId: string;
+  onPostSuccess?: (results: Record<string, PostResult>) => void;
   onPostError?: (error: string) => void;
 }
 
 export const SmartPosting: React.FC<SmartPostingProps> = ({
   availableIntegrations,
+  userId,
   onPostSuccess,
   onPostError,
 }) => {
   const [content, setContent] = useState('');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
   const [postingOptions, setPostingOptions] = useState({
     includeCallToAction: true,
     tone: 'professional' as 'professional' | 'casual' | 'friendly' | 'authoritative',
@@ -44,7 +65,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
     mediaUrls: [] as string[],
   });
   const [isPosting, setIsPosting] = useState(false);
-  const [postResults, setPostResults] = useState<Record<string, any>>({});
+  const [postResults, setPostResults] = useState<Record<string, PostResult>>({});
   const [showPreview, setShowPreview] = useState(false);
 
   // Get connected integrations
@@ -54,8 +75,11 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
   // Handle platform selection
   const handlePlatformToggle = (platform: string) => {
+    const platformTyped = platform as Platform;
     setSelectedPlatforms((prev) =>
-      prev.includes(platform) ? prev.filter((p) => p !== platform) : [...prev, platform]
+      prev.includes(platformTyped)
+        ? prev.filter((p) => p !== platformTyped)
+        : [...prev, platformTyped]
     );
   };
 
@@ -66,17 +90,18 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
   // Validate content for all selected platforms
   const validateAllPlatforms = async () => {
-    if (!content.trim() || selectedPlatforms.length === 0) return;
+    if (!content.trim() || selectedPlatforms.length === 0) return null;
 
-    const validations: Record<string, any> = {};
+    const validations: Record<
+      string,
+      { isValid: boolean; issues: string[]; suggestions: string[] }
+    > = {};
     let allValid = true;
 
     for (const platform of selectedPlatforms) {
       try {
-        const validation = await socialMediaIntegrations.validateContentForPlatform(
-          content,
-          platform
-        );
+        // Use contentAdaptationService for validation (synchronous method)
+        const validation = contentAdaptationService.validateContentForPlatform(content, platform);
         validations[platform] = validation;
         if (!validation.isValid) {
           allValid = false;
@@ -106,10 +131,13 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
     try {
       // Validate content first
-      const { validations, allValid } = await validateAllPlatforms();
-
-      if (!allValid) {
-        onPostError?.('Content validation failed. Please check the preview for issues.');
+      const validationResult = await validateAllPlatforms();
+      if (!validationResult || !validationResult.allValid) {
+        onPostError?.(
+          validationResult
+            ? 'Content validation failed. Please check the preview for issues.'
+            : 'Please enter content and select at least one platform'
+        );
         setIsPosting(false);
         return;
       }
@@ -121,6 +149,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
           : new Date().toISOString();
 
       await schedulePost({
+        userId,
         content,
         platforms: selectedPlatforms,
         scheduleDate,
@@ -131,10 +160,11 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
         },
       });
 
-      setPostResults(
-        Object.fromEntries(selectedPlatforms.map((p) => [p, { success: true, queued: true }]))
-      );
-      onPostSuccess?.({ queued: true });
+      const results: Record<string, PostResult> = Object.fromEntries(
+        selectedPlatforms.map((p) => [p, { success: true, queued: true }])
+      ) as Record<string, PostResult>;
+      setPostResults(results);
+      onPostSuccess?.(results);
     } catch (error) {
       onPostError?.(error instanceof Error ? error.message : 'Unknown error occurred');
     } finally {
@@ -154,20 +184,6 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
       youtube: '📺',
     };
     return icons[platform] || '📱';
-  };
-
-  const getPlatformColor = (platform: string): string => {
-    const colors: Record<string, string> = {
-      twitter: 'from-blue-400 to-blue-600',
-      linkedin: 'from-blue-500 to-blue-700',
-      facebook: 'from-blue-600 to-blue-800',
-      instagram: 'from-pink-400 to-pink-600',
-      bluesky: 'from-sky-400 to-sky-600',
-      reddit: 'from-orange-500 to-orange-700',
-      pinterest: 'from-red-500 to-red-700',
-      youtube: 'from-red-500 to-red-700',
-    };
-    return colors[platform] || 'from-gray-400 to-gray-600';
   };
 
   return (
@@ -209,7 +225,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
               key={integration.id}
               onClick={() => handlePlatformToggle(integration.platform)}
               className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${
-                selectedPlatforms.includes(integration.platform)
+                selectedPlatforms.includes(integration.platform as Platform)
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
@@ -222,12 +238,12 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
                   {integration.platform}
                 </span>
                 <span className="text-xs text-gray-500 mt-1">
-                  {contentAdaptationService.getPlatformLimits(integration.platform)
+                  {contentAdaptationService.getPlatformLimits(integration.platform as Platform)
                     ?.maxCharacters || 0}{' '}
                   chars
                 </span>
               </div>
-              {selectedPlatforms.includes(integration.platform) && (
+              {selectedPlatforms.includes(integration.platform as Platform) && (
                 <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">✓</span>
                 </div>
@@ -255,7 +271,14 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
               <select
                 value={postingOptions.tone}
                 onChange={(e) =>
-                  setPostingOptions((prev) => ({ ...prev, tone: e.target.value as any }))
+                  setPostingOptions((prev) => ({
+                    ...prev,
+                    tone: e.target.value as
+                      | 'professional'
+                      | 'casual'
+                      | 'friendly'
+                      | 'authoritative',
+                  }))
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >

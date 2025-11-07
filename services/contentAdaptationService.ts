@@ -114,6 +114,17 @@ export class ContentAdaptationService {
       preferredHashtagStyle: 'heavy',
       preferredMentionStyle: 'minimal',
     },
+    blogger: {
+      maxCharacters: 1000000, // Blogger supports very long posts (essentially unlimited)
+      maxHashtags: 50, // Blogger uses labels/tags, similar to hashtags
+      maxMentions: 0, // Blogger doesn't use @mentions in the same way
+      maxLinks: 100, // Blogger posts can have many links
+      supportsLineBreaks: true,
+      supportsRichText: true,
+      supportsMedia: true,
+      preferredHashtagStyle: 'minimal', // Blogger uses labels, not hashtags
+      preferredMentionStyle: 'formal',
+    },
   };
 
   /**
@@ -287,11 +298,13 @@ export class ContentAdaptationService {
       case 'linkedin':
         return 'Here are a few practical takeaways to consider.';
       case 'facebook':
-        return 'Let’s break this down with a quick example for clarity.';
+        return "Let's break this down with a quick example for clarity.";
       case 'reddit':
         return 'Adding context can help the discussion stay constructive.';
       case 'pinterest':
         return 'Save this for later and apply it step by step.';
+      case 'blogger':
+        return 'Let me elaborate on this point with more detail and examples.';
       default:
         return 'Here is an extra detail that adds helpful context.';
     }
@@ -418,6 +431,8 @@ export class ContentAdaptationService {
         return this.applyRedditStyle(content, options);
       case 'pinterest':
         return this.applyPinterestStyle(content, options);
+      case 'blogger':
+        return this.applyBloggerStyle(content, options);
       default:
         return content;
     }
@@ -516,6 +531,36 @@ export class ContentAdaptationService {
     // Make it more descriptive and keyword-rich
     adapted = adapted.replace(/\bgood\b/g, 'amazing');
     adapted = adapted.replace(/\bnice\b/g, 'beautiful');
+
+    return adapted;
+  }
+
+  private applyBloggerStyle(content: string, options?: any): string {
+    // Blogger: Long-form content, well-structured, formal or casual depending on tone
+    let adapted = content;
+
+    // Ensure proper paragraph structure (double line breaks for blog posts)
+    if (!adapted.includes('\n\n')) {
+      // Add paragraph breaks where there are single line breaks
+      adapted = adapted.replace(/\n/g, '\n\n');
+    }
+
+    // Format based on tone
+    if (options?.tone === 'professional' || options?.tone === 'authoritative') {
+      // Ensure professional language
+      adapted = adapted.replace(/\bawesome\b/g, 'exceptional');
+      adapted = adapted.replace(/\bcool\b/g, 'impressive');
+      adapted = adapted.replace(/\bamazing\b/g, 'outstanding');
+    }
+
+    // Add call to action if requested
+    if (
+      options?.includeCallToAction &&
+      !adapted.toLowerCase().includes('share') &&
+      !adapted.toLowerCase().includes('comment')
+    ) {
+      adapted += '\n\nWhat are your thoughts? Feel free to share in the comments below!';
+    }
 
     return adapted;
   }
@@ -665,6 +710,12 @@ export class ContentAdaptationService {
       case 'pinterest':
         // Pinterest loves descriptive, keyword-rich content
         enhanced = enhanced.replace(/\bamazing\b/g, 'absolutely stunning');
+        break;
+      case 'blogger':
+        // Blogger posts benefit from structured, well-formatted content
+        if (options?.includeCallToAction && !enhanced.toLowerCase().includes('comment')) {
+          enhanced += '\n\nWhat are your thoughts on this topic?';
+        }
         break;
     }
 

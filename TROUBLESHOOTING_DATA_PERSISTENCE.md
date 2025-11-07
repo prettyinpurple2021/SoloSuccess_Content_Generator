@@ -3,63 +3,63 @@
 ## **Quick Fix Steps**
 
 ### 1. **Check Browser Console**
+
 Open your browser's developer tools (F12) and look for any error messages. The updated code now includes detailed logging.
 
 ### 2. **Verify Database Schema**
-Run this in your Supabase SQL Editor:
+
+Run this in your Neon SQL Editor:
 
 ```sql
 -- Check if tables exist
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public'
 AND table_name IN ('posts', 'brand_voices', 'audience_profiles', 'campaigns');
 
 -- Check RLS policies
-SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
-FROM pg_policies 
+SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
+FROM pg_policies
 WHERE tablename = 'posts';
 ```
 
 ### 3. **Test Authentication**
-Run this in your browser console:
 
-```javascript
-// Test authentication
-import { auth } from './services/supabaseService';
-auth.getUser().then(user => console.log('User:', user));
-```
+The app uses Stack Auth for authentication. Check your Stack Auth configuration in your environment variables.
 
 ### 4. **Test Database Connection**
-Run this in your browser console:
 
-```javascript
-// Test database connection
-import { db } from './services/supabaseService';
-db.getPosts().then(posts => console.log('Posts:', posts));
-```
+Verify your Neon database connection string is set correctly in your environment variables as `DATABASE_URL`.
 
 ## **Common Issues & Solutions**
 
 ### **Issue: "User not authenticated" error**
+
 **Solution:**
-1. The app now automatically signs in anonymously
-2. Check if anonymous authentication is enabled in your Supabase project
-3. Go to Authentication > Settings > Enable anonymous sign-ins
+
+1. Verify your Stack Auth credentials are set correctly in environment variables
+2. Check that `VITE_STACK_PROJECT_ID` and `VITE_STACK_PUBLISHABLE_CLIENT_KEY` are configured
+3. Ensure users are properly authenticated through Stack Auth
 
 ### **Issue: "Permission denied" error**
+
 **Solution:**
+
 1. RLS policies might not be applied correctly
 2. Run the database schema fix script
 3. Check if the user_id matches in the database
 
 ### **Issue: "Table doesn't exist" error**
+
 **Solution:**
+
 1. Apply the complete database schema
 2. Run the `fix-database-setup.js` script
 3. Or manually run the SQL in your Supabase SQL Editor
 
 ### **Issue: Data saves but doesn't appear**
+
 **Solution:**
+
 1. Check if the user_id is being set correctly
 2. Verify RLS policies allow the user to see their own data
 3. Clear browser cache and refresh
@@ -67,17 +67,20 @@ db.getPosts().then(posts => console.log('Posts:', posts));
 ## **Step-by-Step Fix Process**
 
 ### **Step 1: Apply Database Schema**
-1. Go to your Supabase project dashboard
+
+1. Go to your Neon project dashboard (https://console.neon.tech/)
 2. Navigate to SQL Editor
-3. Copy and paste the contents of `database/complete-migration.sql`
+3. Copy and paste the contents of `database/neon-complete-migration.sql`
 4. Run the script
 
-### **Step 2: Enable Anonymous Authentication**
-1. Go to Authentication > Settings
-2. Enable "Allow anonymous sign-ins"
-3. Save the settings
+### **Step 2: Verify Stack Auth Configuration**
+
+1. Check your Stack Auth project settings (https://app.stack-auth.com/)
+2. Verify environment variables are set correctly
+3. Ensure the app can authenticate users properly
 
 ### **Step 3: Test the Fix**
+
 1. Open your app in the browser
 2. Open Developer Tools (F12)
 3. Look for the console messages:
@@ -86,6 +89,7 @@ db.getPosts().then(posts => console.log('Posts:', posts));
 4. Try creating a new post
 
 ### **Step 4: Verify Data Persistence**
+
 1. Create a post
 2. Refresh the page
 3. Check if the post appears in the list
@@ -94,10 +98,11 @@ db.getPosts().then(posts => console.log('Posts:', posts));
 ## **Debug Commands**
 
 ### **Check User Authentication**
+
 ```javascript
 // In browser console
 import { auth } from './services/supabaseService';
-auth.getUser().then(user => {
+auth.getUser().then((user) => {
   console.log('Current user:', user);
   if (user) {
     console.log('User ID:', user.id);
@@ -108,37 +113,42 @@ auth.getUser().then(user => {
 ```
 
 ### **Test Database Operations**
+
 ```javascript
 // In browser console
 import { db } from './services/supabaseService';
 
 // Test getting posts
-db.getPosts().then(posts => {
-  console.log('All posts:', posts);
-}).catch(err => {
-  console.error('Error getting posts:', err);
-});
+db.getPosts()
+  .then((posts) => {
+    console.log('All posts:', posts);
+  })
+  .catch((err) => {
+    console.error('Error getting posts:', err);
+  });
 
 // Test saving a post
 const testPost = {
   topic: 'Test Topic',
   idea: 'Test Idea',
   content: 'Test Content',
-  status: 'draft'
+  status: 'draft',
 };
 
-db.addPost(testPost).then(post => {
-  console.log('Post saved:', post);
-}).catch(err => {
-  console.error('Error saving post:', err);
-});
+db.addPost(testPost)
+  .then((post) => {
+    console.log('Post saved:', post);
+  })
+  .catch((err) => {
+    console.error('Error saving post:', err);
+  });
 ```
 
 ### **Check Database Tables**
+
 ```sql
--- In Supabase SQL Editor
+-- In Neon SQL Editor
 SELECT COUNT(*) as post_count FROM posts;
-SELECT COUNT(*) as user_count FROM auth.users;
 SELECT user_id, COUNT(*) as post_count FROM posts GROUP BY user_id;
 ```
 
@@ -147,25 +157,37 @@ SELECT user_id, COUNT(*) as post_count FROM posts GROUP BY user_id;
 Make sure these are set in your `.env.local` file:
 
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+# Stack Auth Configuration
+VITE_STACK_PROJECT_ID=your_project_id
+VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_client_key
+STACK_SECRET_SERVER_KEY=your_server_key
+
+# Neon Database
+DATABASE_URL=postgresql://user:pass@host:port/database?sslmode=require
+
+# AI Services
+GEMINI_API_KEY=your_gemini_api_key
+
+# Integration Encryption
+INTEGRATION_ENCRYPTION_SECRET=your_64_char_hex_string
 ```
 
-## **Supabase Project Settings**
+## **Neon Database Settings**
 
-1. **Authentication Settings:**
-   - Enable anonymous sign-ins
-   - Set session timeout to 24 hours
-   - Enable email confirmations (optional)
+1. **Database Configuration:**
+   - Ensure your Neon project is active
+   - Verify the connection string is correct
+   - Check that SSL mode is set to `require`
 
-2. **Database Settings:**
-   - Enable Row Level Security (RLS)
-   - Apply the complete schema
-   - Check RLS policies
+2. **Schema Setup:**
+   - Apply the complete Neon schema migration
+   - Verify all tables are created
+   - Check that indexes are in place
 
-3. **API Settings:**
-   - Enable realtime for all tables
-   - Set appropriate rate limits
+3. **Connection Settings:**
+   - Use connection pooling for better performance
+   - Set appropriate timeout values
+   - Monitor connection usage
 
 ## **Still Having Issues?**
 
@@ -190,6 +212,7 @@ You'll know the fix is working when you see:
 ## **Need More Help?**
 
 If you're still having issues, please share:
+
 1. The exact error messages from the browser console
 2. Your Supabase project URL (without the key)
 3. Which step of the troubleshooting process you're stuck on
