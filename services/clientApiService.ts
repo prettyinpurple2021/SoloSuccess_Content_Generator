@@ -90,11 +90,14 @@ export const apiService = {
 
   async updateBrandVoice(userId: string, brandVoiceId: string, updates: any) {
     try {
-      const response = await fetch(`${API_BASE_URL}/brand-voices?id=${encodeURIComponent(brandVoiceId)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...updates, userId }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/brand-voices?id=${encodeURIComponent(brandVoiceId)}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...updates, userId }),
+        }
+      );
       if (!response.ok) throw new Error('Failed to update brand voice');
       return await response.json();
     } catch (error) {
@@ -105,11 +108,14 @@ export const apiService = {
 
   async deleteBrandVoice(userId: string, brandVoiceId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/brand-voices?id=${encodeURIComponent(brandVoiceId)}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/brand-voices?id=${encodeURIComponent(brandVoiceId)}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        }
+      );
       if (!response.ok) throw new Error('Failed to delete brand voice');
       return await response.json();
     } catch (error) {
@@ -147,11 +153,14 @@ export const apiService = {
 
   async updateAudienceProfile(userId: string, profileId: string, updates: any) {
     try {
-      const response = await fetch(`${API_BASE_URL}/audience-profiles?id=${encodeURIComponent(profileId)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...updates, userId }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/audience-profiles?id=${encodeURIComponent(profileId)}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...updates, userId }),
+        }
+      );
       if (!response.ok) throw new Error('Failed to update audience profile');
       return await response.json();
     } catch (error) {
@@ -162,11 +171,14 @@ export const apiService = {
 
   async deleteAudienceProfile(userId: string, profileId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/audience-profiles?id=${encodeURIComponent(profileId)}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/audience-profiles?id=${encodeURIComponent(profileId)}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        }
+      );
       if (!response.ok) throw new Error('Failed to delete audience profile');
       return await response.json();
     } catch (error) {
@@ -204,11 +216,14 @@ export const apiService = {
 
   async updateCampaign(userId: string, campaignId: string, updates: any) {
     try {
-      const response = await fetch(`${API_BASE_URL}/campaigns?id=${encodeURIComponent(campaignId)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...updates, userId }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/campaigns?id=${encodeURIComponent(campaignId)}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...updates, userId }),
+        }
+      );
       if (!response.ok) throw new Error('Failed to update campaign');
       return await response.json();
     } catch (error) {
@@ -219,11 +234,14 @@ export const apiService = {
 
   async deleteCampaign(userId: string, campaignId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/campaigns?id=${encodeURIComponent(campaignId)}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/campaigns?id=${encodeURIComponent(campaignId)}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        }
+      );
       if (!response.ok) throw new Error('Failed to delete campaign');
       return await response.json();
     } catch (error) {
@@ -291,7 +309,7 @@ export const apiService = {
 
   async testConnection(userId: string, integrationId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/integrations/${integrationId}/test`, {
+      const response = await fetch(`${API_BASE_URL}/integrations/${integrationId}?action=test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -301,6 +319,69 @@ export const apiService = {
     } catch (error) {
       console.error('Failed to test connection:', error);
       throw new Error('Failed to test connection');
+    }
+  },
+
+  async syncIntegration(userId: string, integrationId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/integrations/${integrationId}?action=sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      if (!response.ok) throw new Error('Failed to sync integration');
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to sync integration:', error);
+      throw new Error('Failed to sync integration');
+    }
+  },
+
+  async checkIntegrationHealth(userId: string, integrationId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/integrations/${integrationId}?action=health`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      if (!response.ok) throw new Error('Failed to check integration health');
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to check integration health:', error);
+      throw new Error('Failed to check integration health');
+    }
+  },
+
+  async connectIntegration(userId: string, integrationId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/integrations/${integrationId}?action=connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      if (!response.ok) throw new Error('Failed to connect integration');
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to connect integration:', error);
+      throw new Error('Failed to connect integration');
+    }
+  },
+
+  async disconnectIntegration(userId: string, integrationId: string) {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/integrations/${integrationId}?action=disconnect`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        }
+      );
+      if (!response.ok) throw new Error('Failed to disconnect integration');
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to disconnect integration:', error);
+      throw new Error('Failed to disconnect integration');
     }
   },
 

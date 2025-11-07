@@ -76,8 +76,39 @@ export const schedulePost = async (payload: SchedulePayload): Promise<void> => {
     payload: {},
   }));
 
-  // Store jobs in database using neonService
-  // Note: This would need to be implemented in neonService if needed
-  // For now, we'll just log the jobs
-  console.log('Scheduled jobs:', jobs);
+  // Store jobs in database
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('Missing DATABASE_URL environment variable');
+  }
+
+  const postgres = (await import('postgres')).default;
+  const pool = postgres(connectionString, {
+    ssl: { rejectUnauthorized: false },
+    max: 20,
+    idle_timeout: 30,
+    connect_timeout: 2,
+  });
+
+  try {
+    for (const job of jobs) {
+      await pool`
+        INSERT INTO post_jobs (
+          user_id, post_id, platform, run_at, status, attempts, max_attempts,
+          idempotency_key, content, media_urls, payload
+        ) VALUES (
+          ${job.user_id}, ${job.post_id}, ${job.platform}, ${job.run_at}, ${job.status},
+          ${job.attempts}, ${job.max_attempts}, ${job.idempotency_key}, ${job.content},
+          ${job.media_urls}, ${JSON.stringify(job.payload)}
+        )
+        ON CONFLICT (idempotency_key) DO NOTHING
+      `;
+    }
+    console.log(`✅ Scheduled ${jobs.length} post jobs`);
+  } catch (error) {
+    console.error('Error storing scheduled jobs:', error);
+    throw error;
+  } finally {
+    await pool.end();
+  }
 };

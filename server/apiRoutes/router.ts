@@ -16,6 +16,8 @@ import monitoringMetricsHandler from './monitoring/metrics';
 import monitoringUptimeHandler from './monitoring/uptime';
 import performanceDatabaseHandler from './performance/database';
 import performanceFrontendHandler from './performance/frontend';
+import integrationsHandler from './integrations/index';
+import integrationDetailHandler from './integrations/[id]';
 
 type HandlerFunction = (
   req: ReturnType<typeof adaptRequest>,
@@ -46,6 +48,8 @@ const routes: RouteDefinition[] = [
   route('monitoring/uptime', monitoringUptimeHandler),
   route('performance/database', performanceDatabaseHandler),
   route('performance/frontend', performanceFrontendHandler),
+  route('integrations', integrationsHandler),
+  route('integrations/:id', integrationDetailHandler),
 ];
 
 function route(path: string, handler: HandlerFunction): RouteDefinition {

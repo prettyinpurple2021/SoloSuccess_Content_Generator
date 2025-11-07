@@ -2182,6 +2182,7 @@ const App: React.FC = () => {
       <IntegrationManager
         isOpen={showIntegrationManager}
         onClose={() => setShowIntegrationManager(false)}
+        userId={user?.id}
       />
 
       {/* Image Style Manager Modal */}

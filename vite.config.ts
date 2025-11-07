@@ -2,6 +2,28 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// Plugin to exclude server-only modules from client bundle
+const excludeServerModules = () => {
+  return {
+    name: 'exclude-server-modules',
+    resolveId(id: string) {
+      // Exclude database services and postgres from client bundle
+      if (
+        id === 'postgres' ||
+        id.includes('services/neonService') ||
+        id.includes('services/databaseService') ||
+        id.includes('services/databaseConnectionManager') ||
+        id.includes('services/databasePerformanceService') ||
+        id.includes('services/databaseMigrationService') ||
+        id.includes('services/enhancedDatabaseService')
+      ) {
+        return { id, external: true };
+      }
+      return null;
+    },
+  };
+};
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
@@ -9,7 +31,7 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
     },
-    plugins: [react()],
+    plugins: [react(), excludeServerModules()],
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
@@ -23,9 +45,43 @@ export default defineConfig(({ mode }) => {
         },
       },
       rollupOptions: {
-        external: ['postgres', 'fs', 'os', 'net', 'tls', 'crypto', 'stream', 'perf_hooks'],
+        external: (id, importer) => {
+          // Externalize Node.js built-ins and server-only modules
+          if (
+            id === 'postgres' ||
+            ['fs', 'os', 'net', 'tls', 'crypto', 'stream', 'perf_hooks'].includes(id)
+          ) {
+            return true;
+          }
+          // Externalize database services that should only run server-side
+          // Check both the id and the importer path
+          const checkPath = id || importer || '';
+          if (
+            checkPath.includes('neonService') ||
+            checkPath.includes('databaseService') ||
+            checkPath.includes('databaseConnectionManager') ||
+            checkPath.includes('databasePerformanceService') ||
+            checkPath.includes('databaseMigrationService') ||
+            checkPath.includes('enhancedDatabaseService')
+          ) {
+            return true;
+          }
+          return false;
+        },
         output: {
           manualChunks: (id) => {
+            // Skip database services - they should be externalized
+            if (
+              id.includes('services/neonService') ||
+              id.includes('services/databaseService') ||
+              id.includes('services/databaseConnectionManager') ||
+              id.includes('services/databasePerformanceService') ||
+              id.includes('services/databaseMigrationService') ||
+              id.includes('services/enhancedDatabaseService')
+            ) {
+              return null; // Don't include in any chunk
+            }
+
             // Vendor chunks with better splitting
             if (id.includes('node_modules')) {
               if (id.includes('react') || id.includes('react-dom')) {
@@ -43,10 +99,9 @@ export default defineConfig(({ mode }) => {
               return 'vendor';
             }
 
-            // Performance and monitoring
+            // Performance and monitoring (client-side only)
             if (
               id.includes('frontendPerformanceService') ||
-              id.includes('databasePerformanceService') ||
               id.includes('performanceMonitoringService')
             ) {
               return 'performance';
@@ -70,15 +125,6 @@ export default defineConfig(({ mode }) => {
             // AI services
             if (id.includes('geminiService') || id.includes('aiLearningService')) {
               return 'ai-services';
-            }
-
-            // Database services
-            if (
-              id.includes('neonService') ||
-              id.includes('databaseService') ||
-              id.includes('databaseConnectionManager')
-            ) {
-              return 'database-services';
             }
 
             // Heavy components

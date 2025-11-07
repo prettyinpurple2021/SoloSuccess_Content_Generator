@@ -10,7 +10,7 @@ import {
   IntegrationType,
   SyncFrequency,
 } from '../types';
-// import { integrationService } from '../services/integrationService';
+import { apiService } from '../services/clientApiService';
 import IntegrationOverview from './integrations/IntegrationOverview';
 import AddIntegration from './integrations/AddIntegration';
 import ConfigureIntegration from './integrations/ConfigureIntegration';
@@ -20,6 +20,7 @@ interface IntegrationManagerProps {
   isOpen: boolean;
   onClose: () => void;
   onIntegrationUpdate?: (integration: Integration) => void;
+  userId?: string;
 }
 
 type ActiveTab = 'overview' | 'add' | 'configure' | 'monitor';
@@ -28,6 +29,7 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
   isOpen,
   onClose,
   onIntegrationUpdate,
+  userId,
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -38,17 +40,21 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Load integrations on component mount
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && userId) {
       loadIntegrations();
     }
-  }, [isOpen]);
+  }, [isOpen, userId]);
 
   // Load all integrations
   const loadIntegrations = async () => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
     try {
       setIsLoading(true);
       setError('');
-      const data = await integrationService.getIntegrations();
+      const data = await apiService.getIntegrations(userId);
       setIntegrations(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load integrations');
@@ -59,10 +65,14 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Create new integration
   const createIntegration = async (data: CreateIntegrationData) => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
     try {
       setIsLoading(true);
       setError('');
-      const newIntegration = await integrationService.createIntegration(data);
+      const newIntegration = await apiService.addIntegration(userId, data);
       setIntegrations((prev) => [...prev, newIntegration]);
       setSuccess('Integration created successfully');
       setActiveTab('overview');
@@ -79,10 +89,14 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Update existing integration
   const updateIntegration = async (id: string, updates: UpdateIntegrationData) => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
     try {
       setIsLoading(true);
       setError('');
-      const updatedIntegration = await integrationService.updateIntegration(id, updates);
+      const updatedIntegration = await apiService.updateIntegration(userId, id, updates);
       setIntegrations((prev) => prev.map((i) => (i.id === id ? updatedIntegration : i)));
       setSuccess('Integration updated successfully');
       onIntegrationUpdate?.(updatedIntegration);
@@ -98,6 +112,10 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Delete integration
   const deleteIntegration = async (id: string) => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
     if (
       !confirm('Are you sure you want to delete this integration? This action cannot be undone.')
     ) {
@@ -107,7 +125,7 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
     try {
       setIsLoading(true);
       setError('');
-      await integrationService.deleteIntegration(id);
+      await apiService.deleteIntegration(userId, id);
       setIntegrations((prev) => prev.filter((i) => i.id !== id));
       setSuccess('Integration deleted successfully');
 
@@ -122,10 +140,19 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Test connection
   const testConnection = async (id: string): Promise<ConnectionTestResult> => {
+    if (!userId) {
+      setError('User ID is required');
+      return {
+        success: false,
+        error: 'User ID is required',
+        responseTime: 0,
+        timestamp: new Date(),
+      };
+    }
     try {
       setIsLoading(true);
       setError('');
-      const result = await integrationService.testConnection(id);
+      const result = await apiService.testConnection(userId, id);
 
       if (result.success) {
         setSuccess('Connection test successful');
@@ -163,10 +190,24 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Sync integration
   const syncIntegration = async (id: string): Promise<SyncResult> => {
+    if (!userId) {
+      setError('User ID is required');
+      return {
+        integrationId: id,
+        success: false,
+        recordsProcessed: 0,
+        recordsCreated: 0,
+        recordsUpdated: 0,
+        recordsDeleted: 0,
+        errors: ['User ID is required'],
+        duration: 0,
+        timestamp: new Date(),
+      };
+    }
     try {
       setIsLoading(true);
       setError('');
-      const result = await integrationService.syncIntegration(id);
+      const result = await apiService.syncIntegration(userId, id);
 
       if (result.success) {
         setSuccess(`Sync completed: ${result.recordsProcessed} records processed`);
@@ -209,10 +250,14 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Health check
   const checkHealth = async (id: string): Promise<HealthCheckResult> => {
+    if (!userId) {
+      setError('User ID is required');
+      throw new Error('User ID is required');
+    }
     try {
       setIsLoading(true);
       setError('');
-      const result = await integrationService.checkIntegrationHealth(id);
+      const result = await apiService.checkIntegrationHealth(userId, id);
       setSuccess(`Health check completed: ${result.healthScore}% health score`);
       setTimeout(() => setSuccess(''), 3000);
       return result;
@@ -228,10 +273,15 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Connect integration
   const connectIntegration = async (id: string) => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
     try {
       setIsLoading(true);
       setError('');
-      const success = await integrationService.connectIntegration(id);
+      const result = await apiService.connectIntegration(userId, id);
+      const success = result.success;
 
       if (success) {
         setSuccess('Integration connected successfully');
@@ -259,10 +309,14 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Disconnect integration
   const disconnectIntegration = async (id: string) => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
     try {
       setIsLoading(true);
       setError('');
-      await integrationService.disconnectIntegration(id);
+      await apiService.disconnectIntegration(userId, id);
       setSuccess('Integration disconnected successfully');
 
       // Update integration status
@@ -283,11 +337,17 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Sync all integrations
   const syncAllIntegrations = async () => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
     try {
       setIsLoading(true);
       setError('');
-      const results = await integrationService.syncAll();
-      const successful = results.filter((r) => r.success).length;
+      const results = await Promise.allSettled(
+        integrations.map((integration) => apiService.syncIntegration(userId, integration.id))
+      );
+      const successful = results.filter((r) => r.status === 'fulfilled').length;
       const total = results.length;
       setSuccess(`Sync completed: ${successful}/${total} integrations synced successfully`);
       setTimeout(() => setSuccess(''), 5000);
@@ -301,11 +361,15 @@ const IntegrationManager: React.FC<IntegrationManagerProps> = ({
 
   // Check all health
   const checkAllHealth = async () => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
     try {
       setIsLoading(true);
       setError('');
       const healthChecks = await Promise.allSettled(
-        integrations.map((integration) => integrationService.checkIntegrationHealth(integration.id))
+        integrations.map((integration) => apiService.checkIntegrationHealth(userId, integration.id))
       );
       const successful = healthChecks.filter((h) => h.status === 'fulfilled').length;
       const total = healthChecks.length;
