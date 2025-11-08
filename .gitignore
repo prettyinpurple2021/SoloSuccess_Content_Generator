@@ -39,3 +39,8 @@ storybook-static
 
 # API credentials and setup files
 API_CREDENTIALS_SETUP.md
+
+# Render deployment files (not used - deploying to Vercel only)
+render.yaml
+render.yml
+.render/
