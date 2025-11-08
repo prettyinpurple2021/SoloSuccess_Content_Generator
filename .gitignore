@@ -18,6 +18,8 @@ dist-ssr
 .env.*.local
 .env.production
 
+# Vercel configuration (if it contains secrets, uncomment the line below)
+# vercel.json
 
 # Editor directories and files
 .vscode/*

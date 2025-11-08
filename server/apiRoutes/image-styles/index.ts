@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { db } from '../../../services/databaseService';
+import { apiErrorHandler } from '../../../services/apiErrorHandler';
+import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
 
 interface ApiRequest {
   method?: string;
   query: Record<string, string | string[] | undefined>;
   body?: unknown;
+  headers?: Record<string, string>;
 }
 
 interface ApiResponse {
@@ -14,31 +17,16 @@ interface ApiResponse {
   setHeader: (name: string, value: string) => void;
 }
 
-const createSchema = z.object({
-  userId: z.string().min(1),
-  name: z.string().min(1),
-  style_prompt: z.string().default(''),
-  color_palette: z.array(z.string()).default([]),
-  visual_elements: z.array(z.string()).default([]),
-  brand_assets: z
-    .array(
-      z.object({
-        type: z.string(),
-        data: z.string(),
-        usage: z.string(),
-      })
-    )
-    .default([]),
-});
-
 export default async function handler(req: ApiRequest, res: ApiResponse) {
+  // Add security headers
+  apiErrorHandler.addSecurityHeaders(res);
+
+  const context: ErrorContext = {
+    endpoint: '/api/image-styles',
+    operation: req.method?.toLowerCase(),
+  };
+
   try {
-    const id = req.query.id
-      ? z
-          .string()
-          .min(1)
-          .parse(req.query.id as string)
-      : undefined;
     if (req.method === 'GET') {
       const userId = z
         .string()
@@ -48,10 +36,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(200).json(styles);
     }
     // POST, PUT, and DELETE are stubs unless create/update functions are added to db
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return apiErrorHandler.handleMethodNotAllowed(req, res, ['GET']);
   } catch (error) {
-    console.error('IMAGE STYLES error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    errorHandler.handleApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+      res
+    );
   }
 }

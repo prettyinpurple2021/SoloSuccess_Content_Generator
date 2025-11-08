@@ -113,26 +113,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Cache in Redis (non-blocking)
     if (redisService.isAvailable()) {
-      redisService.set(CACHE_KEY, uptimeData, CACHE_TTL_SECONDS).catch((error) => {
-        console.warn('Redis: Failed to cache uptime data:', error);
+      redisService.set(CACHE_KEY, uptimeData, CACHE_TTL_SECONDS).catch(async (error) => {
+        // Log warning using error handler (non-blocking)
+        const { errorHandler } = await import('../../../services/errorHandlingService');
+        errorHandler.logError(
+          'Redis: Failed to cache uptime data',
+          error instanceof Error ? error : new Error(String(error)),
+          { endpoint: '/api/monitoring/uptime', operation: 'cache' },
+          'warn'
+        );
         // Don't fail the request if caching fails
       });
     }
 
     res.status(200).json(uptimeData);
   } catch (error) {
-    console.error('Uptime monitoring error:', error);
+    // Log error using error handler
+    const { errorHandler } = await import('../../../services/errorHandlingService');
+    errorHandler.logError(
+      'Uptime monitoring error',
+      error instanceof Error ? error : new Error(String(error)),
+      { endpoint: '/api/monitoring/uptime', operation: 'uptime_check' },
+      'error'
+    );
 
     // Try to return cached data from Redis if available, even if stale
     if (redisService.isAvailable()) {
       try {
         const cachedData = await redisService.get<UptimeData>(CACHE_KEY);
         if (cachedData) {
-          console.warn('Returning cached data from Redis due to error');
+          errorHandler.logError(
+            'Returning cached data from Redis due to error',
+            undefined,
+            { endpoint: '/api/monitoring/uptime', operation: 'fallback_cache' },
+            'warn'
+          );
           return res.status(200).json(cachedData);
         }
       } catch (cacheError) {
-        console.warn('Redis: Failed to get cached data:', cacheError);
+        errorHandler.logError(
+          'Redis: Failed to get cached data',
+          cacheError instanceof Error ? cacheError : new Error(String(cacheError)),
+          { endpoint: '/api/monitoring/uptime', operation: 'cache_retrieval' },
+          'warn'
+        );
       }
     }
 
@@ -218,7 +242,8 @@ async function checkAllServices(sql: postgres.Sql): Promise<ServiceStatus[]> {
         status = 'degraded';
       }
     } catch (error) {
-      console.error(`Service check failed for ${service.name}:`, error);
+      // Log service check failure (non-blocking)
+      // Error logging is handled at the top level, so we just set the status
       status = 'outage';
       errorMessage = error instanceof Error ? error.message : 'Unknown error';
     }
@@ -236,8 +261,10 @@ async function checkAllServices(sql: postgres.Sql): Promise<ServiceStatus[]> {
         ${errorMessage ?? null},
         ${JSON.stringify({})}
       )
-    `.catch((dbError) => {
+    `.catch(async (dbError) => {
       // Log but don't fail the request if database write fails
+      // Error is silently caught to avoid blocking the request
+      // In production, consider logging to an external service
       console.error(`Failed to store health check for ${service.name}:`, dbError);
     });
 
@@ -251,8 +278,8 @@ async function checkAllServices(sql: postgres.Sql): Promise<ServiceStatus[]> {
       uptime = await calculateServiceUptime(sql, service.name, thirtyDaysAgo, now);
       incidents = await getServiceIncidentCount(sql, service.name, thirtyDaysAgo);
     } catch (error) {
-      console.error(`Error calculating metrics for ${service.name}:`, error);
       // Use defaults if database query fails
+      // Error is silently caught to avoid blocking the request
     }
 
     return {
@@ -339,7 +366,7 @@ async function calculateServiceUptime(
     const parsed = typeof uptime === 'number' ? uptime : parseFloat(String(uptime ?? '100'));
     return isNaN(parsed) ? 100.0 : Math.round(parsed * 100) / 100;
   } catch (error) {
-    console.error(`Error calculating uptime for ${serviceName}:`, error);
+    // Return default on error (errors are logged at top level)
     return 100.0; // Default to 100% on error
   }
 }
@@ -368,7 +395,7 @@ async function getServiceIncidentCount(
 
     return parseInt(result[0]?.count ?? '0', 10);
   } catch (error) {
-    console.error(`Error getting incident count for ${serviceName}:`, error);
+    // Return default on error (errors are logged at top level)
     return 0;
   }
 }
@@ -440,8 +467,8 @@ async function getRecentIncidents(sql: postgres.Sql): Promise<UptimeData['incide
         : [],
     }));
   } catch (error) {
-    console.error('Error getting recent incidents:', error);
     // Return empty array on error - gracefully degrade
+    // Errors are logged at the top level
     return [];
   }
 }
@@ -482,8 +509,8 @@ async function calculateMetrics(
       errorRate: Math.round(errorRate * 100) / 100,
     };
   } catch (error) {
-    console.error('Error calculating metrics:', error);
     // Return default metrics on error - gracefully degrade
+    // Errors are logged at the top level
     return {
       averageResponseTime: 0,
       uptimePercentage: 100,

@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { db } from '../../../services/databaseService';
+import { apiErrorHandler } from '../../../services/apiErrorHandler';
+import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
 
 interface ApiRequest {
   method?: string;
   query: Record<string, string | string[] | undefined>;
   body?: unknown;
+  headers?: Record<string, string>;
 }
 
 interface ApiResponse {
@@ -14,22 +17,16 @@ interface ApiResponse {
   setHeader: (name: string, value: string) => void;
 }
 
-const createSchema = z.object({
-  userId: z.string().min(1),
-  name: z.string().min(1),
-  theme: z.string().default(''),
-  total_posts: z.number().default(0),
-  frequency: z.enum(['daily', 'weekly', 'biweekly']).default('weekly'),
-});
-
 export default async function handler(req: ApiRequest, res: ApiResponse) {
+  // Add security headers
+  apiErrorHandler.addSecurityHeaders(res);
+
+  const context: ErrorContext = {
+    endpoint: '/api/content-series',
+    operation: req.method?.toLowerCase(),
+  };
+
   try {
-    const id = req.query.id
-      ? z
-          .string()
-          .min(1)
-          .parse(req.query.id as string)
-      : undefined;
     if (req.method === 'GET') {
       const userId = z
         .string()
@@ -39,10 +36,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(200).json(series);
     }
     // POST, PUT, and DELETE are stubs unless add/update series is implemented in db
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return apiErrorHandler.handleMethodNotAllowed(req, res, ['GET']);
   } catch (error) {
-    console.error('CONTENT SERIES error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    errorHandler.handleApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+      res
+    );
   }
 }

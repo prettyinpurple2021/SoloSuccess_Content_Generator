@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { productionMonitoringService } from '../../../services/productionMonitoringService';
+import { apiErrorHandler } from '../../../services/apiErrorHandler';
+import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
 
 /**
  * Monitoring Dashboard API
@@ -8,11 +10,17 @@ import { productionMonitoringService } from '../../../services/productionMonitor
  */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Add security headers
+  apiErrorHandler.addSecurityHeaders(res);
+
+  const context: ErrorContext = {
+    endpoint: '/api/monitoring/dashboard',
+    operation: req.method?.toLowerCase(),
+  };
+
   try {
     // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    apiErrorHandler.addCorsHeaders(res);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
     // Handle preflight requests
@@ -30,14 +38,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'DELETE':
         return handleDeleteAlert(req, res);
       default:
-        return res.status(405).json({ error: 'Method not allowed' });
+        return apiErrorHandler.handleMethodNotAllowed(req, res, ['GET', 'POST', 'PUT', 'DELETE']);
     }
   } catch (error) {
-    console.error('Monitoring dashboard error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    errorHandler.handleApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+      res
+    );
   }
 }
 

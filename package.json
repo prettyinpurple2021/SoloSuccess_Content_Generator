@@ -28,7 +28,8 @@
     "validate:workflow": "node scripts/end-to-end-workflow-test.js",
     "validate:performance": "node scripts/performance-validation.js",
     "validate:security": "node scripts/security-validation.js",
-    "validate:readiness": "node scripts/production-readiness-validation.js"
+    "validate:readiness": "node scripts/production-readiness-validation.js",
+    "scan:secrets": "echo 'Running secret scan...' && git diff --cached --name-only | grep -E '\\.(ts|tsx|js|jsx|json|env|md)$' | xargs grep -l -E '(api[_-]?key|secret[_-]?key|password|token|credential)\\s*[:=]\\s*[\"\\']?[a-zA-Z0-9]{20,}' 2>/dev/null || echo '✅ No secrets detected'"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

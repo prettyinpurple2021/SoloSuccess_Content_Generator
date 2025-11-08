@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { query } from '../../../services/databaseService';
+import { apiErrorHandler } from '../../../services/apiErrorHandler';
+import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
 
 interface ApiRequest {
   method?: string;
   query: Record<string, string | string[] | undefined>;
   body?: unknown;
+  headers?: Record<string, string>;
 }
 
 interface ApiResponse {
@@ -15,6 +18,14 @@ interface ApiResponse {
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
+  // Add security headers
+  apiErrorHandler.addSecurityHeaders(res);
+
+  const context: ErrorContext = {
+    endpoint: '/api/templates/:id',
+    operation: req.method?.toLowerCase(),
+  };
+
   try {
     const id = z
       .string()
@@ -72,10 +83,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(204).end();
     }
 
-    res.setHeader('Allow', 'PUT, DELETE');
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return apiErrorHandler.handleMethodNotAllowed(req, res, ['PUT', 'DELETE']);
   } catch (error) {
-    console.error('TEMPLATES [id] error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    errorHandler.handleApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+      res
+    );
   }
 }

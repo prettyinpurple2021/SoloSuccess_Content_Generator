@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { productionMonitoringService } from '../../../services/productionMonitoringService';
+import { apiErrorHandler } from '../../../services/apiErrorHandler';
+import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
 
 /**
  * Metrics Collection API
@@ -8,18 +10,24 @@ import { productionMonitoringService } from '../../../services/productionMonitor
  */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Add security headers
+  apiErrorHandler.addSecurityHeaders(res);
+
+  const context: ErrorContext = {
+    endpoint: '/api/monitoring/metrics',
+    operation: req.method?.toLowerCase(),
+  };
+
   try {
     // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    apiErrorHandler.addCorsHeaders(res);
 
     if (req.method === 'OPTIONS') {
       return res.status(200).end();
     }
 
     if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
+      return apiErrorHandler.handleMethodNotAllowed(req, res, ['POST']);
     }
 
     const { type, data } = req.body;
@@ -56,11 +64,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json({ success: true, message: 'Metrics recorded successfully' });
   } catch (error) {
-    console.error('Metrics collection error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    errorHandler.handleApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+      res
+    );
   }
 }
 

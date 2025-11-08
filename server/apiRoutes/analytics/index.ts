@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { db } from '../../../services/databaseService';
+import { apiErrorHandler } from '../../../services/apiErrorHandler';
+import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
 
 interface ApiRequest {
   method?: string;
   query: Record<string, string | string[] | undefined>;
   body?: unknown;
+  headers?: Record<string, string>;
 }
 
 interface ApiResponse {
@@ -20,18 +23,28 @@ const querySchema = z.object({
 });
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
+  // Add security headers
+  apiErrorHandler.addSecurityHeaders(res);
+
+  const context: ErrorContext = {
+    endpoint: '/api/analytics',
+    operation: req.method?.toLowerCase(),
+  };
+
   try {
     if (req.method === 'GET') {
-      const q = querySchema.parse(req.query);
+      const q = apiErrorHandler.validateQuery(req.query, querySchema, context);
       const end = q.end ? new Date(q.end) : new Date();
       const start = q.start ? new Date(q.start) : new Date(new Date().getTime() - 30 * 86400000);
       const data = await db.getAnalyticsByTimeframe(start, end);
       return res.status(200).json(data);
     }
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return apiErrorHandler.handleMethodNotAllowed(req, res, ['GET']);
   } catch (error) {
-    console.error('ANALYTICS error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    errorHandler.handleApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+      res
+    );
   }
 }

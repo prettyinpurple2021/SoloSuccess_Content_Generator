@@ -111,7 +111,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     res.status(statusCode).json(response);
   } catch (error) {
-    console.error('Health check error:', error);
+    // Log error using error handler instead of console
+    const { errorHandler } = await import('../../../services/errorHandlingService');
+    errorHandler.logError(
+      'Health check error',
+      error instanceof Error ? error : new Error(String(error)),
+      { endpoint: '/api/health', operation: 'health_check' },
+      'error'
+    );
 
     const errorResponse: HealthResponse = {
       status: 'unhealthy',
@@ -145,7 +152,7 @@ async function checkDatabaseHealth(): Promise<HealthCheck> {
     // Import database service dynamically to avoid issues
     const neonService = await import('../../../services/neonService');
 
-    const connectionTest = await neonService.testConnection();
+    await neonService.testConnection();
 
     return {
       service: 'database',
