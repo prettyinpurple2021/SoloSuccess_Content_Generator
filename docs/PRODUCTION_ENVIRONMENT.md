@@ -42,29 +42,38 @@ Production deployment includes comprehensive security headers:
 
 ### Required Production Variables
 
+⚠️ **SECURITY WARNING:** Never commit real credentials to version control. Always use Vercel Environment Variables for production secrets.
+
 ```bash
 # Authentication (Stack Auth)
-VITE_STACK_PROJECT_ID=d36a87a3-7f57-44a0-9c1b-9c5c07c93677
-VITE_STACK_PUBLISHABLE_CLIENT_KEY=pck_hjbjmtkkfb5n0zxhkgwz5swftj4bhps2bgdygt4rb8xsg
-STACK_SECRET_SERVER_KEY=ssk_j6xj3ge4smta510tadxgetkwecaf99x7db2qdkcgzxc30
+# Get these from your Stack Auth dashboard: https://app.stack-auth.com/
+VITE_STACK_PROJECT_ID=your_stack_project_id_here
+VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_stack_publishable_client_key_here
+STACK_SECRET_SERVER_KEY=your_stack_secret_server_key_here
 
 # Database (Neon PostgreSQL)
-DATABASE_URL=postgresql://neondb_owner:npg_Z4Ti5vRBVdKy@ep-damp-mud-a4mygxyl.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+# Get this from your Neon dashboard: https://console.neon.tech/
+DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
 
 # AI Services (Google Gemini)
-GEMINI_API_KEY=AIzaSyAeVGu8ypyiePvd0TGMkCMFy_oo_jv4Pk8
+# Get from Google AI Studio: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
 
 # Google Services
-GOOGLE_CLIENT_ID=534250069964-mgu5agco450c25n6vs5ipqdt4q7hmicn.apps.googleusercontent.com
-GOOGLE_API_KEY=AIzaSyBLz7tFt3QeJH11SMxi3GNOBRKBX3yEBNc
-GOOGLE_BLOGGER_API_KEY=AIzaSyBI19127AZQ7Ac4q2QHk07yqHuNrJIRBCo
+# Get from Google Cloud Console: https://console.cloud.google.com/
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_API_KEY=your_google_api_key_here
+GOOGLE_BLOGGER_API_KEY=your_google_blogger_api_key_here
 
 # Integration Services
-INTEGRATION_ENCRYPTION_SECRET=8fc98f42ebb9812919ce2b58ee1d53f1765c0ac694183054fa538bca1ba1707d
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+INTEGRATION_ENCRYPTION_SECRET=your_64_character_hex_encryption_secret_here
 INTEGRATION_RATE_LIMIT_DEFAULT=100
 INTEGRATION_MONITORING_ENABLED=true
 INTEGRATION_LOG_LEVEL=info
 ```
+
+**Important:** Set these environment variables in the Vercel Dashboard (Settings → Environment Variables) rather than in `vercel.json`. The `vercel.json` file should never contain secrets.
 
 ### Optional: Additional AI Services
 
