@@ -7,17 +7,77 @@ const excludeServerModules = () => {
   return {
     name: 'exclude-server-modules',
     resolveId(id: string) {
-      // Exclude database services and postgres from client bundle
-      if (
+      // Create virtual stubs for server-only modules to prevent client-side imports
+      // Check for both relative paths and absolute URL paths
+      const isServerOnlyModule =
         id === 'postgres' ||
         id.includes('services/neonService') ||
         id.includes('services/databaseService') ||
         id.includes('services/databaseConnectionManager') ||
         id.includes('services/databasePerformanceService') ||
         id.includes('services/databaseMigrationService') ||
-        id.includes('services/enhancedDatabaseService')
-      ) {
-        return { id, external: true };
+        id.includes('services/enhancedDatabaseService') ||
+        id.includes('services/redisService') ||
+        id.startsWith('/services/databaseService') ||
+        id.startsWith('/services/neonService') ||
+        id.startsWith('/services/redisService');
+
+      if (isServerOnlyModule) {
+        // Return a virtual module that throws an error if imported client-side
+        return {
+          id: `\0virtual:${id}`,
+          moduleSideEffects: false,
+        };
+      }
+      return null;
+    },
+    load(id: string) {
+      // Provide stub implementations for server-only modules
+      if (id.startsWith('\0virtual:')) {
+        const originalId = id.replace('\0virtual:', '');
+        if (
+          originalId === 'postgres' ||
+          originalId.includes('services/neonService') ||
+          originalId.includes('services/databaseService') ||
+          originalId.includes('services/databaseConnectionManager') ||
+          originalId.includes('services/databasePerformanceService') ||
+          originalId.includes('services/databaseMigrationService') ||
+          originalId.includes('services/enhancedDatabaseService') ||
+          originalId.includes('services/redisService') ||
+          originalId.startsWith('/services/databaseService') ||
+          originalId.startsWith('/services/neonService') ||
+          originalId.startsWith('/services/redisService')
+        ) {
+          // Return a stub that exports empty objects/functions to prevent runtime errors
+          // This allows the code to compile but will fail gracefully if actually called
+          return `
+            // Server-only module stub - this should never be called in client-side code
+            const error = () => {
+              throw new Error(
+                '${originalId} is a server-only module and cannot be used in client-side code. ' +
+                'Please use the API endpoints instead (e.g., /api/*) or clientApiService.'
+              );
+            };
+            
+            // Export common patterns that might be imported
+            export const db = new Proxy({}, {
+              get: () => error,
+              set: () => { throw error(); },
+            });
+            
+            export const query = error;
+            export const auth = { getUser: error, isAuthenticated: error };
+            export const pool = error;
+            export const databaseService = error;
+            export const enhancedDb = error;
+            export const enhancedDatabaseService = error;
+            export const redisService = error;
+            export const RedisService = error;
+            
+            // Default export
+            export default error;
+          `;
+        }
       }
       return null;
     },
@@ -46,38 +106,41 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         external: (id, importer) => {
-          // Externalize Node.js built-ins and server-only modules
+          // Only externalize Node.js built-ins - server-only modules are handled by the plugin
           if (
-            id === 'postgres' ||
-            ['fs', 'os', 'net', 'tls', 'crypto', 'stream', 'perf_hooks'].includes(id)
+            [
+              'fs',
+              'os',
+              'net',
+              'tls',
+              'crypto',
+              'stream',
+              'perf_hooks',
+              'path',
+              'url',
+              'http',
+              'https',
+            ].includes(id)
           ) {
             return true;
           }
-          // Externalize database services that should only run server-side
-          // Check both the id and the importer path
-          const checkPath = id || importer || '';
-          if (
-            checkPath.includes('neonService') ||
-            checkPath.includes('databaseService') ||
-            checkPath.includes('databaseConnectionManager') ||
-            checkPath.includes('databasePerformanceService') ||
-            checkPath.includes('databaseMigrationService') ||
-            checkPath.includes('enhancedDatabaseService')
-          ) {
-            return true;
-          }
+          // Don't externalize postgres or database services - let the plugin handle them with virtual stubs
           return false;
         },
         output: {
           manualChunks: (id) => {
-            // Skip database services - they should be externalized
+            // Skip database services and Redis - they should be externalized
             if (
               id.includes('services/neonService') ||
               id.includes('services/databaseService') ||
               id.includes('services/databaseConnectionManager') ||
               id.includes('services/databasePerformanceService') ||
               id.includes('services/databaseMigrationService') ||
-              id.includes('services/enhancedDatabaseService')
+              id.includes('services/enhancedDatabaseService') ||
+              id.includes('services/redisService') ||
+              id.startsWith('/services/databaseService') ||
+              id.startsWith('/services/neonService') ||
+              id.startsWith('/services/redisService')
             ) {
               return null; // Don't include in any chunk
             }
