@@ -199,7 +199,15 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
     },
-    plugins: [react(), excludeServerModules()],
+    plugins: [
+      // React plugin must run first to properly handle JSX and React imports
+      react({
+        jsxRuntime: 'automatic',
+        jsxImportSource: 'react',
+      }),
+      // Our custom plugin runs after to handle server-only modules
+      excludeServerModules(),
+    ],
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
@@ -208,8 +216,14 @@ export default defineConfig(({ mode }) => {
       minify: 'terser',
       terserOptions: {
         compress: {
-          drop_console: true,
+          drop_console: false, // Keep console for debugging - we can enable in production later
           drop_debugger: true,
+          // Preserve React internal properties
+          keep_classnames: true,
+          keep_fnames: true,
+        },
+        format: {
+          comments: false,
         },
       },
       rollupOptions: {
@@ -238,7 +252,9 @@ export default defineConfig(({ mode }) => {
 
             // Vendor chunks with better splitting
             if (id.includes('node_modules')) {
-              if (id.includes('react') || id.includes('react-dom')) {
+              // Keep React and ReactDOM in the same chunk to ensure proper initialization
+              // This prevents race conditions where ReactDOM loads before React
+              if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
                 return 'vendor-react';
               }
               if (id.includes('lucide-react') || id.includes('@stackframe/stack')) {
