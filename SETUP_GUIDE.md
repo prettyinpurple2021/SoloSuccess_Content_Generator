@@ -194,7 +194,7 @@ const tabs = [
 **"No valid integrations found"**
 
 - Make sure you've added integrations for selected platforms
-- Verify credentials are correct in Supabase
+- Verify credentials are correct in Stack Auth and Neon database
 
 **"Validation failed"**
 

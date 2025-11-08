@@ -26,9 +26,9 @@ This document outlines the production-quality implementation of Phase 1 of the I
    - Automated triggers and helper functions
    - Real-time subscriptions support
 
-4. **Supabase Service Extensions** (`services/supabaseService.ts`)
+4. **Database Service** (`services/databaseService.ts` and `services/neonService.ts`)
    - Full CRUD operations for integrations
-   - Real-time subscriptions for live updates
+   - Database connection management via Neon PostgreSQL
    - Data transformation functions
    - Error handling and validation
 

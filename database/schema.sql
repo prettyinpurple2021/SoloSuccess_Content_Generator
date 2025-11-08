@@ -1,10 +1,13 @@
 -- Neon PostgreSQL Database Schema for Soloboss AI Content Factory
 -- Run this in your Neon SQL Editor
+-- 
+-- NOTE: This file is for reference only. For Neon + Stack Auth, use database/neon-complete-migration.sql instead.
+-- This file still contains Supabase-specific syntax (auth.users, auth.uid()) that won't work with Neon.
 
 -- Create posts table
 CREATE TABLE IF NOT EXISTS posts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL, -- Changed from UUID REFERENCES auth.users(id) for Neon compatibility
   topic TEXT NOT NULL,
   idea TEXT NOT NULL,
   content TEXT NOT NULL,
@@ -26,12 +29,11 @@ CREATE TABLE IF NOT EXISTS posts (
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 
 -- Create policy for users to access their own posts
+-- NOTE: With Neon + Stack Auth, RLS policies should be handled at the application level
+-- or use session variables. This policy may not work correctly with Stack Auth.
+-- Consider disabling RLS and handling access control in your application code.
 CREATE POLICY "Users can access own posts" ON posts
-  FOR ALL USING (auth.uid() = user_id);
-
--- Create policy for anonymous users (if using anonymous auth)
-CREATE POLICY "Anonymous users can access own posts" ON posts
-  FOR ALL USING (auth.uid() = user_id);
+  FOR ALL USING (user_id = current_setting('app.user_id', true));
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS posts_user_id_idx ON posts(user_id);

@@ -1,4 +1,9 @@
 -- Complete Database Migration for Soloboss AI Content Planner
+-- 
+-- ⚠️ WARNING: This file contains Supabase-specific syntax (auth.users, auth.uid())
+-- For Neon + Stack Auth, use database/neon-complete-migration.sql instead!
+-- 
+-- This file is kept for reference only and may not work correctly with Neon.
 -- Run this entire script in your Neon SQL Editor
 -- This will create all necessary tables for the application to work properly
 
