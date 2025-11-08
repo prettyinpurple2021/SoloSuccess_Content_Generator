@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Trophy, 
-  Star, 
-  Zap, 
-  Target, 
-  TrendingUp, 
-  Calendar, 
-  Users, 
+import {
+  Trophy,
+  Star,
+  Zap,
+  Target,
+  TrendingUp,
+  Calendar,
+  Users,
   Award,
   Crown,
   Flame,
   Gift,
-  Medal
+  Medal,
 } from 'lucide-react';
-import { HoloCard, HoloButton, HoloText, SparkleEffect, FloatingSkull, RainbowProgress } from './HolographicTheme';
+import {
+  HoloCard,
+  HoloButton,
+  HoloText,
+  SparkleEffect,
+  FloatingSkull,
+  RainbowProgress,
+} from './HolographicTheme';
 
 interface Achievement {
   id: string;
@@ -56,7 +63,7 @@ interface GamificationSystemProps {
 export const GamificationSystem: React.FC<GamificationSystemProps> = ({
   userId,
   onAchievementUnlocked,
-  className = ''
+  className = '',
 }) => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -76,7 +83,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       points: 50,
       progress: 0,
       maxProgress: 1,
-      unlocked: false
+      unlocked: false,
     },
     {
       id: 'content_creator',
@@ -88,7 +95,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       points: 200,
       progress: 0,
       maxProgress: 10,
-      unlocked: false
+      unlocked: false,
     },
     {
       id: 'prolific_writer',
@@ -101,7 +108,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       progress: 0,
       maxProgress: 50,
       unlocked: false,
-      reward: { type: 'title', value: 'Content Master' }
+      reward: { type: 'title', value: 'Content Master' },
     },
     {
       id: 'content_legend',
@@ -114,7 +121,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       progress: 0,
       maxProgress: 100,
       unlocked: false,
-      reward: { type: 'theme', value: 'legendary_sparkles' }
+      reward: { type: 'theme', value: 'legendary_sparkles' },
     },
 
     // Engagement Achievements
@@ -128,7 +135,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       points: 750,
       progress: 0,
       maxProgress: 1000,
-      unlocked: false
+      unlocked: false,
     },
     {
       id: 'engagement_master',
@@ -140,7 +147,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       points: 600,
       progress: 0,
       maxProgress: 10000,
-      unlocked: false
+      unlocked: false,
     },
 
     // Consistency Achievements
@@ -154,7 +161,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       points: 300,
       progress: 0,
       maxProgress: 7,
-      unlocked: false
+      unlocked: false,
     },
     {
       id: 'streak_master',
@@ -167,7 +174,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       progress: 0,
       maxProgress: 30,
       unlocked: false,
-      reward: { type: 'feature', value: 'streak_multiplier' }
+      reward: { type: 'feature', value: 'streak_multiplier' },
     },
 
     // Special Achievements
@@ -182,7 +189,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       progress: 0,
       maxProgress: 30,
       unlocked: false,
-      reward: { type: 'badge', value: 'skull_master' }
+      reward: { type: 'badge', value: 'skull_master' },
     },
     {
       id: 'voice_commander',
@@ -194,8 +201,8 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       points: 350,
       progress: 0,
       maxProgress: 50,
-      unlocked: false
-    }
+      unlocked: false,
+    },
   ];
 
   useEffect(() => {
@@ -209,10 +216,10 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
       const stats = JSON.parse(savedStats);
       setUserStats({
         ...stats,
-        achievements: achievements.map(achievement => {
+        achievements: achievements.map((achievement) => {
           const saved = stats.achievements?.find((a: Achievement) => a.id === achievement.id);
           return saved ? { ...achievement, ...saved } : achievement;
-        })
+        }),
       });
     } else {
       // Initialize new user
@@ -227,7 +234,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
         achievements,
         badges: [],
         title: 'Content Newbie',
-        joinedDate: new Date()
+        joinedDate: new Date(),
       });
     }
   };
@@ -239,12 +246,12 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
   const checkAchievements = (stats: UserStats) => {
     const newUnlocks: Achievement[] = [];
 
-    stats.achievements.forEach(achievement => {
+    stats.achievements.forEach((achievement) => {
       if (!achievement.unlocked && achievement.progress >= achievement.maxProgress) {
         achievement.unlocked = true;
         achievement.unlockedAt = new Date();
         stats.totalPoints += achievement.points;
-        
+
         // Add reward
         if (achievement.reward) {
           switch (achievement.reward.type) {
@@ -266,11 +273,11 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
     const newLevel = Math.floor(stats.totalPoints / 100) + 1;
     if (newLevel > stats.level) {
       stats.level = newLevel;
-      stats.pointsToNextLevel = (newLevel * 100) - stats.totalPoints;
+      stats.pointsToNextLevel = newLevel * 100 - stats.totalPoints;
       setShowLevelUp(true);
       setTimeout(() => setShowLevelUp(false), 3000);
     } else {
-      stats.pointsToNextLevel = (stats.level * 100) - stats.totalPoints;
+      stats.pointsToNextLevel = stats.level * 100 - stats.totalPoints;
     }
 
     if (newUnlocks.length > 0) {
@@ -285,8 +292,8 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
     if (!userStats) return;
 
     const updatedStats = { ...userStats };
-    const achievement = updatedStats.achievements.find(a => a.id === achievementId);
-    
+    const achievement = updatedStats.achievements.find((a) => a.id === achievementId);
+
     if (achievement && !achievement.unlocked) {
       achievement.progress = Math.min(achievement.maxProgress, achievement.progress + progress);
     }
@@ -299,7 +306,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
   // Public methods for tracking user actions
   const trackPostCreated = () => {
     if (!userStats) return;
-    
+
     const updatedStats = { ...userStats };
     updatedStats.totalPosts += 1;
     updatedStats.currentStreak += 1;
@@ -316,7 +323,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
 
   const trackEngagement = (engagementCount: number) => {
     if (!userStats) return;
-    
+
     const updatedStats = { ...userStats };
     updatedStats.totalEngagement += engagementCount;
 
@@ -339,20 +346,29 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
 
   const getRarityColor = (rarity: Achievement['rarity']) => {
     switch (rarity) {
-      case 'common': return 'text-gray-400 border-gray-400';
-      case 'rare': return 'text-blue-400 border-blue-400';
-      case 'epic': return 'text-purple-400 border-purple-400';
-      case 'legendary': return 'text-yellow-400 border-yellow-400';
-      default: return 'text-gray-400 border-gray-400';
+      case 'common':
+        return 'text-gray-400 border-gray-400';
+      case 'rare':
+        return 'text-blue-400 border-blue-400';
+      case 'epic':
+        return 'text-purple-400 border-purple-400';
+      case 'legendary':
+        return 'text-yellow-400 border-yellow-400';
+      default:
+        return 'text-gray-400 border-gray-400';
     }
   };
 
   const getRarityGlow = (rarity: Achievement['rarity']) => {
     switch (rarity) {
-      case 'rare': return 'shadow-blue-400/50';
-      case 'epic': return 'shadow-purple-400/50';
-      case 'legendary': return 'shadow-yellow-400/50';
-      default: return '';
+      case 'rare':
+        return 'shadow-blue-400/50';
+      case 'epic':
+        return 'shadow-purple-400/50';
+      case 'legendary':
+        return 'shadow-yellow-400/50';
+      default:
+        return '';
     }
   };
 
@@ -368,9 +384,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
             <HoloText variant="title" glow className="mb-4">
               🎉 LEVEL UP! 🎉
             </HoloText>
-            <HoloText variant="subtitle">
-              You reached Level {userStats.level}!
-            </HoloText>
+            <HoloText variant="subtitle">You reached Level {userStats.level}!</HoloText>
             <FloatingSkull className="mt-4" size="large" />
           </HoloCard>
         </div>
@@ -383,21 +397,21 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
           className="fixed top-20 right-4 z-40 animate-slide-in-right"
           style={{ animationDelay: `${index * 0.5}s` }}
         >
-          <HoloCard className={`p-4 border-2 ${getRarityColor(achievement.rarity)} ${getRarityGlow(achievement.rarity)}`}>
+          <HoloCard
+            className={`p-4 border-2 ${getRarityColor(achievement.rarity)} ${getRarityGlow(achievement.rarity)}`}
+          >
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 ${getRarityColor(achievement.rarity)}`}>
+              <div
+                className={`p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 ${getRarityColor(achievement.rarity)}`}
+              >
                 {achievement.icon}
               </div>
               <div>
                 <HoloText variant="subtitle" glow>
                   Achievement Unlocked! ✨
                 </HoloText>
-                <HoloText className="text-sm">
-                  {achievement.title}
-                </HoloText>
-                <HoloText className="text-xs text-white/70">
-                  +{achievement.points} points
-                </HoloText>
+                <HoloText className="text-sm">{achievement.title}</HoloText>
+                <HoloText className="text-xs text-white/70">+{achievement.points} points</HoloText>
               </div>
             </div>
             <SparkleEffect count={8} size="small" />
@@ -424,7 +438,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
               </HoloText>
             </div>
           </div>
-          
+
           <HoloButton
             onClick={() => setShowAchievements(!showAchievements)}
             className="flex items-center gap-2"
@@ -440,30 +454,32 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
             <HoloText className="text-sm">Progress to Level {userStats.level + 1}</HoloText>
             <HoloText className="text-sm">{userStats.pointsToNextLevel} points to go</HoloText>
           </div>
-          <RainbowProgress 
-            value={userStats.totalPoints % 100} 
-            max={100} 
-            showSparkles 
-          />
+          <RainbowProgress value={userStats.totalPoints % 100} max={100} showSparkles />
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-3 bg-glass-pink rounded-lg">
-            <HoloText variant="subtitle" glow>{userStats.totalPosts}</HoloText>
+            <HoloText variant="subtitle" glow>
+              {userStats.totalPosts}
+            </HoloText>
             <HoloText className="text-xs">Posts Created</HoloText>
           </div>
           <div className="text-center p-3 bg-glass-purple rounded-lg">
-            <HoloText variant="subtitle" glow>{userStats.currentStreak}</HoloText>
+            <HoloText variant="subtitle" glow>
+              {userStats.currentStreak}
+            </HoloText>
             <HoloText className="text-xs">Current Streak</HoloText>
           </div>
           <div className="text-center p-3 bg-glass-cyan rounded-lg">
-            <HoloText variant="subtitle" glow>{userStats.totalEngagement}</HoloText>
+            <HoloText variant="subtitle" glow>
+              {userStats.totalEngagement}
+            </HoloText>
             <HoloText className="text-xs">Total Engagement</HoloText>
           </div>
           <div className="text-center p-3 bg-glass-purple rounded-lg">
             <HoloText variant="subtitle" glow>
-              {userStats.achievements.filter(a => a.unlocked).length}
+              {userStats.achievements.filter((a) => a.unlocked).length}
             </HoloText>
             <HoloText className="text-xs">Achievements</HoloText>
           </div>
@@ -478,7 +494,7 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
               🏆 Achievements
             </HoloText>
             <div className="flex gap-2">
-              {['all', 'content', 'engagement', 'consistency', 'special'].map(category => (
+              {['all', 'content', 'engagement', 'consistency', 'special'].map((category) => (
                 <button
                   key={category}
                   className="px-3 py-1 text-xs rounded-full bg-white/10 hover:bg-white/20 transition-colors capitalize"
@@ -490,37 +506,37 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userStats.achievements.map(achievement => (
+            {userStats.achievements.map((achievement) => (
               <div
                 key={achievement.id}
                 className={`p-4 rounded-lg border-2 transition-all duration-300 ${
-                  achievement.unlocked 
-                    ? `${getRarityColor(achievement.rarity)} bg-white/5 ${getRarityGlow(achievement.rarity)}` 
+                  achievement.unlocked
+                    ? `${getRarityColor(achievement.rarity)} bg-white/5 ${getRarityGlow(achievement.rarity)}`
                     : 'border-gray-600 bg-gray-800/50 opacity-60'
                 }`}
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <div className={`p-2 rounded-lg ${
-                    achievement.unlocked 
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-500' 
-                      : 'bg-gray-700'
-                  }`}>
+                  <div
+                    className={`p-2 rounded-lg ${
+                      achievement.unlocked
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-500'
+                        : 'bg-gray-700'
+                    }`}
+                  >
                     {achievement.icon}
                   </div>
                   <div className="flex-1">
-                    <HoloText className="font-medium mb-1">
-                      {achievement.title}
-                    </HoloText>
+                    <HoloText className="font-medium mb-1">{achievement.title}</HoloText>
                     <HoloText className="text-xs text-white/70 mb-2">
                       {achievement.description}
                     </HoloText>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-1 rounded-full ${getRarityColor(achievement.rarity)} bg-current/20`}>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${getRarityColor(achievement.rarity)} bg-current/20`}
+                      >
                         {achievement.rarity}
                       </span>
-                      <span className="text-xs text-yellow-400">
-                        {achievement.points} pts
-                      </span>
+                      <span className="text-xs text-yellow-400">{achievement.points} pts</span>
                     </div>
                   </div>
                 </div>
@@ -533,8 +549,8 @@ export const GamificationSystem: React.FC<GamificationSystemProps> = ({
                         {achievement.progress}/{achievement.maxProgress}
                       </span>
                     </div>
-                    <RainbowProgress 
-                      value={achievement.progress} 
+                    <RainbowProgress
+                      value={achievement.progress}
                       max={achievement.maxProgress}
                       className="h-2"
                     />

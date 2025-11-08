@@ -21,7 +21,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
   onPageSizeChange,
   loading = false,
   showPageSizeSelector = true,
-  pageSizeOptions = [10, 20, 50, 100]
+  pageSizeOptions = [10, 20, 50, 100],
 }) => {
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
@@ -31,9 +31,11 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
     const range = [];
     const rangeWithDots = [];
 
-    for (let i = Math.max(2, currentPage - delta); 
-         i <= Math.min(totalPages - 1, currentPage + delta); 
-         i++) {
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
       range.push(i);
     }
 
@@ -78,7 +80,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
             disabled={loading}
             className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
           >
-            {pageSizeOptions.map(size => (
+            {pageSizeOptions.map((size) => (
               <option key={size} value={size}>
                 {size}
               </option>
@@ -147,10 +149,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
 /**
  * Hook for managing pagination state
  */
-export const usePagination = (
-  totalItems: number,
-  initialPageSize: number = 20
-) => {
+export const usePagination = (totalItems: number, initialPageSize: number = 20) => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(initialPageSize);
 
@@ -187,7 +186,7 @@ export const usePagination = (
     handlePageSizeChange,
     reset,
     offset: (currentPage - 1) * pageSize,
-    limit: pageSize
+    limit: pageSize,
   };
 };
 
@@ -207,15 +206,15 @@ export function VirtualScrollList<T>({
   itemHeight,
   containerHeight,
   renderItem,
-  overscan = 5
+  overscan = 5,
 }: VirtualScrollListProps<T>) {
   const [scrollTop, setScrollTop] = React.useState(0);
-  
+
   const totalHeight = items.length * itemHeight;
   const visibleCount = Math.ceil(containerHeight / itemHeight);
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const endIndex = Math.min(items.length - 1, startIndex + visibleCount + overscan * 2);
-  
+
   const visibleItems = items.slice(startIndex, endIndex + 1);
   const offsetY = startIndex * itemHeight;
 
@@ -236,7 +235,7 @@ export function VirtualScrollList<T>({
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0
+            right: 0,
           }}
         >
           {visibleItems.map((item, index) => (

@@ -1,15 +1,11 @@
-import { 
-  Integration, 
-  EncryptedCredentials,
-  IntegrationAlert
-} from '../types';
+import { Integration, EncryptedCredentials, IntegrationAlert } from '../types';
 import { CredentialEncryption } from './credentialEncryption';
 import { monitoringService } from './monitoringService';
 import { comprehensiveLoggingService } from './comprehensiveLoggingService';
 
 /**
  * AdvancedSecurityService - Production-quality security enhancements
- * 
+ *
  * Features:
  * - Advanced threat detection and prevention
  * - Security policy enforcement
@@ -65,10 +61,10 @@ export class AdvancedSecurityService {
         requireNumbers: true,
         requireSpecialChars: true,
         maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
-        preventReuse: 5
+        preventReuse: 5,
       },
       severity: 'high',
-      isActive: true
+      isActive: true,
     });
 
     // API key policy
@@ -81,10 +77,10 @@ export class AdvancedSecurityService {
         requireRotation: true,
         rotationInterval: 30 * 24 * 60 * 60 * 1000, // 30 days
         requireEncryption: true,
-        maxUsage: 10000
+        maxUsage: 10000,
       },
       severity: 'high',
-      isActive: true
+      isActive: true,
     });
 
     // Access control policy
@@ -97,10 +93,10 @@ export class AdvancedSecurityService {
         sessionTimeout: 30 * 60 * 1000, // 30 minutes
         maxConcurrentSessions: 3,
         requireIPWhitelist: false,
-        requireGeoRestriction: false
+        requireGeoRestriction: false,
       },
       severity: 'medium',
-      isActive: true
+      isActive: true,
     });
 
     // Data encryption policy
@@ -112,10 +108,10 @@ export class AdvancedSecurityService {
         requireEncryptionAtRest: true,
         requireEncryptionInTransit: true,
         encryptionAlgorithm: 'AES-256-GCM',
-        keyRotationInterval: 90 * 24 * 60 * 60 * 1000 // 90 days
+        keyRotationInterval: 90 * 24 * 60 * 60 * 1000, // 90 days
       },
       severity: 'high',
-      isActive: true
+      isActive: true,
     });
   }
 
@@ -127,20 +123,26 @@ export class AdvancedSecurityService {
     return await CredentialEncryption.encrypt(credentials, userId);
   }
 
-  async decryptCredentials(
-    encrypted: EncryptedCredentials,
-    userId: string
-  ): Promise<any> {
+  async decryptCredentials(encrypted: EncryptedCredentials, userId: string): Promise<any> {
     return await CredentialEncryption.decrypt(encrypted, userId);
   }
 
-  async checkAccessControl(userId: string, integrationId: string, action?: string): Promise<boolean> {
+  async checkAccessControl(
+    userId: string,
+    integrationId: string,
+    action?: string
+  ): Promise<boolean> {
     // Minimal policy: deny if missing either id
     if (!userId || !integrationId) return false;
     return true;
   }
 
-  async logAuditEvent(userId: string, integrationId: string, action: string, metadata?: any): Promise<void> {
+  async logAuditEvent(
+    userId: string,
+    integrationId: string,
+    action: string,
+    metadata?: any
+  ): Promise<void> {
     await comprehensiveLoggingService.info(integrationId, `AUDIT: ${action}`, {
       userId,
       operation: 'audit_event',
@@ -154,7 +156,7 @@ export class AdvancedSecurityService {
   async createSecurityPolicy(policy: SecurityPolicy): Promise<void> {
     try {
       this.securityPolicies.set(policy.id, policy);
-      
+
       await comprehensiveLoggingService.info(
         'system',
         `Security policy created/updated: ${policy.name}`,
@@ -162,17 +164,16 @@ export class AdvancedSecurityService {
           operation: 'create_security_policy',
           policyId: policy.id,
           policyName: policy.name,
-          severity: policy.severity
+          severity: policy.severity,
         }
       );
-
     } catch (error) {
       await comprehensiveLoggingService.error(
         'system',
         `Failed to create security policy: ${policy.name}`,
         {
           operation: 'create_security_policy',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         }
       );
       throw error;
@@ -232,30 +233,21 @@ export class AdvancedSecurityService {
   async performSecurityScan(): Promise<void> {
     try {
       const integrations = await this.getIntegrations(); // Assuming this method exists
-      
+
       for (const integration of integrations) {
         await this.scanIntegrationSecurity(integration);
       }
 
-      await comprehensiveLoggingService.info(
-        'system',
-        'Security scan completed',
-        {
-          operation: 'security_scan',
-          integrationsScanned: integrations.length,
-          timestamp: new Date().toISOString()
-        }
-      );
-
+      await comprehensiveLoggingService.info('system', 'Security scan completed', {
+        operation: 'security_scan',
+        integrationsScanned: integrations.length,
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Security scan failed',
-        {
-          operation: 'security_scan',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error('system', 'Security scan failed', {
+        operation: 'security_scan',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -284,7 +276,7 @@ export class AdvancedSecurityService {
       securityIssues.push(...vulnerabilityIssues);
 
       // Create security alerts for high-severity issues
-      const highSeverityIssues = securityIssues.filter(issue => issue.severity === 'high');
+      const highSeverityIssues = securityIssues.filter((issue) => issue.severity === 'high');
       if (highSeverityIssues.length > 0) {
         await this.createSecurityAlert(integration.id, highSeverityIssues, recommendations);
       }
@@ -298,23 +290,18 @@ export class AdvancedSecurityService {
           integrationId: integration.id,
           totalIssues: securityIssues.length,
           highSeverityIssues: highSeverityIssues.length,
-          issues: securityIssues.map(issue => ({
+          issues: securityIssues.map((issue) => ({
             type: issue.type,
             severity: issue.severity,
-            description: issue.description
-          }))
+            description: issue.description,
+          })),
         }
       );
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        integration.id,
-        'Security scan failed',
-        {
-          operation: 'security_scan',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error(integration.id, 'Security scan failed', {
+        operation: 'security_scan',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -331,7 +318,7 @@ export class AdvancedSecurityService {
         type: 'credential_encryption',
         severity: 'high',
         description: 'Credentials are not properly encrypted',
-        recommendation: 'Re-encrypt credentials using AES-256-GCM encryption'
+        recommendation: 'Re-encrypt credentials using AES-256-GCM encryption',
       });
     }
 
@@ -341,7 +328,7 @@ export class AdvancedSecurityService {
         type: 'encryption_algorithm',
         severity: 'medium',
         description: 'Credentials are using outdated encryption algorithm',
-        recommendation: 'Upgrade to AES-256-GCM encryption'
+        recommendation: 'Upgrade to AES-256-GCM encryption',
       });
     }
 
@@ -354,7 +341,7 @@ export class AdvancedSecurityService {
           type: 'credential_age',
           severity: 'medium',
           description: 'Credentials are too old and should be rotated',
-          recommendation: 'Rotate credentials immediately'
+          recommendation: 'Rotate credentials immediately',
         });
       }
     }
@@ -371,12 +358,11 @@ export class AdvancedSecurityService {
     try {
       // Get recent logs for the integration
       const logs = await monitoringService.getIntegrationLogs(integration.id, '24h');
-      const errorLogs = logs.filter(log => log.level === 'error');
-      
+      const errorLogs = logs.filter((log) => log.level === 'error');
+
       // Check for brute force attempts
-      const failedAuthAttempts = errorLogs.filter(log => 
-        log.message.includes('authentication') || 
-        log.message.includes('unauthorized')
+      const failedAuthAttempts = errorLogs.filter(
+        (log) => log.message.includes('authentication') || log.message.includes('unauthorized')
       );
 
       if (failedAuthAttempts.length > AdvancedSecurityService.THREAT_DETECTION_THRESHOLD) {
@@ -384,15 +370,13 @@ export class AdvancedSecurityService {
           type: 'brute_force_attack',
           severity: 'high',
           description: `Potential brute force attack detected: ${failedAuthAttempts.length} failed attempts`,
-          recommendation: 'Enable rate limiting and consider IP blocking'
+          recommendation: 'Enable rate limiting and consider IP blocking',
         });
       }
 
       // Check for unusual access patterns
       const uniqueIPs = new Set(
-        failedAuthAttempts
-          .map(log => log.details?.metadata?.ipAddress)
-          .filter(Boolean)
+        failedAuthAttempts.map((log) => log.details?.metadata?.ipAddress).filter(Boolean)
       );
 
       if (uniqueIPs.size > 5) {
@@ -400,10 +384,9 @@ export class AdvancedSecurityService {
           type: 'unusual_access_pattern',
           severity: 'medium',
           description: `Unusual access pattern detected: ${uniqueIPs.size} different IP addresses`,
-          recommendation: 'Review access logs and consider geo-blocking'
+          recommendation: 'Review access logs and consider geo-blocking',
         });
       }
-
     } catch (error) {
       console.error('Failed to check access patterns:', error);
     }
@@ -425,7 +408,7 @@ export class AdvancedSecurityService {
           type: 'rate_limit_too_high',
           severity: 'medium',
           description: 'Rate limits are too high, potential security risk',
-          recommendation: 'Reduce rate limits to prevent abuse'
+          recommendation: 'Reduce rate limits to prevent abuse',
         });
       }
     }
@@ -437,7 +420,7 @@ export class AdvancedSecurityService {
           type: 'error_alerts_disabled',
           severity: 'low',
           description: 'Error alerts are not enabled',
-          recommendation: 'Enable error alerts for security monitoring'
+          recommendation: 'Enable error alerts for security monitoring',
         });
       }
     }
@@ -450,7 +433,7 @@ export class AdvancedSecurityService {
             type: 'webhook_no_secret',
             severity: 'medium',
             description: 'Webhook does not have a secret for verification',
-            recommendation: 'Add webhook secret for secure verification'
+            recommendation: 'Add webhook secret for secure verification',
           });
         }
       }
@@ -470,17 +453,16 @@ export class AdvancedSecurityService {
       const vulnerabilityChecks = [
         this.checkForWeakCrypto(integration),
         this.checkForInsecureProtocols(integration),
-        this.checkForExposedSecrets(integration)
+        this.checkForExposedSecrets(integration),
       ];
 
       const results = await Promise.allSettled(vulnerabilityChecks);
-      
-      results.forEach(result => {
+
+      results.forEach((result) => {
         if (result.status === 'fulfilled') {
           issues.push(...result.value);
         }
       });
-
     } catch (error) {
       console.error('Failed to check known vulnerabilities:', error);
     }
@@ -502,7 +484,7 @@ export class AdvancedSecurityService {
           type: 'weak_encryption',
           severity: 'high',
           description: `Weak encryption algorithm detected: ${integration.credentials.algorithm}`,
-          recommendation: 'Upgrade to AES-256-GCM encryption'
+          recommendation: 'Upgrade to AES-256-GCM encryption',
         });
       }
     }
@@ -524,7 +506,7 @@ export class AdvancedSecurityService {
             type: 'insecure_protocol',
             severity: 'medium',
             description: 'Webhook URL uses insecure HTTP protocol',
-            recommendation: 'Use HTTPS for webhook URLs'
+            recommendation: 'Use HTTPS for webhook URLs',
           });
         }
       }
@@ -545,16 +527,16 @@ export class AdvancedSecurityService {
       /password\s*[:=]\s*["']?[^"'\s]{8,}["']?/gi,
       /api[_-]?key\s*[:=]\s*["']?[^"'\s]{16,}["']?/gi,
       /secret\s*[:=]\s*["']?[^"'\s]{16,}["']?/gi,
-      /token\s*[:=]\s*["']?[^"'\s]{20,}["']?/gi
+      /token\s*[:=]\s*["']?[^"'\s]{20,}["']?/gi,
     ];
 
-    secretPatterns.forEach(pattern => {
+    secretPatterns.forEach((pattern) => {
       if (pattern.test(configString)) {
         issues.push({
           type: 'exposed_secret',
           severity: 'high',
           description: 'Potential hardcoded secret detected in configuration',
-          recommendation: 'Remove hardcoded secrets and use secure credential storage'
+          recommendation: 'Remove hardcoded secrets and use secure credential storage',
         });
       }
     });
@@ -572,30 +554,21 @@ export class AdvancedSecurityService {
   async performVulnerabilityScan(): Promise<void> {
     try {
       const integrations = await this.getIntegrations();
-      
+
       for (const integration of integrations) {
         await this.scanIntegrationVulnerabilities(integration);
       }
 
-      await comprehensiveLoggingService.info(
-        'system',
-        'Vulnerability scan completed',
-        {
-          operation: 'vulnerability_scan',
-          integrationsScanned: integrations.length,
-          timestamp: new Date().toISOString()
-        }
-      );
-
+      await comprehensiveLoggingService.info('system', 'Vulnerability scan completed', {
+        operation: 'vulnerability_scan',
+        integrationsScanned: integrations.length,
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Vulnerability scan failed',
-        {
-          operation: 'vulnerability_scan',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error('system', 'Vulnerability scan failed', {
+        operation: 'vulnerability_scan',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -607,13 +580,13 @@ export class AdvancedSecurityService {
       const vulnerabilities: Vulnerability[] = [];
 
       // Check for common vulnerabilities
-      vulnerabilities.push(...await this.checkSQLInjectionVulnerabilities(integration));
-      vulnerabilities.push(...await this.checkXSSVulnerabilities(integration));
-      vulnerabilities.push(...await this.checkCSRFVulnerabilities(integration));
-      vulnerabilities.push(...await this.checkInsecureDirectObjectReferences(integration));
+      vulnerabilities.push(...(await this.checkSQLInjectionVulnerabilities(integration)));
+      vulnerabilities.push(...(await this.checkXSSVulnerabilities(integration)));
+      vulnerabilities.push(...(await this.checkCSRFVulnerabilities(integration)));
+      vulnerabilities.push(...(await this.checkInsecureDirectObjectReferences(integration)));
 
       // Create vulnerability alerts
-      const criticalVulnerabilities = vulnerabilities.filter(v => v.severity === 'critical');
+      const criticalVulnerabilities = vulnerabilities.filter((v) => v.severity === 'critical');
       if (criticalVulnerabilities.length > 0) {
         await this.createVulnerabilityAlert(integration.id, criticalVulnerabilities);
       }
@@ -627,30 +600,27 @@ export class AdvancedSecurityService {
           integrationId: integration.id,
           totalVulnerabilities: vulnerabilities.length,
           criticalVulnerabilities: criticalVulnerabilities.length,
-          vulnerabilities: vulnerabilities.map(v => ({
+          vulnerabilities: vulnerabilities.map((v) => ({
             type: v.type,
             severity: v.severity,
-            description: v.description
-          }))
+            description: v.description,
+          })),
         }
       );
-
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        integration.id,
-        'Vulnerability scan failed',
-        {
-          operation: 'vulnerability_scan',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error(integration.id, 'Vulnerability scan failed', {
+        operation: 'vulnerability_scan',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
   /**
    * Checks for SQL injection vulnerabilities
    */
-  private async checkSQLInjectionVulnerabilities(integration: Integration): Promise<Vulnerability[]> {
+  private async checkSQLInjectionVulnerabilities(
+    integration: Integration
+  ): Promise<Vulnerability[]> {
     const vulnerabilities: Vulnerability[] = [];
 
     // Check for SQL injection patterns in configuration
@@ -662,17 +632,17 @@ export class AdvancedSecurityService {
       /insert\s+into/gi,
       /update\s+set/gi,
       /exec\s*\(/gi,
-      /sp_\w+/gi
+      /sp_\w+/gi,
     ];
 
-    sqlInjectionPatterns.forEach(pattern => {
+    sqlInjectionPatterns.forEach((pattern) => {
       if (pattern.test(configString)) {
         vulnerabilities.push({
           type: 'sql_injection',
           severity: 'critical',
           description: 'Potential SQL injection vulnerability detected',
           recommendation: 'Use parameterized queries and input validation',
-          cve: 'CWE-89'
+          cve: 'CWE-89',
         });
       }
     });
@@ -694,17 +664,17 @@ export class AdvancedSecurityService {
       /on\w+\s*=/gi,
       /<iframe/gi,
       /<object/gi,
-      /<embed/gi
+      /<embed/gi,
     ];
 
-    xssPatterns.forEach(pattern => {
+    xssPatterns.forEach((pattern) => {
       if (pattern.test(configString)) {
         vulnerabilities.push({
           type: 'xss',
           severity: 'high',
           description: 'Potential XSS vulnerability detected',
           recommendation: 'Implement proper input sanitization and output encoding',
-          cve: 'CWE-79'
+          cve: 'CWE-79',
         });
       }
     });
@@ -727,7 +697,7 @@ export class AdvancedSecurityService {
             severity: 'medium',
             description: 'Potential CSRF vulnerability - missing CSRF protection',
             recommendation: 'Implement CSRF tokens for state-changing operations',
-            cve: 'CWE-352'
+            cve: 'CWE-352',
           });
         }
       }
@@ -739,7 +709,9 @@ export class AdvancedSecurityService {
   /**
    * Checks for insecure direct object references
    */
-  private async checkInsecureDirectObjectReferences(integration: Integration): Promise<Vulnerability[]> {
+  private async checkInsecureDirectObjectReferences(
+    integration: Integration
+  ): Promise<Vulnerability[]> {
     const vulnerabilities: Vulnerability[] = [];
 
     // Check for direct object references in configuration
@@ -748,17 +720,17 @@ export class AdvancedSecurityService {
       /\/api\/users\/\d+/gi,
       /\/api\/files\/\d+/gi,
       /\/api\/data\/\d+/gi,
-      /id=\d+/gi
+      /id=\d+/gi,
     ];
 
-    insecurePatterns.forEach(pattern => {
+    insecurePatterns.forEach((pattern) => {
       if (pattern.test(configString)) {
         vulnerabilities.push({
           type: 'insecure_direct_object_reference',
           severity: 'medium',
           description: 'Potential insecure direct object reference detected',
           recommendation: 'Implement proper authorization checks for object access',
-          cve: 'CWE-639'
+          cve: 'CWE-639',
         });
       }
     });
@@ -783,20 +755,20 @@ export class AdvancedSecurityService {
         integrationId,
         type: 'error',
         title: 'Security Issues Detected',
-        message: `Security scan found ${issues.length} issue(s): ${issues.map(i => i.type).join(', ')}`,
+        message: `Security scan found ${issues.length} issue(s): ${issues.map((i) => i.type).join(', ')}`,
         severity: 'high',
         isResolved: false,
         metadata: {
           alertType: 'security',
-          issues: issues.map(issue => ({
+          issues: issues.map((issue) => ({
             type: issue.type,
             severity: issue.severity,
             description: issue.description,
-            recommendation: issue.recommendation
+            recommendation: issue.recommendation,
           })),
           recommendations,
-          scanTimestamp: new Date().toISOString()
-        }
+          scanTimestamp: new Date().toISOString(),
+        },
       });
 
       // Create security incident
@@ -805,9 +777,8 @@ export class AdvancedSecurityService {
         severity: 'high',
         description: `Security scan detected ${issues.length} issues`,
         evidence: { issues, recommendations },
-        status: 'open'
+        status: 'open',
       });
-
     } catch (error) {
       console.error('Failed to create security alert:', error);
     }
@@ -825,20 +796,20 @@ export class AdvancedSecurityService {
         integrationId,
         type: 'error',
         title: 'Vulnerabilities Detected',
-        message: `Vulnerability scan found ${vulnerabilities.length} vulnerability(ies): ${vulnerabilities.map(v => v.type).join(', ')}`,
+        message: `Vulnerability scan found ${vulnerabilities.length} vulnerability(ies): ${vulnerabilities.map((v) => v.type).join(', ')}`,
         severity: 'critical',
         isResolved: false,
         metadata: {
           alertType: 'vulnerability',
-          vulnerabilities: vulnerabilities.map(v => ({
+          vulnerabilities: vulnerabilities.map((v) => ({
             type: v.type,
             severity: v.severity,
             description: v.description,
             recommendation: v.recommendation,
-            cve: v.cve
+            cve: v.cve,
           })),
-          scanTimestamp: new Date().toISOString()
-        }
+          scanTimestamp: new Date().toISOString(),
+        },
       });
 
       // Create security incident
@@ -847,9 +818,8 @@ export class AdvancedSecurityService {
         severity: 'critical',
         description: `Vulnerability scan detected ${vulnerabilities.length} vulnerabilities`,
         evidence: { vulnerabilities },
-        status: 'open'
+        status: 'open',
       });
-
     } catch (error) {
       console.error('Failed to create vulnerability alert:', error);
     }
@@ -869,7 +839,7 @@ export class AdvancedSecurityService {
         timestamp: new Date(),
         ...incident,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       if (!this.securityIncidents.has(integrationId)) {
@@ -885,10 +855,9 @@ export class AdvancedSecurityService {
           incidentId: securityIncident.id,
           incidentType: incident.type,
           severity: incident.severity,
-          status: incident.status
+          status: incident.status,
         }
       );
-
     } catch (error) {
       console.error('Failed to create security incident:', error);
     }
@@ -904,30 +873,21 @@ export class AdvancedSecurityService {
   async performComplianceCheck(): Promise<void> {
     try {
       const integrations = await this.getIntegrations();
-      
+
       for (const integration of integrations) {
         await this.checkIntegrationCompliance(integration);
       }
 
-      await comprehensiveLoggingService.info(
-        'system',
-        'Compliance check completed',
-        {
-          operation: 'compliance_check',
-          integrationsChecked: integrations.length,
-          timestamp: new Date().toISOString()
-        }
-      );
-
+      await comprehensiveLoggingService.info('system', 'Compliance check completed', {
+        operation: 'compliance_check',
+        integrationsChecked: integrations.length,
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      await comprehensiveLoggingService.error(
-        'system',
-        'Compliance check failed',
-        {
-          operation: 'compliance_check',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      );
+      await comprehensiveLoggingService.error('system', 'Compliance check failed', {
+        operation: 'compliance_check',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -940,7 +900,7 @@ export class AdvancedSecurityService {
         this.checkGDPRCompliance(integration),
         this.checkSOXCompliance(integration),
         this.checkHIPAACompliance(integration),
-        this.checkPCIDSSCompliance(integration)
+        this.checkPCIDSSCompliance(integration),
       ];
 
       const results = await Promise.allSettled(complianceChecks);
@@ -950,7 +910,7 @@ export class AdvancedSecurityService {
         overallCompliance: 'compliant',
         frameworkCompliance: {},
         violations: [],
-        recommendations: []
+        recommendations: [],
       };
 
       results.forEach((result, index) => {
@@ -960,22 +920,22 @@ export class AdvancedSecurityService {
         } else {
           complianceStatus.frameworkCompliance[frameworks[index]] = {
             compliant: false,
-            violations: [`Failed to check ${frameworks[index]} compliance`]
+            violations: [`Failed to check ${frameworks[index]} compliance`],
           };
         }
       });
 
       // Determine overall compliance
-      const nonCompliantFrameworks = Object.values(complianceStatus.frameworkCompliance)
-        .filter(status => !status.compliant);
-      
+      const nonCompliantFrameworks = Object.values(complianceStatus.frameworkCompliance).filter(
+        (status) => !status.compliant
+      );
+
       if (nonCompliantFrameworks.length > 0) {
         complianceStatus.overallCompliance = 'non_compliant';
-        complianceStatus.violations = nonCompliantFrameworks.flatMap(status => status.violations);
+        complianceStatus.violations = nonCompliantFrameworks.flatMap((status) => status.violations);
       }
 
       this.complianceStatus.set(integration.id, complianceStatus);
-
     } catch (error) {
       console.error(`Compliance check failed for integration ${integration.id}:`, error);
     }
@@ -1004,7 +964,7 @@ export class AdvancedSecurityService {
 
     return {
       compliant: violations.length === 0,
-      violations
+      violations,
     };
   }
 
@@ -1031,7 +991,7 @@ export class AdvancedSecurityService {
 
     return {
       compliant: violations.length === 0,
-      violations
+      violations,
     };
   }
 
@@ -1058,7 +1018,7 @@ export class AdvancedSecurityService {
 
     return {
       compliant: violations.length === 0,
-      violations
+      violations,
     };
   }
 
@@ -1085,7 +1045,7 @@ export class AdvancedSecurityService {
 
     return {
       compliant: violations.length === 0,
-      violations
+      violations,
     };
   }
 
@@ -1149,10 +1109,10 @@ export class AdvancedSecurityService {
   } {
     const totalIntegrations = this.securityIncidents.size;
     const totalSecurityPolicies = this.securityPolicies.size;
-    
+
     let activeSecurityIncidents = 0;
     for (const incidents of this.securityIncidents.values()) {
-      activeSecurityIncidents += incidents.filter(incident => incident.status === 'open').length;
+      activeSecurityIncidents += incidents.filter((incident) => incident.status === 'open').length;
     }
 
     let complianceScore = 0;
@@ -1162,7 +1122,7 @@ export class AdvancedSecurityService {
         compliantIntegrations++;
       }
     }
-    
+
     if (this.complianceStatus.size > 0) {
       complianceScore = Math.round((compliantIntegrations / this.complianceStatus.size) * 100);
     }
@@ -1170,7 +1130,9 @@ export class AdvancedSecurityService {
     // Count vulnerabilities (simplified)
     let vulnerabilityCount = 0;
     for (const incidents of this.securityIncidents.values()) {
-      vulnerabilityCount += incidents.filter(incident => incident.type === 'vulnerability_scan').length;
+      vulnerabilityCount += incidents.filter(
+        (incident) => incident.type === 'vulnerability_scan'
+      ).length;
     }
 
     return {
@@ -1179,7 +1141,7 @@ export class AdvancedSecurityService {
       activeSecurityIncidents,
       complianceScore,
       vulnerabilityCount,
-      lastScanDate: new Date()
+      lastScanDate: new Date(),
     };
   }
 }

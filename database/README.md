@@ -7,10 +7,13 @@ This directory contains the database schema files for the SoloSuccess AI Content
 ## Files
 
 ### `schema.sql`
+
 The base database schema with the core `posts` table and basic functionality.
 
 ### `enhanced-schema-migration.sql`
+
 Migration script that adds enhanced content features including:
+
 - Brand voice management
 - Audience profiling
 - Campaign and content series management
@@ -19,6 +22,7 @@ Migration script that adds enhanced content features including:
 - Image style management
 
 ### `rollback-enhanced-schema.sql`
+
 Rollback script to remove all enhanced features and revert to the base schema.
 
 ## Migration Instructions
@@ -27,11 +31,11 @@ Rollback script to remove all enhanced features and revert to the base schema.
 
 1. **Prerequisites**: Ensure the base schema (`schema.sql`) has been applied first
 2. **Backup**: Create a backup of your database before running the migration
-3. **Apply Migration**: Run the `enhanced-schema-migration.sql` script in your Supabase SQL Editor
+3. **Apply Migration**: Run the `enhanced-schema-migration.sql` script in your Neon SQL Editor
 
 ```sql
 -- Copy and paste the contents of enhanced-schema-migration.sql
--- into your Supabase SQL Editor and execute
+-- into your Neon SQL Editor and execute
 ```
 
 ### Rolling Back (if needed)
@@ -40,15 +44,17 @@ If you need to remove the enhanced features:
 
 ```sql
 -- Copy and paste the contents of rollback-enhanced-schema.sql
--- into your Supabase SQL Editor and execute
+-- into your Neon SQL Editor and execute
 ```
 
 ## New Tables Added
 
 ### `brand_voices`
+
 Stores user-defined brand voice configurations for content personalization.
 
 **Key Fields:**
+
 - `name`: Brand voice name
 - `tone`: Writing tone (professional, casual, etc.)
 - `vocabulary`: Preferred vocabulary terms
@@ -56,9 +62,11 @@ Stores user-defined brand voice configurations for content personalization.
 - `sample_content`: Example content for AI training
 
 ### `audience_profiles`
+
 Stores target audience definitions for content optimization.
 
 **Key Fields:**
+
 - `name`: Profile name
 - `age_range`: Target age demographic
 - `industry`: Target industry
@@ -67,9 +75,11 @@ Stores target audience definitions for content optimization.
 - `engagement_patterns`: Historical engagement data (JSONB)
 
 ### `campaigns`
+
 Manages content campaigns and coordinated content efforts.
 
 **Key Fields:**
+
 - `name`: Campaign name
 - `theme`: Campaign theme/topic
 - `start_date`/`end_date`: Campaign duration
@@ -78,9 +88,11 @@ Manages content campaigns and coordinated content efforts.
 - `performance`: Campaign metrics (JSONB)
 
 ### `content_series`
+
 Manages multi-post content series within campaigns.
 
 **Key Fields:**
+
 - `campaign_id`: Parent campaign (optional)
 - `name`: Series name
 - `theme`: Series theme
@@ -89,9 +101,11 @@ Manages multi-post content series within campaigns.
 - `current_post`: Current position in series
 
 ### `post_analytics`
+
 Tracks performance metrics for published content.
 
 **Key Fields:**
+
 - `post_id`: Reference to posts table
 - `platform`: Social media platform
 - `likes`, `shares`, `comments`, `clicks`: Engagement metrics
@@ -99,9 +113,11 @@ Tracks performance metrics for published content.
 - `engagement_rate`: Calculated engagement percentage
 
 ### `content_templates`
+
 Stores reusable content templates and structures.
 
 **Key Fields:**
+
 - `name`: Template name
 - `category`: Template category
 - `content_type`: Type (blog, social, email, video)
@@ -110,9 +126,11 @@ Stores reusable content templates and structures.
 - `is_public`: Whether template is shared publicly
 
 ### `image_styles`
+
 Manages consistent image generation styles and brand assets.
 
 **Key Fields:**
+
 - `name`: Style name
 - `style_prompt`: AI generation prompt
 - `color_palette`: Brand colors array
@@ -135,6 +153,7 @@ The existing `posts` table has been extended with new optional foreign key colum
 ## Security
 
 All new tables implement Row Level Security (RLS) policies:
+
 - Users can only access their own data
 - Content templates support public sharing when `is_public = true`
 - Analytics data inherits permissions from the associated posts
@@ -142,6 +161,7 @@ All new tables implement Row Level Security (RLS) policies:
 ## Performance
 
 The migration includes optimized indexes for:
+
 - Foreign key relationships
 - Common query patterns
 - Performance-critical fields (engagement rates, scores)
@@ -150,22 +170,29 @@ The migration includes optimized indexes for:
 ## Triggers and Functions
 
 ### Automatic Updates
+
 - `updated_at` triggers for all tables
 - Automatic engagement rate calculation
 - Performance score updates based on analytics
 
 ### Helper Functions
+
 - `calculate_engagement_rate()`: Computes engagement percentages
 - `update_post_performance_score()`: Updates post performance based on analytics
 - `trigger_update_performance_score()`: Automatic trigger function
 
 ## Real-time Subscriptions
 
-All new tables are enabled for Supabase real-time subscriptions, allowing the frontend to receive live updates when data changes.
+**Note**: Neon PostgreSQL doesn't have built-in realtime like Supabase. If you need realtime functionality, consider using:
+
+- WebSockets via API routes
+- Server-Sent Events (SSE)
+- Third-party realtime services like Pusher, Ably, or Socket.io
 
 ## Sample Data
 
 The migration includes optional sample data insertion for development:
+
 - Default brand voices (Professional, Casual & Friendly)
 - Sample audience profile (Small Business Owners)
 - Basic blog post template

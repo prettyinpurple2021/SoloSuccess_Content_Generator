@@ -82,7 +82,6 @@ export default [
       'node_modules/',
       '*.config.js',
       '*.config.ts',
-      'supabase/functions/',
       'fix-database-setup.js',
       'scripts/',
     ],

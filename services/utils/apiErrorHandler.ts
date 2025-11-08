@@ -22,7 +22,7 @@ export class ApiErrorHandler {
     baseDelay: 1000,
     maxDelay: 10000,
     backoffMultiplier: 2,
-    retryCondition: (error) => this.isRetryableError(error)
+    retryCondition: (error) => this.isRetryableError(error),
   };
 
   /**
@@ -40,7 +40,7 @@ export class ApiErrorHandler {
         return await apiCall();
       } catch (error) {
         lastError = error;
-        
+
         // Don't retry on the last attempt
         if (attempt === retryOptions.maxRetries) {
           break;
@@ -57,8 +57,11 @@ export class ApiErrorHandler {
           retryOptions.maxDelay
         );
 
-        console.warn(`API call failed (attempt ${attempt + 1}/${retryOptions.maxRetries + 1}), retrying in ${delay}ms:`, error);
-        
+        console.warn(
+          `API call failed (attempt ${attempt + 1}/${retryOptions.maxRetries + 1}), retrying in ${delay}ms:`,
+          error
+        );
+
         await this.sleep(delay);
       }
     }
@@ -122,14 +125,14 @@ export class ApiErrorHandler {
    */
   private static createApiError(error: any): ApiError {
     const isRetryable = this.isRetryableError(error);
-    
+
     let code = 'UNKNOWN_ERROR';
     let message = 'An unknown error occurred';
 
     if (error.status || error.statusCode) {
       const status = error.status || error.statusCode;
       code = `HTTP_${status}`;
-      
+
       switch (status) {
         case 400:
           message = 'Bad request - please check your input';
@@ -159,7 +162,7 @@ export class ApiErrorHandler {
       }
     } else if (error.message) {
       message = error.message;
-      
+
       if (error.message.includes('network')) {
         code = 'NETWORK_ERROR';
       } else if (error.message.includes('timeout')) {
@@ -174,7 +177,7 @@ export class ApiErrorHandler {
       message,
       statusCode: error.status || error.statusCode,
       retryable: isRetryable,
-      originalError: error
+      originalError: error,
     };
   }
 
@@ -182,7 +185,7 @@ export class ApiErrorHandler {
    * Sleep utility for delays
    */
   private static sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -203,12 +206,15 @@ export class ApiErrorHandler {
   /**
    * Log API errors with context
    */
-  static logError(error: ApiError, context: {
-    service: string;
-    operation: string;
-    userId?: string;
-    metadata?: Record<string, any>;
-  }): void {
+  static logError(
+    error: ApiError,
+    context: {
+      service: string;
+      operation: string;
+      userId?: string;
+      metadata?: Record<string, any>;
+    }
+  ): void {
     const logData = {
       timestamp: new Date().toISOString(),
       service: context.service,
@@ -217,10 +223,10 @@ export class ApiErrorHandler {
         code: error.code,
         message: error.message,
         statusCode: error.statusCode,
-        retryable: error.retryable
+        retryable: error.retryable,
       },
       userId: context.userId,
-      metadata: context.metadata
+      metadata: context.metadata,
     };
 
     if (error.statusCode && error.statusCode >= 500) {
@@ -238,10 +244,7 @@ export class ApiErrorHandler {
   /**
    * Create a circuit breaker for API calls
    */
-  static createCircuitBreaker(
-    failureThreshold: number = 5,
-    timeout: number = 60000
-  ) {
+  static createCircuitBreaker(failureThreshold: number = 5, timeout: number = 60000) {
     let failures = 0;
     let lastFailureTime = 0;
     let state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
@@ -261,13 +264,13 @@ export class ApiErrorHandler {
 
       try {
         const result = await apiCall();
-        
+
         // Reset on success
         if (state === 'HALF_OPEN') {
           state = 'CLOSED';
           failures = 0;
         }
-        
+
         return result;
       } catch (error) {
         failures++;
@@ -285,10 +288,7 @@ export class ApiErrorHandler {
   /**
    * Validate API response
    */
-  static validateResponse<T>(
-    response: any,
-    validator: (data: any) => data is T
-  ): T {
+  static validateResponse<T>(response: any, validator: (data: any) => data is T): T {
     if (!response) {
       throw new Error('Empty response received');
     }
@@ -303,17 +303,14 @@ export class ApiErrorHandler {
   /**
    * Create timeout wrapper for API calls
    */
-  static withTimeout<T>(
-    apiCall: () => Promise<T>,
-    timeoutMs: number = 30000
-  ): Promise<T> {
+  static withTimeout<T>(apiCall: () => Promise<T>, timeoutMs: number = 30000): Promise<T> {
     return Promise.race([
       apiCall(),
       new Promise<never>((_, reject) => {
         setTimeout(() => {
           reject(new Error(`API call timed out after ${timeoutMs}ms`));
         }, timeoutMs);
-      })
+      }),
     ]);
   }
 }

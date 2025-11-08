@@ -2,7 +2,7 @@ import { RateLimitResult, RateLimitConfig } from '../types';
 
 /**
  * RateLimitingService - Production-quality rate limiting and error handling
- * 
+ *
  * Features:
  * - Advanced rate limiting with multiple strategies
  * - Sliding window rate limiting
@@ -20,21 +20,27 @@ export class RateLimitingService {
   private static readonly DEFAULT_CIRCUIT_BREAKER_THRESHOLD = 5;
   private static readonly DEFAULT_CIRCUIT_BREAKER_TIMEOUT = 30000; // 30 seconds
 
-  private rateLimitStore: Map<string, {
-    requests: number[];
-    tokens: number;
-    lastRefill: number;
-    circuitBreakerState: 'closed' | 'open' | 'half-open';
-    circuitBreakerFailures: number;
-    circuitBreakerLastFailure: number;
-  }> = new Map();
+  private rateLimitStore: Map<
+    string,
+    {
+      requests: number[];
+      tokens: number;
+      lastRefill: number;
+      circuitBreakerState: 'closed' | 'open' | 'half-open';
+      circuitBreakerFailures: number;
+      circuitBreakerLastFailure: number;
+    }
+  > = new Map();
 
-  private errorHandlingStore: Map<string, {
-    consecutiveErrors: number;
-    lastError: number;
-    backoffMultiplier: number;
-    maxBackoffTime: number;
-  }> = new Map();
+  private errorHandlingStore: Map<
+    string,
+    {
+      consecutiveErrors: number;
+      lastError: number;
+      backoffMultiplier: number;
+      maxBackoffTime: number;
+    }
+  > = new Map();
 
   private overrideConfig: Map<string, Partial<RateLimitConfig>> = new Map();
 
@@ -56,7 +62,7 @@ export class RateLimitingService {
       }
       const rateLimitKey = `${key}:${operation}`;
       const now = Date.now();
-      
+
       // Get or create rate limit entry
       let entry = this.rateLimitStore.get(rateLimitKey);
       if (!entry) {
@@ -66,7 +72,7 @@ export class RateLimitingService {
           lastRefill: now,
           circuitBreakerState: 'closed',
           circuitBreakerFailures: 0,
-          circuitBreakerLastFailure: 0
+          circuitBreakerLastFailure: 0,
         };
         this.rateLimitStore.set(rateLimitKey, entry);
       }
@@ -79,7 +85,7 @@ export class RateLimitingService {
           remaining: 0,
           resetTime: circuitBreakerResult.resetTime ?? Date.now() + 60000,
           retryAfter: circuitBreakerResult.retryAfter ?? 60000,
-          reason: 'Circuit breaker is open'
+          reason: 'Circuit breaker is open',
         };
       }
 
@@ -113,7 +119,6 @@ export class RateLimitingService {
       }
 
       return rateLimitResult;
-
     } catch (error) {
       console.error('Rate limiting check failed:', error);
       // Fail open - allow request if rate limiting fails
@@ -122,7 +127,7 @@ export class RateLimitingService {
         remaining: 100,
         resetTime: Date.now() + 60000,
         retryAfter: 0,
-        reason: 'Rate limiting service error - failing open'
+        reason: 'Rate limiting service error - failing open',
       };
     }
   }
@@ -179,7 +184,7 @@ export class RateLimitingService {
         remaining: 0,
         resetTime: resetTime,
         retryAfter: Math.max(0, retryAfter),
-        reason: 'Rate limit exceeded'
+        reason: 'Rate limit exceeded',
       };
     }
 
@@ -192,7 +197,7 @@ export class RateLimitingService {
       remaining,
       resetTime: now + windowSize,
       retryAfter: 0,
-      reason: 'Request allowed'
+      reason: 'Request allowed',
     };
   }
 
@@ -205,7 +210,7 @@ export class RateLimitingService {
     now: number
   ): RateLimitResult {
     const maxTokens = config?.burstLimit || RateLimitingService.DEFAULT_BURST_LIMIT;
-    const refillRate = config?.refillRate || (maxTokens / 60); // tokens per second
+    const refillRate = config?.refillRate || maxTokens / 60; // tokens per second
     const tokensPerRequest = config?.tokensPerRequest || 1;
 
     // Refill tokens based on time passed
@@ -218,14 +223,14 @@ export class RateLimitingService {
     if (entry.tokens < tokensPerRequest) {
       const tokensNeeded = tokensPerRequest - entry.tokens;
       const timeToWait = tokensNeeded / refillRate;
-      const resetTime = now + (timeToWait * 1000);
+      const resetTime = now + timeToWait * 1000;
 
       return {
         allowed: false,
         remaining: Math.floor(entry.tokens),
         resetTime: resetTime,
         retryAfter: Math.max(0, timeToWait * 1000),
-        reason: 'Insufficient tokens'
+        reason: 'Insufficient tokens',
       };
     }
 
@@ -237,7 +242,7 @@ export class RateLimitingService {
       remaining: Math.floor(entry.tokens),
       resetTime: now + 60000, // 1 minute window
       retryAfter: 0,
-      reason: 'Request allowed'
+      reason: 'Request allowed',
     };
   }
 
@@ -271,7 +276,7 @@ export class RateLimitingService {
         remaining: 0,
         resetTime: resetTime,
         retryAfter: resetTime - now,
-        reason: 'Rate limit exceeded'
+        reason: 'Rate limit exceeded',
       };
     }
 
@@ -284,7 +289,7 @@ export class RateLimitingService {
       remaining,
       resetTime: windowEnd,
       retryAfter: 0,
-      reason: 'Request allowed'
+      reason: 'Request allowed',
     };
   }
 
@@ -295,7 +300,10 @@ export class RateLimitingService {
   /**
    * Checks circuit breaker state
    */
-  private checkCircuitBreaker(entry: any, now: number): {
+  private checkCircuitBreaker(
+    entry: any,
+    now: number
+  ): {
     allowed: boolean;
     resetTime?: number;
     retryAfter?: number;
@@ -314,12 +322,12 @@ export class RateLimitingService {
           entry.circuitBreakerState = 'half-open';
           return { allowed: true };
         }
-        
+
         const retryAfter = timeout - (now - entry.circuitBreakerLastFailure);
         return {
           allowed: false,
           resetTime: entry.circuitBreakerLastFailure + timeout,
-          retryAfter
+          retryAfter,
         };
 
       case 'half-open':
@@ -340,7 +348,7 @@ export class RateLimitingService {
     if (success) {
       // Reset failures on success
       entry.circuitBreakerFailures = 0;
-      
+
       if (entry.circuitBreakerState === 'half-open') {
         entry.circuitBreakerState = 'closed';
       }
@@ -381,7 +389,7 @@ export class RateLimitingService {
   }> {
     const errorKey = `${key}:error`;
     const now = Date.now();
-    
+
     // Get or create error handling entry
     let entry = this.errorHandlingStore.get(errorKey);
     if (!entry) {
@@ -389,7 +397,7 @@ export class RateLimitingService {
         consecutiveErrors: 0,
         lastError: now,
         backoffMultiplier: 1,
-        maxBackoffTime: config?.maxDelay || 30000
+        maxBackoffTime: config?.maxDelay || 30000,
       };
       this.errorHandlingStore.set(errorKey, entry);
     }
@@ -410,18 +418,18 @@ export class RateLimitingService {
       // Reset error count after max retries
       entry.consecutiveErrors = 0;
       entry.backoffMultiplier = 1;
-      
+
       return {
         shouldRetry: false,
         delay: 0,
         retryCount: entry.consecutiveErrors,
-        error
+        error,
       };
     }
 
     // Calculate delay with exponential backoff
     let delay = baseDelay * Math.pow(backoffMultiplier, entry.consecutiveErrors - 1);
-    
+
     // Add jitter to prevent thundering herd
     if (jitter) {
       const jitterAmount = delay * 0.1; // 10% jitter
@@ -435,7 +443,7 @@ export class RateLimitingService {
       shouldRetry: true,
       delay: Math.max(0, delay),
       retryCount: entry.consecutiveErrors,
-      error
+      error,
     };
   }
 
@@ -466,7 +474,7 @@ export class RateLimitingService {
       activeKeys: 0,
       blockedRequests: 0,
       allowedRequests: 0,
-      circuitBreakerStates: { closed: 0, open: 0, half_open: 0 }
+      circuitBreakerStates: { closed: 0, open: 0, half_open: 0 },
     };
 
     for (const [rateLimitKey, entry] of this.rateLimitStore.entries()) {
@@ -475,7 +483,7 @@ export class RateLimitingService {
       }
 
       stats.totalKeys++;
-      
+
       // Count circuit breaker states
       const stateKey = entry.circuitBreakerState.replace('-', '_');
       stats.circuitBreakerStates[stateKey] = (stats.circuitBreakerStates[stateKey] || 0) + 1;
@@ -488,7 +496,9 @@ export class RateLimitingService {
       }
 
       // Estimate blocked/allowed requests (simplified)
-      const recentRequests = entry.requests.filter((timestamp: number) => now - timestamp < 3600000); // 1 hour
+      const recentRequests = entry.requests.filter(
+        (timestamp: number) => now - timestamp < 3600000
+      ); // 1 hour
       stats.blockedRequests += Math.max(0, recentRequests.length - 100); // Assume 100 is the limit
       stats.allowedRequests += Math.min(100, recentRequests.length);
     }
@@ -519,7 +529,7 @@ export class RateLimitingService {
       totalErrorKeys: 0,
       activeErrorKeys: 0,
       totalErrors: 0,
-      averageRetryCount: 0
+      averageRetryCount: 0,
     };
 
     let totalRetryCount = 0;
@@ -535,7 +545,8 @@ export class RateLimitingService {
       totalRetryCount += entry.consecutiveErrors;
 
       // Check if error handling is active (recent errors)
-      if (now - entry.lastError < 300000) { // 5 minutes
+      if (now - entry.lastError < 300000) {
+        // 5 minutes
         stats.activeErrorKeys++;
       }
     }
@@ -561,8 +572,10 @@ export class RateLimitingService {
     // Cleanup rate limit entries
     for (const [key, entry] of this.rateLimitStore.entries()) {
       // Remove old requests
-      entry.requests = entry.requests.filter((timestamp: number) => now - timestamp < cleanupThreshold);
-      
+      entry.requests = entry.requests.filter(
+        (timestamp: number) => now - timestamp < cleanupThreshold
+      );
+
       // Remove entries with no recent activity
       if (entry.requests.length === 0 && now - entry.lastRefill > cleanupThreshold) {
         this.rateLimitStore.delete(key);

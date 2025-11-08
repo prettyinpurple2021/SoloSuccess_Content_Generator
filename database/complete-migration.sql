@@ -1,5 +1,5 @@
 -- Complete Database Migration for Soloboss AI Content Planner
--- Run this entire script in your Supabase SQL Editor
+-- Run this entire script in your Neon SQL Editor
 -- This will create all necessary tables for the application to work properly
 
 -- ============================================================================
@@ -522,23 +522,14 @@ CREATE TRIGGER update_integration_webhooks_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
--- 6. ENABLE REALTIME FOR ALL TABLES
+-- 6. REALTIME (NOT APPLICABLE FOR NEON)
 -- ============================================================================
 
--- Enable realtime subscriptions for all tables
-ALTER PUBLICATION supabase_realtime ADD TABLE posts;
-ALTER PUBLICATION supabase_realtime ADD TABLE brand_voices;
-ALTER PUBLICATION supabase_realtime ADD TABLE audience_profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE campaigns;
-ALTER PUBLICATION supabase_realtime ADD TABLE content_series;
-ALTER PUBLICATION supabase_realtime ADD TABLE post_analytics;
-ALTER PUBLICATION supabase_realtime ADD TABLE content_templates;
-ALTER PUBLICATION supabase_realtime ADD TABLE image_styles;
-ALTER PUBLICATION supabase_realtime ADD TABLE integrations;
-ALTER PUBLICATION supabase_realtime ADD TABLE integration_webhooks;
-ALTER PUBLICATION supabase_realtime ADD TABLE integration_logs;
-ALTER PUBLICATION supabase_realtime ADD TABLE integration_alerts;
-ALTER PUBLICATION supabase_realtime ADD TABLE integration_metrics;
+-- Note: Neon PostgreSQL doesn't have built-in realtime like Supabase.
+-- If you need realtime functionality, consider using:
+-- - WebSockets via API routes
+-- - Server-Sent Events (SSE)
+-- - Third-party realtime services like Pusher, Ably, or Socket.io
 
 -- ============================================================================
 -- 7. CREATE HELPER FUNCTIONS

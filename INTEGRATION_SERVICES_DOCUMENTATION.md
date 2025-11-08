@@ -33,6 +33,7 @@ The Integration Services system is built on a modular architecture with the foll
 **Purpose**: Core integration management with CRUD operations, connection testing, and sync management.
 
 **Key Features**:
+
 - Create, read, update, delete integrations
 - Test connections and validate credentials
 - Manage sync operations and schedules
@@ -41,6 +42,7 @@ The Integration Services system is built on a modular architecture with the foll
 - Rate limiting enforcement
 
 **API Methods**:
+
 ```typescript
 // CRUD Operations
 createIntegration(data: CreateIntegrationData): Promise<Integration>
@@ -79,6 +81,7 @@ checkRateLimit(integrationId: string, action: string): Promise<RateLimitResult>
 **Purpose**: Secure encryption and decryption of sensitive integration credentials.
 
 **Key Features**:
+
 - AES-256-GCM encryption with authenticated encryption
 - PBKDF2 key derivation with configurable iterations
 - Random salt and IV generation for each encryption
@@ -86,6 +89,7 @@ checkRateLimit(integrationId: string, action: string): Promise<RateLimitResult>
 - Credential rotation support
 
 **API Methods**:
+
 ```typescript
 // Encryption/Decryption
 encrypt(credentials: any, userKey: string): Promise<EncryptedCredentials>
@@ -99,6 +103,7 @@ secureWipe(data: any): void
 ```
 
 **Security Features**:
+
 - Uses Web Crypto API for cryptographic operations
 - Implements authenticated encryption with additional authenticated data (AAD)
 - Generates cryptographically secure random values
@@ -110,6 +115,7 @@ secureWipe(data: any): void
 **Purpose**: Advanced rate limiting with multiple strategies and dynamic adjustments.
 
 **Key Features**:
+
 - Multiple rate limiting strategies (fixed window, sliding window, token bucket)
 - Granular rate limiting (per integration, per action, per user)
 - Dynamic rate limit adjustments based on behavior
@@ -117,6 +123,7 @@ secureWipe(data: any): void
 - Rate limit statistics and monitoring
 
 **API Methods**:
+
 ```typescript
 // Rate Limit Checking
 checkRateLimit(integrationId: string, action: string, config?: RateLimitConfig): Promise<RateLimitResult>
@@ -130,6 +137,7 @@ getRateLimitStats(integrationId?: string): RateLimitStats
 ```
 
 **Rate Limiting Strategies**:
+
 - **Fixed Window**: Traditional time-based windows
 - **Sliding Window**: More accurate rate limiting with overlapping windows
 - **Token Bucket**: Allows burst traffic while maintaining average rate
@@ -139,6 +147,7 @@ getRateLimitStats(integrationId?: string): RateLimitStats
 **Purpose**: Comprehensive performance monitoring, analysis, and optimization.
 
 **Key Features**:
+
 - Real-time performance metrics collection
 - Performance trend analysis and degradation detection
 - Integration-specific performance insights
@@ -146,6 +155,7 @@ getRateLimitStats(integrationId?: string): RateLimitStats
 - Performance optimization recommendations
 
 **API Methods**:
+
 ```typescript
 // Metrics Collection
 recordMetrics(integrationId: string, metrics: Partial<IntegrationMetrics>): Promise<void>
@@ -161,6 +171,7 @@ getPerformanceSummary(): Promise<PerformanceSummary>
 ```
 
 **Performance Metrics**:
+
 - Response time (average, p95, p99)
 - Success rate and error rate
 - Request throughput
@@ -172,6 +183,7 @@ getPerformanceSummary(): Promise<PerformanceSummary>
 **Purpose**: Centralized, structured logging system with real-time capabilities.
 
 **Key Features**:
+
 - Structured logging with multiple levels
 - Real-time log streaming via WebSockets
 - Log filtering and search capabilities
@@ -179,6 +191,7 @@ getPerformanceSummary(): Promise<PerformanceSummary>
 - Log retention and archival
 
 **API Methods**:
+
 ```typescript
 // Logging
 log(integrationId: string | 'system', level: LogLevel, message: string, metadata?: Record<string, any>): Promise<void>
@@ -191,6 +204,7 @@ subscribeToLogs(onLogReceived: (log: IntegrationLog) => void, integrationId?: st
 ```
 
 **Log Levels**:
+
 - `debug`: Detailed debugging information
 - `verbose`: Verbose operational information
 - `info`: General operational information
@@ -203,6 +217,7 @@ subscribeToLogs(onLogReceived: (log: IntegrationLog) => void, integrationId?: st
 **Purpose**: Advanced security monitoring, vulnerability scanning, and access control.
 
 **Key Features**:
+
 - Continuous security monitoring
 - Automated vulnerability scanning
 - Access control and permission management
@@ -210,6 +225,7 @@ subscribeToLogs(onLogReceived: (log: IntegrationLog) => void, integrationId?: st
 - Threat detection and incident response
 
 **API Methods**:
+
 ```typescript
 // Credential Security
 encryptCredentials(credentials: any, userId: string): Promise<EncryptedCredentials>
@@ -232,6 +248,7 @@ getSecurityIncidents(integrationId: string): SecurityIncident[]
 ```
 
 **Security Features**:
+
 - Credential encryption and secure storage
 - Role-based access control (RBAC)
 - Automated vulnerability scanning
@@ -243,6 +260,7 @@ getSecurityIncidents(integrationId: string): SecurityIncident[]
 **Purpose**: Comprehensive quality assurance and production readiness validation.
 
 **Key Features**:
+
 - Production readiness validation
 - Quality score calculation
 - Integration quality assessment
@@ -250,6 +268,7 @@ getSecurityIncidents(integrationId: string): SecurityIncident[]
 - Automated quality checks
 
 **API Methods**:
+
 ```typescript
 // Validation
 validateProductionReadiness(integrationId: string): Promise<ValidationResult>
@@ -261,6 +280,7 @@ getQualityMetrics(): Promise<QualityMetrics>
 ```
 
 **Quality Checks**:
+
 - Configuration validation
 - Connection testing
 - Health monitoring
@@ -273,6 +293,7 @@ getQualityMetrics(): Promise<QualityMetrics>
 **Purpose**: Central coordination and orchestration of all integration services.
 
 **Key Features**:
+
 - Service coordination and management
 - System health monitoring
 - Performance optimization
@@ -281,6 +302,7 @@ getQualityMetrics(): Promise<QualityMetrics>
 - Comprehensive reporting
 
 **API Methods**:
+
 ```typescript
 // System Management
 getSystemStatus(): Promise<SystemStatus>
@@ -299,9 +321,13 @@ shutdown(): Promise<void>
 ### Environment Variables
 
 ```bash
-# Supabase Configuration
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
+# Neon Database Configuration
+DATABASE_URL=your_neon_database_url
+
+# Stack Auth Configuration
+VITE_STACK_PROJECT_ID=your_stack_project_id
+VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_stack_publishable_key
+STACK_SECRET_SERVER_KEY=your_stack_secret_key
 
 # Security Configuration
 ENCRYPTION_SECRET=your_encryption_secret
@@ -331,7 +357,7 @@ const rateLimitConfig: RateLimitConfig = {
   maxRequests: 100,
   windowSize: 60000,
   strategy: 'sliding_window',
-  burstLimit: 10
+  burstLimit: 10,
 };
 
 // Performance Monitoring Configuration
@@ -340,15 +366,15 @@ const performanceConfig: PerformanceConfig = {
   alertThresholds: {
     responseTime: 5000,
     errorRate: 5,
-    successRate: 95
-  }
+    successRate: 95,
+  },
 };
 
 // Security Configuration
 const securityConfig: SecurityConfig = {
   vulnerabilityScanInterval: 86400000,
   accessControlEnabled: true,
-  auditLoggingEnabled: true
+  auditLoggingEnabled: true,
 };
 ```
 
@@ -367,8 +393,8 @@ const integration = await integrationService.createIntegration({
   credentials: { apiKey: 'xxx', apiSecret: 'xxx' },
   configuration: {
     syncFrequency: 'hourly',
-    rateLimits: { requestsPerMinute: 60 }
-  }
+    rateLimits: { requestsPerMinute: 60 },
+  },
 });
 
 // Test the connection
@@ -414,11 +440,12 @@ await performanceMonitoringService.recordMetrics('integration-123', {
   avgResponseTime: 150,
   successRate: 95,
   errorRate: 5,
-  totalRequests: 1000
+  totalRequests: 1000,
 });
 
 // Analyze performance
-const analysis = await performanceMonitoringService.analyzeIntegrationPerformance('integration-123');
+const analysis =
+  await performanceMonitoringService.analyzeIntegrationPerformance('integration-123');
 console.log('Performance Score:', analysis.overallScore);
 console.log('Recommendations:', analysis.recommendations);
 
@@ -432,10 +459,7 @@ const globalReport = await performanceMonitoringService.getGlobalPerformanceRepo
 import { rateLimitingService } from './services/rateLimitingService';
 
 // Check rate limit
-const rateLimitResult = await rateLimitingService.checkRateLimit(
-  'integration-123',
-  'api_call'
-);
+const rateLimitResult = await rateLimitingService.checkRateLimit('integration-123', 'api_call');
 
 if (rateLimitResult.allowed) {
   // Make API call
@@ -447,7 +471,7 @@ if (rateLimitResult.allowed) {
 // Adjust rate limits dynamically
 await rateLimitingService.adjustRateLimit('integration-123', 'api_call', {
   maxRequests: 200,
-  windowSize: 120000
+  windowSize: 120000,
 });
 ```
 
@@ -457,18 +481,16 @@ await rateLimitingService.adjustRateLimit('integration-123', 'api_call', {
 import { comprehensiveLoggingService } from './services/comprehensiveLoggingService';
 
 // Log events
-await comprehensiveLoggingService.log(
-  'integration-123',
-  'info',
-  'Integration sync started',
-  { syncId: 'sync-456', timestamp: new Date().toISOString() }
-);
+await comprehensiveLoggingService.log('integration-123', 'info', 'Integration sync started', {
+  syncId: 'sync-456',
+  timestamp: new Date().toISOString(),
+});
 
 // Retrieve logs
 const logs = await comprehensiveLoggingService.getLogs('integration-123', {
   level: 'error',
   timeRange: '24h',
-  searchQuery: 'sync'
+  searchQuery: 'sync',
 });
 
 // Subscribe to real-time logs
@@ -484,14 +506,15 @@ const unsubscribe = comprehensiveLoggingService.subscribeToLogs(
 import { productionQualityValidationService } from './services/productionQualityValidationService';
 
 // Validate production readiness
-const validation = await productionQualityValidationService.validateProductionReadiness('integration-123');
+const validation =
+  await productionQualityValidationService.validateProductionReadiness('integration-123');
 
 if (validation.isProductionReady) {
   console.log('Integration is production ready');
   console.log('Quality Score:', validation.overallScore);
 } else {
   console.log('Integration needs improvements:');
-  validation.recommendations.forEach(rec => console.log('-', rec));
+  validation.recommendations.forEach((rec) => console.log('-', rec));
 }
 
 // Generate quality report
@@ -554,20 +577,25 @@ npm test -- --coverage
 ### Production Deployment
 
 1. **Environment Setup**:
+
    ```bash
    # Set production environment variables
    export NODE_ENV=production
-   export SUPABASE_URL=your_production_supabase_url
-   export SUPABASE_ANON_KEY=your_production_supabase_anon_key
+   export DATABASE_URL=your_production_neon_database_url
+   export VITE_STACK_PROJECT_ID=your_stack_project_id
+   export VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_stack_publishable_key
+   export STACK_SECRET_SERVER_KEY=your_stack_secret_key
    ```
 
 2. **Database Migration**:
+
    ```bash
    # Run database migrations
    npm run migrate
    ```
 
 3. **Service Initialization**:
+
    ```bash
    # Start the integration orchestrator
    npm run start:orchestrator
@@ -658,12 +686,9 @@ import { comprehensiveLoggingService } from './services/comprehensiveLoggingServ
 process.env.LOG_LEVEL = 'debug';
 
 // Log debug information
-await comprehensiveLoggingService.log(
-  'integration-123',
-  'debug',
-  'Debug information',
-  { details: 'additional context' }
-);
+await comprehensiveLoggingService.log('integration-123', 'debug', 'Debug information', {
+  details: 'additional context',
+});
 ```
 
 ### Performance Debugging
@@ -672,7 +697,8 @@ await comprehensiveLoggingService.log(
 import { performanceMonitoringService } from './services/performanceMonitoringService';
 
 // Get performance analysis
-const analysis = await performanceMonitoringService.analyzeIntegrationPerformance('integration-123');
+const analysis =
+  await performanceMonitoringService.analyzeIntegrationPerformance('integration-123');
 console.log('Performance Issues:', analysis.insights);
 console.log('Recommendations:', analysis.recommendations);
 ```

@@ -49,34 +49,35 @@ export const HolographicThemeProvider: React.FC<{ children: React.ReactNode }> =
       glowEffect,
       rainbowMode,
       skullsEnabled,
-      themeMode
+      themeMode,
     };
     localStorage.setItem('holographic-theme-prefs', JSON.stringify(prefs));
 
     // Apply theme classes to body
     document.body.className = '';
     document.body.classList.add(`theme-${themeMode}`);
-    
+
     if (glowEffect) document.body.classList.add('glow-enabled');
     if (rainbowMode) document.body.classList.add('rainbow-mode');
     if (skullsEnabled) document.body.classList.add('skulls-enabled');
     document.body.classList.add(`sparkle-${sparkleIntensity}`);
-
   }, [sparkleIntensity, glowEffect, rainbowMode, skullsEnabled, themeMode]);
 
   return (
-    <HolographicThemeContext.Provider value={{
-      sparkleIntensity,
-      glowEffect,
-      rainbowMode,
-      skullsEnabled,
-      themeMode,
-      setSparkleIntensity,
-      setGlowEffect,
-      setRainbowMode,
-      setSkullsEnabled,
-      setThemeMode
-    }}>
+    <HolographicThemeContext.Provider
+      value={{
+        sparkleIntensity,
+        glowEffect,
+        rainbowMode,
+        skullsEnabled,
+        themeMode,
+        setSparkleIntensity,
+        setGlowEffect,
+        setRainbowMode,
+        setSkullsEnabled,
+        setThemeMode,
+      }}
+    >
       {children}
     </HolographicThemeContext.Provider>
   );
@@ -85,18 +86,20 @@ export const HolographicThemeProvider: React.FC<{ children: React.ReactNode }> =
 /**
  * Sparkle Effect Component
  */
-export const SparkleEffect: React.FC<{ 
-  count?: number; 
+export const SparkleEffect: React.FC<{
+  count?: number;
   size?: 'small' | 'medium' | 'large';
   color?: string;
 }> = ({ count = 5, size = 'medium', color = '#ff69b4' }) => {
-  const [sparkles, setSparkles] = useState<Array<{
-    id: number;
-    x: number;
-    y: number;
-    delay: number;
-    duration: number;
-  }>>([]);
+  const [sparkles, setSparkles] = useState<
+    Array<{
+      id: number;
+      x: number;
+      y: number;
+      delay: number;
+      duration: number;
+    }>
+  >([]);
 
   useEffect(() => {
     const newSparkles = Array.from({ length: count }, (_, i) => ({
@@ -104,16 +107,19 @@ export const SparkleEffect: React.FC<{
       x: Math.random() * 100,
       y: Math.random() * 100,
       delay: Math.random() * 2,
-      duration: 1 + Math.random() * 2
+      duration: 1 + Math.random() * 2,
     }));
     setSparkles(newSparkles);
   }, [count]);
 
   const getSizeClass = () => {
     switch (size) {
-      case 'small': return 'text-xs';
-      case 'large': return 'text-xl';
-      default: return 'text-base';
+      case 'small':
+        return 'text-xs';
+      case 'large':
+        return 'text-xl';
+      default:
+        return 'text-base';
     }
   };
 
@@ -128,7 +134,7 @@ export const SparkleEffect: React.FC<{
             top: `${sparkle.y}%`,
             color,
             animation: `sparkle ${sparkle.duration}s infinite`,
-            animationDelay: `${sparkle.delay}s`
+            animationDelay: `${sparkle.delay}s`,
           }}
         >
           ✨
@@ -151,15 +157,17 @@ export const HoloCard: React.FC<{
   const { glowEffect, sparkleIntensity } = useHolographicTheme();
 
   return (
-    <div className={`
+    <div
+      className={`
       glass-card 
       ${glow && glowEffect ? 'neon-glow' : ''} 
       ${float ? 'floating' : ''} 
       ${className}
-    `}>
+    `}
+    >
       {sparkles && sparkleIntensity !== 'low' && (
-        <SparkleEffect 
-          count={sparkleIntensity === 'high' ? 8 : 4} 
+        <SparkleEffect
+          count={sparkleIntensity === 'high' ? 8 : 4}
           size={sparkleIntensity === 'high' ? 'medium' : 'small'}
         />
       )}
@@ -261,12 +269,14 @@ export const HoloText: React.FC<{
   };
 
   return (
-    <span className={`
+    <span
+      className={`
       ${getVariantClass()}
       ${rainbow && rainbowMode ? 'holo-text' : 'text-white'}
       ${glow ? 'text-shadow-glow' : ''}
       ${className}
-    `}>
+    `}
+    >
       {children}
     </span>
   );
@@ -286,16 +296,13 @@ export const RainbowProgress: React.FC<{
   return (
     <div className={`relative ${className}`}>
       <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-        <div 
+        <div
           className="rainbow-progress h-full transition-all duration-500 ease-out"
           style={{ width: `${percentage}%` }}
         />
       </div>
       {showSparkles && percentage > 0 && (
-        <div 
-          className="absolute top-0 h-full"
-          style={{ width: `${percentage}%` }}
-        >
+        <div className="absolute top-0 h-full" style={{ width: `${percentage}%` }}>
           <SparkleEffect count={Math.ceil(percentage / 25)} size="small" />
         </div>
       )}
@@ -316,15 +323,16 @@ export const FloatingSkull: React.FC<{
 
   const getSizeClass = () => {
     switch (size) {
-      case 'small': return 'text-lg';
-      case 'large': return 'text-4xl';
-      default: return 'text-2xl';
+      case 'small':
+        return 'text-lg';
+      case 'large':
+        return 'text-4xl';
+      default:
+        return 'text-2xl';
     }
   };
 
-  return (
-    <div className={`girly-skull floating ${getSizeClass()} ${className}`} />
-  );
+  return <div className={`girly-skull floating ${getSizeClass()} ${className}`} />;
 };
 
 /**
@@ -344,7 +352,7 @@ export const ThemeSettings: React.FC<{
     setGlowEffect,
     setRainbowMode,
     setSkullsEnabled,
-    setThemeMode
+    setThemeMode,
   } = useHolographicTheme();
 
   if (!isOpen) return null;
@@ -356,10 +364,7 @@ export const ThemeSettings: React.FC<{
           <HoloText variant="title" glow>
             ✨ Theme Settings
           </HoloText>
-          <button
-            onClick={onClose}
-            className="text-white hover:text-pink-300 transition-colors"
-          >
+          <button onClick={onClose} className="text-white hover:text-pink-300 transition-colors">
             ✕
           </button>
         </div>
@@ -413,14 +418,18 @@ export const ThemeSettings: React.FC<{
                 onChange={(e) => setGlowEffect(e.target.checked)}
                 className="sr-only"
               />
-              <div className={`
+              <div
+                className={`
                 w-12 h-6 rounded-full transition-colors cursor-pointer
                 ${glowEffect ? 'bg-pink-500' : 'bg-gray-600'}
-              `}>
-                <div className={`
+              `}
+              >
+                <div
+                  className={`
                   w-5 h-5 bg-white rounded-full shadow-md transform transition-transform mt-0.5
                   ${glowEffect ? 'translate-x-6' : 'translate-x-0.5'}
-                `} />
+                `}
+                />
               </div>
             </label>
 
@@ -432,14 +441,18 @@ export const ThemeSettings: React.FC<{
                 onChange={(e) => setRainbowMode(e.target.checked)}
                 className="sr-only"
               />
-              <div className={`
+              <div
+                className={`
                 w-12 h-6 rounded-full transition-colors cursor-pointer
                 ${rainbowMode ? 'bg-gradient-to-r from-pink-500 to-purple-500' : 'bg-gray-600'}
-              `}>
-                <div className={`
+              `}
+              >
+                <div
+                  className={`
                   w-5 h-5 bg-white rounded-full shadow-md transform transition-transform mt-0.5
                   ${rainbowMode ? 'translate-x-6' : 'translate-x-0.5'}
-                `} />
+                `}
+                />
               </div>
             </label>
 
@@ -451,14 +464,18 @@ export const ThemeSettings: React.FC<{
                 onChange={(e) => setSkullsEnabled(e.target.checked)}
                 className="sr-only"
               />
-              <div className={`
+              <div
+                className={`
                 w-12 h-6 rounded-full transition-colors cursor-pointer
                 ${skullsEnabled ? 'bg-pink-500' : 'bg-gray-600'}
-              `}>
-                <div className={`
+              `}
+              >
+                <div
+                  className={`
                   w-5 h-5 bg-white rounded-full shadow-md transform transition-transform mt-0.5
                   ${skullsEnabled ? 'translate-x-6' : 'translate-x-0.5'}
-                `} />
+                `}
+                />
               </div>
             </label>
           </div>

@@ -1,10 +1,10 @@
-import { 
-  Integration, 
-  IntegrationMetrics, 
-  IntegrationLog, 
+import {
+  Integration,
+  IntegrationMetrics,
+  IntegrationLog,
   IntegrationAlert,
   RateLimitResult,
-  EncryptedCredentials
+  EncryptedCredentials,
 } from '../types';
 import { CredentialEncryption } from './credentialEncryption';
 import { integrationService } from './integrationService';
@@ -12,7 +12,7 @@ import { monitoringService } from './monitoringService';
 
 /**
  * SecurityPerformanceService - Production-quality security and performance monitoring
- * 
+ *
  * Features:
  * - Advanced security scanning
  * - Performance optimization
@@ -62,7 +62,7 @@ export class SecurityPerformanceService {
   async performSecurityScan(): Promise<void> {
     try {
       const integrations = await integrationService.getIntegrations();
-      
+
       for (const integration of integrations) {
         await this.scanIntegrationSecurity(integration);
       }
@@ -120,7 +120,7 @@ export class SecurityPerformanceService {
         {
           securityIssues,
           recommendations,
-          scanTimestamp: new Date().toISOString()
+          scanTimestamp: new Date().toISOString(),
         }
       );
     } catch (error) {
@@ -162,7 +162,7 @@ export class SecurityPerformanceService {
     return {
       isSecure: issues.length === 0,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -180,21 +180,26 @@ export class SecurityPerformanceService {
     try {
       // Get recent logs
       const logs = await monitoringService.getIntegrationLogs(integration.id, '1h');
-      const errorLogs = logs.filter(log => log.level === 'error');
-      const failedAttempts = errorLogs.filter(log => 
-        log.message.includes('authentication') || 
-        log.message.includes('unauthorized') ||
-        log.message.includes('forbidden')
+      const errorLogs = logs.filter((log) => log.level === 'error');
+      const failedAttempts = errorLogs.filter(
+        (log) =>
+          log.message.includes('authentication') ||
+          log.message.includes('unauthorized') ||
+          log.message.includes('forbidden')
       );
 
       // Check for brute force attempts
       if (failedAttempts.length > SecurityPerformanceService.THREAT_DETECTION_THRESHOLD) {
-        issues.push(`Potential brute force attack detected: ${failedAttempts.length} failed attempts in the last hour`);
+        issues.push(
+          `Potential brute force attack detected: ${failedAttempts.length} failed attempts in the last hour`
+        );
         recommendations.push('Enable rate limiting and consider temporary IP blocking');
       }
 
       // Check for unusual access patterns
-      const uniqueIPs = new Set(failedAttempts.map(log => log.metadata?.ipAddress).filter(Boolean));
+      const uniqueIPs = new Set(
+        failedAttempts.map((log) => log.metadata?.ipAddress).filter(Boolean)
+      );
       if (uniqueIPs.size > 5) {
         issues.push(`Unusual access pattern detected: ${uniqueIPs.size} different IP addresses`);
         recommendations.push('Review access logs and consider implementing geo-blocking');
@@ -211,7 +216,6 @@ export class SecurityPerformanceService {
           this.threatDetectionMap.delete(key);
         }
       }
-
     } catch (error) {
       console.error('Threat activity check failed:', error);
     }
@@ -219,7 +223,7 @@ export class SecurityPerformanceService {
     return {
       isThreat: issues.length > 0,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -237,7 +241,7 @@ export class SecurityPerformanceService {
     try {
       // Get recent metrics
       const metrics = await monitoringService.getIntegrationMetrics(integration.id, '24h');
-      
+
       if (metrics.length === 0) {
         return { isNormal: true, issues, recommendations };
       }
@@ -256,7 +260,6 @@ export class SecurityPerformanceService {
         issues.push('High error rate detected');
         recommendations.push('Investigate error patterns and review integration configuration');
       }
-
     } catch (error) {
       console.error('Access pattern check failed:', error);
     }
@@ -264,7 +267,7 @@ export class SecurityPerformanceService {
     return {
       isNormal: issues.length === 0,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -324,7 +327,7 @@ export class SecurityPerformanceService {
     return {
       isSecure: issues.length === 0,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -332,8 +335,8 @@ export class SecurityPerformanceService {
    * Creates security alert
    */
   private async createSecurityAlert(
-    integration: Integration, 
-    issues: string[], 
+    integration: Integration,
+    issues: string[],
     recommendations: string[]
   ): Promise<void> {
     try {
@@ -348,8 +351,8 @@ export class SecurityPerformanceService {
           issues,
           recommendations,
           scanType: 'security',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     } catch (error) {
       console.error('Failed to create security alert:', error);
@@ -379,7 +382,7 @@ export class SecurityPerformanceService {
   async performPerformanceCheck(): Promise<void> {
     try {
       const integrations = await integrationService.getIntegrations();
-      
+
       for (const integration of integrations) {
         await this.checkIntegrationPerformance(integration);
       }
@@ -437,7 +440,7 @@ export class SecurityPerformanceService {
         {
           performanceIssues,
           recommendations,
-          checkTimestamp: new Date().toISOString()
+          checkTimestamp: new Date().toISOString(),
         }
       );
     } catch (error) {
@@ -458,7 +461,7 @@ export class SecurityPerformanceService {
 
     try {
       const metrics = await monitoringService.getIntegrationMetrics(integration.id, '1h');
-      
+
       if (metrics.length === 0) {
         return { isOptimal: true, issues, recommendations };
       }
@@ -473,7 +476,7 @@ export class SecurityPerformanceService {
       }
 
       // Check for response time spikes
-      const responseTimes = metrics.map(m => m.averageResponseTime);
+      const responseTimes = metrics.map((m) => m.averageResponseTime);
       const maxResponseTime = Math.max(...responseTimes);
       const minResponseTime = Math.min(...responseTimes);
       const responseTimeVariation = maxResponseTime - minResponseTime;
@@ -487,14 +490,13 @@ export class SecurityPerformanceService {
       const metricsKey = `${integration.id}:response_time`;
       const currentMetrics = this.performanceMetrics.get(metricsKey) || [];
       currentMetrics.push(avgResponseTime);
-      
+
       // Keep only last 100 measurements
       if (currentMetrics.length > 100) {
         currentMetrics.shift();
       }
-      
-      this.performanceMetrics.set(metricsKey, currentMetrics);
 
+      this.performanceMetrics.set(metricsKey, currentMetrics);
     } catch (error) {
       console.error('Response time check failed:', error);
     }
@@ -502,7 +504,7 @@ export class SecurityPerformanceService {
     return {
       isOptimal: issues.length === 0,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -519,7 +521,7 @@ export class SecurityPerformanceService {
 
     try {
       const metrics = await monitoringService.getIntegrationMetrics(integration.id, '24h');
-      
+
       if (metrics.length === 0) {
         return { isOptimal: true, issues, recommendations };
       }
@@ -539,7 +541,6 @@ export class SecurityPerformanceService {
         issues.push('High error rate indicates inefficient resource usage');
         recommendations.push('Optimize error handling and retry logic');
       }
-
     } catch (error) {
       console.error('Resource usage check failed:', error);
     }
@@ -547,7 +548,7 @@ export class SecurityPerformanceService {
     return {
       isOptimal: issues.length === 0,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -585,7 +586,6 @@ export class SecurityPerformanceService {
         issues.push('Real-time sync is not performing as expected');
         recommendations.push('Consider switching to hourly or daily sync frequency');
       }
-
     } catch (error) {
       console.error('Sync performance check failed:', error);
     }
@@ -593,7 +593,7 @@ export class SecurityPerformanceService {
     return {
       isOptimal: issues.length === 0,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -610,7 +610,7 @@ export class SecurityPerformanceService {
 
     try {
       const rateLimitResult = await integrationService.checkRateLimit(integration.id, 'api_call');
-      
+
       // Check if rate limits are being hit frequently
       if (!rateLimitResult.allowed) {
         issues.push('Rate limits are being exceeded');
@@ -641,7 +641,6 @@ export class SecurityPerformanceService {
           recommendations.push('Align rate limits across different time windows');
         }
       }
-
     } catch (error) {
       console.error('Rate limit efficiency check failed:', error);
     }
@@ -649,7 +648,7 @@ export class SecurityPerformanceService {
     return {
       isOptimal: issues.length === 0,
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -657,8 +656,8 @@ export class SecurityPerformanceService {
    * Creates performance alert
    */
   private async createPerformanceAlert(
-    integration: Integration, 
-    issues: string[], 
+    integration: Integration,
+    issues: string[],
     recommendations: string[]
   ): Promise<void> {
     try {
@@ -673,8 +672,8 @@ export class SecurityPerformanceService {
           issues,
           recommendations,
           checkType: 'performance',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     } catch (error) {
       console.error('Failed to create performance alert:', error);
@@ -688,12 +687,15 @@ export class SecurityPerformanceService {
   /**
    * Handles security incident
    */
-  async handleSecurityIncident(integrationId: string, incident: {
-    type: 'brute_force' | 'suspicious_activity' | 'credential_compromise' | 'data_breach';
-    severity: 'low' | 'medium' | 'high' | 'critical';
-    description: string;
-    evidence: any;
-  }): Promise<void> {
+  async handleSecurityIncident(
+    integrationId: string,
+    incident: {
+      type: 'brute_force' | 'suspicious_activity' | 'credential_compromise' | 'data_breach';
+      severity: 'low' | 'medium' | 'high' | 'critical';
+      description: string;
+      evidence: any;
+    }
+  ): Promise<void> {
     try {
       // Create critical alert
       await monitoringService.createAlert({
@@ -706,8 +708,8 @@ export class SecurityPerformanceService {
         metadata: {
           incidentType: incident.type,
           evidence: incident.evidence,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
 
       // Take automatic response actions based on severity
@@ -722,10 +724,9 @@ export class SecurityPerformanceService {
         `Security incident detected: ${incident.type}`,
         {
           incident,
-          responseActions: 'Emergency actions triggered'
+          responseActions: 'Emergency actions triggered',
         }
       );
-
     } catch (error) {
       console.error('Failed to handle security incident:', error);
     }
@@ -738,7 +739,7 @@ export class SecurityPerformanceService {
     try {
       // Disable integration temporarily
       await integrationService.updateIntegration(integrationId, {
-        isActive: false
+        isActive: false,
       });
 
       // Stop all sync jobs
@@ -755,10 +756,9 @@ export class SecurityPerformanceService {
         metadata: {
           emergencyActions: ['disabled_integration', 'stopped_sync'],
           incident: incident,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
-
     } catch (error) {
       console.error('Failed to take emergency actions:', error);
     }
@@ -818,23 +818,25 @@ export class SecurityPerformanceService {
             syncSettings: {
               ...integration.configuration.syncSettings,
               ...syncOptimization.config,
-              ...batchOptimization.config
+              ...batchOptimization.config,
             },
             rateLimits: {
               ...integration.configuration.rateLimits,
-              ...rateLimitOptimization.config
-            }
-          }
+              ...rateLimitOptimization.config,
+            },
+          },
         });
       }
 
       return {
         optimizations,
         performanceGain,
-        recommendations
+        recommendations,
       };
     } catch (error) {
-      throw new Error(`Performance optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Performance optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -844,11 +846,16 @@ export class SecurityPerformanceService {
 
   private getSyncIntervalMs(frequency: string): number {
     switch (frequency) {
-      case 'realtime': return 30 * 1000;
-      case 'hourly': return 60 * 60 * 1000;
-      case 'daily': return 24 * 60 * 60 * 1000;
-      case 'weekly': return 7 * 24 * 60 * 60 * 1000;
-      default: return 60 * 60 * 1000;
+      case 'realtime':
+        return 30 * 1000;
+      case 'hourly':
+        return 60 * 60 * 1000;
+      case 'daily':
+        return 24 * 60 * 60 * 1000;
+      case 'weekly':
+        return 7 * 24 * 60 * 60 * 1000;
+      default:
+        return 60 * 60 * 1000;
     }
   }
 
@@ -860,13 +867,13 @@ export class SecurityPerformanceService {
     config?: any;
   } {
     const metrics = this.performanceMetrics.get(`${integration.id}:response_time`) || [];
-    
+
     if (metrics.length === 0) {
       return { optimized: false, optimization: '', gain: 0, recommendation: '' };
     }
 
     const avgResponseTime = metrics.reduce((sum, time) => sum + time, 0) / metrics.length;
-    
+
     // If response times are consistently high, recommend less frequent syncing
     if (avgResponseTime > 3000 && integration.syncFrequency === 'realtime') {
       return {
@@ -874,7 +881,7 @@ export class SecurityPerformanceService {
         optimization: 'Changed sync frequency from real-time to hourly',
         gain: 20,
         recommendation: 'Consider using hourly sync for better performance',
-        config: { syncInterval: 60 * 60 * 1000 }
+        config: { syncInterval: 60 * 60 * 1000 },
       };
     }
 
@@ -889,7 +896,7 @@ export class SecurityPerformanceService {
     config?: any;
   } {
     const config = integration.configuration.rateLimits;
-    
+
     if (!config) {
       return { optimized: false, optimization: '', gain: 0, recommendation: '' };
     }
@@ -904,8 +911,8 @@ export class SecurityPerformanceService {
         config: {
           requestsPerMinute: Math.min(100, config.requestsPerMinute * 2),
           requestsPerHour: Math.min(1000, config.requestsPerHour * 2),
-          requestsPerDay: Math.min(10000, config.requestsPerDay * 2)
-        }
+          requestsPerDay: Math.min(10000, config.requestsPerDay * 2),
+        },
       };
     }
 
@@ -920,7 +927,7 @@ export class SecurityPerformanceService {
     config?: any;
   } {
     const config = integration.configuration.syncSettings;
-    
+
     if (!config) {
       return { optimized: false, optimization: '', gain: 0, recommendation: '' };
     }
@@ -932,7 +939,7 @@ export class SecurityPerformanceService {
         optimization: 'Increased batch size for better performance',
         gain: 10,
         recommendation: 'Monitor memory usage with larger batch sizes',
-        config: { batchSize: Math.min(200, config.batchSize * 2) }
+        config: { batchSize: Math.min(200, config.batchSize * 2) },
       };
     }
 
@@ -974,22 +981,24 @@ export class SecurityPerformanceService {
       for (const integration of integrations) {
         // Get recent alerts
         const alerts = await monitoringService.getIntegrationAlerts(integration.id);
-        const securityAlerts = alerts.filter(a => a.metadata?.scanType === 'security');
-        const performanceAlerts = alerts.filter(a => a.metadata?.checkType === 'performance');
-        const criticalAlerts = alerts.filter(a => a.severity === 'critical' || a.severity === 'high');
+        const securityAlerts = alerts.filter((a) => a.metadata?.scanType === 'security');
+        const performanceAlerts = alerts.filter((a) => a.metadata?.checkType === 'performance');
+        const criticalAlerts = alerts.filter(
+          (a) => a.severity === 'critical' || a.severity === 'high'
+        );
 
         totalSecurityIssues += securityAlerts.length;
         totalPerformanceIssues += performanceAlerts.length;
         criticalIssues += criticalAlerts.length;
 
         // Collect recommendations
-        securityAlerts.forEach(alert => {
+        securityAlerts.forEach((alert) => {
           if (alert.metadata?.recommendations) {
             allRecommendations.push(...alert.metadata.recommendations);
           }
         });
 
-        performanceAlerts.forEach(alert => {
+        performanceAlerts.forEach((alert) => {
           if (alert.metadata?.recommendations) {
             allRecommendations.push(...alert.metadata.recommendations);
           }
@@ -997,15 +1006,15 @@ export class SecurityPerformanceService {
       }
 
       // Calculate scores (0-100)
-      const securityScore = Math.max(0, 100 - (totalSecurityIssues * 10));
-      const performanceScore = Math.max(0, 100 - (totalPerformanceIssues * 5));
+      const securityScore = Math.max(0, 100 - totalSecurityIssues * 10);
+      const performanceScore = Math.max(0, 100 - totalPerformanceIssues * 5);
 
       return {
         securityScore,
         performanceScore,
         totalIssues: totalSecurityIssues + totalPerformanceIssues,
         criticalIssues,
-        recommendations: [...new Set(allRecommendations)] // Remove duplicates
+        recommendations: [...new Set(allRecommendations)], // Remove duplicates
       };
     } catch (error) {
       console.error('Failed to get security performance summary:', error);
@@ -1014,7 +1023,7 @@ export class SecurityPerformanceService {
         performanceScore: 0,
         totalIssues: 0,
         criticalIssues: 0,
-        recommendations: []
+        recommendations: [],
       };
     }
   }

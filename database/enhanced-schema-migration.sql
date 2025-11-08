@@ -1,6 +1,6 @@
 -- Enhanced Content Features Database Migration
 -- This script adds new tables and columns for enhanced content generation features
--- Run this in your Supabase SQL Editor after the base schema
+-- Run this in your Neon SQL Editor after the base schema
 
 -- ============================================================================
 -- 1. BRAND VOICES TABLE
@@ -275,13 +275,8 @@ CREATE TRIGGER update_image_styles_updated_at
 -- 10. ENABLE REALTIME FOR NEW TABLES
 -- ============================================================================
 -- Enable realtime subscriptions for all new tables
-ALTER PUBLICATION supabase_realtime ADD TABLE brand_voices;
-ALTER PUBLICATION supabase_realtime ADD TABLE audience_profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE campaigns;
-ALTER PUBLICATION supabase_realtime ADD TABLE content_series;
-ALTER PUBLICATION supabase_realtime ADD TABLE post_analytics;
-ALTER PUBLICATION supabase_realtime ADD TABLE content_templates;
-ALTER PUBLICATION supabase_realtime ADD TABLE image_styles;
+-- Note: Neon PostgreSQL doesn't have built-in realtime like Supabase.
+-- If you need realtime functionality, consider using WebSockets, SSE, or third-party services.
 
 -- ============================================================================
 -- 11. CREATE HELPER FUNCTIONS

@@ -53,8 +53,8 @@ Verify your Neon database connection string is set correctly in your environment
 **Solution:**
 
 1. Apply the complete database schema
-2. Run the `fix-database-setup.js` script
-3. Or manually run the SQL in your Supabase SQL Editor
+2. Run the migration scripts using Neon SQL Editor
+3. Or manually run the SQL in your Neon SQL Editor
 
 ### **Issue: Data saves but doesn't appear**
 
@@ -93,7 +93,7 @@ Verify your Neon database connection string is set correctly in your environment
 1. Create a post
 2. Refresh the page
 3. Check if the post appears in the list
-4. Check the database directly in Supabase
+4. Check the database directly in Neon console
 
 ## **Debug Commands**
 
@@ -101,22 +101,16 @@ Verify your Neon database connection string is set correctly in your environment
 
 ```javascript
 // In browser console
-import { auth } from './services/supabaseService';
-auth.getUser().then((user) => {
-  console.log('Current user:', user);
-  if (user) {
-    console.log('User ID:', user.id);
-  } else {
-    console.log('No user authenticated');
-  }
-});
+import { useUser } from '@stackframe/react';
+// Use Stack Auth hooks in React components
+// For API routes, use Stack Auth server SDK
 ```
 
 ### **Test Database Operations**
 
 ```javascript
-// In browser console
-import { db } from './services/supabaseService';
+// Use API endpoints or databaseService for database operations
+// Example: fetch('/api/posts')
 
 // Test getting posts
 db.getPosts()
@@ -214,5 +208,5 @@ You'll know the fix is working when you see:
 If you're still having issues, please share:
 
 1. The exact error messages from the browser console
-2. Your Supabase project URL (without the key)
+2. Your Neon database connection string
 3. Which step of the troubleshooting process you're stuck on

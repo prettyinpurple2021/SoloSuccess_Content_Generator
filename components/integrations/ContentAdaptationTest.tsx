@@ -13,7 +13,15 @@ export const ContentAdaptationTest: React.FC = () => {
   const [results, setResults] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
 
-  const platforms = ['twitter', 'linkedin', 'facebook', 'instagram', 'bluesky', 'reddit', 'pinterest'];
+  const platforms = [
+    'twitter',
+    'linkedin',
+    'facebook',
+    'instagram',
+    'bluesky',
+    'reddit',
+    'pinterest',
+  ];
 
   const testAdaptation = async () => {
     setLoading(true);
@@ -39,7 +47,7 @@ export const ContentAdaptationTest: React.FC = () => {
       instagram: '📷',
       bluesky: '☁️',
       reddit: '🤖',
-      pinterest: '📌'
+      pinterest: '📌',
     };
     return icons[platform] || '📱';
   };
@@ -52,7 +60,7 @@ export const ContentAdaptationTest: React.FC = () => {
       instagram: 'from-pink-400 to-pink-600',
       bluesky: 'from-sky-400 to-sky-600',
       reddit: 'from-orange-500 to-orange-700',
-      pinterest: 'from-red-500 to-red-700'
+      pinterest: 'from-red-500 to-red-700',
     };
     return colors[platform] || 'from-gray-400 to-gray-600';
   };
@@ -67,9 +75,7 @@ export const ContentAdaptationTest: React.FC = () => {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Test Content
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Test Content</label>
             <textarea
               value={testContent}
               onChange={(e) => setTestContent(e.target.value)}
@@ -97,7 +103,7 @@ export const ContentAdaptationTest: React.FC = () => {
             {Object.entries(results).map(([platform, result]) => {
               const platformLimits = contentAdaptationService.getPlatformLimits(platform);
               const isWithinLimit = result.characterCount <= (platformLimits?.maxCharacters || 0);
-              
+
               return (
                 <div
                   key={platform}

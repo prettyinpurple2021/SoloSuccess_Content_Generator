@@ -494,38 +494,39 @@ class ClientMonitoringService {
   private generateMetricId(): string {
     return `metric_${Date.now()}_${this.secureRandomString(9)}`;
   }
-    /**
-     * Generate a cryptographically secure random string.
-     */
-    private secureRandomString(length: number): string {
-      let randomStr = "";
-      const charsetSize = 36;
-      const maxValue = Math.floor(256 / charsetSize) * charsetSize; // 252
-      if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
-        // Browser: use window.crypto
-        while (randomStr.length < length) {
-          const arr = new Uint8Array(1);
-          window.crypto.getRandomValues(arr);
-          const value = arr[0];
-          if (value < maxValue) {
-            randomStr += (value % charsetSize).toString(36);
-          }
-          // else, discard and try again
+  /**
+   * Generate a cryptographically secure random string.
+   */
+  private secureRandomString(length: number): string {
+    let randomStr = '';
+    const charsetSize = 36;
+    const maxValue = Math.floor(256 / charsetSize) * charsetSize; // 252
+
+    // Use browser crypto API if available
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+      // Browser: use window.crypto
+      while (randomStr.length < length) {
+        const arr = new Uint8Array(1);
+        window.crypto.getRandomValues(arr);
+        const value = arr[0];
+        if (value < maxValue) {
+          randomStr += (value % charsetSize).toString(36);
         }
-      } else {
-        // Node.js or fallback (note: process.browser may be available)
-        const crypto = require("crypto");
-        while (randomStr.length < length) {
-          const buf = crypto.randomBytes(1);
-          const value = buf[0];
-          if (value < maxValue) {
-            randomStr += (value % charsetSize).toString(36);
-          }
-          // else, discard and try again
-        }
+        // else, discard and try again
       }
-      return randomStr;
+    } else {
+      // Fallback: use Math.random (less secure but works in all environments)
+      // This should rarely be used since modern browsers support window.crypto
+      while (randomStr.length < length) {
+        const value = Math.floor(Math.random() * 256);
+        if (value < maxValue) {
+          randomStr += (value % charsetSize).toString(36);
+        }
+        // else, discard and try again
+      }
     }
+    return randomStr;
+  }
 }
 
 // Create singleton instance

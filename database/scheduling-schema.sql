@@ -45,5 +45,6 @@ CREATE POLICY post_jobs_user_access ON post_jobs
   FOR ALL USING (auth.uid() = user_id);
 
 -- Realtime (optional)
-ALTER PUBLICATION supabase_realtime ADD TABLE post_jobs;
+-- Note: Neon PostgreSQL doesn't have built-in realtime like Supabase.
+-- If you need realtime functionality, consider using WebSockets, SSE, or third-party services.
 

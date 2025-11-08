@@ -21,7 +21,7 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
   onDisconnect,
   onConfigure,
   onDelete,
-  isLoading
+  isLoading,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -44,7 +44,7 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
       hubspot: '🎯',
       salesforce: '☁️',
       mailchimp: '📧',
-      sendgrid: '📮'
+      sendgrid: '📮',
     };
     return icons[platform] || '🔗';
   };
@@ -128,17 +128,16 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(integration.status)}`}>
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(integration.status)}`}
+            >
               {integration.status}
             </span>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <motion.div
-                animate={{ rotate: isExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
                 ▼
               </motion.div>
             </button>
@@ -149,7 +148,9 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
       {/* Card Content */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
-          <span className={`px-2 py-1 rounded text-xs font-medium border ${getTypeColor(integration.type)}`}>
+          <span
+            className={`px-2 py-1 rounded text-xs font-medium border ${getTypeColor(integration.type)}`}
+          >
             {integration.type.replace('_', ' ')}
           </span>
           <div className="text-xs text-gray-500">
@@ -159,14 +160,14 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
         <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
           <div className="flex items-center">
-            <div className={`w-2 h-2 rounded-full mr-2 ${
-              integration.isActive ? 'bg-green-500' : 'bg-gray-400'
-            }`}></div>
+            <div
+              className={`w-2 h-2 rounded-full mr-2 ${
+                integration.isActive ? 'bg-green-500' : 'bg-gray-400'
+              }`}
+            ></div>
             {integration.isActive ? 'Active' : 'Inactive'}
           </div>
-          <div>
-            Sync: {integration.syncFrequency}
-          </div>
+          <div>Sync: {integration.syncFrequency}</div>
         </div>
 
         {/* Quick Actions */}
@@ -197,7 +198,7 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
               {isActionLoading ? '⏳' : '🔗'} Connect
             </button>
           )}
-          
+
           <button
             onClick={() => handleAction(() => onTestConnection(integration.id))}
             disabled={isLoading || isActionLoading}
@@ -221,9 +222,13 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
             <div>
               <h5 className="text-sm font-medium text-gray-900 mb-2">Configuration</h5>
               <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                <div>Auto Sync: {integration.configuration.syncSettings?.autoSync ? 'Yes' : 'No'}</div>
+                <div>
+                  Auto Sync: {integration.configuration.syncSettings?.autoSync ? 'Yes' : 'No'}
+                </div>
                 <div>Batch Size: {integration.configuration.syncSettings?.batchSize || 'N/A'}</div>
-                <div>Retry Attempts: {integration.configuration.errorHandling?.maxRetries || 'N/A'}</div>
+                <div>
+                  Retry Attempts: {integration.configuration.errorHandling?.maxRetries || 'N/A'}
+                </div>
                 <div>Timeout: {integration.configuration.syncSettings?.timeoutMs || 'N/A'}ms</div>
               </div>
             </div>
@@ -247,13 +252,19 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
                 <h5 className="text-sm font-medium text-gray-900 mb-2">Notifications</h5>
                 <div className="flex flex-wrap gap-2">
                   {integration.configuration.notifications.emailNotifications && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Email</span>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                      Email
+                    </span>
                   )}
                   {integration.configuration.notifications.webhookNotifications && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Webhook</span>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                      Webhook
+                    </span>
                   )}
                   {integration.configuration.notifications.slackNotifications && (
-                    <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">Slack</span>
+                    <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+                      Slack
+                    </span>
                   )}
                 </div>
               </div>

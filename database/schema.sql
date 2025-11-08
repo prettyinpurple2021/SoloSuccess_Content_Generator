@@ -1,5 +1,5 @@
--- Supabase Database Schema for Soloboss AI Content Factory
--- Run this in your Supabase SQL Editor
+-- Neon PostgreSQL Database Schema for Soloboss AI Content Factory
+-- Run this in your Neon SQL Editor
 
 -- Create posts table
 CREATE TABLE IF NOT EXISTS posts (
@@ -50,6 +50,3 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER update_posts_updated_at BEFORE UPDATE ON posts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Enable realtime for posts table
-ALTER PUBLICATION supabase_realtime ADD TABLE posts;

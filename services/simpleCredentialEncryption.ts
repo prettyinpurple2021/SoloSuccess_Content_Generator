@@ -2,7 +2,7 @@ import { EncryptedCredentials } from '../types';
 
 /**
  * SimpleCredentialEncryption - Browser-compatible credential encryption
- * 
+ *
  * Uses a simpler approach that's more compatible across different browsers
  * and environments, especially for client-side encryption.
  */
@@ -43,7 +43,7 @@ export class SimpleCredentialEncryption {
       const encryptedBuffer = await crypto.subtle.encrypt(
         {
           name: this.ALGORITHM,
-          iv: iv
+          iv: iv,
         },
         key,
         plaintextBuffer
@@ -54,11 +54,13 @@ export class SimpleCredentialEncryption {
         iv: this.arrayBufferToBase64(iv.buffer),
         authTag: '', // GCM includes auth tag in encrypted data
         algorithm: this.ALGORITHM,
-        salt: '' // Not needed for this simple approach
+        salt: '', // Not needed for this simple approach
       };
     } catch (error) {
       console.error('Encryption error:', error);
-      throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -94,7 +96,7 @@ export class SimpleCredentialEncryption {
       const decryptedBuffer = await crypto.subtle.decrypt(
         {
           name: this.ALGORITHM,
-          iv: new Uint8Array(iv)
+          iv: new Uint8Array(iv),
         },
         key,
         ciphertext
@@ -105,7 +107,9 @@ export class SimpleCredentialEncryption {
       return JSON.parse(decryptedText);
     } catch (error) {
       console.error('Decryption error:', error);
-      throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -115,14 +119,11 @@ export class SimpleCredentialEncryption {
   private static async createKey(userKey: string): Promise<CryptoKey> {
     // Create a hash of the user key to get a consistent 256-bit key
     const keyBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(userKey));
-    
-    return crypto.subtle.importKey(
-      'raw',
-      keyBuffer,
-      { name: this.ALGORITHM },
-      false,
-      ['encrypt', 'decrypt']
-    );
+
+    return crypto.subtle.importKey('raw', keyBuffer, { name: this.ALGORITHM }, false, [
+      'encrypt',
+      'decrypt',
+    ]);
   }
 
   /**
@@ -138,15 +139,15 @@ export class SimpleCredentialEncryption {
 
     // Combine user ID and app secret with a separator
     const combined = `${userId}:${appSecret}`;
-    
+
     // Create a simple hash for the user key
     let hash = 0;
     for (let i = 0; i < combined.length; i++) {
       const char = combined.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     return Math.abs(hash).toString(36) + userId.slice(-8);
   }
 
@@ -159,10 +160,11 @@ export class SimpleCredentialEncryption {
     }
 
     const requiredFields = ['encrypted', 'iv', 'algorithm'];
-    return requiredFields.every(field => 
-      encryptedCredentials[field] && 
-      typeof encryptedCredentials[field] === 'string' &&
-      encryptedCredentials[field].length > 0
+    return requiredFields.every(
+      (field) =>
+        encryptedCredentials[field] &&
+        typeof encryptedCredentials[field] === 'string' &&
+        encryptedCredentials[field].length > 0
     );
   }
 

@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Check, Lightbulb, Target, BarChart3, Palette, Calendar, Users } from 'lucide-react';
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Lightbulb,
+  Target,
+  BarChart3,
+  Palette,
+  Calendar,
+  Users,
+} from 'lucide-react';
 import { HoloCard, HoloButton, HoloText, SparkleEffect, FloatingSkull } from './HolographicTheme';
 
 interface OnboardingStep {
@@ -36,8 +47,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     hasCreatedAudienceProfile: false,
     hasCreatedCampaign: false,
     hasViewedAnalytics: false,
-    hasUsedTemplate: false
-  }
+    hasUsedTemplate: false,
+  },
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
@@ -51,7 +62,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       content: (
         <div className="space-y-4">
           <p className="text-gray-600">
-            We've added exciting new features to help you create more engaging, personalized content:
+            We've added exciting new features to help you create more engaging, personalized
+            content:
           </p>
           <ul className="space-y-2 text-sm text-gray-600">
             <li className="flex items-center gap-2">
@@ -76,7 +88,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </li>
           </ul>
         </div>
-      )
+      ),
     },
     {
       id: 'brand-voice',
@@ -105,13 +117,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           )}
         </div>
       ),
-      action: userProgress.hasCreatedBrandVoice ? undefined : {
-        label: 'Create Brand Voice',
-        onClick: () => {
-          // This would trigger opening the brand voice manager
-          console.log('Open brand voice manager');
-        }
-      }
+      action: userProgress.hasCreatedBrandVoice
+        ? undefined
+        : {
+            label: 'Create Brand Voice',
+            onClick: () => {
+              // This would trigger opening the brand voice manager
+              console.log('Open brand voice manager');
+            },
+          },
     },
     {
       id: 'audience-profiles',
@@ -121,7 +135,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       content: (
         <div className="space-y-4">
           <p className="text-gray-600">
-            Audience profiles help the AI understand who you're writing for, resulting in more relevant content.
+            Audience profiles help the AI understand who you're writing for, resulting in more
+            relevant content.
           </p>
           <div className="bg-purple-50 p-4 rounded-lg">
             <h4 className="font-medium text-purple-900 mb-2">Profile includes:</h4>
@@ -140,12 +155,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           )}
         </div>
       ),
-      action: userProgress.hasCreatedAudienceProfile ? undefined : {
-        label: 'Create Audience Profile',
-        onClick: () => {
-          console.log('Open audience profile manager');
-        }
-      }
+      action: userProgress.hasCreatedAudienceProfile
+        ? undefined
+        : {
+            label: 'Create Audience Profile',
+            onClick: () => {
+              console.log('Open audience profile manager');
+            },
+          },
     },
     {
       id: 'campaigns',
@@ -155,7 +172,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       content: (
         <div className="space-y-4">
           <p className="text-gray-600">
-            Campaigns help you coordinate content across multiple platforms and track performance as a cohesive unit.
+            Campaigns help you coordinate content across multiple platforms and track performance as
+            a cohesive unit.
           </p>
           <div className="bg-green-50 p-4 rounded-lg">
             <h4 className="font-medium text-green-900 mb-2">Campaign features:</h4>
@@ -174,12 +192,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           )}
         </div>
       ),
-      action: userProgress.hasCreatedCampaign ? undefined : {
-        label: 'Create Campaign',
-        onClick: () => {
-          console.log('Open campaign manager');
-        }
-      }
+      action: userProgress.hasCreatedCampaign
+        ? undefined
+        : {
+            label: 'Create Campaign',
+            onClick: () => {
+              console.log('Open campaign manager');
+            },
+          },
     },
     {
       id: 'analytics',
@@ -189,7 +209,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       content: (
         <div className="space-y-4">
           <p className="text-gray-600">
-            The analytics dashboard provides detailed insights into your content performance and optimization suggestions.
+            The analytics dashboard provides detailed insights into your content performance and
+            optimization suggestions.
           </p>
           <div className="bg-red-50 p-4 rounded-lg">
             <h4 className="font-medium text-red-900 mb-2">Analytics include:</h4>
@@ -208,22 +229,26 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           )}
         </div>
       ),
-      action: userProgress.hasViewedAnalytics ? undefined : {
-        label: 'View Analytics',
-        onClick: () => {
-          console.log('Open analytics dashboard');
-        }
-      }
+      action: userProgress.hasViewedAnalytics
+        ? undefined
+        : {
+            label: 'View Analytics',
+            onClick: () => {
+              console.log('Open analytics dashboard');
+            },
+          },
     },
     {
       id: 'templates',
       title: 'Use Content Templates',
-      description: 'Speed up content creation with customizable templates for different content types.',
+      description:
+        'Speed up content creation with customizable templates for different content types.',
       icon: <Palette className="w-8 h-8 text-indigo-500" />,
       content: (
         <div className="space-y-4">
           <p className="text-gray-600">
-            Templates provide structured starting points for your content, ensuring consistency and saving time.
+            Templates provide structured starting points for your content, ensuring consistency and
+            saving time.
           </p>
           <div className="bg-indigo-50 p-4 rounded-lg">
             <h4 className="font-medium text-indigo-900 mb-2">Template features:</h4>
@@ -242,22 +267,25 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           )}
         </div>
       ),
-      action: userProgress.hasUsedTemplate ? undefined : {
-        label: 'Browse Templates',
-        onClick: () => {
-          console.log('Open template library');
-        }
-      }
+      action: userProgress.hasUsedTemplate
+        ? undefined
+        : {
+            label: 'Browse Templates',
+            onClick: () => {
+              console.log('Open template library');
+            },
+          },
     },
     {
       id: 'complete',
-      title: 'You\'re All Set!',
+      title: "You're All Set!",
       description: 'Start creating amazing content with your new enhanced features.',
       icon: <Check className="w-8 h-8 text-green-500" />,
       content: (
         <div className="space-y-4">
           <p className="text-gray-600">
-            You now have access to all the enhanced features. Here are some quick tips to get started:
+            You now have access to all the enhanced features. Here are some quick tips to get
+            started:
           </p>
           <div className="space-y-3">
             <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -266,7 +294,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               </div>
               <div>
                 <h4 className="font-medium text-gray-900">Start with a brand voice</h4>
-                <p className="text-sm text-gray-600">This will improve all your AI-generated content</p>
+                <p className="text-sm text-gray-600">
+                  This will improve all your AI-generated content
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -284,13 +314,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               </div>
               <div>
                 <h4 className="font-medium text-gray-900">Monitor your analytics</h4>
-                <p className="text-sm text-gray-600">Track performance and optimize your strategy</p>
+                <p className="text-sm text-gray-600">
+                  Track performance and optimize your strategy
+                </p>
               </div>
             </div>
           </div>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   useEffect(() => {
@@ -332,7 +364,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       <HoloCard className="max-w-4xl w-full max-h-[90vh] overflow-hidden relative">
         <SparkleEffect count={15} size="medium" />
         <FloatingSkull className="absolute top-4 right-16" size="small" />
-        
+
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/20">
           <div className="flex items-center gap-4">
@@ -367,7 +399,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             />
           </div>
-          
+
           {/* Step indicators */}
           <div className="flex justify-between mt-4">
             {steps.map((step, index) => (
@@ -378,17 +410,19 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   index === currentStep
                     ? 'bg-glass-pink text-pink-300 neon-glow'
                     : index < currentStep || completedSteps.has(step.id)
-                    ? 'text-green-400 hover:bg-glass-cyan'
-                    : 'text-white/60 hover:bg-white/10'
+                      ? 'text-green-400 hover:bg-glass-cyan'
+                      : 'text-white/60 hover:bg-white/10'
                 }`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ${
-                  index === currentStep
-                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
-                    : index < currentStep || completedSteps.has(step.id)
-                    ? 'bg-gradient-to-r from-green-400 to-cyan-400 text-white shadow-lg'
-                    : 'bg-gray-700 text-gray-300'
-                }`}>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ${
+                    index === currentStep
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
+                      : index < currentStep || completedSteps.has(step.id)
+                        ? 'bg-gradient-to-r from-green-400 to-cyan-400 text-white shadow-lg'
+                        : 'bg-gray-700 text-gray-300'
+                  }`}
+                >
                   {index < currentStep || completedSteps.has(step.id) ? (
                     <Check className="w-4 h-4" />
                   ) : (
@@ -405,12 +439,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-96">
-          <HoloText className="mb-6 text-white/80">
-            {currentStepData.description}
-          </HoloText>
-          <div className="text-white/90">
-            {currentStepData.content}
-          </div>
+          <HoloText className="mb-6 text-white/80">{currentStepData.description}</HoloText>
+          <div className="text-white/90">{currentStepData.content}</div>
         </div>
 
         {/* Footer */}
@@ -435,11 +465,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 {currentStepData.action.label} ✨
               </HoloButton>
             )}
-            
-            <HoloButton
-              onClick={handleNext}
-              className="flex items-center gap-2 sparkles neon-glow"
-            >
+
+            <HoloButton onClick={handleNext} className="flex items-center gap-2 sparkles neon-glow">
               {isLastStep ? '🚀 Get Started!' : 'Next ✨'}
               {!isLastStep && <ChevronRight className="w-4 h-4" />}
             </HoloButton>
@@ -485,7 +512,7 @@ export const useOnboarding = () => {
     hasCompletedOnboarding,
     completeOnboarding,
     resetOnboarding,
-    setShowOnboarding
+    setShowOnboarding,
   };
 };
 

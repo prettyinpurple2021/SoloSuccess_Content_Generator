@@ -1,6 +1,6 @@
 -- Integration Manager Database Schema Migration
 -- This script creates all tables and functions needed for the Integration Manager
--- Run this in your Supabase SQL Editor after the base schema
+-- Run this in your Neon SQL Editor after the base schema
 
 -- ============================================================================
 -- 1. INTEGRATIONS TABLE
@@ -228,12 +228,8 @@ CREATE TRIGGER update_webhook_deliveries_updated_at
 -- 8. ENABLE REALTIME FOR INTEGRATION TABLES
 -- ============================================================================
 -- Enable realtime subscriptions for integration tables
-ALTER PUBLICATION supabase_realtime ADD TABLE integrations;
-ALTER PUBLICATION supabase_realtime ADD TABLE integration_webhooks;
-ALTER PUBLICATION supabase_realtime ADD TABLE integration_logs;
-ALTER PUBLICATION supabase_realtime ADD TABLE integration_alerts;
-ALTER PUBLICATION supabase_realtime ADD TABLE integration_metrics;
-ALTER PUBLICATION supabase_realtime ADD TABLE webhook_deliveries;
+-- Note: Neon PostgreSQL doesn't have built-in realtime like Supabase.
+-- If you need realtime functionality, consider using WebSockets, SSE, or third-party services.
 
 -- ============================================================================
 -- 9. CREATE INTEGRATION HELPER FUNCTIONS

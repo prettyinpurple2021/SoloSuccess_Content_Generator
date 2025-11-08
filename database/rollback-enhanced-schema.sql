@@ -36,13 +36,8 @@ DROP COLUMN IF EXISTS brand_voice_id;
 -- ============================================================================
 -- 4. REMOVE REALTIME SUBSCRIPTIONS
 -- ============================================================================
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS image_styles;
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS content_templates;
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS post_analytics;
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS content_series;
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS campaigns;
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS audience_profiles;
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS brand_voices;
+-- Note: Neon PostgreSQL doesn't have built-in realtime like Supabase.
+-- No realtime publication cleanup needed for Neon.
 
 -- ============================================================================
 -- 5. DROP TABLES (in reverse dependency order)

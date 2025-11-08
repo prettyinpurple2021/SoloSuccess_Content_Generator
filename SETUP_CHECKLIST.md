@@ -8,19 +8,19 @@
 
 ## 🔧 Still Need To Do
 
-### 1. Supabase Database Setup
+### 1. Neon Database Setup
 
-- [x] Go to your Supabase project dashboard
+- [x] Go to your Neon project dashboard (https://console.neon.tech/)
 - [x] Navigate to **SQL Editor**
 - [x] Copy and paste the contents of `database/schema.sql`
 - [x] Click **Run** to create the database tables
 
-### 2. Enable Anonymous Authentication
+### 2. Stack Auth Setup
 
-- [x] In Supabase dashboard, go to **Authentication** > **Settings**
-- [x] Scroll to **Auth Providers** section
-- [x] Toggle **Anonymous sign-ins** to **ON**
-- [x] Click **Save**
+- [x] Go to your Stack Auth project (https://app.stack-auth.com/)
+- [x] Configure authentication providers
+- [x] Set up environment variables for Stack Auth
+- [x] Verify authentication is working
 
 ### 3. Test the Application
 
@@ -31,13 +31,14 @@
 
 ## 🚨 Common Issues
 
-### "Anonymous sign-in disabled"
+### "Authentication failed"
 
-- Make sure you enabled anonymous auth in Supabase (step 2 above)
+- Make sure Stack Auth is configured correctly (step 2 above)
+- Check Stack Auth environment variables
 
 ### "Table 'posts' doesn't exist"
 
-- Make sure you ran the database schema (step 1 above)
+- Make sure you ran the database schema in Neon (step 1 above)
 
 ### Styling issues
 
@@ -48,8 +49,10 @@
 ```env
 # Required
 GEMINI_API_KEY=your_gemini_key
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+DATABASE_URL=your_neon_database_url
+VITE_STACK_PROJECT_ID=your_stack_project_id
+VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_stack_publishable_key
+STACK_SECRET_SERVER_KEY=your_stack_secret_key
 
 # Optional (for Blogger publishing)
 GOOGLE_CLIENT_ID=your_google_client_id

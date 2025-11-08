@@ -61,7 +61,7 @@ export const getUserFriendlyError = (
   ) {
     return {
       title: 'Access Denied',
-      message: "You don&apos;t have permission to perform this action.",
+      message: 'You don&apos;t have permission to perform this action.',
       action: 'Contact support if you believe this is an error',
       severity: 'medium',
       recoverable: false,

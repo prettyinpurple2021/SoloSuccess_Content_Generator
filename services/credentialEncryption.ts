@@ -98,7 +98,8 @@ export class CredentialEncryption {
       const salt = this.base64ToArrayBuffer(encryptedCredentials.salt || '');
       const iv = this.base64ToArrayBuffer(encryptedCredentials.iv);
       const authTag = this.base64ToArrayBuffer(encryptedCredentials.authTag);
-      const encryptedField = (encryptedCredentials as any).encrypted || (encryptedCredentials as any).data;
+      const encryptedField =
+        (encryptedCredentials as any).encrypted || (encryptedCredentials as any).data;
       if (!encryptedField) {
         throw new Error('Missing required field: encrypted');
       }
@@ -287,7 +288,8 @@ export class CredentialEncryption {
     if (!hasEncrypted) throw new Error('Missing required field: encrypted');
     const mustHave = ['iv', 'authTag', 'algorithm'] as const;
     for (const field of mustHave) {
-      if (!(encryptedCredentials as any)[field]) throw new Error(`Missing required field: ${field}`);
+      if (!(encryptedCredentials as any)[field])
+        throw new Error(`Missing required field: ${field}`);
     }
   }
 

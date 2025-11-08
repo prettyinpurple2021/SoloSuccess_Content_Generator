@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
-      errorId: ''
+      errorId: '',
     };
   }
 
@@ -29,14 +29,14 @@ export class ErrorBoundary extends Component<Props, State> {
     return {
       hasError: true,
       error,
-      errorId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      errorId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({
       error,
-      errorInfo
+      errorInfo,
     });
 
     // Log error to console in development
@@ -64,18 +64,18 @@ export class ErrorBoundary extends Component<Props, State> {
         componentStack: errorInfo.componentStack,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
-        url: window.location.href
+        url: window.location.href,
       };
 
       // Store locally for debugging
       const existingErrors = JSON.parse(localStorage.getItem('app_errors') || '[]');
       existingErrors.push(errorData);
-      
+
       // Keep only last 10 errors
       if (existingErrors.length > 10) {
         existingErrors.splice(0, existingErrors.length - 10);
       }
-      
+
       localStorage.setItem('app_errors', JSON.stringify(existingErrors));
     } catch (loggingError) {
       console.error('Failed to log error:', loggingError);
@@ -87,7 +87,7 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
-      errorId: ''
+      errorId: '',
     });
   };
 
@@ -97,7 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleReportError = () => {
     const { error, errorInfo, errorId } = this.state;
-    
+
     const errorReport = {
       errorId,
       message: error?.message || 'Unknown error',
@@ -105,7 +105,7 @@ export class ErrorBoundary extends Component<Props, State> {
       componentStack: errorInfo?.componentStack || 'No component stack',
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
-      url: window.location.href
+      url: window.location.href,
     };
 
     // Create mailto link with error details
@@ -153,7 +153,7 @@ Please describe what you were doing when this error occurred:
           <div className="fixed inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-purple-900/20 to-pink-900/20" />
           </div>
-          
+
           <div className="max-w-md w-full glass-card p-6 relative sparkles neon-glow">
             {/* Sparkle effects */}
             <div className="absolute inset-0 pointer-events-none">
@@ -164,31 +164,28 @@ Please describe what you were doing when this error occurred:
                   style={{
                     left: `${Math.random() * 100}%`,
                     top: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 2}s`
+                    animationDelay: `${Math.random() * 2}s`,
                   }}
                 >
                   💀
                 </div>
               ))}
             </div>
-            
+
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
                 <AlertTriangle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold holo-text">
-                  Something went wrong 💀
-                </h1>
-                <p className="text-sm text-white/70">
-                  Error ID: {this.state.errorId}
-                </p>
+                <h1 className="text-lg font-semibold holo-text">Something went wrong 💀</h1>
+                <p className="text-sm text-white/70">Error ID: {this.state.errorId}</p>
               </div>
             </div>
 
             <div className="mb-6">
               <p className="text-white/80 mb-4">
-                We're sorry, but something unexpected happened. This error has been logged and we'll look into it. 💫
+                We're sorry, but something unexpected happened. This error has been logged and we'll
+                look into it. 💫
               </p>
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
@@ -200,9 +197,7 @@ Please describe what you were doing when this error occurred:
                     <div className="text-red-600 font-semibold mb-2">
                       {this.state.error.message}
                     </div>
-                    <div className="text-gray-700">
-                      {this.state.error.stack}
-                    </div>
+                    <div className="text-gray-700">{this.state.error.stack}</div>
                   </div>
                 </details>
               )}
@@ -306,12 +301,11 @@ export const FeatureErrorBoundary: React.FC<{
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center gap-3 mb-3">
             <AlertTriangle className="w-5 h-5 text-red-600" />
-            <h3 className="font-medium text-red-900">
-              {featureName} Error
-            </h3>
+            <h3 className="font-medium text-red-900">{featureName} Error</h3>
           </div>
           <p className="text-sm text-red-700 mb-4">
-            There was a problem loading this feature. You can try again or continue using other features.
+            There was a problem loading this feature. You can try again or continue using other
+            features.
           </p>
           {onRetry && (
             <button

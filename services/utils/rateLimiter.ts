@@ -16,11 +16,14 @@ export interface RateLimitInfo {
 
 export class RateLimiter {
   private static limits: Map<string, RateLimitConfig> = new Map();
-  private static usage: Map<string, {
-    minute: { count: number; resetTime: number };
-    hour: { count: number; resetTime: number };
-    day: { count: number; resetTime: number };
-  }> = new Map();
+  private static usage: Map<
+    string,
+    {
+      minute: { count: number; resetTime: number };
+      hour: { count: number; resetTime: number };
+      day: { count: number; resetTime: number };
+    }
+  > = new Map();
 
   /**
    * Configure rate limits for a service
@@ -35,12 +38,12 @@ export class RateLimiter {
   static async checkLimit(service: string, userId?: string): Promise<RateLimitInfo> {
     const key = userId ? `${service}:${userId}` : service;
     const config = this.limits.get(service);
-    
+
     if (!config) {
       return {
         remaining: Number.MAX_SAFE_INTEGER,
         resetTime: Date.now() + 60000,
-        limit: Number.MAX_SAFE_INTEGER
+        limit: Number.MAX_SAFE_INTEGER,
       };
     }
 
@@ -48,7 +51,7 @@ export class RateLimiter {
     const usage = this.usage.get(key) || {
       minute: { count: 0, resetTime: now + 60000 },
       hour: { count: 0, resetTime: now + 3600000 },
-      day: { count: 0, resetTime: now + 86400000 }
+      day: { count: 0, resetTime: now + 86400000 },
     };
 
     // Reset counters if time windows have passed
@@ -72,7 +75,7 @@ export class RateLimiter {
         remaining: 0,
         resetTime: usage.minute.resetTime,
         limit: minuteLimit,
-        retryAfter: Math.ceil((usage.minute.resetTime - now) / 1000)
+        retryAfter: Math.ceil((usage.minute.resetTime - now) / 1000),
       };
     }
 
@@ -81,7 +84,7 @@ export class RateLimiter {
         remaining: 0,
         resetTime: usage.hour.resetTime,
         limit: hourLimit,
-        retryAfter: Math.ceil((usage.hour.resetTime - now) / 1000)
+        retryAfter: Math.ceil((usage.hour.resetTime - now) / 1000),
       };
     }
 
@@ -90,7 +93,7 @@ export class RateLimiter {
         remaining: 0,
         resetTime: usage.day.resetTime,
         limit: dayLimit,
-        retryAfter: Math.ceil((usage.day.resetTime - now) / 1000)
+        retryAfter: Math.ceil((usage.day.resetTime - now) / 1000),
       };
     }
 
@@ -106,12 +109,8 @@ export class RateLimiter {
         hourLimit - usage.hour.count,
         dayLimit - usage.day.count
       ),
-      resetTime: Math.min(
-        usage.minute.resetTime,
-        usage.hour.resetTime,
-        usage.day.resetTime
-      ),
-      limit: Math.min(minuteLimit, hourLimit, dayLimit)
+      resetTime: Math.min(usage.minute.resetTime, usage.hour.resetTime, usage.day.resetTime),
+      limit: Math.min(minuteLimit, hourLimit, dayLimit),
     };
   }
 
@@ -120,9 +119,11 @@ export class RateLimiter {
    */
   static async waitForReset(service: string, userId?: string): Promise<void> {
     const rateLimitInfo = await this.checkLimit(service, userId);
-    
+
     if (rateLimitInfo.retryAfter && rateLimitInfo.retryAfter > 0) {
-      console.log(`Rate limit exceeded for ${service}, waiting ${rateLimitInfo.retryAfter} seconds`);
+      console.log(
+        `Rate limit exceeded for ${service}, waiting ${rateLimitInfo.retryAfter} seconds`
+      );
       await this.sleep(rateLimitInfo.retryAfter * 1000);
     }
   }
@@ -142,7 +143,10 @@ export class RateLimiter {
   /**
    * Get current usage for a service
    */
-  static getUsage(service: string, userId?: string): {
+  static getUsage(
+    service: string,
+    userId?: string
+  ): {
     minute: { count: number; limit: number; remaining: number };
     hour: { count: number; limit: number; remaining: number };
     day: { count: number; limit: number; remaining: number };
@@ -155,7 +159,7 @@ export class RateLimiter {
       return {
         minute: { count: 0, limit: 0, remaining: 0 },
         hour: { count: 0, limit: 0, remaining: 0 },
-        day: { count: 0, limit: 0, remaining: 0 }
+        day: { count: 0, limit: 0, remaining: 0 },
       };
     }
 
@@ -163,18 +167,18 @@ export class RateLimiter {
       minute: {
         count: usage.minute.count,
         limit: config.requestsPerMinute,
-        remaining: Math.max(0, config.requestsPerMinute - usage.minute.count)
+        remaining: Math.max(0, config.requestsPerMinute - usage.minute.count),
       },
       hour: {
         count: usage.hour.count,
         limit: config.requestsPerHour,
-        remaining: Math.max(0, config.requestsPerHour - usage.hour.count)
+        remaining: Math.max(0, config.requestsPerHour - usage.hour.count),
       },
       day: {
         count: usage.day.count,
         limit: config.requestsPerDay,
-        remaining: Math.max(0, config.requestsPerDay - usage.day.count)
-      }
+        remaining: Math.max(0, config.requestsPerDay - usage.day.count),
+      },
     };
   }
 
@@ -190,7 +194,7 @@ export class RateLimiter {
    * Sleep utility
    */
   private static sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -199,53 +203,53 @@ export const DEFAULT_RATE_LIMITS: Record<string, RateLimitConfig> = {
   twitter: {
     requestsPerMinute: 15,
     requestsPerHour: 300,
-    requestsPerDay: 1000
+    requestsPerDay: 1000,
   },
   linkedin: {
     requestsPerMinute: 10,
     requestsPerHour: 100,
-    requestsPerDay: 500
+    requestsPerDay: 500,
   },
   facebook: {
     requestsPerMinute: 20,
     requestsPerHour: 200,
-    requestsPerDay: 1000
+    requestsPerDay: 1000,
   },
   instagram: {
     requestsPerMinute: 20,
     requestsPerHour: 200,
-    requestsPerDay: 1000
+    requestsPerDay: 1000,
   },
   reddit: {
     requestsPerMinute: 60,
     requestsPerHour: 1000,
-    requestsPerDay: 10000
+    requestsPerDay: 10000,
   },
   pinterest: {
     requestsPerMinute: 10,
     requestsPerHour: 100,
-    requestsPerDay: 1000
+    requestsPerDay: 1000,
   },
   bluesky: {
     requestsPerMinute: 30,
     requestsPerHour: 1000,
-    requestsPerDay: 10000
+    requestsPerDay: 10000,
   },
   google_analytics: {
     requestsPerMinute: 10,
     requestsPerHour: 100,
-    requestsPerDay: 1000
+    requestsPerDay: 1000,
   },
   openai: {
     requestsPerMinute: 60,
     requestsPerHour: 1000,
-    requestsPerDay: 10000
+    requestsPerDay: 10000,
   },
   claude: {
     requestsPerMinute: 60,
     requestsPerHour: 1000,
-    requestsPerDay: 10000
-  }
+    requestsPerDay: 10000,
+  },
 };
 
 // Initialize default rate limits

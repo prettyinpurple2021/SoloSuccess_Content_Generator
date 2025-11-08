@@ -2,39 +2,79 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 // Temporarily replaced lucide-react icons with simple SVGs
 const Mic = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+    />
   </svg>
 );
 
 const MicOff = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+    />
   </svg>
 );
 
 const Volume2 = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9a3 3 0 000 6" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9a3 3 0 000 6"
+    />
   </svg>
 );
 
 const VolumeX = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9a3 3 0 000 6" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9a3 3 0 000 6"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+    />
   </svg>
 );
 
 const Zap = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M13 10V3L4 14h7v7l9-11h-7z"
+    />
   </svg>
 );
 
 const Sparkles = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+    />
   </svg>
 );
 import { HoloButton, HoloText, SparkleEffect, FloatingSkull } from './HolographicTheme';
@@ -59,7 +99,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
   onGenerateIdeas,
   onOpenSettings,
   onNavigate,
-  onToggleTheme
+  onToggleTheme,
 }) => {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
@@ -85,7 +125,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         }
       },
       description: 'Create a new post about a specific topic',
-      category: 'content'
+      category: 'content',
     },
     {
       command: 'generate ideas for *',
@@ -97,7 +137,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         }
       },
       description: 'Generate content ideas for a topic',
-      category: 'content'
+      category: 'content',
     },
     {
       command: 'new blog post',
@@ -106,7 +146,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         speak('Starting a new blog post! What would you like to write about?');
       },
       description: 'Start creating a new blog post',
-      category: 'content'
+      category: 'content',
     },
 
     // Navigation
@@ -117,7 +157,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         speak('Opening your analytics dashboard! 📊');
       },
       description: 'Navigate to analytics dashboard',
-      category: 'navigation'
+      category: 'navigation',
     },
     {
       command: 'show calendar',
@@ -126,7 +166,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         speak('Opening your content calendar! 📅');
       },
       description: 'Navigate to content calendar',
-      category: 'navigation'
+      category: 'navigation',
     },
     {
       command: 'open settings',
@@ -135,7 +175,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         speak('Opening settings! ⚙️');
       },
       description: 'Open settings panel',
-      category: 'navigation'
+      category: 'navigation',
     },
 
     // Theme & Settings
@@ -146,7 +186,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         speak('Switching themes! ✨');
       },
       description: 'Switch between light/dark/holographic themes',
-      category: 'settings'
+      category: 'settings',
     },
     {
       command: 'more sparkles',
@@ -155,26 +195,30 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         speak('Adding more sparkles! So magical! ✨✨✨');
       },
       description: 'Increase sparkle effects',
-      category: 'settings'
+      category: 'settings',
     },
 
     // AI Interactions
     {
       command: 'hey solo success',
       action: () => {
-        speak('Hey there! I\'m here to help you create amazing content! What can I do for you? 💀✨');
+        speak(
+          "Hey there! I'm here to help you create amazing content! What can I do for you? 💀✨"
+        );
       },
       description: 'Activate AI assistant',
-      category: 'ai'
+      category: 'ai',
     },
     {
       command: 'what can you do',
       action: () => {
-        speak('I can help you create posts, generate ideas, navigate the app, and so much more! Just ask me anything! 🌟');
+        speak(
+          'I can help you create posts, generate ideas, navigate the app, and so much more! Just ask me anything! 🌟'
+        );
       },
       description: 'List available capabilities',
-      category: 'ai'
-    }
+      category: 'ai',
+    },
   ];
 
   // Initialize speech recognition
@@ -183,7 +227,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
       setIsSupported(true);
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
-      
+
       if (recognitionRef.current) {
         recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
@@ -236,59 +280,66 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
     };
   }, []);
 
-  const speak = useCallback((text: string) => {
-    if (!voiceEnabled || !synthRef.current) return;
+  const speak = useCallback(
+    (text: string) => {
+      if (!voiceEnabled || !synthRef.current) return;
 
-    // Cancel any ongoing speech
-    synthRef.current.cancel();
+      // Cancel any ongoing speech
+      synthRef.current.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.1;
-    utterance.pitch = 1.2;
-    utterance.volume = 0.8;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.1;
+      utterance.pitch = 1.2;
+      utterance.volume = 0.8;
 
-    // Try to use a female voice if available
-    const voices = synthRef.current.getVoices();
-    const femaleVoice = voices.find(voice => 
-      voice.name.toLowerCase().includes('female') || 
-      voice.name.toLowerCase().includes('zira') ||
-      voice.name.toLowerCase().includes('samantha')
-    );
-    
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
-    }
+      // Try to use a female voice if available
+      const voices = synthRef.current.getVoices();
+      const femaleVoice = voices.find(
+        (voice) =>
+          voice.name.toLowerCase().includes('female') ||
+          voice.name.toLowerCase().includes('zira') ||
+          voice.name.toLowerCase().includes('samantha')
+      );
 
-    synthRef.current.speak(utterance);
-  }, [voiceEnabled]);
-
-  const processCommand = useCallback((transcript: string) => {
-    setLastCommand(transcript);
-    
-    // Find matching command
-    const matchedCommand = commands.find(cmd => {
-      if (cmd.command.includes('*')) {
-        const pattern = cmd.command.replace('*', '(.+)');
-        const regex = new RegExp(pattern, 'i');
-        return regex.test(transcript);
-      } else {
-        return transcript.includes(cmd.command.toLowerCase());
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
       }
-    });
 
-    if (matchedCommand) {
-      matchedCommand.action();
-    } else {
-      // Fallback responses for unrecognized commands
-      const responses = [
-        "I didn't quite catch that! Try saying 'what can you do' to see available commands! 💫",
-        "Hmm, I'm not sure about that one! Say 'hey solo success' to get started! ✨",
-        "That's a new one! Check out the available commands by clicking the sparkly button! 🌟"
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      speak(randomResponse);
-    }
-  }, [commands]);
+      synthRef.current.speak(utterance);
+    },
+    [voiceEnabled]
+  );
+
+  const processCommand = useCallback(
+    (transcript: string) => {
+      setLastCommand(transcript);
+
+      // Find matching command
+      const matchedCommand = commands.find((cmd) => {
+        if (cmd.command.includes('*')) {
+          const pattern = cmd.command.replace('*', '(.+)');
+          const regex = new RegExp(pattern, 'i');
+          return regex.test(transcript);
+        } else {
+          return transcript.includes(cmd.command.toLowerCase());
+        }
+      });
+
+      if (matchedCommand) {
+        matchedCommand.action();
+      } else {
+        // Fallback responses for unrecognized commands
+        const responses = [
+          "I didn't quite catch that! Try saying 'what can you do' to see available commands! 💫",
+          "Hmm, I'm not sure about that one! Say 'hey solo success' to get started! ✨",
+          "That's a new one! Check out the available commands by clicking the sparkly button! 🌟",
+        ];
+        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+        speak(randomResponse);
+      }
+    },
+    [commands]
+  );
 
   const toggleListening = useCallback(() => {
     if (!isSupported || !recognitionRef.current) return;
@@ -299,7 +350,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
     } else {
       recognitionRef.current.start();
       setIsListening(true);
-      speak('I\'m listening! What can I help you with? ✨');
+      speak("I'm listening! What can I help you with? ✨");
     }
   }, [isListening, isSupported, speak]);
 
@@ -326,11 +377,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
             isListening ? 'animate-pulse neon-glow' : ''
           }`}
         >
-          {isListening ? (
-            <Mic className="w-6 h-6" />
-          ) : (
-            <MicOff className="w-6 h-6" />
-          )}
+          {isListening ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
           {isListening && <SparkleEffect count={6} size="small" />}
         </HoloButton>
 
@@ -379,22 +426,18 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
           </div>
 
           <div className="space-y-4">
-            {['content', 'navigation', 'settings', 'ai'].map(category => (
+            {['content', 'navigation', 'settings', 'ai'].map((category) => (
               <div key={category}>
                 <HoloText className="text-sm font-medium mb-2 capitalize">
                   {category} Commands 🌟
                 </HoloText>
                 <div className="space-y-2">
                   {commands
-                    .filter(cmd => cmd.category === category)
+                    .filter((cmd) => cmd.category === category)
                     .map((cmd, index) => (
                       <div key={index} className="bg-white/5 p-2 rounded-lg">
-                        <div className="text-sm font-medium text-pink-300">
-                          "{cmd.command}"
-                        </div>
-                        <div className="text-xs text-white/70">
-                          {cmd.description}
-                        </div>
+                        <div className="text-sm font-medium text-pink-300">"{cmd.command}"</div>
+                        <div className="text-xs text-white/70">{cmd.description}</div>
                       </div>
                     ))}
                 </div>
@@ -404,9 +447,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
 
           {lastCommand && (
             <div className="mt-4 pt-4 border-t border-white/20">
-              <HoloText className="text-xs">
-                Last command: "{lastCommand}"
-              </HoloText>
+              <HoloText className="text-xs">Last command: "{lastCommand}"</HoloText>
             </div>
           )}
         </div>

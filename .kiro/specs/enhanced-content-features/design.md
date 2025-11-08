@@ -19,7 +19,7 @@ graph TB
         B --> E[Campaign Management UI]
         B --> F[Template Library UI]
     end
-    
+
     subgraph "Service Layer"
         G[Enhanced Gemini Service] --> H[Content Personalization]
         G --> I[Performance Analytics]
@@ -29,19 +29,19 @@ graph TB
         N[Campaign Service] --> O[Series Management]
         N --> P[Scheduling Optimization]
     end
-    
+
     subgraph "Data Layer"
         Q[Supabase Database] --> R[Enhanced Post Schema]
         Q --> S[Analytics Tables]
         Q --> T[Template Tables]
         Q --> U[Campaign Tables]
     end
-    
+
     subgraph "External APIs"
         V[Social Platform APIs] --> W[Engagement Data]
         X[Trending Topics API] --> Y[Hashtag Research]
     end
-    
+
     A --> G
     A --> K
     A --> N
@@ -66,6 +66,7 @@ The enhanced features will extend the existing single-page application architect
 ### 1. Content Personalization System
 
 #### Brand Voice Manager
+
 ```typescript
 interface BrandVoice {
   id: string;
@@ -87,6 +88,7 @@ interface PersonalizationSettings {
 ```
 
 #### Audience Targeting
+
 ```typescript
 interface AudienceProfile {
   id: string;
@@ -103,6 +105,7 @@ interface AudienceProfile {
 ### 2. Campaign and Series Management
 
 #### Campaign System
+
 ```typescript
 interface Campaign {
   id: string;
@@ -132,6 +135,7 @@ interface ContentSeries {
 ### 3. Enhanced Scheduling System
 
 #### Smart Scheduling Engine
+
 ```typescript
 interface SchedulingEngine {
   analyzeOptimalTimes(platform: string, audience: AudienceProfile): Promise<TimeSlot[]>;
@@ -151,6 +155,7 @@ interface TimeSlot {
 ### 4. Enhanced Image Generation
 
 #### Style Consistency System
+
 ```typescript
 interface ImageStyle {
   id: string;
@@ -172,6 +177,7 @@ interface BrandAsset {
 ### 5. Performance Analytics System
 
 #### Analytics Engine
+
 ```typescript
 interface AnalyticsService {
   trackEngagement(postId: string, platform: string, metrics: EngagementMetrics): Promise<void>;
@@ -194,6 +200,7 @@ interface EngagementMetrics {
 ### 6. Template Library System
 
 #### Template Management
+
 ```typescript
 interface ContentTemplate {
   id: string;
@@ -221,6 +228,7 @@ interface TemplateSection {
 ### Enhanced Database Schema
 
 #### Extended Posts Table
+
 ```sql
 -- Add new columns to existing posts table
 ALTER TABLE posts ADD COLUMN brand_voice_id UUID REFERENCES brand_voices(id);
@@ -233,6 +241,7 @@ ALTER TABLE posts ADD COLUMN optimization_suggestions JSONB DEFAULT '[]';
 ```
 
 #### New Tables
+
 ```sql
 -- Brand Voices
 CREATE TABLE brand_voices (
@@ -337,6 +346,7 @@ CREATE TABLE image_styles (
 ### Enhanced Error Management
 
 #### Service-Level Error Handling
+
 ```typescript
 class EnhancedError extends Error {
   constructor(
@@ -359,6 +369,7 @@ interface ErrorHandler {
 ```
 
 #### User Experience Error Handling
+
 - **Graceful Degradation**: If analytics fail, core functionality remains available
 - **Retry Mechanisms**: Automatic retry for transient failures
 - **Fallback Options**: Alternative suggestions when primary features fail
@@ -367,21 +378,25 @@ interface ErrorHandler {
 ## Testing Strategy
 
 ### Unit Testing
+
 - **Service Layer**: Test all new services with mock data
 - **Component Testing**: Test new UI components in isolation
 - **Utility Functions**: Test analytics calculations and scheduling algorithms
 
 ### Integration Testing
+
 - **Database Operations**: Test new table operations and relationships
 - **API Integrations**: Test external service integrations
 - **Workflow Testing**: Test complete user workflows for new features
 
 ### Performance Testing
+
 - **Analytics Queries**: Ensure database queries perform well with large datasets
 - **Image Generation**: Test image generation performance and memory usage
 - **Real-time Updates**: Test Supabase real-time performance with enhanced data
 
 ### User Acceptance Testing
+
 - **Campaign Creation**: Test complete campaign creation and management workflow
 - **Template Usage**: Test template selection, customization, and content generation
 - **Analytics Dashboard**: Test analytics viewing and insight generation
@@ -390,30 +405,35 @@ interface ErrorHandler {
 ## Implementation Phases
 
 ### Phase 1: Foundation (Core Infrastructure)
+
 1. Database schema extensions
 2. Enhanced service layer architecture
 3. Basic UI component structure
 4. Error handling framework
 
 ### Phase 2: Content Personalization
+
 1. Brand voice management system
 2. Audience profile creation
 3. Content tone and style customization
 4. Template library foundation
 
 ### Phase 3: Campaign Management
+
 1. Campaign creation and management
 2. Content series functionality
 3. Enhanced scheduling system
 4. Performance tracking integration
 
 ### Phase 4: Analytics and Optimization
+
 1. Analytics dashboard
 2. Performance insights engine
 3. Optimization suggestions
 4. Reporting system
 
 ### Phase 5: Advanced Features
+
 1. External integrations
 2. Collaboration features
 3. Advanced image generation
@@ -422,16 +442,19 @@ interface ErrorHandler {
 ## Security Considerations
 
 ### Data Privacy
+
 - **User Data Isolation**: Ensure all new features respect existing RLS policies
 - **Analytics Privacy**: Anonymize sensitive analytics data
 - **Template Sharing**: Secure template sharing with proper permissions
 
 ### API Security
+
 - **Rate Limiting**: Implement rate limiting for new AI service calls
 - **Input Validation**: Validate all user inputs for new features
 - **External API Security**: Secure integration with social platform APIs
 
 ### Performance Security
+
 - **Resource Limits**: Prevent abuse of analytics and generation features
 - **Database Security**: Ensure new queries don't expose unauthorized data
 - **Caching Strategy**: Implement secure caching for performance optimization

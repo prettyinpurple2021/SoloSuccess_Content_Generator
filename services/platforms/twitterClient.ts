@@ -20,35 +20,33 @@ export class TwitterClient {
    */
   async testConnection(): Promise<{ success: boolean; error?: string; details?: any }> {
     const startTime = Date.now();
-    
+
     try {
-      const result = await ApiErrorHandler.executeWithRetry(
-        () => RateLimiter.executeWithRateLimit(
-          'twitter',
-          async () => {
-            const response = await ApiErrorHandler.withTimeout(
-              () => fetch(`${this.baseUrl}/users/me`, {
+      const result = await ApiErrorHandler.executeWithRetry(() =>
+        RateLimiter.executeWithRateLimit('twitter', async () => {
+          const response = await ApiErrorHandler.withTimeout(
+            () =>
+              fetch(`${this.baseUrl}/users/me`, {
                 headers: {
                   Authorization: `Bearer ${this.credentials.bearerToken || this.credentials.accessToken}`,
                   'Content-Type': 'application/json',
                 },
               }),
-              10000
-            );
+            10000
+          );
 
-            if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}));
-              throw new Error(`HTTP ${response.status}: ${errorData.detail || response.statusText}`);
-            }
-
-            return response;
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`HTTP ${response.status}: ${errorData.detail || response.statusText}`);
           }
-        )
+
+          return response;
+        })
       );
 
       const data = await result.json();
       const duration = Date.now() - startTime;
-      
+
       // Record successful metrics
       await MonitoringService.recordMetrics({
         service: 'twitter',
@@ -56,7 +54,7 @@ export class TwitterClient {
         timestamp: new Date(),
         duration,
         success: true,
-        statusCode: 200
+        statusCode: 200,
       });
 
       return {
@@ -69,7 +67,7 @@ export class TwitterClient {
       };
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       // Record failed metrics
       await MonitoringService.recordMetrics({
         service: 'twitter',
@@ -77,7 +75,7 @@ export class TwitterClient {
         timestamp: new Date(),
         duration,
         success: false,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
       });
 
       return {
@@ -254,16 +252,19 @@ export class TwitterClient {
 
       const data = await response.json();
       const tweets = data.data || [];
-      
+
       // Calculate basic metrics
       const totalEngagement = tweets.reduce((sum: number, tweet: any) => {
-        return sum + (tweet.public_metrics?.like_count || 0) + 
-               (tweet.public_metrics?.retweet_count || 0) + 
-               (tweet.public_metrics?.reply_count || 0);
+        return (
+          sum +
+          (tweet.public_metrics?.like_count || 0) +
+          (tweet.public_metrics?.retweet_count || 0) +
+          (tweet.public_metrics?.reply_count || 0)
+        );
       }, 0);
 
       const avgEngagement = tweets.length > 0 ? totalEngagement / tweets.length : 0;
-      const trendingScore = Math.min(100, (tweets.length * 10) + (avgEngagement * 2));
+      const trendingScore = Math.min(100, tweets.length * 10 + avgEngagement * 2);
 
       return {
         usageCount: tweets.length,

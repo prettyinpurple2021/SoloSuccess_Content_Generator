@@ -21,7 +21,7 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
   const [logs, setLogs] = useState<IntegrationLog[]>([]);
 
   useEffect(() => {
-    // Fetch real data from Supabase
+    // Fetch real data from Neon database
     loadMetrics();
     loadAlerts();
     loadLogs();

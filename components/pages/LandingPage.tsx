@@ -7,12 +7,15 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle" style={{top: '10%', left: '10%', animationDelay: '0s'}}></div>
-        <div className="sparkle" style={{top: '20%', right: '15%', animationDelay: '0.5s'}}></div>
-        <div className="sparkle" style={{bottom: '30%', left: '20%', animationDelay: '1s'}}></div>
-        <div className="sparkle" style={{bottom: '10%', right: '10%', animationDelay: '1.5s'}}></div>
-        <div className="sparkle" style={{top: '50%', left: '5%', animationDelay: '2s'}}></div>
-        <div className="sparkle" style={{top: '70%', right: '25%', animationDelay: '2.5s'}}></div>
+        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
+        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
+        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
+        <div
+          className="sparkle"
+          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
+        ></div>
+        <div className="sparkle" style={{ top: '50%', left: '5%', animationDelay: '2s' }}></div>
+        <div className="sparkle" style={{ top: '70%', right: '25%', animationDelay: '2.5s' }}></div>
       </div>
 
       {/* Navigation */}
@@ -58,10 +61,10 @@ export const LandingPage: React.FC = () => {
         >
           <h1 className="text-6xl sm:text-8xl font-display gradient-text tracking-wider mb-8 relative">
             SoloSuccess AI
-            <div className="sparkle" style={{top: '10px', right: '10px'}}></div>
-            <div className="sparkle" style={{bottom: '10px', left: '10px'}}></div>
+            <div className="sparkle" style={{ top: '10px', right: '10px' }}></div>
+            <div className="sparkle" style={{ bottom: '10px', left: '10px' }}></div>
           </h1>
-          
+
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -70,14 +73,14 @@ export const LandingPage: React.FC = () => {
           >
             Your Empire. Your Vision. Your AI DreamTeam.
           </motion.h2>
-          
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
             className="text-xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            Transform your content creation with AI-powered planning, scheduling, and optimization. 
+            Transform your content creation with AI-powered planning, scheduling, and optimization.
             Build your empire with intelligent automation and strategic insights.
           </motion.p>
 
@@ -115,10 +118,11 @@ export const LandingPage: React.FC = () => {
             <div className="text-4xl mb-4">🤖</div>
             <h3 className="text-xl font-bold text-white mb-3">AI-Powered Content</h3>
             <p className="text-white/80">
-              Generate compelling content ideas, blog posts, and social media content with advanced AI.
+              Generate compelling content ideas, blog posts, and social media content with advanced
+              AI.
             </p>
           </div>
-          
+
           <div className="glass-card text-center p-6">
             <div className="text-4xl mb-4">📅</div>
             <h3 className="text-xl font-bold text-white mb-3">Smart Scheduling</h3>
@@ -126,7 +130,7 @@ export const LandingPage: React.FC = () => {
               Automatically schedule and optimize your content for maximum engagement and reach.
             </p>
           </div>
-          
+
           <div className="glass-card text-center p-6">
             <div className="text-4xl mb-4">📊</div>
             <h3 className="text-xl font-bold text-white mb-3">Analytics & Insights</h3>

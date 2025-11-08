@@ -27,7 +27,7 @@ const EnhancedApp: React.FC = () => {
     initialArticle,
   } = useHelpSystem();
 
-  // Fetch real user progress from Supabase
+  // Fetch real user progress from Neon database
   const [userProgress, setUserProgress] = React.useState({
     hasCreatedBrandVoice: false,
     hasCreatedAudienceProfile: false,
