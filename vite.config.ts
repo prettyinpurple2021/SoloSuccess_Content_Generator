@@ -45,9 +45,10 @@ const excludeServerModules = () => {
       }
 
       // Create virtual stubs for server-only modules to prevent client-side imports
-      // Check for both relative paths and absolute URL paths
+      // Check for both relative paths and absolute URL paths, and node_modules packages
       const isServerOnlyModule =
         id === 'postgres' ||
+        id.includes('node_modules/postgres') ||
         id.includes('services/neonService') ||
         id.includes('services/databaseService') ||
         id.includes('services/databaseConnectionManager') ||
@@ -55,6 +56,8 @@ const excludeServerModules = () => {
         id.includes('services/databaseMigrationService') ||
         id.includes('services/enhancedDatabaseService') ||
         id.includes('services/redisService') ||
+        id.includes('node_modules/@upstash/redis') ||
+        id.includes('node_modules/ioredis') ||
         id.startsWith('/services/databaseService') ||
         id.startsWith('/services/neonService') ||
         id.startsWith('/services/redisService');
@@ -139,6 +142,7 @@ const excludeServerModules = () => {
         const originalId = id.replace('\0virtual:', '');
         if (
           originalId === 'postgres' ||
+          originalId.includes('node_modules/postgres') ||
           originalId.includes('services/neonService') ||
           originalId.includes('services/databaseService') ||
           originalId.includes('services/databaseConnectionManager') ||
@@ -146,6 +150,8 @@ const excludeServerModules = () => {
           originalId.includes('services/databaseMigrationService') ||
           originalId.includes('services/enhancedDatabaseService') ||
           originalId.includes('services/redisService') ||
+          originalId.includes('node_modules/@upstash/redis') ||
+          originalId.includes('node_modules/ioredis') ||
           originalId.startsWith('/services/databaseService') ||
           originalId.startsWith('/services/neonService') ||
           originalId.startsWith('/services/redisService')
@@ -340,6 +346,11 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        // Alias server-only packages to empty stubs for client builds
+        // API routes run server-side and will use the real packages from node_modules
+        postgres: path.resolve(__dirname, 'vite.server-stub.js'),
+        '@upstash/redis': path.resolve(__dirname, 'vite.server-stub.js'),
+        ioredis: path.resolve(__dirname, 'vite.server-stub.js'),
       },
     },
   };
