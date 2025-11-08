@@ -4,9 +4,46 @@ import react from '@vitejs/plugin-react';
 
 // Plugin to exclude server-only modules from client bundle
 const excludeServerModules = () => {
+  // Node.js built-ins that should be stubbed in the browser (only Node-only modules)
+  // Note: crypto, url, stream have browser equivalents, so we handle them differently
+  const nodeOnlyBuiltIns = [
+    'fs',
+    'os',
+    'net',
+    'tls',
+    'http',
+    'https',
+    'child_process',
+    'cluster',
+    'dgram',
+    'dns',
+    'readline',
+    'repl',
+    'string_decoder',
+    'vm',
+    'zlib',
+    'perf_hooks',
+  ];
+
   return {
     name: 'exclude-server-modules',
     resolveId(id: string) {
+      // Handle Node.js-only built-ins - stub them for browser
+      if (nodeOnlyBuiltIns.includes(id)) {
+        return {
+          id: `\0virtual:node-builtin:${id}`,
+          moduleSideEffects: false,
+        };
+      }
+
+      // Handle path, util, events - provide minimal stubs
+      if (id === 'path' || id === 'util' || id === 'events') {
+        return {
+          id: `\0virtual:node-builtin:${id}`,
+          moduleSideEffects: false,
+        };
+      }
+
       // Create virtual stubs for server-only modules to prevent client-side imports
       // Check for both relative paths and absolute URL paths
       const isServerOnlyModule =
@@ -32,6 +69,71 @@ const excludeServerModules = () => {
       return null;
     },
     load(id: string) {
+      // Provide stubs for Node.js built-ins
+      if (id.startsWith('\0virtual:node-builtin:')) {
+        const builtinName = id.replace('\0virtual:node-builtin:', '');
+
+        // Provide minimal implementations for common modules
+        if (builtinName === 'path') {
+          return `
+            // Minimal path stub for browser
+            export const join = (...args) => args.filter(Boolean).join('/').replace(/\\/+/g, '/');
+            export const resolve = (...args) => '/' + args.filter(Boolean).join('/').replace(/\\/+/g, '/');
+            export const dirname = (p) => p.split('/').slice(0, -1).join('/') || '/';
+            export const basename = (p) => p.split('/').pop() || '';
+            export const extname = (p) => {
+              const parts = p.split('.');
+              return parts.length > 1 ? '.' + parts.pop() : '';
+            };
+            export default { join, resolve, dirname, basename, extname };
+          `;
+        }
+
+        if (builtinName === 'util') {
+          return `
+            // Minimal util stub for browser
+            export const promisify = (fn) => (...args) => Promise.resolve(fn(...args));
+            export const inspect = (obj) => JSON.stringify(obj, null, 2);
+            export default { promisify, inspect };
+          `;
+        }
+
+        if (builtinName === 'events') {
+          return `
+            // Minimal EventEmitter stub for browser
+            export class EventEmitter {
+              constructor() { this._events = {}; }
+              on(event, handler) {
+                if (!this._events[event]) this._events[event] = [];
+                this._events[event].push(handler);
+                return this;
+              }
+              emit(event, ...args) {
+                if (this._events[event]) {
+                  this._events[event].forEach(handler => handler(...args));
+                }
+                return this;
+              }
+              off(event, handler) {
+                if (this._events[event]) {
+                  this._events[event] = this._events[event].filter(h => h !== handler);
+                }
+                return this;
+              }
+            }
+            export default EventEmitter;
+          `;
+        }
+
+        // Return empty object stub for other Node.js built-ins
+        return `
+          // Node.js built-in module stub: ${builtinName}
+          // This module is not available in the browser environment.
+          console.warn('Attempted to use Node.js built-in "${builtinName}" in browser environment.');
+          export default {};
+        `;
+      }
+
       // Provide stub implementations for server-only modules
       if (id.startsWith('\0virtual:')) {
         const originalId = id.replace('\0virtual:', '');
@@ -106,24 +208,7 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         external: (id, importer) => {
-          // Only externalize Node.js built-ins - server-only modules are handled by the plugin
-          if (
-            [
-              'fs',
-              'os',
-              'net',
-              'tls',
-              'crypto',
-              'stream',
-              'perf_hooks',
-              'path',
-              'url',
-              'http',
-              'https',
-            ].includes(id)
-          ) {
-            return true;
-          }
+          // Don't externalize Node.js built-ins - the plugin will stub them for browser
           // Don't externalize postgres or database services - let the plugin handle them with virtual stubs
           return false;
         },
