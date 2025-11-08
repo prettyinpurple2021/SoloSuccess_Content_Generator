@@ -213,19 +213,8 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       sourcemap: false,
       target: 'es2020',
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: false, // Keep console for debugging - we can enable in production later
-          drop_debugger: true,
-          // Preserve React internal properties
-          keep_classnames: true,
-          keep_fnames: true,
-        },
-        format: {
-          comments: false,
-        },
-      },
+      // Temporarily disable minification to debug React initialization issue
+      minify: false,
       rollupOptions: {
         external: (id, importer) => {
           // Don't externalize Node.js built-ins - the plugin will stub them for browser
@@ -252,9 +241,14 @@ export default defineConfig(({ mode }) => {
 
             // Vendor chunks with better splitting
             if (id.includes('node_modules')) {
-              // Keep React and ReactDOM in the same chunk to ensure proper initialization
-              // This prevents race conditions where ReactDOM loads before React
-              if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              // Ensure React, ReactDOM, and scheduler are in the same chunk
+              // This is critical for React to initialize properly
+              if (
+                id.includes('react') ||
+                id.includes('react-dom') ||
+                id.includes('react/jsx-runtime') ||
+                id.includes('scheduler')
+              ) {
                 return 'vendor-react';
               }
               if (id.includes('lucide-react') || id.includes('@stackframe/stack')) {
@@ -346,7 +340,8 @@ export default defineConfig(({ mode }) => {
     // Performance improvements
     esbuild: {
       target: 'es2020',
-      drop: ['console', 'debugger'],
+      // Don't drop console during debugging
+      drop: [],
     },
     define: {
       // Only expose client-safe environment variables
