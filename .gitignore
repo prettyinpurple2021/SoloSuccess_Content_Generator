@@ -44,3 +44,11 @@ API_CREDENTIALS_SETUP.md
 render.yaml
 render.yml
 .render/
+
+# Docker files (not used - deploying to Vercel only)
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.yaml
+nginx.conf
+.docker/
