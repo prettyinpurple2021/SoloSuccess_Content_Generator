@@ -1,6 +1,84 @@
 # Neon Database Migration Guide
 
-## Steps to Fix the Database Errors:
+## 🚀 Getting Started with Neon MCP Resource
+
+The Neon MCP (Model Context Protocol) Resource allows you to interact with your Neon database directly from Cursor's AI chat interface using natural language commands.
+
+### Initial Setup
+
+1. **Open your terminal** in the project directory:
+
+   ```bash
+   cd C:\Users\prett\Desktop\soloboss-ai-content-planner
+   ```
+
+2. **Initialize Neon MCP integration**:
+
+   ```bash
+   npx neonctl@latest init
+   ```
+
+3. **Follow the setup wizard**:
+   - The command will guide you through authentication
+   - You'll need to log in to your Neon account (or create one at https://neon.tech)
+   - Select or create a Neon project
+   - The MCP server will be configured automatically
+
+4. **Restart Cursor**:
+   - Close and restart Cursor to apply the MCP configuration
+   - The Neon MCP server will be available in Cursor's chat interface
+
+### Using Neon MCP in Cursor
+
+After setup, you can interact with your Neon database using natural language in Cursor's chat:
+
+**Example commands:**
+
+- "Show me all tables in my Neon database"
+- "Create a new table for user preferences"
+- "Query the posts table for all entries from this month"
+- "Check the database connection status"
+- "Run a migration script"
+- "Get the schema for the integrations table"
+
+### Security Considerations
+
+⚠️ **Important**: The Neon MCP Server grants powerful database management capabilities through natural language requests.
+
+- ✅ **Intended for**: Local development and IDE integrations
+- ❌ **Not for**: Production environments
+- 🔒 **Always**: Review actions before execution
+- 🛡️ **Best practice**: Use read-only operations when possible in production
+
+### Troubleshooting
+
+If the MCP integration doesn't work:
+
+1. **Verify installation**:
+
+   ```bash
+   npx neonctl@latest --version
+   ```
+
+2. **Check MCP configuration**:
+   - Look for MCP configuration files in your project
+   - Verify your Neon credentials are correct
+
+3. **Re-initialize if needed**:
+
+   ```bash
+   npx neonctl@latest init --force
+   ```
+
+4. **Check Cursor settings**:
+   - Ensure MCP servers are enabled in Cursor settings
+   - Verify the Neon MCP server is listed in your MCP configuration
+
+---
+
+## 📊 Database Migration Steps
+
+### Steps to Fix the Database Errors:
 
 ### If you haven't run any migration yet:
 
