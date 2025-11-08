@@ -381,12 +381,6 @@ export default defineConfig(({ mode }) => {
       // Note: API keys, database URLs, and secret keys should NOT be exposed to client
       // They should only be used server-side in API routes
     },
-    optimizeDeps: {
-      // Pre-bundle React and React-DOM to ensure they load first
-      include: ['react', 'react-dom', 'react/jsx-runtime'],
-      // Force optimization of React dependencies
-      force: false,
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
