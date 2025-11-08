@@ -213,8 +213,22 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       sourcemap: false,
       target: 'es2020',
-      // Temporarily disable minification to debug React initialization issue
-      minify: false,
+      // Only disable minification in development mode for debugging
+      // In production, use terser for optimal bundle size
+      minify: mode === 'production' ? 'terser' : false,
+      ...(mode === 'production' && {
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+            keep_classnames: true,
+            keep_fnames: true,
+          },
+          format: {
+            comments: false,
+          },
+        },
+      }),
       rollupOptions: {
         external: (id, importer) => {
           // Don't externalize Node.js built-ins - the plugin will stub them for browser
@@ -340,8 +354,9 @@ export default defineConfig(({ mode }) => {
     // Performance improvements
     esbuild: {
       target: 'es2020',
-      // Don't drop console during debugging
-      drop: [],
+      // Drop console and debugger only in production builds
+      // Keep them in development for debugging
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
     },
     define: {
       // Only expose client-safe environment variables
