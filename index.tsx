@@ -1,13 +1,25 @@
-import React from 'react';
+// Ensure React is imported and available first
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
+
+// Then import React Router
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+
+// Then import Stack Auth components (which depend on React)
 import { StackHandler, StackProvider, StackTheme } from '@stackframe/react';
-import { Suspense } from 'react';
+
+// Import styles
 import './styles/holographic-theme.css';
+
+// Import app components
 import { HolographicThemeProvider } from './components/HolographicTheme';
 import AppWithErrorHandling from './components/AppWithErrorHandling';
 import { ErrorBoundaryEnhanced } from './components/ErrorBoundaryEnhanced';
+
+// Import Stack Auth client (must be after React is imported)
 import { stackClientApp } from './stack/client';
+
+// Import Sentry last
 import * as Sentry from '@sentry/react';
 
 Sentry.init({

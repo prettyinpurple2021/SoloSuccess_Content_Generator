@@ -346,10 +346,22 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1000,
     },
     optimizeDeps: {
-      include: ['react', 'react-dom', 'lucide-react', '@stackframe/stack'],
+      include: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'lucide-react',
+        '@stackframe/react',
+        '@stackframe/stack',
+        'framer-motion',
+      ],
       exclude: [
         '@google/genai', // Large AI library - load on demand
       ],
+      esbuildOptions: {
+        // Ensure React is processed first
+        target: 'es2020',
+      },
     },
     // Performance improvements
     esbuild: {
@@ -378,6 +390,8 @@ export default defineConfig(({ mode }) => {
         '@upstash/redis': path.resolve(__dirname, 'vite.server-stub.js'),
         ioredis: path.resolve(__dirname, 'vite.server-stub.js'),
       },
+      // Ensure React is deduplicated - prevents multiple React instances
+      dedupe: ['react', 'react-dom'],
     },
   };
 });
