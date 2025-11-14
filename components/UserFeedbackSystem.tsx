@@ -10,8 +10,7 @@ import {
   AlertTriangle,
   CheckCircle,
   User,
-  Mail,
-  Bug,
+  Mail
 } from 'lucide-react';
 
 export type FeedbackType = 'bug' | 'feature' | 'improvement' | 'compliment' | 'question' | 'error';
@@ -546,7 +545,7 @@ export const FeedbackButton: React.FC<{
  * Quick feedback component for inline use
  */
 export const QuickFeedback: React.FC<{
-  onFeedback: (type: 'positive' | 'negative', comment?: string) => void;
+  onFeedback: (_type: 'positive' | 'negative', _comment?: string) => void;
   className?: string;
 }> = ({ onFeedback, className = '' }) => {
   const [showComment, setShowComment] = useState<'positive' | 'negative' | null>(null);

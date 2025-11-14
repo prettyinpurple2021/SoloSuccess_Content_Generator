@@ -10,6 +10,7 @@
 import { execSync } from 'child_process';
 import { readFileSync, existsSync, statSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { validatePath } from '../utils/pathValidator.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -101,7 +102,7 @@ class PerformanceValidator {
     log.header('📦 Analyzing Bundle Size');
 
     try {
-      const distPath = join(projectRoot, 'dist');
+      const distPath = validatePath(projectRoot, 'dist');
 
       if (!existsSync(distPath)) {
         log.error('Build output not found. Run build first.');
@@ -192,7 +193,7 @@ class PerformanceValidator {
 
     try {
       // Check Vite configuration
-      const viteConfigPath = join(projectRoot, 'vite.config.ts');
+      const viteConfigPath = validatePath(projectRoot, 'vite.config.ts');
       let optimizationScore = 0;
       let maxScore = 10;
 
@@ -258,7 +259,7 @@ class PerformanceValidator {
       }
 
       // Check package.json for optimization scripts
-      const packageJsonPath = join(projectRoot, 'package.json');
+      const packageJsonPath = validatePath(projectRoot, 'package.json');
       if (existsSync(packageJsonPath)) {
         const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
 
@@ -308,7 +309,7 @@ class PerformanceValidator {
 
       let performanceMonitoringFound = false;
       performanceFiles.forEach((file) => {
-        if (existsSync(join(projectRoot, file))) {
+        if (existsSync(validatePath(projectRoot, file))) {
           performanceMonitoringFound = true;
           log.success(`Performance monitoring found: ${file}`);
         }
@@ -322,7 +323,7 @@ class PerformanceValidator {
       }
 
       // Check for lazy loading in main app
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
 
@@ -353,7 +354,7 @@ class PerformanceValidator {
       }
 
       // Check for service worker or caching
-      const indexHtmlPath = join(projectRoot, 'index.html');
+      const indexHtmlPath = validatePath(projectRoot, 'index.html');
       if (existsSync(indexHtmlPath)) {
         const indexContent = readFileSync(indexHtmlPath, 'utf8');
 
@@ -376,7 +377,7 @@ class PerformanceValidator {
     log.header('📚 Testing Dependency Performance');
 
     try {
-      const packageJsonPath = join(projectRoot, 'package.json');
+      const packageJsonPath = validatePath(projectRoot, 'package.json');
       if (!existsSync(packageJsonPath)) {
         log.error('package.json not found');
         return false;
@@ -455,7 +456,7 @@ class PerformanceValidator {
       let memoryIssues = [];
 
       codeFiles.forEach((file) => {
-        const filePath = join(projectRoot, file);
+        const filePath = validatePath(projectRoot, file);
         if (existsSync(filePath)) {
           const content = readFileSync(filePath, 'utf8');
 

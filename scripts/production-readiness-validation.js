@@ -10,6 +10,7 @@
 import { execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { validatePath } from '../utils/pathValidator.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -123,7 +124,7 @@ class ProductionReadinessValidator {
 
       let authImplementationFound = false;
       authFiles.forEach((file) => {
-        const filePath = join(projectRoot, file);
+        const filePath = validatePath(projectRoot, file);
         if (existsSync(filePath)) {
           const content = readFileSync(filePath, 'utf8');
           if (content.includes('useUser') || content.includes('Stack')) {
@@ -171,7 +172,7 @@ class ProductionReadinessValidator {
 
       let contentServiceFound = false;
       contentServices.forEach((service) => {
-        const servicePath = join(projectRoot, service);
+        const servicePath = validatePath(projectRoot, service);
         if (existsSync(servicePath)) {
           const content = readFileSync(servicePath, 'utf8');
           if (content.includes('generateTopic') && content.includes('generateIdeas')) {
@@ -190,7 +191,7 @@ class ProductionReadinessValidator {
       );
 
       // Check for personalization features
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
         const hasPersonalization =
@@ -230,7 +231,7 @@ class ProductionReadinessValidator {
 
       let dbServiceFound = false;
       dbServices.forEach((service) => {
-        const servicePath = join(projectRoot, service);
+        const servicePath = validatePath(projectRoot, service);
         if (existsSync(servicePath)) {
           const content = readFileSync(servicePath, 'utf8');
           if (content.includes('testConnection') || content.includes('pool')) {
@@ -251,7 +252,7 @@ class ProductionReadinessValidator {
 
       let schemaFound = false;
       schemaFiles.forEach((file) => {
-        if (existsSync(join(projectRoot, file))) {
+        if (existsSync(validatePath(projectRoot, file))) {
           schemaFound = true;
         }
       });
@@ -290,7 +291,7 @@ class ProductionReadinessValidator {
 
     try {
       // Check for API directory structure
-      const apiDir = join(projectRoot, 'api');
+      const apiDir = validatePath(projectRoot, 'api');
       if (existsSync(apiDir)) {
         this.logResult('API Directory Structure', 'pass', 'API directory exists');
 
@@ -304,7 +305,7 @@ class ProductionReadinessValidator {
 
         let endpointsFound = 0;
         essentialEndpoints.forEach((endpoint) => {
-          if (existsSync(join(projectRoot, endpoint))) {
+          if (existsSync(validatePath(projectRoot, endpoint))) {
             endpointsFound++;
           }
         });
@@ -316,7 +317,7 @@ class ProductionReadinessValidator {
         );
 
         // Test health endpoint specifically
-        const healthEndpoint = join(projectRoot, 'api/health/index.ts');
+        const healthEndpoint = validatePath(projectRoot, 'api/health/index.ts');
         if (existsSync(healthEndpoint)) {
           const healthContent = readFileSync(healthEndpoint, 'utf8');
           const hasComprehensiveHealth =
@@ -375,7 +376,7 @@ class ProductionReadinessValidator {
 
       let integrationImplemented = false;
       integrationFiles.forEach((file) => {
-        if (existsSync(join(projectRoot, file))) {
+        if (existsSync(validatePath(projectRoot, file))) {
           integrationImplemented = true;
         }
       });
@@ -389,7 +390,7 @@ class ProductionReadinessValidator {
       );
 
       // Check for social media platform support
-      const constantsPath = join(projectRoot, 'constants.tsx');
+      const constantsPath = validatePath(projectRoot, 'constants.tsx');
       if (existsSync(constantsPath)) {
         const constantsContent = readFileSync(constantsPath, 'utf8');
         const hasPlatforms =
@@ -425,7 +426,7 @@ class ProductionReadinessValidator {
 
       let schedulingServiceFound = false;
       schedulingServices.forEach((service) => {
-        const servicePath = join(projectRoot, service);
+        const servicePath = validatePath(projectRoot, service);
         if (existsSync(servicePath)) {
           const content = readFileSync(servicePath, 'utf8');
           if (content.includes('schedule') || content.includes('Schedule')) {
@@ -441,7 +442,7 @@ class ProductionReadinessValidator {
       );
 
       // Check for calendar view component
-      const calendarPath = join(projectRoot, 'components/CalendarView.tsx');
+      const calendarPath = validatePath(projectRoot, 'components/CalendarView.tsx');
       if (existsSync(calendarPath)) {
         this.logResult('Calendar Interface', 'pass', 'Calendar view component exists');
       } else {
@@ -449,7 +450,7 @@ class ProductionReadinessValidator {
       }
 
       // Check for scheduling in main app
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
         const hasScheduling = appContent.includes('schedule') && appContent.includes('Schedule');
@@ -482,7 +483,7 @@ class ProductionReadinessValidator {
 
       let errorBoundaryFound = false;
       errorBoundaryFiles.forEach((file) => {
-        if (existsSync(join(projectRoot, file))) {
+        if (existsSync(validatePath(projectRoot, file))) {
           errorBoundaryFound = true;
         }
       });
@@ -500,7 +501,7 @@ class ProductionReadinessValidator {
 
       let errorServiceFound = false;
       errorServices.forEach((service) => {
-        if (existsSync(join(projectRoot, service))) {
+        if (existsSync(validatePath(projectRoot, service))) {
           errorServiceFound = true;
         }
       });
@@ -514,7 +515,7 @@ class ProductionReadinessValidator {
       );
 
       // Check for user-friendly error messages in main app
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
         const hasErrorMessages =
@@ -538,7 +539,7 @@ class ProductionReadinessValidator {
 
     try {
       // Check build configuration
-      const viteConfigPath = join(projectRoot, 'vite.config.ts');
+      const viteConfigPath = validatePath(projectRoot, 'vite.config.ts');
       if (existsSync(viteConfigPath)) {
         const viteContent = readFileSync(viteConfigPath, 'utf8');
 
@@ -568,7 +569,7 @@ class ProductionReadinessValidator {
 
       let performanceMonitoringFound = false;
       performanceServices.forEach((service) => {
-        if (existsSync(join(projectRoot, service))) {
+        if (existsSync(validatePath(projectRoot, service))) {
           performanceMonitoringFound = true;
         }
       });
@@ -582,7 +583,7 @@ class ProductionReadinessValidator {
       );
 
       // Check for lazy loading
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
         const hasLazyLoading = appContent.includes('lazy') || appContent.includes('Suspense');
@@ -625,7 +626,7 @@ class ProductionReadinessValidator {
       }
 
       // Check if build output exists
-      const distPath = join(projectRoot, 'dist');
+      const distPath = validatePath(projectRoot, 'dist');
       if (existsSync(distPath)) {
         this.logResult('Build Output', 'pass', 'Build output directory exists');
 
@@ -677,7 +678,7 @@ class ProductionReadinessValidator {
       }
 
       // Check for HTTPS configuration
-      const vercelConfigPath = join(projectRoot, 'vercel.json');
+      const vercelConfigPath = validatePath(projectRoot, 'vercel.json');
       if (existsSync(vercelConfigPath)) {
         const vercelContent = readFileSync(vercelConfigPath, 'utf8');
         const hasSecurityHeaders =
@@ -703,7 +704,7 @@ class ProductionReadinessValidator {
 
     try {
       // Check for health check endpoint
-      const healthEndpoint = join(projectRoot, 'api/health/index.ts');
+      const healthEndpoint = validatePath(projectRoot, 'api/health/index.ts');
       if (existsSync(healthEndpoint)) {
         const healthContent = readFileSync(healthEndpoint, 'utf8');
 
@@ -738,7 +739,7 @@ class ProductionReadinessValidator {
 
       let monitoringFound = false;
       monitoringServices.forEach((service) => {
-        if (existsSync(join(projectRoot, service))) {
+        if (existsSync(validatePath(projectRoot, service))) {
           monitoringFound = true;
         }
       });
@@ -750,7 +751,7 @@ class ProductionReadinessValidator {
       );
 
       // Check for error reporting
-      const errorReportingPath = join(projectRoot, 'components/ErrorReportingSystem.tsx');
+      const errorReportingPath = validatePath(projectRoot, 'components/ErrorReportingSystem.tsx');
       if (existsSync(errorReportingPath)) {
         this.logResult('Error Reporting', 'pass', 'Error reporting system found');
       } else {

@@ -13,6 +13,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { validatePath } from '../utils/pathValidator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -120,7 +121,7 @@ class EndToEndWorkflowTester {
       let authDetails = {};
 
       authComponentPaths.forEach((componentPath) => {
-        const fullPath = join(projectRoot, componentPath);
+        const fullPath = validatePath(projectRoot, componentPath);
         if (existsSync(fullPath)) {
           const content = readFileSync(fullPath, 'utf8');
 
@@ -154,7 +155,7 @@ class EndToEndWorkflowTester {
       // Step 3: Check user state management
       log.step(3, 'Verify user state management');
 
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
 
@@ -208,7 +209,7 @@ class EndToEndWorkflowTester {
       // Step 2: Check content generation services
       log.step(2, 'Verify content generation services');
 
-      const geminiServicePath = join(projectRoot, 'services/geminiService.ts');
+      const geminiServicePath = validatePath(projectRoot, 'services/geminiService.ts');
       if (existsSync(geminiServicePath)) {
         const geminiContent = readFileSync(geminiServicePath, 'utf8');
 
@@ -257,7 +258,7 @@ class EndToEndWorkflowTester {
       // Step 3: Check content workflow in main app
       log.step(3, 'Verify content creation workflow in main app');
 
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
 
@@ -363,7 +364,7 @@ class EndToEndWorkflowTester {
       let schedulingDetails = {};
 
       schedulingServices.forEach((servicePath) => {
-        const fullPath = join(projectRoot, servicePath);
+        const fullPath = validatePath(projectRoot, servicePath);
         if (existsSync(fullPath)) {
           const content = readFileSync(fullPath, 'utf8');
           schedulingServiceFound = true;
@@ -394,7 +395,7 @@ class EndToEndWorkflowTester {
       // Step 2: Check scheduling workflow in main app
       log.step(2, 'Verify scheduling workflow integration');
 
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
 
@@ -433,7 +434,7 @@ class EndToEndWorkflowTester {
       // Step 3: Check calendar view component
       log.step(3, 'Verify calendar view component');
 
-      const calendarPath = join(projectRoot, 'components/CalendarView.tsx');
+      const calendarPath = validatePath(projectRoot, 'components/CalendarView.tsx');
       if (existsSync(calendarPath)) {
         const calendarContent = readFileSync(calendarPath, 'utf8');
 
@@ -484,7 +485,7 @@ class EndToEndWorkflowTester {
       let integrationDetails = {};
 
       integrationFiles.forEach((filePath) => {
-        const fullPath = join(projectRoot, filePath);
+        const fullPath = validatePath(projectRoot, filePath);
         if (existsSync(fullPath)) {
           const content = readFileSync(fullPath, 'utf8');
           integrationServiceFound = true;
@@ -516,7 +517,7 @@ class EndToEndWorkflowTester {
       // Step 2: Check social media platform support
       log.step(2, 'Verify social media platform support');
 
-      const constantsPath = join(projectRoot, 'constants.tsx');
+      const constantsPath = validatePath(projectRoot, 'constants.tsx');
       if (existsSync(constantsPath)) {
         const constantsContent = readFileSync(constantsPath, 'utf8');
 
@@ -559,7 +560,7 @@ class EndToEndWorkflowTester {
       // Step 3: Check publishing workflow in main app
       log.step(3, 'Verify publishing workflow integration');
 
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
 
@@ -645,7 +646,7 @@ class EndToEndWorkflowTester {
       // Step 2: Check database service implementation
       log.step(2, 'Verify database service implementation');
 
-      const dbServicePath = join(projectRoot, 'services/neonService.ts');
+      const dbServicePath = validatePath(projectRoot, 'services/neonService.ts');
       if (existsSync(dbServicePath)) {
         const dbContent = readFileSync(dbServicePath, 'utf8');
 
@@ -688,7 +689,7 @@ class EndToEndWorkflowTester {
       // Step 3: Check API service for database operations
       log.step(3, 'Verify API service database integration');
 
-      const apiServicePath = join(projectRoot, 'services/clientApiService.ts');
+      const apiServicePath = validatePath(projectRoot, 'services/clientApiService.ts');
       if (existsSync(apiServicePath)) {
         const apiContent = readFileSync(apiServicePath, 'utf8');
 
@@ -761,7 +762,7 @@ class EndToEndWorkflowTester {
       let schemaDetails = {};
 
       schemaFiles.forEach((schemaFile) => {
-        const schemaPath = join(projectRoot, schemaFile);
+        const schemaPath = validatePath(projectRoot, schemaFile);
         if (existsSync(schemaPath)) {
           const schemaContent = readFileSync(schemaPath, 'utf8');
 
@@ -800,7 +801,7 @@ class EndToEndWorkflowTester {
       // Step 2: Check user-specific data handling in services
       log.step(2, 'Verify user-specific data handling');
 
-      const apiServicePath = join(projectRoot, 'services/clientApiService.ts');
+      const apiServicePath = validatePath(projectRoot, 'services/clientApiService.ts');
       if (existsSync(apiServicePath)) {
         const apiContent = readFileSync(apiServicePath, 'utf8');
 
@@ -834,7 +835,7 @@ class EndToEndWorkflowTester {
       // Step 3: Check session management
       log.step(3, 'Verify session management');
 
-      const appPath = join(projectRoot, 'App.tsx');
+      const appPath = validatePath(projectRoot, 'App.tsx');
       if (existsSync(appPath)) {
         const appContent = readFileSync(appPath, 'utf8');
 

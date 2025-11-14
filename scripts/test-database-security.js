@@ -12,6 +12,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { validatePath } from '../utils/pathValidator.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -37,7 +38,7 @@ function logTest(testName, passed, message) {
 function testSSLConfiguration() {
   console.log('📋 Testing SSL configuration...');
 
-  const neonServicePath = join(projectRoot, 'services', 'neonService.ts');
+  const neonServicePath = validatePath(projectRoot, 'services', 'neonService.ts');
 
   if (!existsSync(neonServicePath)) {
     logTest('SSL Configuration', false, 'neonService.ts not found');
@@ -71,7 +72,7 @@ function testSSLConfiguration() {
 function testParameterizedQueries() {
   console.log('\n📋 Testing parameterized queries...');
 
-  const neonServicePath = join(projectRoot, 'services', 'neonService.ts');
+  const neonServicePath = validatePath(projectRoot, 'services', 'neonService.ts');
 
   if (!existsSync(neonServicePath)) {
     logTest('Parameterized Queries', false, 'neonService.ts not found');
@@ -122,7 +123,7 @@ function testParameterizedQueries() {
 function testConnectionPooling() {
   console.log('\n📋 Testing connection pooling...');
 
-  const neonServicePath = join(projectRoot, 'services', 'neonService.ts');
+  const neonServicePath = validatePath(projectRoot, 'services', 'neonService.ts');
 
   if (!existsSync(neonServicePath)) {
     logTest('Connection Pooling', false, 'neonService.ts not found');
@@ -169,7 +170,7 @@ function testErrorHandling() {
   let tryBlocksFound = 0;
 
   files.forEach((file) => {
-    const filePath = join(projectRoot, file);
+    const filePath = validatePath(projectRoot, file);
     if (existsSync(filePath)) {
       const content = readFileSync(filePath, 'utf8');
 
@@ -195,7 +196,7 @@ function testErrorHandling() {
   );
 
   // Check for enhanced database service
-  const enhancedDbPath = join(projectRoot, 'services', 'enhancedDatabaseService.ts');
+  const enhancedDbPath = validatePath(projectRoot, 'services', 'enhancedDatabaseService.ts');
   if (existsSync(enhancedDbPath)) {
     const content = readFileSync(enhancedDbPath, 'utf8');
 
@@ -218,7 +219,7 @@ function testErrorHandling() {
 function testConnectionSecurity() {
   console.log('\n📋 Testing connection string security...');
 
-  const neonServicePath = join(projectRoot, 'services', 'neonService.ts');
+  const neonServicePath = validatePath(projectRoot, 'services', 'neonService.ts');
 
   if (!existsSync(neonServicePath)) {
     logTest('Connection Security', false, 'neonService.ts not found');
@@ -260,7 +261,7 @@ function testConnectionSecurity() {
 function testDatabaseHealthChecks() {
   console.log('\n📋 Testing database health checks...');
 
-  const healthCheckPath = join(projectRoot, 'api', 'health', 'index.ts');
+  const healthCheckPath = validatePath(projectRoot, 'api', 'health', 'index.ts');
 
   if (!existsSync(healthCheckPath)) {
     logTest('Health Check Endpoint', false, 'Health check endpoint not found');
@@ -299,7 +300,7 @@ function testRowLevelSecurity() {
   let policiesFound = 0;
 
   schemaFiles.forEach((file) => {
-    const filePath = join(projectRoot, file);
+    const filePath = validatePath(projectRoot, file);
     if (existsSync(filePath)) {
       const content = readFileSync(filePath, 'utf8');
 
