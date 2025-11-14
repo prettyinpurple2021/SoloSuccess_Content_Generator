@@ -105,6 +105,7 @@ if (!React || !ReactDOM) {
   contentDiv.appendChild(reloadButton);
 
   errorContainer.appendChild(contentDiv);
+  rootElement.innerHTML = '';
   rootElement.appendChild(errorContainer);
 
   throw new Error(errorMsg);
