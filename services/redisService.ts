@@ -66,11 +66,14 @@ class RedisService {
       else if (process.env.REDIS_URL) {
         const redisUrl = process.env.REDIS_URL;
 
-        // Check if it's an Upstash URL (contains @upstash.io or upstash.com)
+        // Check if it's an Upstash URL (hostname ends with upstash.io or upstash.com, or starts with https://)
+        const urlObj = (() => {
+          try { return new URL(redisUrl); } catch { return null; }
+        })();
+        const hostname = urlObj ? urlObj.hostname : '';
         if (
-          redisUrl.includes('@upstash.io') ||
-          redisUrl.includes('upstash.io') ||
-          redisUrl.includes('upstash.com') ||
+          hostname.endsWith('upstash.io') ||
+          hostname.endsWith('upstash.com') ||
           redisUrl.startsWith('https://')
         ) {
           try {
