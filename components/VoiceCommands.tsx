@@ -317,7 +317,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
       // Find matching command
       const matchedCommand = commands.find((cmd) => {
         if (cmd.command.includes('*')) {
-          const pattern = cmd.command.replace('*', '(.+)');
+          const pattern = cmd.command.replace(/\*/g, '(.+)');
           const regex = new RegExp(pattern, 'i');
           return regex.test(transcript);
         } else {
