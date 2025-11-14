@@ -79,17 +79,35 @@ function HandlerRoutes() {
 if (!React || !ReactDOM) {
   const errorMsg = 'React or ReactDOM is not available. Check your dependencies.';
   console.error(errorMsg);
-  rootElement.innerHTML = `
-    <div style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; text-align: center; padding: 2rem;">
-      <div>
-        <h1 style="font-size: 2rem; margin-bottom: 1rem;">React Not Available 💀</h1>
-        <p style="margin-bottom: 1rem;">${errorMsg}</p>
-        <button onclick="window.location.reload()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
-          Reload Page 🔄
-        </button>
-      </div>
-    </div>
-  `;
+
+  // Create error UI using DOM methods to prevent XSS
+  const errorContainer = document.createElement('div');
+  errorContainer.style.cssText =
+    'min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; text-align: center; padding: 2rem;';
+
+  const contentDiv = document.createElement('div');
+
+  const heading = document.createElement('h1');
+  heading.style.cssText = 'font-size: 2rem; margin-bottom: 1rem;';
+  heading.textContent = 'React Not Available 💀';
+  contentDiv.appendChild(heading);
+
+  const description = document.createElement('p');
+  description.style.cssText = 'margin-bottom: 1rem;';
+  description.textContent = errorMsg;
+  contentDiv.appendChild(description);
+
+  const reloadButton = document.createElement('button');
+  reloadButton.style.cssText =
+    'background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;';
+  reloadButton.textContent = 'Reload Page 🔄';
+  reloadButton.addEventListener('click', () => window.location.reload());
+  contentDiv.appendChild(reloadButton);
+
+  errorContainer.appendChild(contentDiv);
+  rootElement.innerHTML = '';
+  rootElement.appendChild(errorContainer);
+
   throw new Error(errorMsg);
 }
 
@@ -167,23 +185,60 @@ try {
   Sentry.captureException(error);
 
   const errorMessage = error instanceof Error ? error.message : String(error);
-  rootElement.innerHTML = `
-    <div style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; text-align: center; padding: 2rem;">
-      <div>
-        <h1 style="font-size: 2rem; margin-bottom: 1rem;">App Failed to Load 💀</h1>
-        <p style="margin-bottom: 1rem;">A critical error occurred during app initialization.</p>
-        <pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; font-size: 0.875rem; text-align: left; overflow: auto; max-width: 600px;">${errorMessage}</pre>
-        <div style="margin-bottom: 1rem;">
-          <button onclick="window.location.reload()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; margin-right: 0.5rem;">
-            Reload Page 🔄
-          </button>
-          <button onclick="navigator.clipboard.writeText('${errorMessage.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}').then(() => alert('Error copied to clipboard!'))" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
-            Copy Error 📋
-          </button>
-        </div>
-        <p style="font-size: 0.875rem; opacity: 0.8;">Error ID: ${Date.now()}</p>
-        <p style="font-size: 0.875rem; opacity: 0.8; margin-top: 0.5rem;">Check the browser console for more details.</p>
-      </div>
-    </div>
-  `;
+
+  // Create error UI using DOM methods to prevent XSS
+  const errorContainer = document.createElement('div');
+  errorContainer.style.cssText =
+    'min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; text-align: center; padding: 2rem;';
+
+  const contentDiv = document.createElement('div');
+
+  const heading = document.createElement('h1');
+  heading.style.cssText = 'font-size: 2rem; margin-bottom: 1rem;';
+  heading.textContent = 'App Failed to Load 💀';
+  contentDiv.appendChild(heading);
+
+  const description = document.createElement('p');
+  description.style.cssText = 'margin-bottom: 1rem;';
+  description.textContent = 'A critical error occurred during app initialization.';
+  contentDiv.appendChild(description);
+
+  const errorPre = document.createElement('pre');
+  errorPre.style.cssText =
+    'background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; font-size: 0.875rem; text-align: left; overflow: auto; max-width: 600px;';
+  errorPre.textContent = errorMessage;
+  contentDiv.appendChild(errorPre);
+
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.cssText = 'margin-bottom: 1rem;';
+
+  const reloadButton = document.createElement('button');
+  reloadButton.style.cssText =
+    'background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; margin-right: 0.5rem;';
+  reloadButton.textContent = 'Reload Page 🔄';
+  reloadButton.addEventListener('click', () => window.location.reload());
+  buttonContainer.appendChild(reloadButton);
+
+  const copyButton = document.createElement('button');
+  copyButton.style.cssText =
+    'background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;';
+  copyButton.textContent = 'Copy Error 📋';
+  copyButton.addEventListener('click', () => {
+    navigator.clipboard.writeText(errorMessage).then(() => alert('Error copied to clipboard!'));
+  });
+  buttonContainer.appendChild(copyButton);
+  contentDiv.appendChild(buttonContainer);
+
+  const errorId = document.createElement('p');
+  errorId.style.cssText = 'font-size: 0.875rem; opacity: 0.8;';
+  errorId.textContent = `Error ID: ${Date.now()}`;
+  contentDiv.appendChild(errorId);
+
+  const consoleHint = document.createElement('p');
+  consoleHint.style.cssText = 'font-size: 0.875rem; opacity: 0.8; margin-top: 0.5rem;';
+  consoleHint.textContent = 'Check the browser console for more details.';
+  contentDiv.appendChild(consoleHint);
+
+  errorContainer.appendChild(contentDiv);
+  rootElement.appendChild(errorContainer);
 }
