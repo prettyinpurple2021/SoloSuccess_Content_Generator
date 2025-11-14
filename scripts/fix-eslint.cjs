@@ -2,6 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const { validatePath } = require('../utils/pathValidator.cjs');
+
+// Get project root
+const projectRoot = path.join(__dirname, '..');
 
 // Files to fix
 const filesToFix = [
@@ -73,8 +77,9 @@ const fixes = [
 
 // Apply fixes to files
 filesToFix.forEach((filePath) => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf8');
+  const fullPath = validatePath(projectRoot, filePath);
+  if (fs.existsSync(fullPath)) {
+    let content = fs.readFileSync(fullPath, 'utf8');
 
     fixes.forEach((fix) => {
       if (typeof fix.replacement === 'function') {
@@ -84,7 +89,7 @@ filesToFix.forEach((filePath) => {
       }
     });
 
-    fs.writeFileSync(filePath, content);
+    fs.writeFileSync(fullPath, content);
     console.log(`Fixed: ${filePath}`);
   }
 });

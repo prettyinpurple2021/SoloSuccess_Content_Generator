@@ -9,6 +9,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { validatePath } from '../utils/pathValidator.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -56,7 +57,7 @@ function checkApiKeyExposure() {
   let exposedKeys = [];
 
   clientSideFiles.forEach((file) => {
-    const filePath = join(projectRoot, file);
+    const filePath = validatePath(projectRoot, file);
     if (existsSync(filePath)) {
       const content = readFileSync(filePath, 'utf8');
 
@@ -107,8 +108,8 @@ function checkApiKeyExposure() {
 function checkEnvironmentVariables() {
   console.log('\n📋 Checking environment variable configuration...');
 
-  const envExamplePath = join(projectRoot, '.env.example');
-  const envLocalPath = join(projectRoot, '.env.local');
+  const envExamplePath = validatePath(projectRoot, '.env.example');
+  const envLocalPath = validatePath(projectRoot, '.env.local');
 
   if (!existsSync(envExamplePath)) {
     logResult('Environment Example File', 'warn', '.env.example file not found');
@@ -170,7 +171,7 @@ function checkEnvironmentVariables() {
 function checkDatabaseSecurity() {
   console.log('\n📋 Checking database security configuration...');
 
-  const neonServicePath = join(projectRoot, 'services', 'neonService.ts');
+  const neonServicePath = validatePath(projectRoot, 'services', 'neonService.ts');
 
   if (existsSync(neonServicePath)) {
     const content = readFileSync(neonServicePath, 'utf8');
@@ -220,7 +221,7 @@ function checkDatabaseSecurity() {
 function checkApiSecurityHeaders() {
   console.log('\n📋 Checking API security headers...');
 
-  const apiErrorHandlerPath = join(projectRoot, 'services', 'apiErrorHandler.ts');
+  const apiErrorHandlerPath = validatePath(projectRoot, 'services', 'apiErrorHandler.ts');
 
   if (existsSync(apiErrorHandlerPath)) {
     const content = readFileSync(apiErrorHandlerPath, 'utf8');
@@ -256,7 +257,7 @@ function checkApiSecurityHeaders() {
 function checkRateLimiting() {
   console.log('\n📋 Checking rate limiting configuration...');
 
-  const rateLimitServicePath = join(projectRoot, 'services', 'rateLimitingService.ts');
+  const rateLimitServicePath = validatePath(projectRoot, 'services', 'rateLimitingService.ts');
 
   if (existsSync(rateLimitServicePath)) {
     const content = readFileSync(rateLimitServicePath, 'utf8');
@@ -290,7 +291,7 @@ function checkRateLimiting() {
 function checkCredentialEncryption() {
   console.log('\n📋 Checking credential encryption...');
 
-  const credentialEncryptionPath = join(projectRoot, 'services', 'credentialEncryption.ts');
+  const credentialEncryptionPath = validatePath(projectRoot, 'services', 'credentialEncryption.ts');
 
   if (existsSync(credentialEncryptionPath)) {
     const content = readFileSync(credentialEncryptionPath, 'utf8');
@@ -363,7 +364,7 @@ function checkStackAuthConfiguration() {
 function checkBuildSecurity() {
   console.log('\n📋 Checking build configuration security...');
 
-  const viteConfigPath = join(projectRoot, 'vite.config.ts');
+  const viteConfigPath = validatePath(projectRoot, 'vite.config.ts');
 
   if (existsSync(viteConfigPath)) {
     const content = readFileSync(viteConfigPath, 'utf8');

@@ -9,6 +9,7 @@
 
 import { readFileSync, existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { validatePath } from '../utils/pathValidator.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { execSync } from 'child_process';
@@ -91,7 +92,7 @@ function checkClientSideFiles() {
 
   let clientIssues = 0;
   clientFiles.forEach((file) => {
-    const filePath = join(projectRoot, file);
+    const filePath = validatePath(projectRoot, file);
     clientIssues += checkFileForSensitiveData(filePath, file);
   });
 
@@ -105,7 +106,7 @@ function checkClientSideFiles() {
 function checkBuildOutput() {
   console.log('📋 Checking build output...');
 
-  const distPath = join(projectRoot, 'dist');
+  const distPath = validatePath(projectRoot, 'dist');
 
   if (!existsSync(distPath)) {
     console.log('⚠️  Build output not found. Run "npm run build" first.\n');
@@ -124,7 +125,7 @@ function checkBuildOutput() {
 
     let buildIssues = 0;
     jsFiles.forEach((file) => {
-      const filePath = join(projectRoot, file);
+      const filePath = validatePath(projectRoot, file);
       buildIssues += checkFileForSensitiveData(filePath, file);
     });
 
@@ -144,7 +145,7 @@ function checkBuildOutput() {
 function checkViteConfig() {
   console.log('📋 Checking Vite configuration...');
 
-  const viteConfigPath = join(projectRoot, 'vite.config.ts');
+  const viteConfigPath = validatePath(projectRoot, 'vite.config.ts');
   const content = readFileSync(viteConfigPath, 'utf8');
 
   // Check for dangerous environment variable exposure
@@ -179,12 +180,12 @@ function checkEnvironmentFiles() {
   let envIssues = 0;
 
   envFiles.forEach((envFile) => {
-    const envPath = join(projectRoot, envFile);
+    const envPath = validatePath(projectRoot, envFile);
     if (existsSync(envPath)) {
       console.log(`⚠️  Environment file ${envFile} exists - ensure it's in .gitignore`);
 
       // Check if it's properly gitignored
-      const gitignorePath = join(projectRoot, '.gitignore');
+      const gitignorePath = validatePath(projectRoot, '.gitignore');
       if (existsSync(gitignorePath)) {
         const gitignoreContent = readFileSync(gitignorePath, 'utf8');
         if (!gitignoreContent.includes(envFile)) {
@@ -196,7 +197,7 @@ function checkEnvironmentFiles() {
   });
 
   // Check .env.example for sensitive data
-  const envExamplePath = join(projectRoot, '.env.example');
+  const envExamplePath = validatePath(projectRoot, '.env.example');
   if (existsSync(envExamplePath)) {
     envIssues += checkFileForSensitiveData(envExamplePath, '.env.example');
   }
@@ -273,7 +274,7 @@ function generateSecurityReport() {
 </body>
 </html>`;
 
-  const testPath = join(projectRoot, 'api-key-exposure-test.html');
+  const testPath = validatePath(projectRoot, 'api-key-exposure-test.html');
   writeFileSync(testPath, testHtml);
 
   console.log(`✅ Created browser test file: api-key-exposure-test.html`);

@@ -1,4 +1,9 @@
 const fs = require('fs');
+const path = require('path');
+const { validatePath } = require('../utils/pathValidator.cjs');
+
+// Get project root
+const projectRoot = path.join(__dirname, '..');
 
 // Fix specific ESLint issues
 const fixes = [
@@ -63,14 +68,15 @@ const fixes = [
 
 // Apply fixes
 fixes.forEach(({ file, replacements }) => {
-  if (fs.existsSync(file)) {
-    let content = fs.readFileSync(file, 'utf8');
+  const fullPath = validatePath(projectRoot, file);
+  if (fs.existsSync(fullPath)) {
+    let content = fs.readFileSync(fullPath, 'utf8');
 
     replacements.forEach(({ from, to }) => {
       content = content.replace(new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to);
     });
 
-    fs.writeFileSync(file, content);
+    fs.writeFileSync(fullPath, content);
     console.log(`Fixed: ${file}`);
   }
 });

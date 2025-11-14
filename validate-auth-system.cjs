@@ -5,11 +5,12 @@
 // Manual validation script for authentication system
 const fs = require('fs');
 const path = require('path');
+const { validatePath } = require('./utils/pathValidator.cjs');
 
 console.log('🔍 Validating Authentication and Authorization System...\n');
 
 // Load environment variables from .env.local
-const envLocalPath = path.join(__dirname, '.env.local');
+const envLocalPath = validatePath(__dirname, '.env.local');
 if (fs.existsSync(envLocalPath)) {
   const envContent = fs.readFileSync(envLocalPath, 'utf8');
   const envLines = envContent.split('\n').filter((line) => line.trim() && !line.startsWith('#'));
@@ -82,7 +83,8 @@ const requiredFiles = [
 ];
 
 requiredFiles.forEach((filePath) => {
-  if (fs.existsSync(filePath)) {
+  const fullPath = validatePath(__dirname, filePath);
+  if (fs.existsSync(fullPath)) {
     console.log(`✅ ${filePath} exists`);
   } else {
     console.log(`❌ ${filePath} missing`);
@@ -97,8 +99,9 @@ const schemaFiles = ['database/schema.sql', 'database/neon-complete-migration.sq
 
 let rlsFound = false;
 schemaFiles.forEach((schemaFile) => {
-  if (fs.existsSync(schemaFile)) {
-    const content = fs.readFileSync(schemaFile, 'utf8');
+  const fullPath = validatePath(__dirname, schemaFile);
+  if (fs.existsSync(fullPath)) {
+    const content = fs.readFileSync(fullPath, 'utf8');
     if (content.includes('ROW LEVEL SECURITY') || content.includes('RLS')) {
       console.log(`✅ ${schemaFile} contains RLS policies`);
       rlsFound = true;
@@ -177,7 +180,7 @@ console.log('======================');
 const checks = [
   { name: 'Environment Variables', status: allEnvVarsPresent },
   { name: 'Database Configuration', status: !!databaseUrl },
-  { name: 'Required Files', status: requiredFiles.every((f) => fs.existsSync(f)) },
+  { name: 'Required Files', status: requiredFiles.every((f) => fs.existsSync(validatePath(__dirname, f))) },
   { name: 'RLS Policies', status: rlsFound },
 ];
 
