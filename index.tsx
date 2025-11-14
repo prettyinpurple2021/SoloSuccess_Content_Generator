@@ -177,7 +177,7 @@ try {
           <button onclick="window.location.reload()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; margin-right: 0.5rem;">
             Reload Page 🔄
           </button>
-          <button onclick="navigator.clipboard.writeText('${errorMessage.replace(/'/g, "\\'")}').then(() => alert('Error copied to clipboard!'))" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
+          <button onclick="navigator.clipboard.writeText('${errorMessage.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}').then(() => alert('Error copied to clipboard!'))" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
             Copy Error 📋
           </button>
         </div>
