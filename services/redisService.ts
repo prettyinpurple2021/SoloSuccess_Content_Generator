@@ -38,6 +38,25 @@ type IORedis = {
   quit: () => Promise<string>;
 };
 
+// Helper to securely check for allowed Upstash hostnames
+function isAllowedUpstashHost(hostname: string): boolean {
+  if (!hostname) return false;
+  if (hostname === 'upstash.io' || hostname === 'upstash.com') return true;
+  // Allow only direct subdomains (e.g., "eu1.upstash.io", "xyz.upstash.com")
+  if (
+    hostname.endsWith('.upstash.io') ||
+    hostname.endsWith('.upstash.com')
+  ) {
+    // Only allow single-level and multi-level subdomains (no tricks)
+    // Check: ensure left-side label(s) only contain valid hostname characters
+    const subdomain = hostname.replace(/\.upstash\.(com|io)$/, '');
+    // Subdomain segments, RFC 1035: a-z, A-Z, 0-9, hyphen; cannot start/end with hyphen
+    const labels = subdomain.split('.');
+    return labels.every(label => /^[a-zA-Z0-9-]+$/.test(label) && !label.startsWith('-') && !label.endsWith('-'));
+  }
+  return false;
+}
+
 class RedisService {
   private client: UpstashRedis | IORedis | null = null;
   private clientType: 'upstash' | 'ioredis' | null = null;
@@ -72,8 +91,7 @@ class RedisService {
         })();
         const hostname = urlObj ? urlObj.hostname : '';
         if (
-          hostname.endsWith('upstash.io') ||
-          hostname.endsWith('upstash.com') ||
+          isAllowedUpstashHost(hostname) ||
           redisUrl.startsWith('https://')
         ) {
           try {
