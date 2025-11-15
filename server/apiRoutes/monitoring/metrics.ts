@@ -30,7 +30,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return apiErrorHandler.handleMethodNotAllowed(req, res, ['POST']);
     }
 
-    const { type, data } = req.body;
+    const body = req.body as { type?: string; data?: unknown };
+    const { type, data } = body;
 
     if (!type || !data) {
       return res.status(400).json({ error: 'Missing required fields: type, data' });
@@ -38,25 +39,25 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     switch (type) {
       case 'web-vitals':
-        handleWebVitalsMetrics(data);
+        handleWebVitalsMetrics(data as any);
         break;
       case 'api-performance':
-        handleApiPerformanceMetrics(data);
+        handleApiPerformanceMetrics(data as any);
         break;
       case 'database-performance':
-        handleDatabasePerformanceMetrics(data);
+        handleDatabasePerformanceMetrics(data as any);
         break;
       case 'ai-service-performance':
-        handleAIServicePerformanceMetrics(data);
+        handleAIServicePerformanceMetrics(data as any);
         break;
       case 'integration-performance':
-        handleIntegrationPerformanceMetrics(data);
+        handleIntegrationPerformanceMetrics(data as any);
         break;
       case 'error':
-        handleErrorMetrics(data);
+        handleErrorMetrics(data as any);
         break;
       case 'custom':
-        handleCustomMetrics(data);
+        handleCustomMetrics(data as any);
         break;
       default:
         return res.status(400).json({ error: `Unknown metric type: ${type}` });

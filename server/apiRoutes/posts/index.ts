@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from '../types';
 import { db } from '../../../services/databaseService';
 import { enhancedDb } from '../../../services/enhancedDatabaseService';
 import { apiErrorHandler, commonSchemas } from '../../../services/apiErrorHandler';
@@ -6,18 +7,6 @@ import { errorHandler } from '../../../services/errorHandlingService';
 import { databaseErrorHandler } from '../../../services/databaseErrorHandler';
 
 // Minimal API Request/Response types to avoid external deps
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 const createPostSchema = z.object({
   userId: z.string().min(1),

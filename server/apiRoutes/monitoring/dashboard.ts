@@ -78,7 +78,13 @@ async function handleGetDashboard(req: ApiRequest, res: ApiResponse) {
 }
 
 async function handlePostMetric(req: ApiRequest, res: ApiResponse) {
-  const { name, value, tags, unit } = req.body;
+  const body = req.body as {
+    name?: string;
+    value?: number;
+    tags?: Record<string, string>;
+    unit?: string;
+  };
+  const { name, value, tags, unit } = body;
 
   if (!name || value === undefined) {
     return res.status(400).json({ error: 'Missing required fields: name, value' });
@@ -93,7 +99,8 @@ async function handlePostMetric(req: ApiRequest, res: ApiResponse) {
 }
 
 async function handleUpdateAlert(req: ApiRequest, res: ApiResponse) {
-  const { alertId, action } = req.body;
+  const body = req.body as { alertId?: string; action?: string };
+  const { alertId, action } = body;
 
   if (!alertId || !action) {
     return res.status(400).json({ error: 'Missing required fields: alertId, action' });

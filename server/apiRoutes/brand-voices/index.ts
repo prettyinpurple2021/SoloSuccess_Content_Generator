@@ -1,21 +1,9 @@
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from '../types';
 import { db } from '../../../services/databaseService';
 import { enhancedDb } from '../../../services/enhancedDatabaseService';
 import { apiErrorHandler, commonSchemas } from '../../../services/apiErrorHandler';
 import { errorHandler } from '../../../services/errorHandlingService';
-
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 // DatabaseBrandVoice shape
 const createSchema = z.object({

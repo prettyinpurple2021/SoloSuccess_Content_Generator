@@ -5,21 +5,7 @@
 
 import { z } from 'zod';
 import { errorHandler, ErrorContext } from './errorHandlingService';
-
-// API Request/Response types
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-  headers?: Record<string, string>;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
+import type { ApiRequest, ApiResponse } from '../server/apiRoutes/types';
 
 export interface ValidationError {
   field: string;
