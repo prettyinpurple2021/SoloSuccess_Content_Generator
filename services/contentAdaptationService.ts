@@ -228,21 +228,26 @@ export class ContentAdaptationService {
         const adapted = await this.adaptContentForPlatform(originalContent, platform, options);
         // For large-limit platforms, try to expand to near-max if significantly under
         const limits = ContentAdaptationService.PLATFORM_LIMITS[platform];
-        const targetMin = Math.floor(limits.maxCharacters * 0.85);
-        if (adapted.characterCount < targetMin) {
-          const expanded = await this.expandToTargetLength(
-            adapted.content,
-            limits.maxCharacters,
-            platform,
-            options
-          );
-          results[platform] = {
-            ...adapted,
-            content: expanded,
-            characterCount: expanded.length,
-            adaptations: [...adapted.adaptations, 'Expanded to target near max length'],
-          };
+        if (limits) {
+          const targetMin = Math.floor(limits.maxCharacters * 0.85);
+          if (adapted.characterCount < targetMin) {
+            const expanded = await this.expandToTargetLength(
+              adapted.content,
+              limits.maxCharacters,
+              platform,
+              options
+            );
+            results[platform] = {
+              ...adapted,
+              content: expanded,
+              characterCount: expanded.length,
+              adaptations: [...adapted.adaptations, 'Expanded to target near max length'],
+            };
+          } else {
+            results[platform] = adapted;
+          }
         } else {
+          // No limits defined for this platform, use adapted content as-is
           results[platform] = adapted;
         }
       } catch (error) {

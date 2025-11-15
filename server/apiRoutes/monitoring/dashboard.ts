@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { ApiRequest, ApiResponse } from '../types';
 import { productionMonitoringService } from '../../../services/productionMonitoringService';
 import { apiErrorHandler } from '../../../services/apiErrorHandler';
 import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
@@ -9,7 +9,7 @@ import { errorHandler, ErrorContext } from '../../../services/errorHandlingServi
  * Provides real-time monitoring data for production dashboard
  */
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   // Add security headers
   apiErrorHandler.addSecurityHeaders(res);
 
@@ -49,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function handleGetDashboard(req: VercelRequest, res: VercelResponse) {
+async function handleGetDashboard(req: ApiRequest, res: ApiResponse) {
   const { timeWindow } = req.query;
   const windowMs = timeWindow ? parseInt(timeWindow as string) * 1000 : 60 * 60 * 1000; // Default 1 hour
 
@@ -77,7 +77,7 @@ async function handleGetDashboard(req: VercelRequest, res: VercelResponse) {
   res.status(200).json(response);
 }
 
-async function handlePostMetric(req: VercelRequest, res: VercelResponse) {
+async function handlePostMetric(req: ApiRequest, res: ApiResponse) {
   const { name, value, tags, unit } = req.body;
 
   if (!name || value === undefined) {
@@ -92,7 +92,7 @@ async function handlePostMetric(req: VercelRequest, res: VercelResponse) {
   });
 }
 
-async function handleUpdateAlert(req: VercelRequest, res: VercelResponse) {
+async function handleUpdateAlert(req: ApiRequest, res: ApiResponse) {
   const { alertId, action } = req.body;
 
   if (!alertId || !action) {
@@ -111,7 +111,7 @@ async function handleUpdateAlert(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function handleDeleteAlert(req: VercelRequest, res: VercelResponse) {
+async function handleDeleteAlert(req: ApiRequest, res: ApiResponse) {
   const { ruleId } = req.query;
 
   if (!ruleId) {

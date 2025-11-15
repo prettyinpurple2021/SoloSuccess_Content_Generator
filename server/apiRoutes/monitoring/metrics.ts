@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { ApiRequest, ApiResponse } from '../types';
 import { productionMonitoringService } from '../../../services/productionMonitoringService';
 import { apiErrorHandler } from '../../../services/apiErrorHandler';
 import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
@@ -9,7 +9,7 @@ import { errorHandler, ErrorContext } from '../../../services/errorHandlingServi
  * Collects and processes various application metrics for monitoring
  */
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   // Add security headers
   apiErrorHandler.addSecurityHeaders(res);
 

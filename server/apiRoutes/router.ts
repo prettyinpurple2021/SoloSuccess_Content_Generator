@@ -103,11 +103,15 @@ function matchRoute(
     const routeSegment = routeSegments[i];
     const pathSegment = pathSegments[i];
 
+    if (!routeSegment || !pathSegment) {
+      return null;
+    }
+
     if (routeSegment.type === 'literal') {
       if (routeSegment.value !== pathSegment) {
         return null;
       }
-    } else {
+    } else if (routeSegment.type === 'param') {
       params[routeSegment.name] = pathSegment;
     }
   }

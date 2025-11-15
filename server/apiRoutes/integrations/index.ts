@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { db } from '../../../services/databaseService';
 import { enhancedDb } from '../../../services/enhancedDatabaseService';
 import { integrationService } from '../../../services/integrationService';
 import { apiErrorHandler, commonSchemas } from '../../../services/apiErrorHandler';
@@ -74,14 +75,15 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
     try {
       if (id) {
         // Get single integration
-        const integration = await enhancedDb.getIntegrationById(id);
+        const integrations = await db.getIntegrations(userId);
+        const integration = integrations.find((i) => i.id === id);
         if (!integration || integration.user_id !== userId) {
           return res.status(404).json({ error: 'Integration not found' });
         }
         return res.status(200).json(integration);
       } else {
         // Get all integrations for user
-        const integrations = await enhancedDb.getIntegrations(userId);
+        const integrations = await db.getIntegrations(userId);
         return res.status(200).json(integrations);
       }
     } catch (error) {
@@ -89,7 +91,7 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
       if (!healthStatus.isHealthy) {
         return res.status(503).json({
           error: 'Database temporarily unavailable',
-          details: healthStatus.message,
+          details: 'Service degraded',
         });
       }
       errorHandler.logError(
@@ -106,7 +108,7 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const validated = createIntegrationSchema.parse(body);
 
-      const service = integrationService.getInstance();
+      const service = integrationService;
       const integration = await service.createIntegration(
         {
           name: validated.name,
@@ -142,7 +144,7 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const validated = updateIntegrationSchema.parse(body);
 
-      const service = integrationService.getInstance();
+      const service = integrationService;
       const integration = await service.updateIntegration(
         id,
         {
@@ -181,7 +183,7 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
         context
       );
 
-      const service = integrationService.getInstance();
+      const service = integrationService;
       await service.deleteIntegration(id, userId);
 
       return res.status(200).json({ success: true });
