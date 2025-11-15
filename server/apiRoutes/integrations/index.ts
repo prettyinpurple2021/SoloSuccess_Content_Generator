@@ -1,22 +1,11 @@
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from '../types';
+import { db } from '../../../services/databaseService';
 import { enhancedDb } from '../../../services/enhancedDatabaseService';
 import { integrationService } from '../../../services/integrationService';
 import { apiErrorHandler, commonSchemas } from '../../../services/apiErrorHandler';
 import { errorHandler } from '../../../services/errorHandlingService';
 import { databaseErrorHandler } from '../../../services/databaseErrorHandler';
-
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 const createIntegrationSchema = z.object({
   userId: z.string().min(1),
@@ -74,14 +63,15 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
     try {
       if (id) {
         // Get single integration
-        const integration = await enhancedDb.getIntegrationById(id);
-        if (!integration || integration.user_id !== userId) {
+        const integrations = await db.getIntegrations(userId);
+        const integration = integrations.find((i) => i.id === id);
+        if (!integration || integration.userId !== userId) {
           return res.status(404).json({ error: 'Integration not found' });
         }
         return res.status(200).json(integration);
       } else {
         // Get all integrations for user
-        const integrations = await enhancedDb.getIntegrations(userId);
+        const integrations = await db.getIntegrations(userId);
         return res.status(200).json(integrations);
       }
     } catch (error) {
@@ -89,7 +79,7 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
       if (!healthStatus.isHealthy) {
         return res.status(503).json({
           error: 'Database temporarily unavailable',
-          details: healthStatus.message,
+          details: 'Service degraded',
         });
       }
       errorHandler.logError(
@@ -106,7 +96,7 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const validated = createIntegrationSchema.parse(body);
 
-      const service = integrationService.getInstance();
+      const service = integrationService;
       const integration = await service.createIntegration(
         {
           name: validated.name,
@@ -142,7 +132,7 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const validated = updateIntegrationSchema.parse(body);
 
-      const service = integrationService.getInstance();
+      const service = integrationService;
       const integration = await service.updateIntegration(
         id,
         {
@@ -181,7 +171,7 @@ async function integrationsHandler(req: ApiRequest, res: ApiResponse) {
         context
       );
 
-      const service = integrationService.getInstance();
+      const service = integrationService;
       await service.deleteIntegration(id, userId);
 
       return res.status(200).json({ success: true });

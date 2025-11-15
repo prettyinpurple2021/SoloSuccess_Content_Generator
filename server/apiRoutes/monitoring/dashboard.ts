@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { ApiRequest, ApiResponse } from '../types';
 import { productionMonitoringService } from '../../../services/productionMonitoringService';
 import { apiErrorHandler } from '../../../services/apiErrorHandler';
 import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
@@ -9,7 +9,7 @@ import { errorHandler, ErrorContext } from '../../../services/errorHandlingServi
  * Provides real-time monitoring data for production dashboard
  */
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   // Add security headers
   apiErrorHandler.addSecurityHeaders(res);
 
@@ -49,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function handleGetDashboard(req: VercelRequest, res: VercelResponse) {
+async function handleGetDashboard(req: ApiRequest, res: ApiResponse) {
   const { timeWindow } = req.query;
   const windowMs = timeWindow ? parseInt(timeWindow as string) * 1000 : 60 * 60 * 1000; // Default 1 hour
 
@@ -77,8 +77,14 @@ async function handleGetDashboard(req: VercelRequest, res: VercelResponse) {
   res.status(200).json(response);
 }
 
-async function handlePostMetric(req: VercelRequest, res: VercelResponse) {
-  const { name, value, tags, unit } = req.body;
+async function handlePostMetric(req: ApiRequest, res: ApiResponse) {
+  const body = req.body as {
+    name?: string;
+    value?: number;
+    tags?: Record<string, string>;
+    unit?: string;
+  };
+  const { name, value, tags, unit } = body;
 
   if (!name || value === undefined) {
     return res.status(400).json({ error: 'Missing required fields: name, value' });
@@ -92,8 +98,9 @@ async function handlePostMetric(req: VercelRequest, res: VercelResponse) {
   });
 }
 
-async function handleUpdateAlert(req: VercelRequest, res: VercelResponse) {
-  const { alertId, action } = req.body;
+async function handleUpdateAlert(req: ApiRequest, res: ApiResponse) {
+  const body = req.body as { alertId?: string; action?: string };
+  const { alertId, action } = body;
 
   if (!alertId || !action) {
     return res.status(400).json({ error: 'Missing required fields: alertId, action' });
@@ -111,7 +118,7 @@ async function handleUpdateAlert(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function handleDeleteAlert(req: VercelRequest, res: VercelResponse) {
+async function handleDeleteAlert(req: ApiRequest, res: ApiResponse) {
   const { ruleId } = req.query;
 
   if (!ruleId) {

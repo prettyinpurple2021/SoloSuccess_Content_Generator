@@ -32,7 +32,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           ? Number(req.query.windowMs[0])
           : undefined;
     const windowMs =
-      Number.isFinite(windowParam) && windowParam > 0 ? windowParam : DEFAULT_WINDOW_MS;
+      windowParam !== undefined && Number.isFinite(windowParam) && windowParam > 0
+        ? windowParam
+        : DEFAULT_WINDOW_MS;
 
     if (req.method === 'GET') {
       switch (action) {

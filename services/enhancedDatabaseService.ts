@@ -570,6 +570,51 @@ class EnhancedDatabaseService {
   }
 
   /**
+   * Perform health check (alias for testConnection)
+   */
+  async performHealthCheck(): Promise<{
+    database: boolean;
+    connectionPool: boolean;
+    responseTime: number;
+  }> {
+    const startTime = Date.now();
+    const isHealthy = await this.testConnection();
+    const responseTime = Date.now() - startTime;
+
+    return {
+      database: isHealthy,
+      connectionPool: this.isConnected && !this.circuitBreaker.isOpen,
+      responseTime,
+    };
+  }
+
+  /**
+   * Get health status
+   */
+  async getHealthStatus(): Promise<{
+    isHealthy: boolean;
+    metrics: HealthMetrics;
+    connectionStatus: {
+      isConnected: boolean;
+      circuitBreakerOpen: boolean;
+      connectionAttempts: number;
+      uptime: number;
+    };
+    activeTransactions?: number;
+    circuitBreakerOpen?: boolean;
+  }> {
+    const isHealthy = await this.testConnection();
+    const connectionStatus = this.getConnectionStatus();
+    return {
+      isHealthy,
+      metrics: this.getHealthMetrics(),
+      connectionStatus,
+      activeTransactions: 0, // Not tracked in this implementation
+      circuitBreakerOpen: connectionStatus.circuitBreakerOpen,
+    };
+  }
+
+  /**
    * Graceful shutdown
    */
   async shutdown(): Promise<void> {

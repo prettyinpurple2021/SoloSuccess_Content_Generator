@@ -1,20 +1,8 @@
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from '../types';
 import { integrationService } from '../../../services/integrationService';
 import { apiErrorHandler, commonSchemas } from '../../../services/apiErrorHandler';
 import { errorHandler } from '../../../services/errorHandlingService';
-
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 async function integrationDetailHandler(req: ApiRequest, res: ApiResponse) {
   // Add security headers
@@ -41,7 +29,7 @@ async function integrationDetailHandler(req: ApiRequest, res: ApiResponse) {
 
   if (req.method === 'GET') {
     try {
-      const service = integrationService.getInstance();
+      const service = integrationService;
       const integration = await service.getIntegrationById(id);
       if (!integration) {
         return res.status(404).json({ error: 'Integration not found' });
@@ -68,7 +56,7 @@ async function integrationDetailHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      const service = integrationService.getInstance();
+      const service = integrationService;
 
       if (action === 'test') {
         const result = await service.testConnection(id);

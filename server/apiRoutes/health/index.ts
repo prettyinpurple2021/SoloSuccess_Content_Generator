@@ -1,3 +1,4 @@
+import type { ApiRequest, ApiResponse } from '../types';
 /**
  * Production Health Check Endpoint
  *
@@ -6,19 +7,6 @@
  */
 
 // Generic types for serverless function
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-  headers?: Record<string, string>;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 interface HealthCheck {
   service: string;

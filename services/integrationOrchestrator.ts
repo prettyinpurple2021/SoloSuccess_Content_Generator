@@ -671,17 +671,18 @@ class IntegrationOrchestrator {
     try {
       switch (platform) {
         case 'twitter':
-          return await import('./integrations/twitterService.js');
+          return await import('./platforms/twitterClient.js');
         case 'linkedin':
-          return await import('./integrations/linkedinService.js');
+          return await import('./platforms/linkedInClient.js');
         case 'facebook':
-          return await import('./integrations/facebookService.js');
+          return await import('./platforms/facebookClient.js');
         case 'instagram':
-          return await import('./integrations/instagramService.js');
+          return await import('./platforms/instagramClient.js');
         case 'threads':
-          return await import('./integrations/threadsService.js');
+          // Threads not yet implemented, return null for graceful degradation
+          return null;
         case 'bluesky':
-          return await import('./integrations/blueskyService.js');
+          return await import('./platforms/blueSkyClient.js');
         default:
           return null;
       }

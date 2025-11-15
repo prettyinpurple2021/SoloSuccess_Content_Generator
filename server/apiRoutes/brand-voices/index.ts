@@ -1,20 +1,9 @@
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from '../types';
+import { db } from '../../../services/databaseService';
 import { enhancedDb } from '../../../services/enhancedDatabaseService';
 import { apiErrorHandler, commonSchemas } from '../../../services/apiErrorHandler';
 import { errorHandler } from '../../../services/errorHandlingService';
-
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 // DatabaseBrandVoice shape
 const createSchema = z.object({
@@ -54,7 +43,7 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      const items = await enhancedDb.getBrandVoices(userId);
+      const items = await db.getBrandVoices(userId);
       return res.status(200).json(items);
     } catch (error) {
       // Enhanced error handling with graceful degradation
@@ -85,7 +74,7 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
-      const created = await enhancedDb.addBrandVoice(
+      const created = await db.addBrandVoice(
         {
           name: sanitizedData.name,
           tone: sanitizedData.tone,
@@ -128,7 +117,7 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
-      const updated = await enhancedDb.updateBrandVoice(
+      const updated = await db.updateBrandVoice(
         id,
         {
           name: sanitizedData.name,
@@ -164,7 +153,7 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      await enhancedDb.deleteBrandVoice(id, userId);
+      await db.deleteBrandVoice(id, userId);
       return res.status(204).end();
     } catch (error) {
       // Enhanced error handling for brand voice deletion

@@ -1,22 +1,12 @@
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from '../types';
+import { db } from '../../../services/databaseService';
 import { enhancedDb } from '../../../services/enhancedDatabaseService';
 import { apiErrorHandler, commonSchemas } from '../../../services/apiErrorHandler';
 import { errorHandler } from '../../../services/errorHandlingService';
 import { databaseErrorHandler } from '../../../services/databaseErrorHandler';
 
 // Minimal API Request/Response types to avoid external deps
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 const createPostSchema = z.object({
   userId: z.string().min(1),
@@ -71,7 +61,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      const posts = await enhancedDb.getPosts(userId);
+      const posts = await db.getPosts(userId);
       return res.status(200).json(posts);
     } catch (error) {
       // Enhanced error handling with graceful degradation
@@ -102,7 +92,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
-      const created = await enhancedDb.addPost(
+      const created = await db.addPost(
         {
           topic: sanitizedData.topic || null,
           idea: sanitizedData.idea || null,
@@ -161,7 +151,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
-      const updated = await enhancedDb.updatePost(
+      const updated = await db.updatePost(
         id,
         {
           topic: sanitizedData.topic,
@@ -219,7 +209,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     );
 
     try {
-      await enhancedDb.deletePost(id, userId);
+      await db.deletePost(id, userId);
       return res.status(204).end();
     } catch (error) {
       // Enhanced error handling for post deletion

@@ -4,6 +4,7 @@ export interface ApiRequest {
   method?: string;
   query: Record<string, string | string[] | undefined>;
   body?: unknown;
+  headers?: Record<string, string | string[] | undefined>;
 }
 
 export interface ApiResponse {
@@ -18,6 +19,7 @@ export function adaptRequest(req: VercelRequest): ApiRequest {
     method: req.method,
     query: (req.query ?? {}) as Record<string, string | string[] | undefined>,
     body: req.body,
+    headers: (req.headers ?? {}) as Record<string, string | string[] | undefined>,
   };
 }
 

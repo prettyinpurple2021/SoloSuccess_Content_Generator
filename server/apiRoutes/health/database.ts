@@ -1,3 +1,4 @@
+import type { ApiRequest, ApiResponse } from '../types';
 /**
  * Database health monitoring API endpoint
  * Provides detailed database health status and metrics
@@ -8,19 +9,6 @@ import { connectionManager } from '../../../services/databaseConnectionManager';
 import { migrationService } from '../../../services/databaseMigrationService';
 import { apiErrorHandler } from '../../../services/apiErrorHandler';
 import { errorHandler } from '../../../services/errorHandlingService';
-
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 async function databaseHealthHandler(req: ApiRequest, res: ApiResponse) {
   // Add security headers

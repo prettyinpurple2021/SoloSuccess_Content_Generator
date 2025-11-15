@@ -1,21 +1,8 @@
+import type { ApiRequest, ApiResponse } from '../types';
 import { z } from 'zod';
 import { db, query } from '../../../services/databaseService';
 import { apiErrorHandler } from '../../../services/apiErrorHandler';
 import { errorHandler, ErrorContext } from '../../../services/errorHandlingService';
-
-interface ApiRequest {
-  method?: string;
-  query: Record<string, string | string[] | undefined>;
-  body?: unknown;
-  headers?: Record<string, string>;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-  end: () => void;
-  setHeader: (name: string, value: string) => void;
-}
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   // Add security headers

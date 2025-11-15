@@ -62,6 +62,7 @@ export async function requireAuth(
       if (authHeader.startsWith('Bearer ')) {
         const token = authHeader.slice(7);
         try {
+          // @ts-expect-error Stack Auth type mismatch with current TypeScript version
           const stackUser = await stackServerApp.getUser({ accessToken: token });
           if (stackUser) {
             user = {
@@ -131,6 +132,7 @@ export async function optionalAuth(
       if (authHeader.startsWith('Bearer ')) {
         const token = authHeader.slice(7);
         try {
+          // @ts-expect-error Stack Auth type mismatch with current TypeScript version
           const stackUser = await stackServerApp.getUser({ accessToken: token });
           if (stackUser) {
             user = {
@@ -146,7 +148,7 @@ export async function optionalAuth(
     }
 
     const authenticatedReq = req as AuthenticatedRequest;
-    authenticatedReq.user = user;
+    authenticatedReq.user = user || undefined;
 
     await next(authenticatedReq, res);
   } catch (error) {
