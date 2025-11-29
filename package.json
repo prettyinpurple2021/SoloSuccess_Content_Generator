@@ -46,7 +46,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/genai": "^1.12.0",
     "@sentry/react": "^8.55.0",
-    "@stackframe/react": "^2.8.48",
+    "@stackframe/react": "^2.8.49",
     "@stackframe/stack": "^2.8.44",
     "@tailwindcss/cli": "^4.1.14",
     "@upstash/redis": "^1.35.6",
