@@ -20,6 +20,7 @@ When implementing any feature, ask: "Would this pass a security audit? Does it h
 **SoloSuccess** is an AI-powered content planning and publishing platform for production use. Users create, schedule, and publish content across multiple social media platforms (Twitter, LinkedIn, Facebook, Instagram, Reddit, Pinterest) and blogs using AI generation (Google Gemini, OpenAI, Anthropic Claude).
 
 **Tech Stack:**
+
 - Frontend: Vite + React + TypeScript + TailwindCSS + Framer Motion
 - Auth: Stack Auth (enterprise authentication, replaces NextAuth.js and better-auth)
 - Database: Neon PostgreSQL (production-grade managed database)
@@ -42,6 +43,7 @@ import React from 'react';
 Failure to do this causes "Cannot set properties of undefined (setting 'Children')" errors in Stack Auth. This is non-negotiable.
 
 **Root structure** (`index.tsx` → `AppWithErrorHandling` → `App.tsx`):
+
 - `index.tsx`: React initialization, Sentry setup, Router wrapping
 - `AppWithErrorHandling`: Error boundaries, loading states, notification system
 - `App.tsx`: Main dashboard with tab-based navigation
@@ -51,14 +53,17 @@ Failure to do this causes "Cannot set properties of undefined (setting 'Children
 **Critical rule:** All external integrations and API calls stay in `services/`. Components never call third-party APIs directly.
 
 **Service patterns:**
-- Singleton instances: `export const serviceName = new ServiceClass()`
-- Database: `services/databaseService.ts` and `services/neonService.ts`
+
+- Singleton instances: `export const serviceName = new ServiceClass()` or `ServiceClass.getInstance()`
+- Database: `services/databaseService.ts` (exports `db`) and `services/neonService.ts` (Neon PostgreSQL client)
 - AI: `services/geminiService.ts`, `services/enhancedGeminiService.ts`
 - Integrations: `services/integrationOrchestrator.ts` orchestrates platform-specific integrations in `services/integrations/`
+- Webhooks: `services/webhookService.ts` (exports `webhookService`) manages webhook CRUD, delivery, retries
 - Encryption: `services/credentialEncryption.ts` with AES-256-GCM
 - Error handling: `services/apiErrorHandler.ts` with Zod validation
 
 **Data flow:**
+
 1. Component calls `apiService.*` (client-facing wrapper)
 2. `apiService` delegates to `db.*` (database operations)
 3. `db.*` uses Neon PostgreSQL client
@@ -78,6 +83,7 @@ export const stackServerApp = new StackServerApp({
 ```
 
 **Authentication flow:**
+
 - Routes wrapped with `StackProvider` at `index.tsx`
 - `useUser()` hook gets current user in client components
 - Protected routes in `AppRouter.tsx` use `ProtectedRoute` wrapper
@@ -89,13 +95,20 @@ Database types in `types.ts` with camelCase interfaces map to snake_case Postgre
 
 ```typescript
 // Component uses camelCase
-interface Post { userId: string; scheduleDate?: Date; }
+interface Post {
+  userId: string;
+  scheduleDate?: Date;
+}
 
 // Database uses snake_case
-interface DatabasePost { user_id: string; schedule_date?: string; }
+interface DatabasePost {
+  user_id: string;
+  schedule_date?: string;
+}
 ```
 
 **Transform functions in `databaseService.ts`:**
+
 - `postToDatabase()` converts Post → DatabasePost
 - `postFromDatabase()` converts DatabasePost → Post
 
@@ -120,13 +133,14 @@ interface DatabasePost { user_id: string; schedule_date?: string; }
 - Loading states managed by `LoadingStateManager.tsx`
 
 **Example:**
+
 ```tsx
 import { LazyPerformanceInsights } from './LazyComponents';
 
 // Lazy loading in JSX:
 <Suspense fallback={<ComponentLoadingFallback name="PerformanceInsights" />}>
   <LazyPerformanceInsights />
-</Suspense>
+</Suspense>;
 ```
 
 ### 3. **Type Safety**
@@ -142,23 +156,43 @@ import { LazyPerformanceInsights } from './LazyComponents';
 ### AI Content Generation
 
 **`geminiService.ts` and `enhancedGeminiService.ts`:**
+
 - Generate blog ideas, posts, summaries, platform-specific content
 - Methods: `generateBlogIdeas()`, `generateBlogPost()`, `adaptContentForPlatform()`
 - Error handling: wrapped in try-catch, fallback to error messages
 
 **AI Usage Monitoring:**
+
 - `aiUsageMonitoringService.ts` tracks requests, tokens, costs
 - Rate limiting: `aiRequestQueueService.ts` queues and prioritizes requests
 
 ### Integration Orchestration
 
 **`integrationOrchestrator.ts`:**
+
 - Manages OAuth flows for Twitter, LinkedIn, Facebook, Instagram, Reddit, Pinterest
 - Methods: `testConnection()`, `publishPost()`, `getAnalytics()`, `syncData()`
 - Platform configs define rate limits, feature sets, content limits
 - Each platform has service in `services/integrations/` (e.g., TwitterService)
 
+**`integrationService.ts`:**
+
+- Complete CRUD for integrations with encrypted credentials
+- Methods: `getIntegrations()`, `createIntegration()`, `updateIntegration()`, `deleteIntegration()`
+- Health monitoring: `checkIntegrationHealth()`, `getIntegrationMetrics()`
+- Webhook management via `getWebhooks()`, `addWebhook()`, `updateWebhook()`, `deleteWebhook()`
+- Rate limiting: `checkRateLimit()` enforces platform-specific limits
+
+**`webhookService.ts`:**
+
+- Real webhook CRUD operations with database persistence
+- Methods: `createWebhook()`, `updateWebhook()`, `deleteWebhook()`, `getWebhooksForIntegration()`
+- Webhook delivery: `deliverWebhook()` with retry logic, signature verification (HMAC-SHA256)
+- Background processing: `processPendingDeliveries()` handles failed deliveries with exponential backoff
+- Stats & testing: `getWebhookStats()`, `testWebhook()` for monitoring and debugging
+
 **Credential Encryption:**
+
 - `credentialEncryption.ts` encrypts user OAuth tokens with AES-256-GCM
 - Never store credentials unencrypted in database
 - Encrypt before DB insert, decrypt on retrieval
@@ -166,13 +200,35 @@ import { LazyPerformanceInsights } from './LazyComponents';
 ### Scheduling & Publishing
 
 **`postScheduler.ts` and `schedulerService.ts`:**
+
 - Queue posts for scheduled publication
 - Cron-like execution for batch publishing
 - Fallback: `schedulingService.ts` handles scheduling logic
 
 **Data persistence:**
+
 - Calendar view syncs with `posts` table
 - Schedule date stored as ISO string, converted to Date on retrieval
+
+---
+
+## Recent Production Readiness Improvements
+
+**Phase 1 Critical Fixes (Completed):**
+
+1. ✅ **WebhookManager** - Replaced local state with real `webhookService` database calls
+2. ✅ **geminiService** - Added comprehensive error handling with try-catch blocks and user-friendly messages
+3. ✅ **MonitorIntegrations** - Moved fetch() calls to service layer via `db.getIntegrationAlerts()` and `db.getIntegrationLogs()`
+4. ✅ **socialMediaOrchestrator** - Added `ENABLE_SIMULATED_POSTING` feature flag with deprecation warnings
+5. ✅ **Image generation** - Documented incomplete methods with implementation guides
+
+**Key Patterns from Phase 1:**
+
+- All service methods must handle errors with try-catch
+- Error messages should be user-friendly: `throw new Error("User message + technical details + next steps")`
+- Components call services, never direct `fetch()` or third-party APIs
+- Feature flags for incomplete features: check `process.env.FEATURE_NAME` and throw errors if disabled in production
+- Document TODOs with clear implementation paths, don't leave silent failures
 
 ---
 
@@ -218,6 +274,7 @@ npm run scan:secrets           # Secret scanning pre-commit
 ## Environment Variables
 
 **Required:**
+
 ```
 VITE_STACK_PROJECT_ID=<your-project-id>
 VITE_STACK_PUBLISHABLE_CLIENT_KEY=<your-key>
@@ -228,6 +285,7 @@ INTEGRATION_ENCRYPTION_SECRET=<64-char-hex>
 ```
 
 **Optional:**
+
 ```
 OPENAI_API_KEY=<openai-key>
 ANTHROPIC_API_KEY=<anthropic-key>
@@ -258,18 +316,21 @@ Generate encryption secret: `node -e "console.log(require('crypto').randomBytes(
 ### Error Handling
 
 **Component level:**
+
 - Try-catch blocks in all event handlers
 - Display user-friendly messages via `setErrorMessage()`
 - Clear messages after 5 seconds: `setTimeout(() => setErrorMessage(''), 5000)`
 - **Test with real network failures and edge cases**
 
 **Service level:**
+
 - `apiErrorHandler` catches and transforms errors
 - Zod validation errors converted to readable messages
 - Database errors wrapped with context and retried when appropriate
 - **All API calls must handle timeouts, rate limits, and connection errors**
 
 **Global level:**
+
 - `ErrorBoundaryEnhanced` catches render errors
 - Sentry captures unhandled exceptions
 - `useErrorReporting()` hook for user feedback
@@ -320,21 +381,53 @@ Generate encryption secret: `node -e "console.log(require('crypto').randomBytes(
 4. Wrap with `ErrorBoundary` if rendering complex logic
 5. Call services via `apiService`, never direct API calls
 
+### Implementing Webhooks for Integrations
+
+When adding webhook support to an integration:
+
+1. **Database Schema**: Ensure `integration_webhooks` and `webhook_deliveries` tables exist
+2. **Service Methods**: Use `webhookService` for all webhook operations:
+   ```typescript
+   await webhookService.createWebhook(integrationId, webhookConfig);
+   await webhookService.deliverWebhook(webhookId, event, payload);
+   ```
+3. **Signature Verification**: Always use HMAC-SHA256 for webhook signatures
+4. **Retry Logic**: Implement exponential backoff (initial: 1s, max: 30s, multiplier: 2)
+5. **Background Processing**: Use `processPendingDeliveries()` for failed webhook retries
+6. **Component Integration**: Components should call `webhookService` methods, never manage webhook state locally
+
+**Example Pattern:**
+
+```typescript
+// Component loads webhooks
+const webhooks = await webhookService.getWebhooksForIntegration(integrationId);
+
+// Create new webhook
+const newWebhook = await webhookService.createWebhook(integrationId, {
+  url: 'https://example.com/webhook',
+  events: ['post.created', 'post.published'],
+  isActive: true,
+});
+```
+
 ---
 
 ## Key Files Reference
 
 **Core:**
+
 - `App.tsx` - Main dashboard, tab routing, central state management
 - `index.tsx` - React initialization, Sentry, root rendering
 - `types.ts` - All TypeScript interfaces (~800 lines)
 
 **Authentication:**
+
 - `stack.ts` - Stack Auth configuration
 - `components/auth/ProtectedRoute.tsx` - Route protection
 - `components/Auth.tsx` - Auth UI components
 
 **Services (Essential):**
+
 - `services/databaseService.ts` - Neon PostgreSQL operations
 - `services/integrationOrchestrator.ts` - Multi-platform orchestration
 - `services/geminiService.ts` - AI content generation
@@ -342,12 +435,14 @@ Generate encryption secret: `node -e "console.log(require('crypto').randomBytes(
 - `services/apiErrorHandler.ts` - Error handling with Zod validation
 
 **Components (Key):**
+
 - `components/IntegrationManager.tsx` - OAuth/credential management
 - `components/CalendarView.tsx` - Scheduled post visualization
 - `components/SmartScheduler.tsx` - Scheduling UI
 - `components/AnalyticsDashboard.tsx` - Performance insights
 
 **Build & Config:**
+
 - `vite.config.ts` - Vite configuration with server module stubbing
 - `tsconfig.json` - TypeScript strict mode enabled
 - `tailwind.config.js` - Tailwind theme customization
@@ -393,13 +488,14 @@ This codebase **must maintain enterprise-grade quality** at all times:
 ❌ **"TODO: implement later" comments** (either implement now or create a GitHub issue)  
 ❌ **Fake success/error states** (test with real API responses)  
 ❌ **Disabled features with no cleanup** (remove code or add proper feature flags)  
-❌ **Environment-dependent behavior not documented** (document all config requirements)  
+❌ **Environment-dependent behavior not documented** (document all config requirements)
 
 ---
 
 ## Deployment
 
 **Vercel deployment:**
+
 - Configure environment variables in Vercel dashboard
 - Push to main branch → automatic deployment
 - SPA routing fallback configured in `vercel.json`
@@ -418,6 +514,7 @@ npm run prepare  # Install husky hooks
 ```
 
 **Enforced checks:**
+
 - ESLint (`eslint . --ext .ts,.tsx`)
 - Prettier formatting
 - Secret scanning (`npm run scan:secrets`)
@@ -435,6 +532,7 @@ npm run validate:readiness # Comprehensive production readiness
 ```
 
 **These scripts verify:**
+
 - No mocks or placeholder code
 - No commented-out code
 - Complete error handling
