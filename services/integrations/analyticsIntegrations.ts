@@ -67,7 +67,9 @@ export class AnalyticsIntegrations {
         details: {
           viewId: credentials.viewId,
           apiVersion: 'v4',
-          hasData: response.reports && response.reports.length > 0,
+          hasData:
+            (response as { reports?: unknown[] }).reports &&
+            (response as { reports: unknown[] }).reports.length > 0,
         },
         timestamp: new Date(),
       };
@@ -167,7 +169,9 @@ export class AnalyticsIntegrations {
         details: {
           pageId: credentials.pageId,
           apiVersion: 'v18.0',
-          hasData: response.data && response.data.length > 0,
+          hasData:
+            (response as { data?: unknown[] }).data &&
+            (response as { data: unknown[] }).data.length > 0,
         },
         timestamp: new Date(),
       };
@@ -258,8 +262,8 @@ export class AnalyticsIntegrations {
         success: true,
         responseTime: Date.now() - startTime,
         details: {
-          userId: response.data?.id,
-          username: response.data?.username,
+          userId: (response as { data?: { id?: unknown } }).data?.id,
+          username: (response as { data?: { username?: unknown } }).data?.username,
           apiVersion: '2.0',
         },
         timestamp: new Date(),
@@ -339,8 +343,8 @@ export class AnalyticsIntegrations {
     method: string,
     url: string,
     credentials: GoogleAnalyticsCredentials,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${credentials.accessToken}`,
       'Content-Type': 'application/json',
@@ -357,8 +361,8 @@ export class AnalyticsIntegrations {
     method: string,
     url: string,
     credentials: FacebookCredentials,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -374,8 +378,8 @@ export class AnalyticsIntegrations {
     method: string,
     url: string,
     credentials: TwitterCredentials,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${credentials.bearerToken}`,
       'Content-Type': 'application/json',
@@ -392,8 +396,8 @@ export class AnalyticsIntegrations {
     method: string,
     url: string,
     headers: Record<string, string>,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {

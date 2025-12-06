@@ -1,4 +1,4 @@
-import { IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
+import { Integration, IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
 import { db } from './neonService';
 
 export class MonitoringService {
@@ -227,11 +227,17 @@ export class MonitoringService {
   /**
    * Gets list of integrations (helper used by tests)
    */
-  async getIntegrations(): Promise<any[]> {
+  async getIntegrations(): Promise<unknown[]> {
     try {
       // Delegate to database service; tests may stub this
-      if (typeof (db as any).getIntegrations === 'function') {
-        return await (db as any).getIntegrations();
+      // Note: db.getIntegrations requires userId, so this is a test helper only
+      if (
+        typeof (db as unknown as { getIntegrations?: () => Promise<unknown[]> }).getIntegrations ===
+        'function'
+      ) {
+        return await (
+          db as unknown as { getIntegrations: () => Promise<unknown[]> }
+        ).getIntegrations();
       }
     } catch {
       // ignore
@@ -306,7 +312,7 @@ export class MonitoringService {
     integrationId: string,
     level: 'info' | 'warn' | 'error',
     message: string,
-    details?: any
+    details?: unknown
   ): Promise<void> {
     try {
       const log: IntegrationLog = {

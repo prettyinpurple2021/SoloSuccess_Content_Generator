@@ -312,7 +312,7 @@ class EnhancedGeminiService {
   /**
    * Generate fallback content when AI service is unavailable
    */
-  private generateFallbackContent(type: string, input?: string): any {
+  private generateFallbackContent(type: string, input?: string): string | string[] {
     const fallbacks = {
       topic: 'Productivity Tips for Solo Entrepreneurs',
       ideas: [
@@ -614,7 +614,7 @@ export const generateSocialMediaPost = (
   tone: string,
   audience: string
 ) => enhancedGeminiService.generateSocialMediaPost(platform, blogPost, tone, audience);
-export const generateImage = (prompt: string, options?: any) =>
+export const generateImage = (prompt: string, options?: Record<string, unknown>) =>
   enhancedGeminiService.generateImage(prompt, options);
 export const generateImagePrompts = (blogPost: string) =>
   enhancedGeminiService.generateImagePrompts(blogPost);

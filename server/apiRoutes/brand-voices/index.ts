@@ -71,19 +71,19 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     const data = apiErrorHandler.validateBody(req.body, createSchema, context);
 
     // Sanitize input data
-    const sanitizedData = apiErrorHandler.sanitizeInput(data);
+    const sanitizedData = apiErrorHandler.sanitizeInput(data) as typeof data;
 
     try {
       const created = await db.addBrandVoice(
         {
-          name: sanitizedData.name,
-          tone: sanitizedData.tone,
-          vocabulary: sanitizedData.vocabulary,
-          writing_style: sanitizedData.writing_style,
-          target_audience: sanitizedData.target_audience,
-          sample_content: sanitizedData.sample_content,
+          name: sanitizedData.name || '',
+          tone: sanitizedData.tone || '',
+          vocabulary: sanitizedData.vocabulary || [],
+          writing_style: sanitizedData.writing_style || '',
+          target_audience: sanitizedData.target_audience || '',
+          sample_content: sanitizedData.sample_content || [],
         },
-        sanitizedData.userId
+        sanitizedData.userId || ''
       );
 
       return res.status(201).json(created);
@@ -114,7 +114,7 @@ async function brandVoicesHandler(req: ApiRequest, res: ApiResponse) {
     const data = apiErrorHandler.validateBody(req.body, updateSchema, context);
 
     // Sanitize input data
-    const sanitizedData = apiErrorHandler.sanitizeInput(data);
+    const sanitizedData = apiErrorHandler.sanitizeInput(data) as typeof data;
 
     try {
       const updated = await db.updateBrandVoice(

@@ -43,7 +43,7 @@ export class AIServiceIntegrations {
         success: true,
         responseTime: Date.now() - startTime,
         details: {
-          modelsAvailable: response.data?.length || 0,
+          modelsAvailable: (response as { data?: unknown[] }).data?.length || 0,
           apiVersion: 'v1',
           organizationId: credentials.organizationId,
         },
@@ -90,12 +90,17 @@ export class AIServiceIntegrations {
         requestData
       );
 
+      const r = response as {
+        choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+        usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+        model?: string;
+      };
       return {
         success: true,
-        content: response.choices?.[0]?.message?.content || '',
-        usage: response.usage,
-        model: response.model,
-        finishReason: response.choices?.[0]?.finish_reason,
+        content: r.choices?.[0]?.message?.content || '',
+        usage: r.usage,
+        model: r.model,
+        finishReason: r.choices?.[0]?.finish_reason,
         timestamp: new Date(),
       };
     } catch (error) {
@@ -232,12 +237,18 @@ export class AIServiceIntegrations {
         requestData
       );
 
+      const r = response as {
+        content?: Array<{ text?: string }>;
+        usage?: { input_tokens: number; output_tokens: number };
+        model?: string;
+        stop_reason?: string;
+      };
       return {
         success: true,
-        content: response.content?.[0]?.text || '',
-        usage: response.usage,
-        model: response.model,
-        stopReason: response.stop_reason,
+        content: r.content?.[0]?.text || '',
+        usage: r.usage,
+        model: r.model,
+        stopReason: r.stop_reason,
         timestamp: new Date(),
       };
     } catch (error) {
@@ -316,13 +327,14 @@ export class AIServiceIntegrations {
         credentials
       );
 
+      const r = response as { version?: string };
       return {
         success: true,
         responseTime: Date.now() - startTime,
         details: {
           modelName: credentials.modelName,
           baseUrl: credentials.baseUrl,
-          version: response.version || 'unknown',
+          version: r.version || 'unknown',
         },
         timestamp: new Date(),
       };
@@ -359,11 +371,16 @@ export class AIServiceIntegrations {
         requestData
       );
 
+      const r = response as {
+        content?: string;
+        text?: string;
+        usage?: { input_tokens: number; output_tokens: number };
+      };
       return {
         success: true,
-        content: response.content || response.text || '',
+        content: r.content || r.text || '',
         model: credentials.modelName,
-        usage: response.usage,
+        usage: r.usage,
         timestamp: new Date(),
       };
     } catch (error) {
@@ -388,8 +405,8 @@ export class AIServiceIntegrations {
     method: string,
     url: string,
     credentials: OpenAICredentials,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${credentials.apiKey}`,
       'Content-Type': 'application/json',
@@ -410,8 +427,8 @@ export class AIServiceIntegrations {
     method: string,
     url: string,
     credentials: ClaudeCredentials,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     const headers: Record<string, string> = {
       'x-api-key': credentials.apiKey,
       'Content-Type': 'application/json',
@@ -433,8 +450,8 @@ export class AIServiceIntegrations {
     method: string,
     url: string,
     credentials: CustomAICredentials,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${credentials.apiKey}`,
       'Content-Type': 'application/json',
@@ -451,8 +468,8 @@ export class AIServiceIntegrations {
     method: string,
     url: string,
     headers: Record<string, string>,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
@@ -574,7 +591,7 @@ export interface ClaudeGenerationOptions {
 export interface CustomAIGenerationOptions {
   maxTokens?: number;
   temperature?: number;
-  customParameters?: Record<string, any>;
+  customParameters?: Record<string, unknown>;
 }
 
 export interface OpenAIGenerationResult {

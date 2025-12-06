@@ -36,7 +36,7 @@ class FrontendPerformanceService {
   private static instance: FrontendPerformanceService;
   private performanceObserver: PerformanceObserver | null = null;
   private componentMetrics: Map<string, ComponentMetrics> = new Map();
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
   private renderTimes: Map<string, number> = new Map();
   private memoryMonitorInterval: NodeJS.Timeout | null = null;
   private performanceMetrics: PerformanceMetrics = {
@@ -121,8 +121,8 @@ class FrontendPerformanceService {
     const clsObserver = new PerformanceObserver((list) => {
       let clsValue = 0;
       for (const entry of list.getEntries()) {
-        if (!(entry as any).hadRecentInput) {
-          clsValue += (entry as any).value;
+        if (!(entry as { hadRecentInput?: boolean }).hadRecentInput) {
+          clsValue += (entry as { value?: number }).value || 0;
         }
       }
       this.performanceMetrics.cumulativeLayoutShift = clsValue;
@@ -142,10 +142,16 @@ class FrontendPerformanceService {
     if (typeof window === 'undefined') return;
 
     // Use React DevTools Profiler API if available
-    if ((window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__) {
-      const hook = (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
+    if ((window as { __REACT_DEVTOOLS_GLOBAL_HOOK__?: unknown }).__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+      const hook = (
+        window as unknown as {
+          __REACT_DEVTOOLS_GLOBAL_HOOK__: {
+            onCommitFiberRoot?: (id: number, root: unknown, priorityLevel: unknown) => void;
+          };
+        }
+      ).__REACT_DEVTOOLS_GLOBAL_HOOK__;
 
-      hook.onCommitFiberRoot = (id: number, root: any, priorityLevel: any) => {
+      hook.onCommitFiberRoot = (id: number, root: unknown, priorityLevel: unknown) => {
         // Track component render times
         this.trackComponentRender('Root', performance.now());
       };
@@ -156,10 +162,11 @@ class FrontendPerformanceService {
    * Observe memory usage
    */
   private observeMemoryUsage(): void {
-    if (typeof window === 'undefined' || !(performance as any).memory) return;
+    if (typeof window === 'undefined' || !(performance as unknown as { memory?: unknown }).memory)
+      return;
 
     const updateMemoryMetrics = () => {
-      const memory = (performance as any).memory;
+      const memory = (performance as unknown as { memory: { usedJSHeapSize: number } }).memory;
       this.performanceMetrics.memoryUsage = memory.usedJSHeapSize;
     };
 
@@ -178,7 +185,7 @@ class FrontendPerformanceService {
       let totalSize = 0;
       for (const entry of list.getEntries()) {
         if (entry.name.includes('.js') || entry.name.includes('.css')) {
-          totalSize += (entry as any).transferSize || 0;
+          totalSize += (entry as { transferSize?: number }).transferSize || 0;
         }
       }
       this.performanceMetrics.bundleSize = totalSize;
@@ -206,9 +213,10 @@ class FrontendPerformanceService {
    * Check for potential memory leaks
    */
   private checkForMemoryLeaks(): void {
-    if (typeof window === 'undefined' || !(performance as any).memory) return;
+    if (typeof window === 'undefined' || !(performance as unknown as { memory?: unknown }).memory)
+      return;
 
-    const memory = (performance as any).memory;
+    const memory = (performance as unknown as { memory: { usedJSHeapSize: number } }).memory;
     const currentUsage = memory.usedJSHeapSize;
     const threshold = 50 * 1024 * 1024; // 50MB threshold
 
@@ -302,7 +310,7 @@ class FrontendPerformanceService {
     // Increment hit counter
     entry.hits++;
 
-    return entry.data;
+    return entry.data as T;
   }
 
   /**
@@ -545,7 +553,8 @@ class FrontendPerformanceService {
   /**
    * Monitor component lifecycle for optimization
    */
-  createComponentProfiler<P>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createComponentProfiler<P = any>(
     componentName: string,
     Component: React.ComponentType<P>
   ): React.ComponentType<P> {
@@ -561,7 +570,8 @@ class FrontendPerformanceService {
         this.trackPropsChange(componentName);
       }, [props]);
 
-      return React.createElement(Component as React.ComponentType<any>, props);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return React.createElement(Component as any, props as any);
     };
 
     ProfiledComponent.displayName = `Profiled(${componentName})`;

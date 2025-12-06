@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, GenerateContentResponse } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 
 if (!process.env.GEMINI_API_KEY) {
   console.error('GEMINI_API_KEY environment variable not set.');
@@ -527,7 +527,7 @@ export const repurposeContent = async (
     brandVoice?: { tone: string; writingStyle: string };
     platform?: string;
     duration?: string;
-    customization?: { [key: string]: any };
+    customization?: Record<string, unknown>;
   }
 ): Promise<string> => {
   let prompt = '';

@@ -67,7 +67,7 @@ export class BloggerIntegrationService {
     }
 
     const data = await response.json();
-    return (data.items || []).map((blog: any) => ({
+    return (data.items || []).map((blog: Record<string, unknown>) => ({
       id: blog.id,
       name: blog.name,
       url: blog.url,
@@ -131,12 +131,18 @@ export class BloggerIntegrationService {
   /**
    * Validate Blogger credentials format
    */
-  validateCredentials(credentials: any): credentials is BloggerCredentials {
+  validateCredentials(credentials: unknown): credentials is BloggerCredentials {
+    const creds = credentials as {
+      clientId?: unknown;
+      clientSecret?: unknown;
+      accessToken?: unknown;
+    } | null;
     return (
-      typeof credentials === 'object' &&
-      typeof credentials.clientId === 'string' &&
-      typeof credentials.clientSecret === 'string' &&
-      typeof credentials.accessToken === 'string'
+      creds !== null &&
+      typeof creds === 'object' &&
+      typeof creds.clientId === 'string' &&
+      typeof creds.clientSecret === 'string' &&
+      typeof creds.accessToken === 'string'
     );
   }
 

@@ -3,6 +3,7 @@
  * Handles database schema validation, migrations, and integrity checks
  */
 
+import postgres from 'postgres';
 import { connectionManager } from './databaseConnectionManager';
 import { errorHandler } from './errorHandlingService';
 import { databaseErrorHandler } from './databaseErrorHandler';
@@ -34,7 +35,7 @@ export interface ColumnDefinition {
   name: string;
   type: string;
   nullable: boolean;
-  defaultValue?: any;
+  defaultValue?: unknown;
   isPrimaryKey?: boolean;
   isForeignKey?: boolean;
   references?: { table: string; column: string };
@@ -425,16 +426,16 @@ export class DatabaseMigrationService {
     ];
   }
 
-  private async checkTableExists(pool: any, tableName: string): Promise<boolean> {
+  private async checkTableExists(pool: postgres.Sql, tableName: string): Promise<boolean> {
     try {
-      const result = await pool`
+      const result = (await pool`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public' 
           AND table_name = ${tableName}
         )
-      `;
-      return result[0].exists;
+      `) as { exists: boolean }[];
+      return result[0]?.exists || false;
     } catch (error) {
       errorHandler.logError(
         `Failed to check if table ${tableName} exists`,
@@ -445,7 +446,10 @@ export class DatabaseMigrationService {
     }
   }
 
-  private async checkMissingColumns(pool: any, expectedTable: TableSchema): Promise<string[]> {
+  private async checkMissingColumns(
+    pool: postgres.Sql,
+    expectedTable: TableSchema
+  ): Promise<string[]> {
     try {
       const result = await pool`
         SELECT column_name 
@@ -454,7 +458,9 @@ export class DatabaseMigrationService {
         AND table_name = ${expectedTable.name}
       `;
 
-      const existingColumns = result.map((row: any) => row.column_name);
+      const existingColumns = result.map(
+        (row) => (row as unknown as { column_name: string }).column_name
+      );
       const expectedColumns = expectedTable.columns.map((col) => col.name);
 
       return expectedColumns.filter((col) => !existingColumns.includes(col));
@@ -468,7 +474,10 @@ export class DatabaseMigrationService {
     }
   }
 
-  private async checkMissingIndexes(pool: any, expectedTable: TableSchema): Promise<string[]> {
+  private async checkMissingIndexes(
+    pool: postgres.Sql,
+    expectedTable: TableSchema
+  ): Promise<string[]> {
     try {
       const result = await pool`
         SELECT indexname 
@@ -477,7 +486,9 @@ export class DatabaseMigrationService {
         AND tablename = ${expectedTable.name}
       `;
 
-      const existingIndexes = result.map((row: any) => row.indexname);
+      const existingIndexes = result.map(
+        (row) => (row as unknown as { indexname: string }).indexname
+      );
       const expectedIndexes = expectedTable.indexes.map((idx) => idx.name);
 
       return expectedIndexes.filter((idx) => !existingIndexes.includes(idx));
@@ -491,12 +502,15 @@ export class DatabaseMigrationService {
     }
   }
 
-  private async performIntegrityChecks(pool: any, result: SchemaValidationResult): Promise<void> {
+  private async performIntegrityChecks(
+    pool: postgres.Sql,
+    result: SchemaValidationResult
+  ): Promise<void> {
     // Add any additional integrity checks here
     // For example, checking for data consistency, constraint violations, etc.
   }
 
-  private async createTable(pool: any, tableName: string): Promise<void> {
+  private async createTable(pool: postgres.Sql, tableName: string): Promise<void> {
     const tableSchema = this.expectedSchema.find((t) => t.name === tableName);
     if (!tableSchema) {
       throw new Error(`No schema definition found for table: ${tableName}`);
@@ -512,7 +526,11 @@ export class DatabaseMigrationService {
     );
   }
 
-  private async addMissingColumns(pool: any, tableName: string, columns: string[]): Promise<void> {
+  private async addMissingColumns(
+    pool: postgres.Sql,
+    tableName: string,
+    columns: string[]
+  ): Promise<void> {
     // This would contain the actual ALTER TABLE SQL
     errorHandler.logError(
       `Would add columns to ${tableName}: ${columns.join(', ')}`,
@@ -522,7 +540,7 @@ export class DatabaseMigrationService {
     );
   }
 
-  private async createIndex(pool: any, indexName: string): Promise<void> {
+  private async createIndex(pool: postgres.Sql, indexName: string): Promise<void> {
     // This would contain the actual CREATE INDEX SQL
     errorHandler.logError(
       `Would create index: ${indexName}`,
@@ -539,12 +557,16 @@ export class DatabaseMigrationService {
     return { passed: true, message: 'All foreign key constraints are valid' };
   }
 
-  private async checkOrphanedRecords(pool: any): Promise<{ passed: boolean; message?: string }> {
+  private async checkOrphanedRecords(
+    pool: postgres.Sql
+  ): Promise<{ passed: boolean; message?: string }> {
     // Check for orphaned records
     return { passed: true, message: 'No orphaned records found' };
   }
 
-  private async checkDataConsistency(pool: any): Promise<{ passed: boolean; message?: string }> {
+  private async checkDataConsistency(
+    pool: postgres.Sql
+  ): Promise<{ passed: boolean; message?: string }> {
     // Check data consistency
     return { passed: true, message: 'Data consistency checks passed' };
   }

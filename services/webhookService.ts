@@ -138,7 +138,7 @@ export class WebhookService {
   async deliverWebhook(
     webhookId: string,
     event: WebhookEvent,
-    payload: any
+    payload: Record<string, unknown>
   ): Promise<WebhookDelivery> {
     const webhook = this.webhooks.get(webhookId);
     if (!webhook || !webhook.isActive) {
@@ -251,7 +251,7 @@ export class WebhookService {
   /**
    * Create webhook signature for verification
    */
-  private createSignature(secret: string, payload: any): string {
+  private createSignature(secret: string, payload: unknown): string {
     const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
     return crypto.createHmac('sha256', secret).update(payloadString).digest('hex');
   }
@@ -259,7 +259,7 @@ export class WebhookService {
   /**
    * Verify webhook signature
    */
-  verifySignature(secret: string, payload: any, signature: string): boolean {
+  verifySignature(secret: string, payload: unknown, signature: string): boolean {
     const expectedSignature = this.createSignature(secret, payload);
     return crypto.timingSafeEqual(
       Buffer.from(signature, 'hex'),
@@ -382,22 +382,22 @@ export class WebhookService {
   /**
    * Transform database delivery to WebhookDelivery
    */
-  private transformDatabaseDeliveryToDelivery(data: any): WebhookDelivery {
+  private transformDatabaseDeliveryToDelivery(data: Record<string, unknown>): WebhookDelivery {
     return {
-      id: data.id,
-      webhookId: data.webhook_id,
-      event: data.event,
-      payload: data.payload,
-      status: data.status,
-      attempts: data.attempts,
-      maxAttempts: data.max_attempts,
-      nextRetryAt: new Date(data.next_retry_at),
-      deliveredAt: data.delivered_at ? new Date(data.delivered_at) : undefined,
-      responseStatus: data.response_status,
-      responseHeaders: data.response_headers,
-      error: data.error,
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
+      id: data.id as string,
+      webhookId: data.webhook_id as string,
+      event: data.event as WebhookEvent,
+      payload: data.payload as Record<string, unknown>,
+      status: data.status as 'pending' | 'delivering' | 'delivered' | 'failed',
+      attempts: data.attempts as number,
+      maxAttempts: data.max_attempts as number,
+      nextRetryAt: new Date(data.next_retry_at as string | number),
+      deliveredAt: data.delivered_at ? new Date(data.delivered_at as string | number) : undefined,
+      responseStatus: data.response_status as number | undefined,
+      responseHeaders: data.response_headers as { [key: string]: string } | undefined,
+      error: data.error as string | undefined,
+      createdAt: new Date(data.created_at as string | number),
+      updatedAt: new Date(data.updated_at as string | number),
     };
   }
 

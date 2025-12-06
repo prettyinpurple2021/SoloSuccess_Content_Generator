@@ -8,7 +8,7 @@ import postgres from 'postgres';
 
 export interface DatabaseErrorContext extends ErrorContext {
   query?: string;
-  params?: any[];
+  params?: unknown[];
   table?: string;
   connectionId?: string;
   transactionId?: string;
@@ -94,7 +94,7 @@ export class DatabaseErrorHandler {
    * Executes database operations within a transaction with rollback support
    */
   async executeTransaction<T>(
-    operations: ((sql: any) => Promise<any>)[],
+    operations: ((sql: postgres.Sql) => Promise<unknown>)[],
     context: DatabaseErrorContext
   ): Promise<T> {
     const transactionId = this.generateTransactionId();
@@ -110,12 +110,13 @@ export class DatabaseErrorHandler {
     try {
       // This would need to be implemented with the actual postgres connection
       // For now, we'll simulate transaction handling
-      const results: any[] = [];
+      const results: unknown[] = [];
 
       for (const operation of operations) {
         try {
           const result = await this.executeWithErrorHandling(
-            () => operation(null), // Would pass actual SQL connection
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            () => operation(null as any), // Would pass actual SQL connection
             { ...context, transactionId }
           );
           results.push(result);
@@ -145,7 +146,7 @@ export class DatabaseErrorHandler {
   /**
    * Tests database connection health
    */
-  async testConnection(pool: any): Promise<boolean> {
+  async testConnection(pool: postgres.Sql): Promise<boolean> {
     const startTime = Date.now();
 
     try {
@@ -170,7 +171,7 @@ export class DatabaseErrorHandler {
   /**
    * Handles connection recovery and reconnection
    */
-  async handleConnectionRecovery(pool: any): Promise<boolean> {
+  async handleConnectionRecovery(pool: postgres.Sql): Promise<boolean> {
     if (this.circuitBreakerOpen) {
       return false;
     }

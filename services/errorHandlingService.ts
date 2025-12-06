@@ -9,18 +9,18 @@ export interface ErrorContext {
   endpoint?: string;
   requestId?: string;
   timestamp?: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   // Database-specific context
   table?: string;
   query?: string;
   transactionId?: string;
   errorType?: string;
   consecutiveFailures?: number;
-  healthStatus?: any;
+  healthStatus?: unknown;
   isHealthy?: boolean;
-  result?: any;
+  result?: unknown;
   // Additional context fields
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ErrorLog {
@@ -37,7 +37,7 @@ export interface ErrorResponse {
   error: string;
   message: string;
   code?: string;
-  details?: any;
+  details?: unknown;
   timestamp: Date;
   requestId?: string;
 }
@@ -144,7 +144,7 @@ export class ErrorHandlingService {
     message: string,
     error?: Error,
     code?: string,
-    details?: any,
+    details?: unknown,
     requestId?: string
   ): ErrorResponse {
     return {
@@ -160,11 +160,11 @@ export class ErrorHandlingService {
   /**
    * Handles API errors with proper HTTP status codes and logging
    */
-  handleApiError(error: unknown, context: ErrorContext, res: any): void {
+  handleApiError(error: unknown, context: ErrorContext, res: unknown): void {
     let statusCode = 500;
     let errorMessage = 'Internal Server Error';
     let errorCode = 'INTERNAL_ERROR';
-    let details: any = undefined;
+    let details: unknown = undefined;
 
     if (error instanceof Error) {
       // Parse known error types
@@ -215,7 +215,10 @@ export class ErrorHandlingService {
       context.requestId
     );
 
-    res.status(statusCode).json(errorResponse);
+    // Cast res as Express response for status/json methods
+    (res as { status: (code: number) => { json: (data: unknown) => void } })
+      .status(statusCode)
+      .json(errorResponse);
   }
 
   /**

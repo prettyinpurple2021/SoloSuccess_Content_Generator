@@ -14,7 +14,10 @@ export class SimpleCredentialEncryption {
   /**
    * Encrypts credentials using AES-GCM with a simple key derivation
    */
-  static async encrypt(credentials: any, userKey: string): Promise<EncryptedCredentials> {
+  static async encrypt(
+    credentials: Record<string, unknown>,
+    userKey: string
+  ): Promise<EncryptedCredentials> {
     try {
       // Validate inputs
       if (!credentials || typeof credentials !== 'object') {
@@ -67,7 +70,10 @@ export class SimpleCredentialEncryption {
   /**
    * Decrypts credentials using AES-GCM
    */
-  static async decrypt(encryptedCredentials: EncryptedCredentials, userKey: string): Promise<any> {
+  static async decrypt(
+    encryptedCredentials: EncryptedCredentials,
+    userKey: string
+  ): Promise<Record<string, unknown>> {
     try {
       // Validate inputs
       if (!encryptedCredentials || typeof encryptedCredentials !== 'object') {
@@ -154,17 +160,16 @@ export class SimpleCredentialEncryption {
   /**
    * Validates encrypted credentials format
    */
-  static validateEncryptedCredentials(encryptedCredentials: any): boolean {
+  static validateEncryptedCredentials(encryptedCredentials: unknown): boolean {
     if (!encryptedCredentials || typeof encryptedCredentials !== 'object') {
       return false;
     }
 
     const requiredFields = ['encrypted', 'iv', 'algorithm'];
+    const creds = encryptedCredentials as Record<string, unknown>;
     return requiredFields.every(
       (field) =>
-        encryptedCredentials[field] &&
-        typeof encryptedCredentials[field] === 'string' &&
-        encryptedCredentials[field].length > 0
+        creds[field] && typeof creds[field] === 'string' && (creds[field] as string).length > 0
     );
   }
 

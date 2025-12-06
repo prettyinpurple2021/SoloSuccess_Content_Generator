@@ -30,7 +30,10 @@ export class SchedulingService {
 
       // If audience profile is provided, adjust for their engagement patterns
       if (audienceProfile && audienceProfile.engagementPatterns[platform || 'general']) {
-        const audiencePattern = audienceProfile.engagementPatterns[platform || 'general'];
+        const audiencePattern = audienceProfile.engagementPatterns[platform || 'general'] as Record<
+          string,
+          unknown
+        >;
         return this.adjustTimeSlotsForAudience(baseTimeSlots, audiencePattern);
       }
 
@@ -381,12 +384,15 @@ export class SchedulingService {
 
   // Private helper methods
 
-  private adjustTimeSlotsForAudience(timeSlots: TimeSlot[], audiencePattern: any): TimeSlot[] {
+  private adjustTimeSlotsForAudience(
+    timeSlots: TimeSlot[],
+    audiencePattern: Record<string, unknown>
+  ): TimeSlot[] {
     // Adjust time slots based on audience engagement patterns
     return timeSlots
       .map((slot) => ({
         ...slot,
-        engagementScore: slot.engagementScore * (audiencePattern.engagementRate || 1),
+        engagementScore: slot.engagementScore * ((audiencePattern.engagementRate as number) || 1),
         confidence: Math.min(slot.confidence * 1.1, 1), // Slight confidence boost for audience-specific data
       }))
       .sort((a, b) => b.engagementScore - a.engagementScore);

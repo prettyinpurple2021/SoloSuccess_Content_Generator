@@ -24,7 +24,7 @@ export class CredentialEncryption {
    * Encrypts credentials using AES-256-GCM with PBKDF2 key derivation
    */
   static async encrypt(
-    credentials: any,
+    credentials: Record<string, unknown>,
     userKey: string,
     options?: EncryptionOptions
   ): Promise<EncryptedCredentials> {
@@ -88,7 +88,10 @@ export class CredentialEncryption {
   /**
    * Decrypts credentials using AES-256-GCM with PBKDF2 key derivation
    */
-  static async decrypt(encryptedCredentials: EncryptedCredentials, userKey: string): Promise<any> {
+  static async decrypt(
+    encryptedCredentials: EncryptedCredentials,
+    userKey: string
+  ): Promise<Record<string, unknown>> {
     try {
       // Validate inputs
       this.validateDecryptionInputs(encryptedCredentials, userKey);
@@ -97,9 +100,9 @@ export class CredentialEncryption {
       const salt = this.base64ToArrayBuffer(encryptedCredentials.salt || '');
       const iv = this.base64ToArrayBuffer(encryptedCredentials.iv);
       const authTag = this.base64ToArrayBuffer(encryptedCredentials.authTag);
-      const encryptedField =
-        (encryptedCredentials as any).encrypted || (encryptedCredentials as any).data;
-      if (!encryptedField) {
+      const creds = encryptedCredentials as unknown as Record<string, unknown>;
+      const encryptedField = creds.encrypted || creds.data;
+      if (!encryptedField || typeof encryptedField !== 'string') {
         throw new Error('Missing required field: encrypted');
       }
       const ciphertext = this.base64ToArrayBuffer(encryptedField);
@@ -158,7 +161,7 @@ export class CredentialEncryption {
   /**
    * Validates encrypted credentials format
    */
-  static validateEncryptedCredentials(encryptedCredentials: any): boolean {
+  static validateEncryptedCredentials(encryptedCredentials: unknown): boolean {
     if (!encryptedCredentials || typeof encryptedCredentials !== 'object') {
       return false;
     }
@@ -167,14 +170,16 @@ export class CredentialEncryption {
     const requiredFields = ['iv', 'authTag', 'algorithm'];
     const optionalFields = ['salt', 'iterations', 'version'];
 
-    const hasEncrypted = Boolean(encryptedCredentials.encrypted || encryptedCredentials.data);
+    const creds = encryptedCredentials as unknown as Record<string, unknown>;
+    const hasEncrypted = Boolean(creds.encrypted || creds.data);
     const hasRequiredFields =
       hasEncrypted &&
       requiredFields.every(
         (field) =>
-          encryptedCredentials[field] &&
-          typeof encryptedCredentials[field] === 'string' &&
-          encryptedCredentials[field].length > 0
+          creds[field] &&
+          typeof creds[field] === 'string' &&
+          typeof creds[field] === 'string' &&
+          (creds[field] as string).length > 0
       );
 
     if (!hasRequiredFields) {
@@ -183,12 +188,12 @@ export class CredentialEncryption {
 
     // Validate field formats
     try {
-      const encryptedField = encryptedCredentials.encrypted || encryptedCredentials.data;
-      this.base64ToArrayBuffer(encryptedField);
-      this.base64ToArrayBuffer(encryptedCredentials.iv);
-      this.base64ToArrayBuffer(encryptedCredentials.authTag);
-      if (encryptedCredentials.salt) {
-        this.base64ToArrayBuffer(encryptedCredentials.salt);
+      const encryptedField = creds.encrypted || creds.data;
+      this.base64ToArrayBuffer(encryptedField as string);
+      this.base64ToArrayBuffer(creds.iv as string);
+      this.base64ToArrayBuffer(creds.authTag as string);
+      if (creds.salt) {
+        this.base64ToArrayBuffer(creds.salt as string);
       }
     } catch {
       return false;
@@ -261,7 +266,7 @@ export class CredentialEncryption {
   /**
    * Validates encryption inputs
    */
-  private static validateEncryptionInputs(credentials: any, userKey: string): void {
+  private static validateEncryptionInputs(credentials: unknown, userKey: string): void {
     if (!credentials || typeof credentials !== 'object') {
       throw new Error('Credentials must be a valid object');
     }
@@ -273,7 +278,7 @@ export class CredentialEncryption {
   /**
    * Validates decryption inputs
    */
-  private static validateDecryptionInputs(encryptedCredentials: any, userKey: string): void {
+  private static validateDecryptionInputs(encryptedCredentials: unknown, userKey: string): void {
     if (!encryptedCredentials || typeof encryptedCredentials !== 'object') {
       throw new Error('Encrypted credentials must be a valid object');
     }
@@ -282,12 +287,13 @@ export class CredentialEncryption {
     }
 
     const hasEncrypted = Boolean(
-      (encryptedCredentials as any).encrypted || (encryptedCredentials as any).data
+      (encryptedCredentials as Record<string, unknown>).encrypted ||
+        (encryptedCredentials as Record<string, unknown>).data
     );
     if (!hasEncrypted) throw new Error('Missing required field: encrypted');
     const mustHave = ['iv', 'authTag', 'algorithm'] as const;
     for (const field of mustHave) {
-      if (!(encryptedCredentials as any)[field])
+      if (!(encryptedCredentials as Record<string, unknown>)[field])
         throw new Error(`Missing required field: ${field}`);
     }
   }

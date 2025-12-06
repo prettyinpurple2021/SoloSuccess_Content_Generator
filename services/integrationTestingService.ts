@@ -2,9 +2,13 @@ import {
   Integration,
   ConnectionTestResult,
   HealthCheckResult,
+  HealthCheck,
   ValidationResult,
   SyncResult,
   IntegrationMetrics,
+  TwitterCredentials,
+  GoogleAnalyticsCredentials,
+  OpenAICredentials,
 } from '../types';
 import { integrationService } from './integrationService';
 import { SocialMediaIntegrations } from './integrations/socialMediaIntegrations';
@@ -216,7 +220,7 @@ export class IntegrationTestingService {
           rateLimited: rateLimited,
           responseTimes: results
             .filter((r) => r.status === 'fulfilled')
-            .map((r) => (r as PromiseFulfilledResult<any>).value.responseTime),
+            .map((r) => (r as PromiseFulfilledResult<{ responseTime: number }>).value.responseTime),
         },
         timestamp: new Date(),
       };
@@ -289,7 +293,7 @@ export class IntegrationTestingService {
       return {
         integrationId,
         healthScore,
-        checks: results as any,
+        checks: results as HealthCheck[],
         timestamp: new Date(),
         recommendations,
       };
@@ -305,7 +309,7 @@ export class IntegrationTestingService {
    */
   private async checkConnectionHealth(
     integration: Integration
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+  ): Promise<{ success: boolean; error?: string; details?: unknown }> {
     try {
       const testResult = await this.testConnection(integration);
       return {
@@ -326,7 +330,7 @@ export class IntegrationTestingService {
    */
   private async checkDataSyncHealth(
     integration: Integration
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+  ): Promise<{ success: boolean; error?: string; details?: unknown }> {
     try {
       const lastSync = integration.lastSync;
       const now = new Date();
@@ -359,7 +363,7 @@ export class IntegrationTestingService {
    */
   private async checkWebhookHealth(
     integration: Integration
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+  ): Promise<{ success: boolean; error?: string; details?: unknown }> {
     try {
       const webhooks = await integrationService.getWebhooks(integration.id);
       const activeWebhooks = webhooks.filter((w) => w.isActive);
@@ -403,7 +407,7 @@ export class IntegrationTestingService {
    */
   private async checkRateLimitHealth(
     integration: Integration
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+  ): Promise<{ success: boolean; error?: string; details?: unknown }> {
     try {
       const rateLimitResult = await integrationService.checkRateLimit(integration.id, 'api_call');
 
@@ -430,7 +434,7 @@ export class IntegrationTestingService {
    */
   private async checkErrorRateHealth(
     integration: Integration
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+  ): Promise<{ success: boolean; error?: string; details?: unknown }> {
     try {
       const metrics = await integrationService.getIntegrationMetrics(integration.id, '24h');
 
@@ -475,7 +479,7 @@ export class IntegrationTestingService {
    */
   private async checkResponseTimeHealth(
     integration: Integration
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+  ): Promise<{ success: boolean; error?: string; details?: unknown }> {
     try {
       const metrics = await integrationService.getIntegrationMetrics(integration.id, '24h');
 
@@ -568,7 +572,10 @@ export class IntegrationTestingService {
   /**
    * Validates integration credentials
    */
-  async validateCredentials(platform: string, credentials: any): Promise<ValidationResult> {
+  async validateCredentials(
+    platform: string,
+    credentials: Record<string, unknown>
+  ): Promise<ValidationResult> {
     try {
       const errors: string[] = [];
       const warnings: string[] = [];
@@ -734,10 +741,11 @@ export class IntegrationTestingService {
     }
   }
 
-  private generateHealthRecommendations(checks: any[]): string[] {
+  private generateHealthRecommendations(checks: unknown[]): string[] {
     const recommendations: string[] = [];
 
-    const failedChecks = checks.filter((check) => !check.success);
+    const healthChecks = checks as HealthCheck[];
+    const failedChecks = healthChecks.filter((check) => !check.success);
 
     if (failedChecks.some((check) => check.check === 'connection')) {
       recommendations.push('Check your API credentials and network connectivity');
@@ -776,7 +784,7 @@ export class IntegrationTestingService {
 
   // Platform-specific credential validation methods
   private validateTwitterCredentials(
-    credentials: any,
+    credentials: Record<string, unknown>,
     errors: string[],
     warnings: string[],
     suggestions: string[]
@@ -786,13 +794,17 @@ export class IntegrationTestingService {
     if (!credentials.accessToken) errors.push('Twitter Access Token is required');
     if (!credentials.accessTokenSecret) errors.push('Twitter Access Token Secret is required');
 
-    if (credentials.apiKey && credentials.apiKey.length < 20) {
+    if (
+      credentials.apiKey &&
+      typeof credentials.apiKey === 'string' &&
+      credentials.apiKey.length < 20
+    ) {
       warnings.push('Twitter API Key appears to be too short');
     }
   }
 
   private validateLinkedInCredentials(
-    credentials: any,
+    credentials: Record<string, unknown>,
     errors: string[],
     warnings: string[],
     suggestions: string[]
@@ -803,7 +815,7 @@ export class IntegrationTestingService {
   }
 
   private validateFacebookCredentials(
-    credentials: any,
+    credentials: Record<string, unknown>,
     errors: string[],
     warnings: string[],
     suggestions: string[]
@@ -814,7 +826,7 @@ export class IntegrationTestingService {
   }
 
   private validateGoogleAnalyticsCredentials(
-    credentials: any,
+    credentials: Record<string, unknown>,
     errors: string[],
     warnings: string[],
     suggestions: string[]
@@ -826,20 +838,24 @@ export class IntegrationTestingService {
   }
 
   private validateOpenAICredentials(
-    credentials: any,
+    credentials: Record<string, unknown>,
     errors: string[],
     warnings: string[],
     suggestions: string[]
   ): void {
     if (!credentials.apiKey) errors.push('OpenAI API Key is required');
 
-    if (credentials.apiKey && !credentials.apiKey.startsWith('sk-')) {
+    if (
+      credentials.apiKey &&
+      typeof credentials.apiKey === 'string' &&
+      !credentials.apiKey.startsWith('sk-')
+    ) {
       warnings.push('OpenAI API Key should start with "sk-"');
     }
   }
 
   private validateGeneralCredentials(
-    credentials: any,
+    credentials: Record<string, unknown>,
     errors: string[],
     warnings: string[],
     suggestions: string[]
@@ -866,22 +882,26 @@ export class IntegrationTestingService {
   private async testSocialMediaAuthentication(
     integration: Integration
   ): Promise<ConnectionTestResult> {
-    // This would use the social media integrations service
-    return await SocialMediaIntegrations.testTwitterConnection(integration.credentials as any);
+    // Cast needed: runtime credentials decrypted to platform-specific shape
+    return await SocialMediaIntegrations.testTwitterConnection(
+      integration.credentials as unknown as TwitterCredentials
+    );
   }
 
   private async testAnalyticsAuthentication(
     integration: Integration
   ): Promise<ConnectionTestResult> {
-    // This would use the analytics integrations service
+    // Cast needed: runtime credentials decrypted to platform-specific shape
     return await AnalyticsIntegrations.testGoogleAnalyticsConnection(
-      integration.credentials as any
+      integration.credentials as unknown as GoogleAnalyticsCredentials
     );
   }
 
   private async testAIAuthentication(integration: Integration): Promise<ConnectionTestResult> {
-    // This would use the AI service integrations
-    return await AIServiceIntegrations.testOpenAIConnection(integration.credentials as any);
+    // Cast needed: runtime credentials decrypted to platform-specific shape
+    return await AIServiceIntegrations.testOpenAIConnection(
+      integration.credentials as unknown as OpenAICredentials
+    );
   }
 }
 

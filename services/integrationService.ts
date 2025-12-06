@@ -7,8 +7,16 @@ import {
   ConnectionTestResult,
   SyncResult,
   HealthCheckResult,
+  HealthCheck,
   RateLimitResult,
   SyncFrequency,
+  TwitterCredentials,
+  LinkedInCredentials,
+  FacebookCredentials,
+  InstagramCredentials,
+  GoogleAnalyticsCredentials,
+  OpenAICredentials,
+  ClaudeCredentials,
 } from '../types';
 import { db } from './neonService';
 import { credentialEncryption } from './credentialEncryption';
@@ -28,7 +36,7 @@ import { credentialEncryption } from './credentialEncryption';
  */
 export class IntegrationService {
   private static instance: IntegrationService;
-  private syncJobs: Map<string, ReturnType<typeof setInterval>> = new Map();
+  private syncJobs: Map<string, NodeJS.Timeout> = new Map();
   private rateLimitTrackers: Map<string, RateLimitTracker> = new Map();
   private appSecret: string;
 
@@ -59,9 +67,14 @@ export class IntegrationService {
 
       // Encrypt credentials
       const userKey = credentialEncryption.generateUserKey(data.name, this.appSecret);
-      const encryptedCredentials = await credentialEncryption.encrypt(data.credentials, userKey);
+      const encryptedCredentials = await credentialEncryption.encrypt(
+        data.credentials as Record<string, unknown>,
+        userKey
+      );
 
       // Create integration record
+      // Note: neonService.addIntegration has incorrect type signature (uses user_id instead of userId in Omit)
+      // This is a pre-existing type issue that needs broader refactoring
       const integration = await db.addIntegration(
         {
           name: data.name,
@@ -100,8 +113,8 @@ export class IntegrationService {
             },
             ...data.configuration,
           },
-          sync_frequency: data.syncFrequency || 'hourly',
-          is_active: true,
+          syncFrequency: data.syncFrequency || 'hourly',
+          isActive: true,
         } as any,
         userId
       );
@@ -467,7 +480,7 @@ export class IntegrationService {
         throw new Error('Integration not found');
       }
 
-      const checks: any[] = [];
+      const checks: HealthCheck[] = [];
 
       // Test connection
       const connectionTest = await this.testConnection(id);
@@ -664,8 +677,8 @@ export class IntegrationService {
 
   private async performConnectionTest(
     platform: string,
-    credentials: any
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+    credentials: Record<string, unknown>
+  ): Promise<{ success: boolean; error?: string; details?: Record<string, unknown> }> {
     try {
       // Import platform-specific integrations
       const { SocialMediaIntegrations } = await import('./integrations/socialMediaIntegrations');
@@ -674,7 +687,9 @@ export class IntegrationService {
 
       switch (platform) {
         case 'twitter': {
-          const twitterResult = await SocialMediaIntegrations.testTwitterConnection(credentials);
+          const twitterResult = await SocialMediaIntegrations.testTwitterConnection(
+            credentials as unknown as any
+          );
           return {
             success: twitterResult.success,
             error: twitterResult.error,
@@ -683,7 +698,9 @@ export class IntegrationService {
         }
 
         case 'linkedin': {
-          const linkedinResult = await SocialMediaIntegrations.testLinkedInConnection(credentials);
+          const linkedinResult = await SocialMediaIntegrations.testLinkedInConnection(
+            credentials as unknown as any
+          );
           return {
             success: linkedinResult.success,
             error: linkedinResult.error,
@@ -692,7 +709,9 @@ export class IntegrationService {
         }
 
         case 'facebook': {
-          const facebookResult = await SocialMediaIntegrations.testFacebookConnection(credentials);
+          const facebookResult = await SocialMediaIntegrations.testFacebookConnection(
+            credentials as unknown as any
+          );
           return {
             success: facebookResult.success,
             error: facebookResult.error,
@@ -701,8 +720,9 @@ export class IntegrationService {
         }
 
         case 'instagram': {
-          const instagramResult =
-            await SocialMediaIntegrations.testInstagramConnection(credentials);
+          const instagramResult = await SocialMediaIntegrations.testInstagramConnection(
+            credentials as unknown as any
+          );
           return {
             success: instagramResult.success,
             error: instagramResult.error,
@@ -711,13 +731,16 @@ export class IntegrationService {
         }
 
         case 'google_analytics': {
-          const gaResult = await AnalyticsIntegrations.testGoogleAnalyticsConnection(credentials);
+          const gaResult = await AnalyticsIntegrations.testGoogleAnalyticsConnection(
+            credentials as unknown as any
+          );
           return { success: gaResult.success, error: gaResult.error, details: gaResult.details };
         }
 
         case 'facebook_analytics': {
-          const fbAnalyticsResult =
-            await AnalyticsIntegrations.testFacebookAnalyticsConnection(credentials);
+          const fbAnalyticsResult = await AnalyticsIntegrations.testFacebookAnalyticsConnection(
+            credentials as unknown as any
+          );
           return {
             success: fbAnalyticsResult.success,
             error: fbAnalyticsResult.error,
@@ -726,8 +749,9 @@ export class IntegrationService {
         }
 
         case 'twitter_analytics': {
-          const twitterAnalyticsResult =
-            await AnalyticsIntegrations.testTwitterAnalyticsConnection(credentials);
+          const twitterAnalyticsResult = await AnalyticsIntegrations.testTwitterAnalyticsConnection(
+            credentials as unknown as any
+          );
           return {
             success: twitterAnalyticsResult.success,
             error: twitterAnalyticsResult.error,
@@ -736,7 +760,9 @@ export class IntegrationService {
         }
 
         case 'openai': {
-          const openaiResult = await AIServiceIntegrations.testOpenAIConnection(credentials);
+          const openaiResult = await AIServiceIntegrations.testOpenAIConnection(
+            credentials as unknown as any
+          );
           return {
             success: openaiResult.success,
             error: openaiResult.error,
@@ -745,7 +771,9 @@ export class IntegrationService {
         }
 
         case 'claude': {
-          const claudeResult = await AIServiceIntegrations.testClaudeConnection(credentials);
+          const claudeResult = await AIServiceIntegrations.testClaudeConnection(
+            credentials as unknown as any
+          );
           return {
             success: claudeResult.success,
             error: claudeResult.error,
@@ -765,77 +793,96 @@ export class IntegrationService {
   }
 
   private async testTwitterConnection(
-    credentials: any
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+    credentials: Record<string, unknown>
+  ): Promise<{ success: boolean; error?: string; details?: Record<string, unknown> }> {
     try {
       const { default: TwitterClient } = await import('./platforms/twitterClient');
-      const client = new TwitterClient(credentials);
+      const client = new TwitterClient(credentials as unknown as any);
       const result = await client.testConnection();
       return result;
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to test Twitter connection' };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to test Twitter connection',
+      };
     }
   }
 
   private async testLinkedInConnection(
-    credentials: any
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+    credentials: Record<string, unknown>
+  ): Promise<{ success: boolean; error?: string; details?: Record<string, unknown> }> {
     try {
       const { default: LinkedInClient } = await import('./platforms/linkedInClient');
-      const client = new LinkedInClient(credentials);
+      const client = new LinkedInClient(credentials as unknown as any);
       const result = await client.testConnection();
       return result;
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to test LinkedIn connection' };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to test LinkedIn connection',
+      };
     }
   }
 
   private async testFacebookConnection(
-    credentials: any
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+    credentials: Record<string, unknown>
+  ): Promise<{ success: boolean; error?: string; details?: Record<string, unknown> }> {
     try {
       const { default: FacebookClient } = await import('./platforms/facebookClient');
-      const client = new FacebookClient(credentials);
+      const client = new FacebookClient(credentials as unknown as any);
       const result = await client.testConnection();
       return result;
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to test Facebook connection' };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to test Facebook connection',
+      };
     }
   }
 
   private async testInstagramConnection(
-    credentials: any
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+    credentials: Record<string, unknown>
+  ): Promise<{ success: boolean; error?: string; details?: Record<string, unknown> }> {
     try {
       const { default: InstagramClient } = await import('./platforms/instagramClient');
-      const client = new InstagramClient(credentials);
+      const client = new InstagramClient(credentials as unknown as any);
       const result = await client.testConnection();
       return result;
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Failed to test Instagram connection' };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to test Instagram connection',
+      };
     }
   }
 
   private async testGoogleAnalyticsConnection(
-    credentials: any
-  ): Promise<{ success: boolean; error?: string; details?: any }> {
+    credentials: Record<string, unknown>
+  ): Promise<{ success: boolean; error?: string; details?: Record<string, unknown> }> {
     try {
       // For Google Analytics, we'll implement a basic validation
-      if (!credentials.clientId || !credentials.clientSecret) {
+      const clientId = credentials.clientId;
+      const clientSecret = credentials.clientSecret;
+
+      if (!clientId || !clientSecret) {
         return { success: false, error: 'Missing client credentials' };
       }
 
       // In a real implementation, this would test the GA4 Data API
       // For now, we'll validate the credentials format
-      if (credentials.clientId.length < 10 || credentials.clientSecret.length < 10) {
+      if (
+        (typeof clientId === 'string' && clientId.length < 10) ||
+        (typeof clientSecret === 'string' && clientSecret.length < 10)
+      ) {
         return { success: false, error: 'Invalid credential format' };
       }
 
       return { success: true, details: { apiVersion: 'v1', service: 'Google Analytics Data API' } };
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
-        error: error.message || 'Failed to test Google Analytics connection',
+        error:
+          error instanceof Error ? error.message : 'Failed to test Google Analytics connection',
       };
     }
   }
@@ -922,7 +969,7 @@ export class IntegrationService {
         case 'twitter': {
           const twitterResult = await SocialMediaIntegrations.syncTwitterData(
             integration.id,
-            credentials
+            credentials as unknown as TwitterCredentials
           );
           return {
             success: twitterResult.success,
@@ -937,7 +984,7 @@ export class IntegrationService {
         case 'linkedin': {
           const linkedinResult = await SocialMediaIntegrations.syncLinkedInData(
             integration.id,
-            credentials
+            credentials as unknown as LinkedInCredentials
           );
           return {
             success: linkedinResult.success,
@@ -952,7 +999,7 @@ export class IntegrationService {
         case 'facebook': {
           const facebookResult = await SocialMediaIntegrations.syncFacebookData(
             integration.id,
-            credentials
+            credentials as unknown as FacebookCredentials
           );
           return {
             success: facebookResult.success,
@@ -967,7 +1014,7 @@ export class IntegrationService {
         case 'instagram': {
           const instagramResult = await SocialMediaIntegrations.syncInstagramData(
             integration.id,
-            credentials
+            credentials as unknown as InstagramCredentials
           );
           return {
             success: instagramResult.success,
@@ -982,7 +1029,7 @@ export class IntegrationService {
         case 'google_analytics': {
           const gaResult = await AnalyticsIntegrations.syncGoogleAnalyticsData(
             integration.id,
-            credentials
+            credentials as unknown as GoogleAnalyticsCredentials
           );
           return {
             success: gaResult.success,
@@ -997,7 +1044,7 @@ export class IntegrationService {
         case 'facebook_analytics': {
           const fbAnalyticsResult = await AnalyticsIntegrations.syncFacebookAnalyticsData(
             integration.id,
-            credentials
+            credentials as unknown as FacebookCredentials
           );
           return {
             success: fbAnalyticsResult.success,
@@ -1012,7 +1059,7 @@ export class IntegrationService {
         case 'twitter_analytics': {
           const twitterAnalyticsResult = await AnalyticsIntegrations.syncTwitterAnalyticsData(
             integration.id,
-            credentials
+            credentials as unknown as TwitterCredentials
           );
           return {
             success: twitterAnalyticsResult.success,
@@ -1027,7 +1074,7 @@ export class IntegrationService {
         case 'openai': {
           const openaiResult = await AIServiceIntegrations.syncOpenAIData(
             integration.id,
-            credentials
+            credentials as unknown as OpenAICredentials
           );
           return {
             success: openaiResult.success,
@@ -1042,7 +1089,7 @@ export class IntegrationService {
         case 'claude': {
           const claudeResult = await AIServiceIntegrations.syncClaudeData(
             integration.id,
-            credentials
+            credentials as unknown as ClaudeCredentials
           );
           return {
             success: claudeResult.success,
@@ -1104,7 +1151,7 @@ export class IntegrationService {
     return limits[operation as keyof typeof limits] || 50;
   }
 
-  private generateHealthRecommendations(checks: any[]): string[] {
+  private generateHealthRecommendations(checks: HealthCheck[]): string[] {
     const recommendations: string[] = [];
 
     const failedChecks = checks.filter((check) => !check.success);
