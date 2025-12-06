@@ -1,12 +1,12 @@
-import { lazy } from 'react';
+import React, { lazy } from 'react';
 import { frontendPerformanceService } from '../services/frontendPerformanceService';
 
 // Enhanced lazy loading with performance monitoring and preloading
-const createLazyComponent = <T extends React.ComponentType<Record<string, unknown>>>(
+const createLazyComponent = <T extends React.ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
   componentName: string,
   preload: boolean = false
-) => {
+): React.LazyExoticComponent<T> => {
   const LazyComponent = lazy(() => {
     const startTime = performance.now();
     return importFn().then((module) => {

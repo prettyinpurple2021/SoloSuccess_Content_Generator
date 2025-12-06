@@ -431,6 +431,20 @@ export const db = {
     }
   },
 
+  getAllIntegrations: async (): Promise<Integration[]> => {
+    try {
+      const result = await pool`
+        SELECT * FROM integrations
+        ORDER BY created_at DESC
+      `;
+
+      return result.map(transformDatabaseIntegrationToIntegration);
+    } catch (error) {
+      console.error('Error fetching all integrations:', error);
+      throw error;
+    }
+  },
+
   getIntegrationById: async (id: string): Promise<Integration | null> => {
     try {
       const result = await pool`

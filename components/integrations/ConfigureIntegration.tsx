@@ -6,6 +6,7 @@ import {
   ConnectionTestResult,
   SyncResult,
   HealthCheckResult,
+  SyncSettings,
 } from '../../types';
 
 interface ConfigureIntegrationProps {
@@ -34,6 +35,16 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
   const [healthResult, setHealthResult] = useState<HealthCheckResult | null>(null);
+
+  const syncDefaults: SyncSettings = {
+    autoSync: true,
+    syncInterval: 60,
+    batchSize: 100,
+    retryAttempts: 3,
+    timeoutMs: 30000,
+    syncOnStartup: true,
+    syncOnSchedule: false,
+  };
 
   useEffect(() => {
     if (integration) {
@@ -296,16 +307,23 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                       type="checkbox"
                       checked={formData.configuration?.syncSettings?.autoSync ?? true}
                       onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          configuration: {
-                            ...prev.configuration,
-                            syncSettings: {
-                              ...prev.configuration?.syncSettings,
-                              autoSync: e.target.checked,
+                        setFormData((prev) => {
+                          const currentSyncSettings = {
+                            ...syncDefaults,
+                            ...(prev.configuration?.syncSettings ?? {}),
+                          };
+
+                          return {
+                            ...prev,
+                            configuration: {
+                              ...prev.configuration,
+                              syncSettings: {
+                                ...currentSyncSettings,
+                                autoSync: e.target.checked,
+                              },
                             },
-                          },
-                        }))
+                          };
+                        })
                       }
                       className="w-4 h-4 text-purple-600 bg-white/10 border-white/20 rounded focus:ring-purple-500 focus:ring-2"
                     />
@@ -318,16 +336,23 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                       type="number"
                       value={formData.configuration?.syncSettings?.syncInterval || 60}
                       onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          configuration: {
-                            ...prev.configuration,
-                            syncSettings: {
-                              ...prev.configuration?.syncSettings,
-                              syncInterval: parseInt(e.target.value),
+                        setFormData((prev) => {
+                          const currentSyncSettings = {
+                            ...syncDefaults,
+                            ...(prev.configuration?.syncSettings ?? {}),
+                          };
+
+                          return {
+                            ...prev,
+                            configuration: {
+                              ...prev.configuration,
+                              syncSettings: {
+                                ...currentSyncSettings,
+                                syncInterval: parseInt(e.target.value, 10),
+                              },
                             },
-                          },
-                        }))
+                          };
+                        })
                       }
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                     />
@@ -342,16 +367,23 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                       type="number"
                       value={formData.configuration?.syncSettings?.batchSize || 100}
                       onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          configuration: {
-                            ...prev.configuration,
-                            syncSettings: {
-                              ...prev.configuration?.syncSettings,
-                              batchSize: parseInt(e.target.value),
+                        setFormData((prev) => {
+                          const currentSyncSettings = {
+                            ...syncDefaults,
+                            ...(prev.configuration?.syncSettings ?? {}),
+                          };
+
+                          return {
+                            ...prev,
+                            configuration: {
+                              ...prev.configuration,
+                              syncSettings: {
+                                ...currentSyncSettings,
+                                batchSize: parseInt(e.target.value, 10),
+                              },
                             },
-                          },
-                        }))
+                          };
+                        })
                       }
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                     />
@@ -364,16 +396,23 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                       type="number"
                       value={formData.configuration?.syncSettings?.retryAttempts || 3}
                       onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          configuration: {
-                            ...prev.configuration,
-                            syncSettings: {
-                              ...prev.configuration?.syncSettings,
-                              retryAttempts: parseInt(e.target.value),
+                        setFormData((prev) => {
+                          const currentSyncSettings = {
+                            ...syncDefaults,
+                            ...(prev.configuration?.syncSettings ?? {}),
+                          };
+
+                          return {
+                            ...prev,
+                            configuration: {
+                              ...prev.configuration,
+                              syncSettings: {
+                                ...currentSyncSettings,
+                                retryAttempts: parseInt(e.target.value, 10),
+                              },
                             },
-                          },
-                        }))
+                          };
+                        })
                       }
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                     />

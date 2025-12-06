@@ -335,31 +335,37 @@ export class MonitoringService {
   async updateMetrics(integrationId: string, metrics: Partial<IntegrationMetrics>): Promise<void> {
     try {
       const existingMetrics = await db.getIntegrationMetrics(integrationId);
-      const latestMetrics = existingMetrics[existingMetrics.length - 1];
+      const latestMetrics = Array.isArray(existingMetrics)
+        ? existingMetrics[existingMetrics.length - 1]
+        : existingMetrics || null;
 
-      if (latestMetrics) {
-        // Update existing metrics
-        const updatedMetrics: IntegrationMetrics = {
-          ...latestMetrics,
-          ...metrics,
-          timestamp: new Date(),
-        };
-        await db.updateIntegrationMetrics(latestMetrics.id, updatedMetrics);
-      } else {
-        // Create new metrics record
-        const newMetrics: IntegrationMetrics = {
-          id: crypto.randomUUID(),
-          integrationId,
-          totalRequests: metrics.totalRequests || 0,
-          successfulRequests: metrics.successfulRequests || 0,
-          failedRequests: metrics.failedRequests || 0,
-          avgResponseTime: metrics.avgResponseTime || 0,
-          successRate: metrics.successRate || 0,
-          errorRate: metrics.errorRate || 0,
-          timestamp: new Date(),
-        };
-        await db.updateIntegrationMetrics(newMetrics.id, newMetrics);
-      }
+      const baseMetrics: IntegrationMetrics = {
+        integrationId,
+        totalRequests: latestMetrics?.totalRequests ?? 0,
+        successfulRequests: latestMetrics?.successfulRequests ?? 0,
+        failedRequests: latestMetrics?.failedRequests ?? 0,
+        averageResponseTime:
+          latestMetrics?.averageResponseTime ?? latestMetrics?.avgResponseTime ?? 0,
+        avgResponseTime: latestMetrics?.avgResponseTime ?? latestMetrics?.averageResponseTime ?? 0,
+        successRate: latestMetrics?.successRate ?? 0,
+        lastRequestTime: latestMetrics?.lastRequestTime ?? new Date(),
+        errorRate: latestMetrics?.errorRate ?? 0,
+        uptime: latestMetrics?.uptime ?? 0,
+        dataProcessed: latestMetrics?.dataProcessed ?? 0,
+        syncCount: latestMetrics?.syncCount ?? 0,
+        lastSyncDuration: latestMetrics?.lastSyncDuration ?? 0,
+      };
+
+      const updatedMetrics: IntegrationMetrics = {
+        ...baseMetrics,
+        ...metrics,
+        avgResponseTime:
+          metrics.avgResponseTime ?? metrics.averageResponseTime ?? baseMetrics.avgResponseTime,
+        averageResponseTime:
+          metrics.averageResponseTime ?? metrics.avgResponseTime ?? baseMetrics.averageResponseTime,
+      };
+
+      await db.updateIntegrationMetrics(integrationId, updatedMetrics);
 
       // Clear cache
       this.metricsCache.clear();

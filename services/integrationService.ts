@@ -195,9 +195,12 @@ export class IntegrationService {
   /**
    * Gets all integrations for the current user
    */
-  async getIntegrations(userId: string): Promise<Integration[]> {
+  async getIntegrations(userId?: string): Promise<Integration[]> {
     try {
-      return await db.getIntegrations(userId);
+      if (userId) {
+        return await db.getIntegrations(userId);
+      }
+      return await db.getAllIntegrations();
     } catch (error) {
       throw new Error(
         `Failed to fetch integrations: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -209,10 +212,13 @@ export class IntegrationService {
    * Gets all integrations across all users (system-wide, for orchestration)
    */
   async getAllIntegrations(): Promise<Integration[]> {
-    // This would require a database method that gets all integrations
-    // For now, return empty array as a safe default
-    // TODO: Implement db.getAllIntegrations() in neonService
-    return [];
+    try {
+      return await db.getAllIntegrations();
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch all integrations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 
   /**

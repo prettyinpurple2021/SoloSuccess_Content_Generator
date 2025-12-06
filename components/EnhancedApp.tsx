@@ -193,6 +193,8 @@ const FeatureDiscoveryHints: React.FC = () => {
 
   if (!showHints) return null;
 
+  if (!hints[currentHint]) return null;
+
   const hint = hints[currentHint];
 
   return (

@@ -60,6 +60,27 @@ interface DragDropContentBuilderProps {
   className?: string;
 }
 
+const BLOCK_TYPES = [
+  { type: 'text', icon: <Type className="w-5 h-5" />, label: 'Text', color: 'text-blue-400' },
+  { type: 'image', icon: <Image className="w-5 h-5" />, label: 'Image', color: 'text-green-400' },
+  { type: 'list', icon: <List className="w-5 h-5" />, label: 'List', color: 'text-purple-400' },
+  { type: 'quote', icon: <Quote className="w-5 h-5" />, label: 'Quote', color: 'text-pink-400' },
+  {
+    type: 'hashtags',
+    icon: <Hash className="w-5 h-5" />,
+    label: 'Hashtags',
+    color: 'text-cyan-400',
+  },
+  { type: 'link', icon: <Link className="w-5 h-5" />, label: 'Link', color: 'text-yellow-400' },
+  { type: 'video', icon: <Video className="w-5 h-5" />, label: 'Video', color: 'text-red-400' },
+  {
+    type: 'cta',
+    icon: <Calendar className="w-5 h-5" />,
+    label: 'Call to Action',
+    color: 'text-orange-400',
+  },
+];
+
 export const DragDropContentBuilder: React.FC<DragDropContentBuilderProps> = ({
   initialBlocks = [],
   onContentChange,
@@ -69,27 +90,6 @@ export const DragDropContentBuilder: React.FC<DragDropContentBuilderProps> = ({
   const [blocks, setBlocks] = useState<ContentBlock[]>(initialBlocks);
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [showBlockPalette, setShowBlockPalette] = useState(false);
-
-  const blockTypes = [
-    { type: 'text', icon: <Type className="w-5 h-5" />, label: 'Text', color: 'text-blue-400' },
-    { type: 'image', icon: <Image className="w-5 h-5" />, label: 'Image', color: 'text-green-400' },
-    { type: 'list', icon: <List className="w-5 h-5" />, label: 'List', color: 'text-purple-400' },
-    { type: 'quote', icon: <Quote className="w-5 h-5" />, label: 'Quote', color: 'text-pink-400' },
-    {
-      type: 'hashtags',
-      icon: <Hash className="w-5 h-5" />,
-      label: 'Hashtags',
-      color: 'text-cyan-400',
-    },
-    { type: 'link', icon: <Link className="w-5 h-5" />, label: 'Link', color: 'text-yellow-400' },
-    { type: 'video', icon: <Video className="w-5 h-5" />, label: 'Video', color: 'text-red-400' },
-    {
-      type: 'cta',
-      icon: <Calendar className="w-5 h-5" />,
-      label: 'Call to Action',
-      color: 'text-orange-400',
-    },
-  ];
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -239,7 +239,7 @@ export const DragDropContentBuilder: React.FC<DragDropContentBuilderProps> = ({
             Choose a block type:
           </HoloText>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {blockTypes.map(({ type, icon, label, color }) => (
+            {BLOCK_TYPES.map(({ type, icon, label, color }) => (
               <button
                 key={type}
                 onClick={() => addBlock(type as ContentBlock['type'])}
@@ -351,7 +351,7 @@ const ContentBlockComponent: React.FC<{
   dragHandleProps,
   isDragging,
 }) => {
-  const blockType = blockTypes.find((bt) => bt.type === block.type);
+  const blockType = BLOCK_TYPES.find((bt) => bt.type === block.type);
 
   return (
     <div

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import {
   ContentSeries,
   Campaign,
@@ -27,6 +28,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
   campaigns,
   onPostUpdate,
 }) => {
+  const user = useUser();
   // State management
   const [contentSeries, setContentSeries] = useState<ContentSeries[]>([]);
   const [selectedSeries, setSelectedSeries] = useState<ContentSeries | null>(null);
@@ -195,7 +197,12 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
   const handleAssignPostToSeries = async (postId: string, seriesId: string) => {
     try {
-      await db.updatePost(postId, { series_id: seriesId });
+      if (!user?.id) {
+        setError('You must be signed in to assign posts to a series.');
+        return;
+      }
+
+      await db.updatePost(postId, { series_id: seriesId }, user.id);
       if (onPostUpdate) {
         const updatedPost = posts.find((p) => p.id === postId);
         if (updatedPost) {

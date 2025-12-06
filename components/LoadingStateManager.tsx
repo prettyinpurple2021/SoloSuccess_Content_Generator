@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { Loader, AlertCircle, CheckCircle} from 'lucide-react';
+import { Loader, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
 export interface LoadingState {
   [key: string]: boolean | undefined;
@@ -474,7 +474,11 @@ export const useBatchOperations = () => {
         } else {
           // Execute operations sequentially
           for (let i = 0; i < operations.length; i++) {
-            const { key, operation } = operations[i];
+            const entry = operations[i];
+            if (!entry) {
+              continue;
+            }
+            const { key, operation } = entry;
 
             try {
               const result = await operation();

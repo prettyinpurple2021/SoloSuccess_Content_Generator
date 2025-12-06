@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import { Campaign, ContentSeries, Post, CampaignMetrics, OptimizationSuggestion } from '../types';
 import { campaignService } from '../services/campaignService';
 import { apiService } from '../services/clientApiService';
+import { db } from '../services/databaseService';
 import { PLATFORMS, Spinner } from '../constants';
 
 interface CampaignManagerProps {
@@ -68,6 +70,8 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       setIsLoading(false);
     }
   };
+
+  const user = useUser();
 
   const loadCampaignPerformance = async (campaignId: string) => {
     try {
@@ -217,7 +221,12 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
   const handleAssignPostToCampaign = async (postId: string, campaignId: string) => {
     try {
-      await db.updatePost(postId, { campaign_id: campaignId });
+      if (!user?.id) {
+        setError('You must be signed in to assign posts to campaigns.');
+        return;
+      }
+
+      await db.updatePost(postId, { campaign_id: campaignId }, user.id);
       if (onPostUpdate) {
         const updatedPost = posts.find((p) => p.id === postId);
         if (updatedPost) {
@@ -246,8 +255,8 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       name: campaign.name,
       description: campaign.description,
       theme: campaign.theme,
-      startDate: campaign.startDate.toISOString().split('T')[0],
-      endDate: campaign.endDate.toISOString().split('T')[0],
+      startDate: campaign.startDate?.toISOString().split('T')[0] ?? '',
+      endDate: campaign.endDate?.toISOString().split('T')[0] ?? '',
       platforms: campaign.platforms,
     });
   };

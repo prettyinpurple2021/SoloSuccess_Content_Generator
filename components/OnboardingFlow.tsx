@@ -359,6 +359,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   if (!isOpen) return null;
 
+  if (!currentStepData) return null;
+
   return (
     <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
       <HoloCard className="max-w-4xl w-full max-h-[90vh] overflow-hidden relative">
