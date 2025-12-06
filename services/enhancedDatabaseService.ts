@@ -118,7 +118,7 @@ class EnhancedDatabaseService {
       // Primary connection pool
       this.pool = postgres(process.env.DATABASE_URL, {
         ...configWithoutTypes,
-        types: types as Record<string, PostgresType<any>>,
+        types: types as Record<string, PostgresType<unknown>>,
         connection: {
           application_name: 'solosuccess_primary',
         },
@@ -132,7 +132,7 @@ class EnhancedDatabaseService {
       const readOnlyUrl = process.env.DATABASE_READ_URL || process.env.DATABASE_URL;
       this.readOnlyPool = postgres(readOnlyUrl, {
         ...configWithoutTypes,
-        types: types as Record<string, PostgresType<any>>,
+        types: types as Record<string, PostgresType<unknown>>,
         max: Math.ceil(this.config.max * 0.6), // 60% of max for read-only
         connection: {
           application_name: 'solosuccess_readonly',
@@ -213,7 +213,10 @@ class EnhancedDatabaseService {
       const queryString = this.formatQuery(query, params);
 
       try {
-        const result = await this.pool.unsafe(queryString, params as any[]);
+        const result = await this.pool.unsafe(
+          queryString,
+          params as postgres.ParameterOrJSON<never>[]
+        );
 
         const duration = Date.now() - startTime;
         this.recordQueryMetrics(queryString, duration, true);
@@ -254,7 +257,7 @@ class EnhancedDatabaseService {
       const queryString = this.formatQuery(query, params);
 
       try {
-        const result = await pool.unsafe(queryString, params as any[]);
+        const result = await pool.unsafe(queryString, params as postgres.ParameterOrJSON<never>[]);
 
         const duration = Date.now() - startTime;
         this.recordQueryMetrics(`[READ] ${queryString}`, duration, true);
