@@ -286,7 +286,12 @@ export default function BrandVoiceManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Brand Voice Manager</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close brand voice manager"
+            title="Close"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -412,6 +417,7 @@ export default function BrandVoiceManager({
                           <button
                             onClick={() => handlePreview(voice)}
                             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            aria-label={`Preview ${voice.name}`}
                             title="Preview"
                           >
                             <Eye className="w-4 h-4" />
@@ -419,6 +425,7 @@ export default function BrandVoiceManager({
                           <button
                             onClick={() => handleEdit(voice)}
                             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            aria-label={`Edit ${voice.name}`}
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -426,6 +433,7 @@ export default function BrandVoiceManager({
                           <button
                             onClick={() => handleDelete(voice)}
                             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            aria-label={`Delete ${voice.name}`}
                             title="Delete"
                             disabled={isLoading}
                           >
@@ -567,6 +575,7 @@ export default function BrandVoiceManager({
                         onClick={() => removeVocabularyTerm(term)}
                         className="text-gray-400 hover:text-gray-600"
                         aria-label={`Remove vocabulary term ${term}`}
+                        title={`Remove ${term}`}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -624,6 +633,7 @@ export default function BrandVoiceManager({
                           onClick={() => removeSampleContent(content)}
                           className="ml-2 text-gray-400 hover:text-gray-600"
                           aria-label="Remove sample content"
+                          title="Remove sample content"
                         >
                           <X className="w-4 h-4" />
                         </button>

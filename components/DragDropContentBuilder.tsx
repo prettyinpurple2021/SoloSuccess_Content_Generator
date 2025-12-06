@@ -243,6 +243,8 @@ export const DragDropContentBuilder: React.FC<DragDropContentBuilderProps> = ({
               <button
                 key={type}
                 onClick={() => addBlock(type as ContentBlock['type'])}
+                aria-label={`Add ${label} block`}
+                title={`Add ${label}`}
                 className={`flex flex-col items-center gap-2 p-3 rounded-lg bg-glass-cyan border border-white/10 hover:border-white/30 transition-all duration-300 sparkles ${color}`}
               >
                 {icon}
@@ -386,18 +388,24 @@ const ContentBlockComponent: React.FC<{
         <div className="flex-shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={onEdit}
+            aria-label="Edit block"
+            title="Edit"
             className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
           >
             <Edit3 className="w-4 h-4" />
           </button>
           <button
             onClick={onDuplicate}
+            aria-label="Duplicate block"
+            title="Duplicate"
             className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors"
           >
             <Copy className="w-4 h-4" />
           </button>
           <button
             onClick={onDelete}
+            aria-label="Delete block"
+            title="Delete"
             className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
