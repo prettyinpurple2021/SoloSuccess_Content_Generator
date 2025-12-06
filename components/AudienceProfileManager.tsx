@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import { AudienceProfile, EngagementData } from '../types';
 import { apiService } from '../services/clientApiService';
+import { db } from '../services/databaseService';
 import { generateAudienceInsights } from '../services/geminiService';
 import {
   X,
@@ -81,6 +83,7 @@ export default function AudienceProfileManager({
   audienceProfiles,
   onAudienceProfilesUpdate,
 }: AudienceProfileManagerProps) {
+  const user = useUser();
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'edit' | 'preview' | 'insights'>(
     'list'
   );
@@ -166,7 +169,12 @@ export default function AudienceProfileManager({
     setError(null);
 
     try {
-      await db.deleteAudienceProfile(profile.id);
+      if (!user?.id) {
+        setError('You must be signed in to delete audience profiles.');
+        return;
+      }
+
+      await db.deleteAudienceProfile(profile.id, user.id);
       const updatedProfiles = audienceProfiles.filter((p) => p.id !== profile.id);
       onAudienceProfilesUpdate(updatedProfiles);
 
@@ -291,6 +299,11 @@ export default function AudienceProfileManager({
     setError(null);
 
     try {
+      if (!user?.id) {
+        setError('You must be signed in to save audience profiles.');
+        return;
+      }
+
       const profileData = {
         name: form.name.trim(),
         age_range: form.ageRange,
@@ -304,14 +317,14 @@ export default function AudienceProfileManager({
       let savedProfile: AudienceProfile;
 
       if (activeTab === 'edit' && editingProfile) {
-        savedProfile = await db.updateAudienceProfile(editingProfile.id, profileData);
+        savedProfile = await db.updateAudienceProfile(editingProfile.id, profileData, user.id);
         const updatedProfiles = audienceProfiles.map((p) =>
           p.id === editingProfile.id ? savedProfile : p
         );
         onAudienceProfilesUpdate(updatedProfiles);
         setSuccess('Audience profile updated successfully');
       } else {
-        savedProfile = await db.addAudienceProfile(profileData);
+        savedProfile = await db.addAudienceProfile(profileData, user.id);
         onAudienceProfilesUpdate([savedProfile, ...audienceProfiles]);
         setSuccess('Audience profile created successfully');
       }

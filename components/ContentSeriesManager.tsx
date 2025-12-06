@@ -7,8 +7,9 @@ import {
   OptimizationSuggestion,
   SchedulingSuggestion,
 } from '../types';
-import { campaignService } from '../services/clientCampaignService';
+import { campaignService } from '../services/campaignService';
 import { apiService } from '../services/clientApiService';
+import { db } from '../services/databaseService';
 import { Spinner } from '../constants';
 
 interface ContentSeriesManagerProps {

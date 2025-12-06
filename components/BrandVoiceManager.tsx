@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import { BrandVoice } from '../types';
 import { apiService } from '../services/clientApiService';
+import { db } from '../services/databaseService';
 import { analyzeBrandVoice } from '../services/geminiService';
 import { X, Plus, Edit2, Trash2, Eye, Upload, Loader2, Save, AlertCircle } from 'lucide-react';
 
@@ -56,6 +58,7 @@ export default function BrandVoiceManager({
   brandVoices,
   onBrandVoicesUpdate,
 }: BrandVoiceManagerProps) {
+  const user = useUser();
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'edit' | 'preview'>('list');
   const [editingVoice, setEditingVoice] = useState<BrandVoice | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -128,7 +131,12 @@ export default function BrandVoiceManager({
     setError(null);
 
     try {
-      await db.deleteBrandVoice(voice.id);
+      if (!user?.id) {
+        setError('You must be signed in to delete brand voices.');
+        return;
+      }
+
+      await db.deleteBrandVoice(voice.id, user.id);
       const updatedVoices = brandVoices.filter((v) => v.id !== voice.id);
       onBrandVoicesUpdate(updatedVoices);
 
@@ -190,7 +198,7 @@ export default function BrandVoiceManager({
     setError(null);
 
     try {
-      const analysis = await analyzeBrandVoice(form.sampleContent.join('\n\n'));
+      const analysis = await analyzeBrandVoice(form.sampleContent);
       setAnalysisResults(analysis);
 
       // Auto-populate form with analysis results
@@ -230,6 +238,11 @@ export default function BrandVoiceManager({
     setError(null);
 
     try {
+      if (!user?.id) {
+        setError('You must be signed in to save brand voices.');
+        return;
+      }
+
       const voiceData = {
         name: form.name.trim(),
         tone: form.tone,
@@ -242,12 +255,12 @@ export default function BrandVoiceManager({
       let savedVoice: BrandVoice;
 
       if (activeTab === 'edit' && editingVoice) {
-        savedVoice = await db.updateBrandVoice(editingVoice.id, voiceData);
+        savedVoice = await db.updateBrandVoice(editingVoice.id, voiceData, user.id);
         const updatedVoices = brandVoices.map((v) => (v.id === editingVoice.id ? savedVoice : v));
         onBrandVoicesUpdate(updatedVoices);
         setSuccess('Brand voice updated successfully');
       } else {
-        savedVoice = await db.addBrandVoice(voiceData);
+        savedVoice = await db.addBrandVoice(voiceData, user.id);
         onBrandVoicesUpdate([savedVoice, ...brandVoices]);
         setSuccess('Brand voice created successfully');
       }

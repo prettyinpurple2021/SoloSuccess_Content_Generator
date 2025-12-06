@@ -7,7 +7,7 @@ import {
   PlatformMetrics,
   LoadingState,
 } from '../types';
-// import { analyticsService } from '../services/analyticsService';
+import { analyticsService } from '../services/analyticsService';
 import { Spinner } from '../constants';
 
 interface AnalyticsDashboardProps {
