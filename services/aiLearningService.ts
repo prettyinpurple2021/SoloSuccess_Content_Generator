@@ -534,11 +534,11 @@ export class AILearningService {
       }
 
       // Fetch trending topics from all connected platforms
-      const trendingTopics = await socialPlatformService.getTrendingTopics(connectedPlatforms);
+      const trendingTopics = await socialPlatformService.fetchTrendingTopics(connectedPlatforms);
 
       // Find if our topic is trending
       const topicInTrends = trendingTopics.find(
-        (t) =>
+        (t: any) =>
           t.topic.toLowerCase().includes(topic.toLowerCase()) ||
           topic.toLowerCase().includes(t.topic.toLowerCase())
       );
@@ -547,10 +547,12 @@ export class AILearningService {
         // Topic is trending, calculate score based on engagement
         const engagementScore = topicInTrends.engagementRate || 0;
         const relevanceScore = this.calculateTopicRelevance(topic, {
-          interests: userInterests,
           contentTypes: [],
           targetAudience: [],
-          preferredTopics: [],
+          preferredTopics: (userInterests || []).map((interest) => ({
+            topic: interest,
+            score: 0.8,
+          })),
         });
 
         // Combine trending status with user relevance
@@ -573,7 +575,11 @@ export class AILearningService {
     if (lengths.length === 0) return null;
 
     const best = lengths.sort((a, b) => b.score - a.score)[0];
-    const [min, max] = best.range.split('-').map(Number);
+    if (!best) return null;
+
+    const rangeParts = best.range.split('-').map(Number);
+    const min = rangeParts[0] ?? 100;
+    const max = rangeParts[1] ?? 500;
 
     return {
       target: (min + max) / 2,
@@ -589,6 +595,7 @@ export class AILearningService {
     if (hashtags.length === 0) return null;
 
     const best = hashtags.sort((a, b) => b.score - a.score)[0];
+    if (!best) return null;
 
     return {
       count: best.count,

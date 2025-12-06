@@ -6,7 +6,7 @@ import {
   AnalyticsData,
   LoadingState,
 } from '../types';
-// import { analyticsService } from '../services/analyticsService';
+import { analyticsService } from '../services/analyticsService';
 import { Spinner } from '../constants';
 
 interface PerformanceInsightsProps {

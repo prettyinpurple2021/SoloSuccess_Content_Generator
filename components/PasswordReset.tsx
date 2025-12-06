@@ -20,26 +20,18 @@ export const PasswordReset: React.FC<PasswordResetProps> = ({ onBack }) => {
     setMessage('');
 
     try {
-      const result = await app.sendPasswordResetEmail(email);
+      const result = await app.sendForgotPasswordEmail(email);
 
-      if (result.status === 'success') {
+      if (result.status === 'ok') {
         setMessage('Check your email for the password reset link!');
       } else {
         // Handle specific error cases
-        switch (result.error?.code) {
-          case 'UserNotFound':
-            setError('No user found with this email address.');
-            break;
-          case 'RateLimitExceeded':
-            setError('Too many requests. Please try again later.');
-            break;
-          case 'InvalidEmail':
-            setError('Please enter a valid email address.');
-            break;
-          default:
-            setError(
-              result.error?.message || 'Failed to send password reset email. Please try again.'
-            );
+        if (result.error) {
+          setError(
+            result.error.message || 'Failed to send password reset email. Please try again.'
+          );
+        } else {
+          setError('Failed to send password reset email. Please try again.');
         }
       }
     } catch (err) {

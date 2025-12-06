@@ -11,7 +11,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentAdaptationService } from '../../services/contentAdaptationService';
-import { SocialMediaIntegrations } from '../../services/integrations/socialMediaIntegrations';
 
 interface ContentPreviewProps {
   content: string;
@@ -46,8 +45,8 @@ export const ContentPreview: React.FC<ContentPreviewProps> = ({
 
           // Validate content for each platform
           const validationPromises = selectedPlatforms.map(async (platform) => {
-            const validation = await SocialMediaIntegrations.validateContentForPlatform(
-              content,
+            const validation = await contentAdaptationService.validateContentForPlatform(
+              adapted[platform]?.content || content,
               platform
             );
             return { platform, validation };

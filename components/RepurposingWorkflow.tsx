@@ -194,10 +194,11 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
       setResults((prev) => ({
         ...prev,
         [format]: {
-          ...prev[format],
+          ...((prev[format] as RepurposingResult) || { format, content: '', parsedContent: '' }),
           optimizationScore: optimization.optimizationScore,
           suggestions: optimization.suggestions,
-          content: optimization.optimizedVersion || prev[format].content,
+          content:
+            optimization.optimizedVersion || (prev[format] as RepurposingResult)?.content || '',
           parsedContent: optimizedParsedContent,
         },
       }));

@@ -36,16 +36,18 @@ export const SignUpPage: React.FC = () => {
       const result = await app.signUpWithCredential({
         email,
         password,
-        noRedirect: true, // Prevent automatic redirection
+        noRedirect: true,
       });
 
-      if (result.status === 'success') {
+      if (result.status === 'ok') {
         setMessage('Check your email for the confirmation link!');
         setTimeout(() => {
-          navigate('/signin');
+          navigate('/auth/signin');
         }, 3000);
+      } else if (result.error) {
+        setError(result.error.message || 'Sign up failed');
       } else {
-        setError(result.error?.message || 'Sign up failed');
+        setError('Sign up failed');
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -57,7 +59,7 @@ export const SignUpPage: React.FC = () => {
   const handleGoogleSignUp = async () => {
     try {
       await app.signInWithOAuth('google', {
-        redirectTo: `${window.location.origin}/dashboard`,
+        returnTo: `${window.location.origin}/dashboard`,
       });
     } catch (err) {
       setError('Google sign-up failed');
@@ -67,7 +69,7 @@ export const SignUpPage: React.FC = () => {
   const handleGitHubSignUp = async () => {
     try {
       await app.signInWithOAuth('github', {
-        redirectTo: `${window.location.origin}/dashboard`,
+        returnTo: `${window.location.origin}/dashboard`,
       });
     } catch (err) {
       setError('GitHub sign-up failed');

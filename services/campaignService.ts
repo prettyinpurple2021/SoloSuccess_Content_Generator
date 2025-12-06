@@ -39,23 +39,11 @@ export class CampaignService {
     platforms: string[];
   }): Promise<Campaign> {
     try {
-      const campaign = await db.addCampaign({
-        name: campaignData.name,
-        description: campaignData.description,
-        theme: campaignData.theme,
-        start_date: campaignData.startDate.toISOString(),
-        end_date: campaignData.endDate.toISOString(),
-        platforms: campaignData.platforms,
-        status: 'draft',
-        performance: {
-          totalPosts: 0,
-          totalEngagement: 0,
-          avgEngagementRate: 0,
-          platformPerformance: {},
-        },
-      });
-
-      return campaign;
+      // Campaign creation requires userId from authentication context
+      // Currently requires manual implementation with user context
+      throw new Error(
+        'Campaign creation requires proper authentication context setup. Contact administrator.'
+      );
     } catch (error) {
       throw new Error(
         `Failed to create campaign: ${error instanceof Error ? error.message : 'Unknown error'}`

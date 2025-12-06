@@ -1,4 +1,46 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+
+// SpeechRecognition API types
+interface SpeechRecognitionEvent extends Event {
+  readonly results: SpeechRecognitionResultList;
+  readonly resultIndex: number;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
 // Temporarily replaced lucide-react icons with simple SVGs
 const Mic = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,7 +279,8 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
           let finalTranscript = '';
           let interimTranscript = '';
 
-          for (let i = event.resultIndex; i < event.results.length; i++) {
+          const resultIndex = (event as any).resultIndex ?? 0;
+          for (let i = resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             const confidence = event.results[i][0].confidence;
 
@@ -318,8 +361,8 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
       const matchedCommand = commands.find((cmd) => {
         if (cmd.command.includes('*')) {
           const pattern = cmd.command
-            .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')  // Escape all regex special chars
-            .replace(/\\\*/g, '(.+)');               // Then replace escaped \* with (.+)
+            .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape all regex special chars
+            .replace(/\\\*/g, '(.+)'); // Then replace escaped \* with (.+)
           const regex = new RegExp(pattern, 'i');
           return regex.test(transcript);
         } else {
@@ -336,8 +379,9 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
           "Hmm, I'm not sure about that one! Say 'hey solo success' to get started! ✨",
           "That's a new one! Check out the available commands by clicking the sparkly button! 🌟",
         ];
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        speak(randomResponse);
+        const randomResponse =
+          responses[Math.floor(Math.random() * responses.length)] ?? responses[0];
+        if (randomResponse) speak(randomResponse);
       }
     },
     [commands]

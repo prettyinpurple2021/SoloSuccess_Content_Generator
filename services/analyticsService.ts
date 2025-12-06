@@ -66,18 +66,12 @@ export class AnalyticsService {
     }>
   ): Promise<AnalyticsData[]> {
     try {
-      const analyticsArray = engagementData.map((data) => ({
-        post_id: data.postId,
-        platform: data.platform,
-        likes: data.metrics.likes,
-        shares: data.metrics.shares,
-        comments: data.metrics.comments,
-        clicks: data.metrics.clicks,
-        impressions: data.metrics.impressions,
-        reach: data.metrics.reach,
-      }));
-
-      return await db.batchInsertAnalytics(analyticsArray);
+      const results: AnalyticsData[] = [];
+      for (const data of engagementData) {
+        const result = await this.trackEngagement(data.postId, data.platform, data.metrics);
+        results.push(result);
+      }
+      return results;
     } catch (error) {
       console.error('Error batch tracking engagement:', error);
       throw new Error('Failed to batch track engagement metrics');
@@ -91,19 +85,18 @@ export class AnalyticsService {
     timeframe: 'week' | 'month' | 'quarter' | 'year'
   ): Promise<PerformanceReport> {
     try {
-      // Get base report from database
-      const baseReport = await db.generatePerformanceReport(timeframe);
-
-      // Enhance with additional insights
+      // Enhance with insights without db call
       const topContent = await this.identifyTopPerformingContent(timeframe);
       const trends = await this.calculatePerformanceTrends(timeframe);
       const recommendations = await this.generateOptimizationRecommendations(timeframe);
 
       return {
-        ...baseReport,
+        period: timeframe,
+        totalEngagement: topContent.reduce((sum, c) => sum + c.engagementScore, 0),
         topContent,
         trends,
         recommendations,
+        generatedAt: new Date(),
       };
     } catch (error) {
       console.error('Error generating performance report:', error);
@@ -119,29 +112,30 @@ export class AnalyticsService {
     limit: number = 10
   ): Promise<ContentInsight[]> {
     try {
-      const topAnalytics = await db.getTopPerformingContent(limit, timeframe);
+      // Get all analytics and posts
       const posts = await db.getPosts();
-
       const insights: ContentInsight[] = [];
 
-      for (const analytics of topAnalytics) {
-        const post = posts.find((p) => p.id === analytics.postId);
-        if (!post) continue;
+      for (const post of posts) {
+        const postAnalytics = await db.getPostAnalytics(post.id);
+        if (postAnalytics.length === 0) continue;
 
-        const engagementScore = this.calculateEngagementScore(analytics);
-        const contentInsights = this.analyzeContentCharacteristics(post, analytics);
+        const engagementScore =
+          postAnalytics.reduce((sum, a) => sum + this.calculateEngagementScore(a), 0) /
+          postAnalytics.length;
+        const contentInsights = this.analyzeContentCharacteristics(post, postAnalytics[0]);
 
         insights.push({
-          postId: analytics.postId,
+          postId: post.id,
           title: post.topic,
-          platform: analytics.platform,
+          platform: postAnalytics[0].platform,
           engagementScore,
           insights: contentInsights,
           contentType: this.determineContentType(post),
         });
       }
 
-      return insights.sort((a, b) => b.engagementScore - a.engagementScore);
+      return insights.sort((a, b) => b.engagementScore - a.engagementScore).slice(0, limit);
     } catch (error) {
       console.error('Error identifying top content:', error);
       throw new Error('Failed to identify top-performing content');
@@ -310,7 +304,9 @@ export class AnalyticsService {
       });
 
       const slots: TimeSlot[] = Object.entries(timeSlots).map(([key, data]) => {
-        const [dayOfWeek, hour] = key.split('-').map(Number);
+        const parsedValues = key.split('-').map(Number);
+        const dayOfWeek = parsedValues[0] ?? 0;
+        const hour = parsedValues[1] ?? 0;
         const avgEngagement = data.engagement / data.count;
 
         return {
@@ -477,6 +473,9 @@ export class AnalyticsService {
     }));
 
     const bestHour = avgHourlyEngagement.sort((a, b) => b.avgEngagement - a.avgEngagement)[0];
+    if (!bestHour) {
+      throw new Error('No engagement data available for timing optimization');
+    }
 
     return {
       type: 'timing',
@@ -527,10 +526,12 @@ export class AnalyticsService {
         platformStats[data.platform] = { engagement: 0, impressions: 0, count: 0 };
       }
 
-      platformStats[data.platform].engagement +=
-        data.likes + data.shares + data.comments + data.clicks;
-      platformStats[data.platform].impressions += data.impressions;
-      platformStats[data.platform].count += 1;
+      const stats = platformStats[data.platform];
+      if (stats) {
+        stats.engagement += data.likes + data.shares + data.comments + data.clicks;
+        stats.impressions += data.impressions;
+        stats.count += 1;
+      }
     });
 
     Object.entries(platformStats).forEach(([platform, stats]) => {
@@ -585,6 +586,10 @@ export class AnalyticsService {
     }
 
     const latestAnalytics = analytics[0];
+    if (!latestAnalytics) {
+      return recommendations;
+    }
+
     const engagementRate =
       latestAnalytics.impressions > 0
         ? ((latestAnalytics.likes + latestAnalytics.shares + latestAnalytics.comments) /
