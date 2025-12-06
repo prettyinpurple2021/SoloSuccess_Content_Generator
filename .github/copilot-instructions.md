@@ -263,35 +263,109 @@ npm run validate:performance   # Performance validation
 npm run scan:secrets           # Secret scanning pre-commit
 ```
 
-### Key Validation Scripts
+### Validation Workflow Guide
 
-- `scripts/production-readiness-validation.js` - Comprehensive pre-deployment checks
-- `scripts/performance-validation.js` - Performance and lazy loading verification
-- `scripts/security-validation.js` - Security best practices audit
+**When to run validation scripts:**
+
+1. **Before Every Commit** (Automatic):
+   - Husky pre-commit hook runs `lint-staged` (ESLint + Prettier)
+   - `npm run scan:secrets` checks for exposed credentials
+   - TypeScript compilation via strict `tsconfig.json`
+
+2. **Before Opening PR**:
+
+   ```bash
+   npm run typecheck              # Verify no TypeScript errors
+   npm run lint:production        # Production-grade linting
+   npm run validate:security      # Security audit
+   ```
+
+3. **Before Deployment**:
+
+   ```bash
+   npm run build                  # Ensure clean build
+   npm run validate:performance   # Check lazy loading, bundle size
+   npm run validate:readiness     # Full production readiness check
+   ```
+
+4. **After Major Changes**:
+   - New service: `npm run validate:workflow` (end-to-end test)
+   - Database schema: `npm run test:neon` (Neon connectivity)
+   - Dependency updates: `npm audit` + `npm run build`
+
+**Validation Script Details:**
+
+- `production-readiness-validation.js` - Checks for mocks, placeholder code, missing error handling, security issues
+- `performance-validation.js` - Validates lazy loading, code splitting, no console.logs in production
+- `security-validation.js` - Scans for hardcoded secrets, unencrypted credentials, SQL injection risks
+- `end-to-end-workflow-test.js` - Tests critical user flows (auth, content generation, publishing)
 
 ---
 
-## Environment Variables
+## Environment Variables & Setup
 
-**Required:**
+### Quick Setup for First-Time Development
 
-```
-VITE_STACK_PROJECT_ID=<your-project-id>
-VITE_STACK_PUBLISHABLE_CLIENT_KEY=<your-key>
-STACK_SECRET_SERVER_KEY=<your-secret>
-DATABASE_URL=postgresql://...
-GEMINI_API_KEY=<google-api-key>
-INTEGRATION_ENCRYPTION_SECRET=<64-char-hex>
+**Step 1: Install Dependencies**
+
+```bash
+npm install
 ```
 
-**Optional:**
+**Step 2: Create `.env.local` file** (copy from `.env.example`)
 
-```
-OPENAI_API_KEY=<openai-key>
-ANTHROPIC_API_KEY=<anthropic-key>
+**Required Environment Variables:**
+
+```bash
+# Stack Auth (Get from https://app.stack-auth.com/)
+VITE_STACK_PROJECT_ID=your-stack-project-id
+VITE_STACK_PUBLISHABLE_CLIENT_KEY=your-stack-publishable-key
+STACK_SECRET_SERVER_KEY=your-stack-secret-key
+
+# Neon PostgreSQL (Get from https://neon.tech)
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+
+# Google Gemini AI (Get from https://aistudio.google.com/app/apikey)
+GEMINI_API_KEY=your-gemini-api-key
+
+# Credential Encryption (Generate with command below)
+INTEGRATION_ENCRYPTION_SECRET=64-character-hex-string
 ```
 
-Generate encryption secret: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+**Generate encryption secret:**
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**Optional AI Providers:**
+
+```bash
+OPENAI_API_KEY=your-openai-key          # https://platform.openai.com/api-keys
+ANTHROPIC_API_KEY=your-anthropic-key    # https://console.anthropic.com/
+```
+
+**Step 3: Setup Database**
+
+```bash
+npm run setup:database    # Initialize Neon database with schema
+npm run migrate:neon      # Apply migrations
+npm run test:neon         # Verify connection
+```
+
+**Step 4: Start Development**
+
+```bash
+npm run dev               # Start Vite dev server at http://localhost:5173
+```
+
+**Verification Checklist:**
+
+- [ ] `npm run typecheck` passes with 0 errors
+- [ ] `npm run dev` starts without errors
+- [ ] Can access http://localhost:5173 and see login page
+- [ ] Stack Auth login/signup works
+- [ ] Can connect to Neon database (check browser console for errors)
 
 ---
 
@@ -409,6 +483,127 @@ const newWebhook = await webhookService.createWebhook(integrationId, {
   isActive: true,
 });
 ```
+
+---
+
+## AI Agent Workflow Guides
+
+### When Adding a New AI Provider (e.g., Claude, GPT-4)
+
+1. **Create Service File**: `services/[provider]Service.ts`
+
+   ```typescript
+   export class ClaudeService {
+     async generateContent(prompt: string): Promise<string> {
+       // Implement with proper error handling
+     }
+   }
+   export const claudeService = new ClaudeService();
+   ```
+
+2. **Update AI Orchestrator**: Add provider to `services/aiOrchestrator.ts` or `enhancedGeminiService.ts`
+3. **Environment Variables**: Add `[PROVIDER]_API_KEY` to `.env.example` and document in README
+4. **Error Handling**: Wrap all API calls in try-catch with user-friendly messages
+5. **Rate Limiting**: Implement via `aiRequestQueueService.ts`
+6. **Usage Tracking**: Integrate with `aiUsageMonitoringService.ts`
+7. **Testing**: Test with real API key, verify error cases (invalid key, rate limits, timeouts)
+
+### When Integrating a New Social Platform (e.g., TikTok, Threads)
+
+1. **Platform Service**: Create `services/integrations/[Platform]Service.ts`
+
+   ```typescript
+   export class TikTokService {
+     async testConnection(credentials: any): Promise<ConnectionTestResult> {}
+     async publishPost(credentials: any, content: any): Promise<any> {}
+     async getAnalytics(credentials: any): Promise<any> {}
+   }
+   ```
+
+2. **OAuth Flow**:
+   - Add OAuth config to `integrationOrchestrator.ts` platform configs
+   - Define required scopes, endpoints, and credential structure
+   - Implement token refresh logic
+
+3. **Database Schema**: Add platform to integration types in `types.ts`
+4. **Credential Encryption**: Use `credentialEncryption.ts` for all OAuth tokens
+5. **Rate Limits**: Define platform-specific limits in `integrationOrchestrator.ts`
+6. **Content Adaptation**: Add platform rules to `contentAdaptationService.ts`
+7. **Testing**: Test OAuth flow, post publishing, analytics retrieval with real account
+
+### When Building a New Feature
+
+1. **Architecture First**:
+   - Identify service layer needs (new service or extend existing?)
+   - Define database schema changes (if any)
+   - Map out component → service → database data flow
+
+2. **Service Layer** (if needed):
+
+   ```typescript
+   // services/myFeatureService.ts
+   export class MyFeatureService {
+     async doSomething(): Promise<Result> {
+       try {
+         // Validate inputs with Zod
+         const validated = MySchema.parse(input);
+         // Call database
+         const data = await db.myOperation(validated);
+         // Return transformed data
+         return transformToResult(data);
+       } catch (error) {
+         throw new Error(`User-friendly message: ${error.message}`);
+       }
+     }
+   }
+   export const myFeatureService = new MyFeatureService();
+   ```
+
+3. **Database Changes** (if needed):
+   - Update `database/neon-complete-migration.sql`
+   - Add types to `types.ts` (both camelCase and snake_case)
+   - Add CRUD methods to `databaseService.ts`
+   - Run `npm run migrate:neon`
+
+4. **Component Implementation**:
+   - Create in `components/MyFeature.tsx`
+   - Use TailwindCSS for styling (glassmorphic patterns)
+   - Add Framer Motion animations
+   - Lazy load if heavy: add to `LazyComponents.tsx`
+   - Call service methods, never direct API calls
+
+5. **Error Handling**:
+   - Component: try-catch in event handlers, show user-friendly errors
+   - Service: comprehensive error messages with context
+   - Global: `ErrorBoundaryEnhanced` catches render errors
+
+6. **Validation Checklist**:
+   - [ ] `npm run typecheck` passes
+   - [ ] `npm run lint:production` passes
+   - [ ] No console.logs in production code
+   - [ ] All async operations have error handling
+   - [ ] Credentials encrypted (if applicable)
+   - [ ] Database queries indexed (if new tables)
+   - [ ] Component lazy loaded (if >100KB)
+   - [ ] Real API tested, not mocked
+
+### When Fixing Bugs or Refactoring
+
+1. **Understand Current State**:
+   - Read relevant service files in `services/`
+   - Check database schema in `database/neon-complete-migration.sql`
+   - Review component dependencies
+
+2. **Maintain Production Standards**:
+   - Don't introduce mocks or placeholders
+   - Keep error handling comprehensive
+   - Preserve type safety
+   - Test with real services
+
+3. **Update Tests & Validation**:
+   - Run `npm run typecheck` after changes
+   - Run `npm run validate:production` before committing
+   - Verify no new console.logs added
 
 ---
 
