@@ -404,7 +404,9 @@ export const generateImageVariations = async (
   ];
 
   for (let i = 0; i < Math.min(variationCount, variationPrompts.length); i++) {
-    const images = await generateImage(variationPrompts[i], { imageStyle, platform });
+    const prompt = variationPrompts[i];
+    if (!prompt) continue;
+    const images = await generateImage(prompt, { imageStyle, platform });
     variations.push(...images);
   }
 

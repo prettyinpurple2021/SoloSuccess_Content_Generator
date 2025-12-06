@@ -166,7 +166,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
     try {
       setIsLoading(true);
-      await campaignService.deleteContentSeries(seriesId, false); // Don't delete associated posts
+      await campaignService.deleteContentSeries('', seriesId, false); // Don't delete associated posts
       setContentSeries((prev) => prev.filter((s) => s.id !== seriesId));
       if (selectedSeries?.id === seriesId) {
         setSelectedSeries(null);

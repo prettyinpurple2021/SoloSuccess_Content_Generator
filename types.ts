@@ -459,6 +459,7 @@ export interface EncryptedCredentials {
   salt?: string; // Optional for backward compatibility
   iterations?: number; // PBKDF2 iterations
   version?: string; // Encryption version for key rotation
+  createdAt?: Date; // Credential creation timestamp
 }
 
 export interface IntegrationConfig {
@@ -468,6 +469,17 @@ export interface IntegrationConfig {
   errorHandling?: ErrorHandlingConfig;
   notifications?: NotificationConfig;
   customFields?: { [key: string]: unknown };
+  // Compliance and security properties
+  dataRetention?: boolean;
+  consentManagement?: boolean;
+  auditLogging?: boolean;
+  accessControls?: boolean;
+  dataIntegrity?: boolean;
+  accessLogging?: boolean;
+  backupAndRecovery?: boolean;
+  networkSecurity?: boolean;
+  vulnerabilityManagement?: boolean;
+  monitoringAndTesting?: boolean;
 }
 
 export interface WebhookConfig {

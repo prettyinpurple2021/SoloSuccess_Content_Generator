@@ -146,8 +146,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
     setTemplateData((prev) => {
       const newStructure = [...(prev.structure || [])];
       const tempSection = newStructure[index];
-      if (tempSection && newStructure[index + 1]) {
-        newStructure[index] = newStructure[index + 1];
+      const nextSection = newStructure[index + 1];
+      if (tempSection && nextSection) {
+        newStructure[index] = nextSection;
         newStructure[index + 1] = tempSection;
       }
       return { ...prev, structure: newStructure };

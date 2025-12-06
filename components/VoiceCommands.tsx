@@ -279,6 +279,10 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
           let finalTranscript = '';
           let interimTranscript = '';
 
+          if (!event?.results) {
+            return; // Exit early if results are missing
+          }
+
           const resultIndex = (event as any).resultIndex ?? 0;
           for (let i = resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;

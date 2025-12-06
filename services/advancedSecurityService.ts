@@ -830,7 +830,10 @@ export class AdvancedSecurityService {
    */
   async createSecurityIncident(
     integrationId: string,
-    incident: Omit<SecurityIncident, 'id' | 'timestamp' | 'createdAt' | 'updatedAt'>
+    incident: Omit<
+      SecurityIncident,
+      'id' | 'integrationId' | 'timestamp' | 'createdAt' | 'updatedAt'
+    >
   ): Promise<void> {
     try {
       const securityIncident: SecurityIncident = {
@@ -915,12 +918,15 @@ export class AdvancedSecurityService {
 
       results.forEach((result, index) => {
         const frameworks = ['GDPR', 'SOX', 'HIPAA', 'PCI-DSS'];
+        const framework = frameworks[index];
+        if (!framework) return;
+
         if (result.status === 'fulfilled') {
-          complianceStatus.frameworkCompliance[frameworks[index]] = result.value;
+          complianceStatus.frameworkCompliance[framework] = result.value;
         } else {
-          complianceStatus.frameworkCompliance[frameworks[index]] = {
+          complianceStatus.frameworkCompliance[framework] = {
             compliant: false,
-            violations: [`Failed to check ${frameworks[index]} compliance`],
+            violations: [`Failed to check ${framework} compliance`],
           };
         }
       });

@@ -91,12 +91,17 @@ export class AnalyticsService {
       const recommendations = await this.generateOptimizationRecommendations(timeframe);
 
       return {
-        period: timeframe,
+        timeframe: timeframe,
+        totalPosts: topContent.length,
         totalEngagement: topContent.reduce((sum, c) => sum + c.engagementScore, 0),
+        avgEngagementRate:
+          topContent.length > 0
+            ? topContent.reduce((sum, c) => sum + c.engagementScore, 0) / topContent.length
+            : 0,
         topContent,
+        platformBreakdown: {},
         trends,
         recommendations,
-        generatedAt: new Date(),
       };
     } catch (error) {
       console.error('Error generating performance report:', error);
@@ -123,6 +128,7 @@ export class AnalyticsService {
         const engagementScore =
           postAnalytics.reduce((sum, a) => sum + this.calculateEngagementScore(a), 0) /
           postAnalytics.length;
+        if (!postAnalytics[0]) continue;
         const contentInsights = this.analyzeContentCharacteristics(post, postAnalytics[0]);
 
         insights.push({
@@ -500,15 +506,17 @@ export class AnalyticsService {
 
     const sortedPlatforms = Object.entries(platformPerformance).sort(([, a], [, b]) => b - a);
 
-    if (sortedPlatforms.length > 1) {
-      const topPlatform = sortedPlatforms[0][0];
-      recommendations.push({
-        type: 'content',
-        title: 'Focus on Top-Performing Platform',
-        description: `${topPlatform} shows the highest engagement. Consider creating more content specifically for this platform.`,
-        impact: 'high',
-        effort: 'medium',
-      });
+    if (sortedPlatforms.length > 0) {
+      const topPlatform = sortedPlatforms[0]?.[0];
+      if (topPlatform) {
+        recommendations.push({
+          type: 'content',
+          title: 'Focus on Top-Performing Platform',
+          description: `${topPlatform} shows the highest engagement. Consider creating more content specifically for this platform.`,
+          impact: 'high',
+          effort: 'medium',
+        });
+      }
     }
 
     return recommendations;

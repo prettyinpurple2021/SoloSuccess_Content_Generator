@@ -7,9 +7,10 @@ import {
   IntegrationMetrics,
 } from '../types';
 import { integrationService } from './integrationService';
-import { socialMediaIntegrations } from './integrations/socialMediaIntegrations';
-import { analyticsIntegrations } from './integrations/analyticsIntegrations';
-import { aiServiceIntegrations } from './integrations/aiServiceIntegrations';
+// Note: These integration classes may need to be instantiated
+// import { SocialMediaIntegrations } from './integrations/socialMediaIntegrations';
+// import { AnalyticsIntegrations } from './integrations/analyticsIntegrations';
+// import { AIServiceIntegrations } from './integrations/aiServiceIntegrations';
 
 /**
  * IntegrationTestingService - Production-quality integration testing and validation
@@ -289,7 +290,7 @@ export class IntegrationTestingService {
       return {
         integrationId,
         healthScore,
-        checks: results,
+        checks: results as any,
         timestamp: new Date(),
         recommendations,
       };
@@ -442,6 +443,14 @@ export class IntegrationTestingService {
       }
 
       const latestMetrics = metrics[metrics.length - 1];
+      if (!latestMetrics) {
+        return {
+          success: false,
+          error: 'No metrics data available',
+          details: {},
+        };
+      }
+
       const errorRate = latestMetrics.errorRate;
       const isHealthy = errorRate < 5; // Less than 5% error rate
 
@@ -479,6 +488,14 @@ export class IntegrationTestingService {
       }
 
       const latestMetrics = metrics[metrics.length - 1];
+      if (!latestMetrics) {
+        return {
+          success: false,
+          error: 'No metrics data available',
+          details: {},
+        };
+      }
+
       const avgResponseTime = latestMetrics.averageResponseTime;
       const isHealthy = avgResponseTime < 5000; // Less than 5 seconds
 

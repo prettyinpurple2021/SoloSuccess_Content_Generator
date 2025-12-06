@@ -100,9 +100,9 @@ export class IntegrationService {
             },
             ...data.configuration,
           },
-          syncFrequency: data.syncFrequency || 'hourly',
-          isActive: true,
-        },
+          sync_frequency: data.syncFrequency || 'hourly',
+          is_active: true,
+        } as any,
         userId
       );
 
@@ -432,8 +432,9 @@ export class IntegrationService {
         if (result.status === 'fulfilled') {
           return result.value;
         } else {
+          const integration = activeIntegrations[index];
           return {
-            integrationId: activeIntegrations[index].id,
+            integrationId: integration?.id || 'unknown',
             success: false,
             recordsProcessed: 0,
             recordsCreated: 0,
@@ -619,11 +620,12 @@ export class IntegrationService {
     const remaining = Math.max(0, limit - tracker.requests.length);
 
     if (tracker.requests.length >= limit) {
+      const firstRequest = tracker.requests[0] || now;
       return {
         allowed: false,
         remaining: 0,
-        resetTime: tracker.requests[0] + 60 * 1000,
-        retryAfter: Math.ceil((tracker.requests[0] + 60 * 1000 - now) / 1000),
+        resetTime: firstRequest + 60 * 1000,
+        retryAfter: Math.ceil((firstRequest + 60 * 1000 - now) / 1000),
       };
     }
 

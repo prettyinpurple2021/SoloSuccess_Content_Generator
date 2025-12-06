@@ -486,7 +486,7 @@ const App: React.FC = () => {
       // Enhanced social media generation with personalization
       // personalization used via generatePersonalizedContent elsewhere
 
-      const config = PLATFORM_CONFIG[platform];
+      const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
       if (!config) {
         throw new Error(`Missing platform configuration for ${platform}`);
       }
@@ -520,7 +520,7 @@ const App: React.FC = () => {
     const gemini = geminiService as unknown as GeminiSocialClient;
     const promises = PLATFORMS.map(async (platform) => {
       const tone = socialMediaTones[platform] ?? defaultTone;
-      const config = PLATFORM_CONFIG[platform];
+      const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
       if (!config) {
         return { platform, post: `Error: Missing platform configuration for ${platform}.` };
       }
@@ -1412,7 +1412,7 @@ const App: React.FC = () => {
                     </div>
                     <div className="space-y-4">
                       {PLATFORMS.map((platform) => {
-                        const config = PLATFORM_CONFIG[platform];
+                        const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
                         if (!config) {
                           return null;
                         }
