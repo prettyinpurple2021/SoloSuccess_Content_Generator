@@ -99,11 +99,11 @@ export class MonitoringService {
         [service, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()]
       );
 
-      const metrics = result.rows;
+      const metrics = (result as any).rows;
 
       const responseTime = Date.now() - startTime;
       const totalRequests = metrics?.length || 0;
-      const successfulRequests = metrics?.filter((m) => m.success).length || 0;
+      const successfulRequests = metrics?.filter((m: any) => m.success).length || 0;
       const errorRate =
         totalRequests > 0 ? ((totalRequests - successfulRequests) / totalRequests) * 100 : 0;
       const availability = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 100;
@@ -235,19 +235,19 @@ export class MonitoringService {
       [startTime.toISOString()]
     );
 
-    const metrics = result.rows;
+    const metrics = (result as any).rows;
 
     const totalRequests = metrics?.length || 0;
-    const successfulRequests = metrics?.filter((m) => m.success).length || 0;
+    const successfulRequests = metrics?.filter((m: any) => m.success).length || 0;
     const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0;
     const averageResponseTime =
-      metrics?.reduce((sum, m) => sum + m.duration, 0) / totalRequests || 0;
+      metrics?.reduce((sum: number, m: any) => sum + m.duration, 0) / totalRequests || 0;
 
     // Top errors
     const errorCounts: { [key: string]: number } = {};
     metrics
-      ?.filter((m) => !m.success)
-      .forEach((m) => {
+      ?.filter((m: any) => !m.success)
+      .forEach((m: any) => {
         const error = m.error_message || 'Unknown error';
         errorCounts[error] = (errorCounts[error] || 0) + 1;
       });
@@ -259,13 +259,13 @@ export class MonitoringService {
 
     // Service breakdown
     const serviceCounts: { [key: string]: { requests: number; errors: number } } = {};
-    metrics?.forEach((m) => {
+    metrics?.forEach((m: any) => {
       if (!serviceCounts[m.service]) {
         serviceCounts[m.service] = { requests: 0, errors: 0 };
       }
-      serviceCounts[m.service].requests++;
+      serviceCounts[m.service]!.requests++;
       if (!m.success) {
-        serviceCounts[m.service].errors++;
+        serviceCounts[m.service]!.errors++;
       }
     });
 

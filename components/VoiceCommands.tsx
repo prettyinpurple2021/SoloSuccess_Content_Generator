@@ -285,10 +285,13 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
 
           const resultIndex = (event as any).resultIndex ?? 0;
           for (let i = resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            const confidence = event.results[i][0].confidence;
+            const result = event.results[i];
+            if (!result || !result[0]) continue;
 
-            if (event.results[i].isFinal) {
+            const transcript = result[0].transcript;
+            const confidence = result[0].confidence;
+
+            if (result.isFinal) {
               finalTranscript += transcript;
               setConfidence(confidence);
             } else {

@@ -195,7 +195,7 @@ class DatabasePerformanceService {
     let error: string | undefined;
 
     try {
-      const result = await pool.unsafe(query, params);
+      const result = await pool.unsafe(query, params as unknown[]);
       const executionTime = Date.now() - startTime;
 
       // Record metrics
@@ -279,7 +279,7 @@ class DatabasePerformanceService {
         'info'
       );
 
-      return results;
+      return results as Awaited<T>[];
     } catch (error) {
       const totalTime = Date.now() - startTime;
 
@@ -417,7 +417,7 @@ class DatabasePerformanceService {
   /**
    * Apply recommended database optimizations
    */
-  async applyOptimizations(pool: postgres.Sql): Promise<{
+  async applyOptimizations(pool: Sql): Promise<{
     applied: string[];
     failed: string[];
   }> {

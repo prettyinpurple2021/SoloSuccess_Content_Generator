@@ -1,5 +1,5 @@
 import { db } from './neonService';
-import { query } from './databaseService';
+import { query, databaseService } from './databaseService';
 
 // Types for social platform integrations
 export interface SocialPlatformConfig {
@@ -525,15 +525,15 @@ class SocialPlatformService {
 
     for (const postId of postIds) {
       try {
-        const analytics = await db.getPostAnalytics(postId);
-        const platformAnalytics = analytics.filter((item) => item.platform === platform);
+        const analytics = await databaseService.getPostAnalytics(postId);
+        const platformAnalytics = analytics.filter((item: any) => item.platform === platform);
 
         if (platformAnalytics.length === 0) {
           continue;
         }
 
         const aggregated = platformAnalytics.reduce(
-          (acc, item) => {
+          (acc: any, item: any) => {
             acc.likes += item.likes || 0;
             acc.shares += item.shares || 0;
             acc.comments += item.comments || 0;
@@ -615,7 +615,7 @@ class SocialPlatformService {
               }
             })
           );
-          return results.filter((r): r is HashtagPerformance => r !== null) as HashtagPerformance[];
+          return results.filter((r) => r !== null) as HashtagPerformance[];
         }
         case 'linkedin': {
           const { default: LinkedInClient } = await import('./platforms/linkedInClient');
@@ -644,7 +644,7 @@ class SocialPlatformService {
               }
             })
           );
-          return results.filter((r): r is HashtagPerformance => r !== null) as HashtagPerformance[];
+          return results.filter((r) => r !== null) as HashtagPerformance[];
         }
         default:
           // For platforms without hashtag API support, return empty array
@@ -814,7 +814,7 @@ class SocialPlatformService {
             bearerToken: config.accessToken,
           });
 
-          const trendingTopics = await client.getTrendingTopics(categories);
+          const trendingTopics = await client.getTrendingTopics(categories || []);
           return trendingTopics;
         }
         case 'linkedin': {
@@ -826,7 +826,7 @@ class SocialPlatformService {
             refreshToken: config.refreshToken,
           });
 
-          const trendingTopics = await client.getTrendingTopics(categories);
+          const trendingTopics = await client.getTrendingTopics(categories || []);
           return trendingTopics;
         }
         case 'facebook': {
@@ -837,7 +837,7 @@ class SocialPlatformService {
             accessToken: config.accessToken || '',
           });
 
-          const trendingTopics = await client.getTrendingTopics(categories);
+          const trendingTopics = await client.getTrendingTopics(categories || []);
           return trendingTopics;
         }
         case 'instagram': {
@@ -849,7 +849,7 @@ class SocialPlatformService {
             clientSecret: '',
           });
 
-          const trendingTopics = await client.getTrendingTopics(categories);
+          const trendingTopics = await client.getTrendingTopics(categories || []);
           return trendingTopics;
         }
         default:
@@ -885,7 +885,7 @@ class SocialPlatformService {
   ): Promise<string | null> {
     try {
       // Use Gemini AI service for real content generation
-      const { geminiService } = await import('./geminiService');
+      const { generateGenericContent } = await import('./geminiService');
 
       const prompt = `Generate engaging social media content about the trending topic "${trend.topic}" with the following context:
 - Platform: ${trend.platform}
@@ -903,7 +903,7 @@ Create content that:
 
 Return only the content text, no additional formatting.`;
 
-      const content = await geminiService.generateContent(prompt);
+      const content = await generateGenericContent(prompt);
       return content;
     } catch (error) {
       console.error('Error generating trend-based content:', error);

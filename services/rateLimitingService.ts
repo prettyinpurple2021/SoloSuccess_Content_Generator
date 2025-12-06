@@ -486,7 +486,8 @@ export class RateLimitingService {
 
       // Count circuit breaker states
       const stateKey = entry.circuitBreakerState.replace('-', '_');
-      stats.circuitBreakerStates[stateKey] = (stats.circuitBreakerStates[stateKey] || 0) + 1;
+      (stats.circuitBreakerStates as Record<string, number>)[stateKey] =
+        ((stats.circuitBreakerStates as Record<string, number>)[stateKey] || 0) + 1;
 
       // Count active entries (recent activity)
       const now = Date.now();
@@ -506,9 +507,7 @@ export class RateLimitingService {
     if (key) {
       // Legacy shape expected by some tests
       return {
-        // @ts-expect-error legacy expose
         activeLimits: stats.activeKeys,
-        // @ts-expect-error legacy expose
         totalRequests: stats.allowedRequests + stats.blockedRequests,
         blockedRequests: stats.blockedRequests,
       } as any;

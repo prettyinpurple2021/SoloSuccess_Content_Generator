@@ -270,6 +270,20 @@ export class InstagramClient {
       return [];
     }
   }
+
+  /**
+   * Get trending topics for given categories
+   */
+  async getTrendingTopics(categories: string[]): Promise<any[]> {
+    throw new Error('getTrendingTopics not yet implemented for Instagram');
+  }
+
+  /**
+   * Get optimization data for content performance
+   */
+  async getOptimizationData(): Promise<any> {
+    throw new Error('getOptimizationData not yet implemented for Instagram');
+  }
 }
 
 export default InstagramClient;

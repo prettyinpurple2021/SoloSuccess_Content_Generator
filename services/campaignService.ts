@@ -427,14 +427,14 @@ export class CampaignService {
 
           if (optimalTimes && optimalTimes.length > 0) {
             const bestTime = optimalTimes[0];
-            const suggestedDate = this.calculateNextAvailableSlot(bestTime, post.scheduleDate);
+            const suggestedDate = this.calculateNextAvailableSlot(bestTime!, post.scheduleDate);
 
             suggestions.push({
               postId: post.id,
               platform,
               suggestedTime: suggestedDate,
               reason: `Optimal engagement time for ${platform} based on audience patterns`,
-              confidence: bestTime.confidence,
+              confidence: bestTime!.confidence,
             });
           }
         }
@@ -545,7 +545,7 @@ export class CampaignService {
       const intervalDays = this.getFrequencyIntervalDays(series.frequency);
 
       for (let i = 0; i < seriesPosts.length; i++) {
-        const post = seriesPosts[i];
+        const post = seriesPosts[i]!;
 
         // Get optimal times for the post's platforms
         const platforms = Object.keys(post.socialMediaPosts || {});
@@ -559,15 +559,15 @@ export class CampaignService {
             scheduledDate.setDate(scheduledDate.getDate() + i * intervalDays);
 
             // Adjust to optimal time of day
-            const [hours, minutes] = bestTime.time.split(':').map(Number);
-            scheduledDate.setHours(hours, minutes, 0, 0);
+            const [hours, minutes] = bestTime!.time.split(':').map(Number);
+            scheduledDate.setHours(hours!, minutes!, 0, 0);
 
             suggestions.push({
-              postId: post.id,
+              postId: post!.id,
               platform,
               suggestedTime: scheduledDate,
               reason: `Optimized for ${series.frequency} series posting with ${platform} engagement patterns`,
-              confidence: bestTime.confidence,
+              confidence: bestTime!.confidence,
             });
           }
         }
@@ -649,7 +649,7 @@ export class CampaignService {
           if (!platformPerformance[analytics.platform]) {
             platformPerformance[analytics.platform] = 0;
           }
-          platformPerformance[analytics.platform] +=
+          platformPerformance[analytics.platform]! +=
             analytics.likes + analytics.shares + analytics.comments;
         });
 
@@ -724,7 +724,7 @@ export class CampaignService {
       if (!postEngagement[data.postId]) {
         postEngagement[data.postId] = 0;
       }
-      postEngagement[data.postId] += data.likes + data.shares + data.comments + data.clicks;
+      postEngagement[data.postId]! += data.likes + data.shares + data.comments + data.clicks;
     });
 
     const topPerformingPost = Object.entries(postEngagement).sort(([, a], [, b]) => b - a)[0]?.[0];
@@ -743,9 +743,9 @@ export class CampaignService {
         };
       }
 
-      platformPerformance[data.platform].totalLikes += data.likes;
-      platformPerformance[data.platform].totalShares += data.shares;
-      platformPerformance[data.platform].totalComments += data.comments;
+      platformPerformance[data.platform]!.totalLikes += data.likes;
+      platformPerformance[data.platform]!.totalShares += data.shares;
+      platformPerformance[data.platform]!.totalComments += data.comments;
     });
 
     // Count posts per platform and calculate engagement rates
@@ -768,7 +768,7 @@ export class CampaignService {
         0
       );
 
-      platformPerformance[platform].avgEngagementRate =
+      platformPerformance[platform]!.avgEngagementRate =
         platformImpressions > 0 ? (platformEngagement / platformImpressions) * 100 : 0;
     });
 
@@ -825,7 +825,7 @@ export class CampaignService {
 
     // Set the optimal time
     const [hours, minutes] = timeSlot.time.split(':').map(Number);
-    nextDate.setHours(hours, minutes, 0, 0);
+    nextDate.setHours(hours!, minutes!, 0, 0);
 
     // If the calculated time is in the past, move to next week
     if (nextDate <= now) {

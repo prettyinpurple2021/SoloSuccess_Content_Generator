@@ -535,7 +535,7 @@ export class SchedulingService {
   ): { time: Date; slot: TimeSlot; index: number } {
     // Find the next available slot that matches an optimal time
     for (let i = startIndex; i < availableSlots.length; i++) {
-      const slot = availableSlots[i];
+      const slot = availableSlots[i]!;
       const slotHour = slot.getHours();
       const slotDay = slot.getDay();
 
@@ -545,7 +545,7 @@ export class SchedulingService {
       );
 
       if (matchingOptimalTime) {
-        return { time: slot!, slot: matchingOptimalTime, index: i };
+        return { time: slot, slot: matchingOptimalTime, index: i };
       }
     }
 

@@ -240,6 +240,20 @@ export class LinkedInClient {
       trendingScore: 0,
     };
   }
+
+  /**
+   * Get trending topics for given categories
+   */
+  async getTrendingTopics(categories: string[]): Promise<any[]> {
+    throw new Error('getTrendingTopics not yet implemented for LinkedIn');
+  }
+
+  /**
+   * Get optimization data for content performance
+   */
+  async getOptimizationData(): Promise<any> {
+    throw new Error('getOptimizationData not yet implemented for LinkedIn');
+  }
 }
 
 export default LinkedInClient;

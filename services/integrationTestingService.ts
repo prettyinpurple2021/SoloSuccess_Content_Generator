@@ -7,10 +7,9 @@ import {
   IntegrationMetrics,
 } from '../types';
 import { integrationService } from './integrationService';
-// Note: These integration classes may need to be instantiated
-// import { SocialMediaIntegrations } from './integrations/socialMediaIntegrations';
-// import { AnalyticsIntegrations } from './integrations/analyticsIntegrations';
-// import { AIServiceIntegrations } from './integrations/aiServiceIntegrations';
+import { SocialMediaIntegrations } from './integrations/socialMediaIntegrations';
+import { AnalyticsIntegrations } from './integrations/analyticsIntegrations';
+import { AIServiceIntegrations } from './integrations/aiServiceIntegrations';
 
 /**
  * IntegrationTestingService - Production-quality integration testing and validation
@@ -136,7 +135,7 @@ export class IntegrationTestingService {
         case 'analytics':
           return await this.testAnalyticsAuthentication(integration);
         case 'ai_service':
-          return await this.testAIServiceAuthentication(integration);
+          return await this.testAIAuthentication(integration);
         default:
           return {
             success: false,
@@ -868,21 +867,21 @@ export class IntegrationTestingService {
     integration: Integration
   ): Promise<ConnectionTestResult> {
     // This would use the social media integrations service
-    return await socialMediaIntegrations.connectTwitter(integration.credentials as any);
+    return await SocialMediaIntegrations.testTwitterConnection(integration.credentials as any);
   }
 
   private async testAnalyticsAuthentication(
     integration: Integration
   ): Promise<ConnectionTestResult> {
     // This would use the analytics integrations service
-    return await analyticsIntegrations.connectGoogleAnalytics(integration.credentials as any);
+    return await AnalyticsIntegrations.testGoogleAnalyticsConnection(
+      integration.credentials as any
+    );
   }
 
-  private async testAIServiceAuthentication(
-    integration: Integration
-  ): Promise<ConnectionTestResult> {
-    // This would use the AI service integrations service
-    return await aiServiceIntegrations.connectOpenAI(integration.credentials as any);
+  private async testAIAuthentication(integration: Integration): Promise<ConnectionTestResult> {
+    // This would use the AI service integrations
+    return await AIServiceIntegrations.testOpenAIConnection(integration.credentials as any);
   }
 }
 

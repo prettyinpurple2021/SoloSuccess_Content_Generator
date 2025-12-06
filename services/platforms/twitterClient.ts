@@ -219,7 +219,7 @@ export class TwitterClient {
   /**
    * Search for trending hashtags
    */
-  async getTrendingHashtags(location?: string): Promise<string[]> {
+  async getTrendingHashtags(topics: string[]): Promise<string[]> {
     // Note: Twitter API v2 doesn't have a direct trending endpoint in the free tier
     // This would require elevated or premium access
     // For now, return empty array - implement when credentials support it
@@ -310,6 +310,20 @@ export class TwitterClient {
       console.error('Error uploading media:', error);
       return null;
     }
+  }
+
+  /**
+   * Get trending topics for given categories
+   */
+  async getTrendingTopics(categories: string[]): Promise<any[]> {
+    throw new Error('getTrendingTopics not yet implemented for Twitter');
+  }
+
+  /**
+   * Get optimization data for content performance
+   */
+  async getOptimizationData(): Promise<any> {
+    throw new Error('getOptimizationData not yet implemented for Twitter');
   }
 }
 

@@ -23,7 +23,7 @@ export function filterMap<T, U>(
 ): U[] {
   const result: U[] = [];
   for (let i = 0; i < array.length; i++) {
-    const item = array[i];
+    const item = array[i]!;
     if (predicate(item, i)) {
       result.push(transform(item, i));
     }
@@ -116,11 +116,11 @@ export function memoize<T extends (...args: any[]) => any>(
 
     const result = func(...args);
 
-    // Limit cache size to prevent memory issues
-    // Map maintains insertion order, so first key is least recently used
     if (cache.size >= maxCacheSize) {
       const firstKey = cache.keys().next().value;
-      cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        cache.delete(firstKey);
+      }
     }
 
     cache.set(key, result);
@@ -313,7 +313,7 @@ export async function batchAsync<T, U>(
   const chunks = chunkArray(items, batchSize);
 
   for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
+    const chunk = chunks[i]!;
     const chunkResults = await Promise.all(chunk.map(asyncFn));
     results.push(...chunkResults);
 
@@ -364,7 +364,9 @@ export class LRUCache<K, V> {
     // Evict oldest if at capacity
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.cache.delete(oldestKey);
+      }
     }
 
     this.cache.set(key, value);

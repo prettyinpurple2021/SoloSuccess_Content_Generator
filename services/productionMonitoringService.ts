@@ -590,7 +590,7 @@ class ProductionMonitoringService {
    * Get current health status
    */
   getHealthStatus(): HealthMetrics | null {
-    return this.metrics.length > 0 ? this.metrics[this.metrics.length - 1] : null;
+    return this.metrics.length > 0 ? this.metrics[this.metrics.length - 1]! : null;
   }
 
   /**
@@ -894,8 +894,8 @@ class ProductionMonitoringService {
     return {
       count,
       avg: count > 0 ? sum / count : 0,
-      min: count > 0 ? values[0] : 0,
-      max: count > 0 ? values[count - 1] : 0,
+      min: count > 0 ? values[0]! : 0,
+      max: count > 0 ? values[count - 1]! : 0,
       p95: this.computePercentile(values, 0.95),
       unit,
     };
@@ -903,7 +903,7 @@ class ProductionMonitoringService {
 
   private pruneMetricSeries(series: MetricPoint[]): void {
     const cutoff = Date.now() - this.getRetentionMs();
-    while (series.length && series[0].timestamp < cutoff) {
+    while (series.length && series[0]!.timestamp < cutoff) {
       series.shift();
     }
     if (series.length > this.maxMetricEntries) {
@@ -913,7 +913,7 @@ class ProductionMonitoringService {
 
   private pruneTimedRecords<T extends { timestamp: number }>(records: T[]): void {
     const cutoff = Date.now() - this.getRetentionMs();
-    while (records.length && records[0].timestamp < cutoff) {
+    while (records.length && records[0]!.timestamp < cutoff) {
       records.shift();
     }
     if (records.length > this.maxMetricEntries) {
@@ -1229,13 +1229,13 @@ class ProductionMonitoringService {
       return 0;
     }
     if (values.length === 1) {
-      return values[0];
+      return values[0]!;
     }
     const index = Math.min(
       values.length - 1,
       Math.max(0, Math.floor(percentile * values.length) - 1)
     );
-    return values[index];
+    return values[index]!;
   }
 
   private getRetentionMs(): number {
