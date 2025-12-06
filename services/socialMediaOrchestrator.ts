@@ -589,15 +589,31 @@ class SocialMediaOrchestrator {
 
   /**
    * Publish to a specific platform
+   * 
+   * @deprecated This method contains simulated publishing logic. 
+   * For production use, migrate to integrationOrchestrator.postToPlatform() instead.
+   * 
+   * FEATURE FLAG: ENABLE_SIMULATED_POSTING must be true to use this method.
+   * Set to false in production to prevent simulated posts.
    */
   private async publishToPlatform(
     platformId: string,
     content: string,
     options: any
   ): Promise<PostingResult> {
+    // Feature flag check - prevent simulated posting in production
+    const ENABLE_SIMULATED_POSTING = process.env.ENABLE_SIMULATED_POSTING === 'true';
+    
+    if (!ENABLE_SIMULATED_POSTING) {
+      throw new Error(
+        'Simulated posting is disabled. Please use integrationOrchestrator.postToPlatform() for real platform publishing. ' +
+        'To enable simulated posting for testing, set ENABLE_SIMULATED_POSTING=true in your environment.'
+      );
+    }
+
     try {
-      // This would integrate with the actual platform APIs
-      // For now, we'll simulate the publishing process
+      // WARNING: This is SIMULATED posting for testing purposes only
+      // For production, use integrationOrchestrator.postToPlatform()
 
       const platformConfig = this.platformConfigs.get(platformId)!;
 
@@ -612,17 +628,20 @@ class SocialMediaOrchestrator {
         return {
           success: true,
           platformId,
-          postId: `${platformId}_${Date.now()}`,
-          url: `https://${platformConfig.name}.com/post/${Date.now()}`,
+          postId: `SIMULATED_${platformId}_${Date.now()}`,
+          url: `https://${platformConfig.name}.com/post/SIMULATED_${Date.now()}`,
           adaptations: options.adaptations || [],
-          warnings: options.warnings || [],
+          warnings: [
+            ...(options.warnings || []),
+            'This is a SIMULATED post. No content was actually published to the platform.',
+          ],
           metrics: {
             estimatedReach: Math.floor(Math.random() * 1000) + 100,
             engagementPrediction: Math.random() * 0.1 + 0.02,
           },
         };
       } else {
-        throw new Error(`Platform ${platformId} API error`);
+        throw new Error(`Platform ${platformId} API error (simulated)`);
       }
     } catch (error) {
       return {

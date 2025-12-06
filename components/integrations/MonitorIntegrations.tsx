@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Integration, IntegrationMetrics, IntegrationAlert, IntegrationLog } from '../../types';
+import { db } from '../../services/databaseService';
 
 interface MonitorIntegrationsProps {
   integrations: Integration[];
@@ -59,14 +60,10 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         return;
       }
 
-      // Use API service instead of direct database calls
+      // Use database service for alerts
       const alertsPromises = integrationIds.map(async (integrationId) => {
         try {
-          const response = await fetch(
-            `/api/integration-alerts?integrationId=${integrationId}&includeResolved=true`
-          );
-          if (!response.ok) throw new Error('Failed to fetch alerts');
-          return await response.json();
+          return await db.getIntegrationAlerts(integrationId, true);
         } catch (error) {
           console.error(`Failed to load alerts for ${integrationId}:`, error);
           return [];
@@ -93,14 +90,10 @@ const MonitorIntegrations: React.FC<MonitorIntegrationsProps> = ({
         return;
       }
 
-      // Use API service instead of direct database calls
+      // Use database service for logs
       const logsPromises = integrationIds.map(async (integrationId) => {
         try {
-          const response = await fetch(
-            `/api/integration-logs?integrationId=${integrationId}&limit=100`
-          );
-          if (!response.ok) throw new Error('Failed to fetch logs');
-          return await response.json();
+          return await db.getIntegrationLogs(integrationId, 100);
         } catch (error) {
           console.error(`Failed to load logs for ${integrationId}:`, error);
           return [];

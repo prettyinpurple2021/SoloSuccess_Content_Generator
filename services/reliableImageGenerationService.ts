@@ -369,22 +369,46 @@ class ReliableImageGenerationService {
     }
   }
 
+  /**
+   * Generate with OpenAI DALL-E (NOT IMPLEMENTED)
+   * 
+   * @throws Error - This feature is not yet implemented
+   * To implement:
+   * 1. Add OPENAI_API_KEY to environment variables
+   * 2. Install OpenAI SDK: npm install openai
+   * 3. Implement DALL-E API integration
+   * 4. Add error handling and retry logic
+   */
   private async generateWithOpenAI(
     prompt: string,
     request: ImageGenerationRequest
   ): Promise<string[]> {
-    // Placeholder for OpenAI DALL-E integration
-    // This would require OpenAI API key and implementation
-    throw new Error('OpenAI DALL-E integration not implemented');
+    throw new Error(
+      'OpenAI DALL-E integration not implemented. ' +
+      'Please use Gemini Imagen instead or implement OpenAI DALL-E integration. ' +
+      'See service documentation for implementation details.'
+    );
   }
 
+  /**
+   * Generate with Stability AI (NOT IMPLEMENTED)
+   * 
+   * @throws Error - This feature is not yet implemented
+   * To implement:
+   * 1. Add STABILITY_API_KEY to environment variables
+   * 2. Install Stability AI SDK or use REST API
+   * 3. Implement Stability AI API integration
+   * 4. Add error handling and retry logic
+   */
   private async generateWithStabilityAI(
     prompt: string,
     request: ImageGenerationRequest
   ): Promise<string[]> {
-    // Placeholder for Stability AI integration
-    // This would require Stability AI API key and implementation
-    throw new Error('Stability AI integration not implemented');
+    throw new Error(
+      'Stability AI integration not implemented. ' +
+      'Please use Gemini Imagen instead or implement Stability AI integration. ' +
+      'See service documentation for implementation details.'
+    );
   }
 
   /**

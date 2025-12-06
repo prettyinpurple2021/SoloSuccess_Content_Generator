@@ -6,140 +6,202 @@ if (!process.env.GEMINI_API_KEY) {
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 export const generateTopic = async (): Promise<string> => {
-  const prompt = `As a market researcher for solo entrepreneurs, identify the single most relevant and trending blog topic for the current market. Provide ONLY the topic title.`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-  });
+  try {
+    const prompt = `As a market researcher for solo entrepreneurs, identify the single most relevant and trending blog topic for the current market. Provide ONLY the topic title.`;
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
 
-  if (!response.text) {
-    throw new Error('Failed to generate topic: No response text received');
+    if (!response.text) {
+      throw new Error('Failed to generate topic: No response text received');
+    }
+
+    return response.text.trim().replace(/^"|"$/g, '');
+  } catch (error) {
+    console.error('Error generating topic:', error);
+    throw new Error(
+      `Unable to generate topic. Please check your internet connection and try again. ${error instanceof Error ? error.message : ''}`
+    );
   }
-
-  return response.text.trim().replace(/^"|"$/g, '');
 };
 
 export const generateIdeas = async (topic: string): Promise<string[]> => {
-  const prompt = `Generate 5 unique, engaging blog post ideas for solo entrepreneurs on the topic: "${topic}".`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          ideas: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
+  try {
+    if (!topic || topic.trim().length === 0) {
+      throw new Error('Topic is required to generate ideas');
+    }
+
+    const prompt = `Generate 5 unique, engaging blog post ideas for solo entrepreneurs on the topic: "${topic}".`;
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            ideas: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
           },
+          required: ['ideas'],
         },
-        required: ['ideas'],
       },
-    },
-  });
+    });
 
-  if (!response.text) {
-    throw new Error('Failed to generate ideas: No response text received');
+    if (!response.text) {
+      throw new Error('Failed to generate ideas: No response text received');
+    }
+
+    const result = JSON.parse(response.text);
+    return result.ideas || [];
+  } catch (error) {
+    console.error('Error generating ideas:', error);
+    throw new Error(
+      `Unable to generate blog ideas for "${topic}". Please try again or choose a different topic. ${error instanceof Error ? error.message : ''}`
+    );
   }
-
-  const result = JSON.parse(response.text);
-  return result.ideas || [];
 };
 
 export const generateBlogPost = async (idea: string): Promise<string> => {
-  const prompt = `Write a detailed, engaging, 500-word blog post about "${idea}" for a solo entrepreneur. Use markdown for headings, bold text, and bullet points. End with a strong call to action.`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-  });
+  try {
+    if (!idea || idea.trim().length === 0) {
+      throw new Error('Blog idea is required to generate a post');
+    }
 
-  if (!response.text) {
-    throw new Error('Failed to generate blog post: No response text received');
+    const prompt = `Write a detailed, engaging, 500-word blog post about "${idea}" for a solo entrepreneur. Use markdown for headings, bold text, and bullet points. End with a strong call to action.`;
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    if (!response.text) {
+      throw new Error('Failed to generate blog post: No response text received');
+    }
+
+    return response.text;
+  } catch (error) {
+    console.error('Error generating blog post:', error);
+    throw new Error(
+      `Unable to generate blog post for "${idea}". Please try again or check your API key. ${error instanceof Error ? error.message : ''}`
+    );
   }
-
-  return response.text;
 };
 
 export const generateTags = async (blogPost: string): Promise<string[]> => {
-  const prompt = `Based on the following blog post, generate a list of 5-7 relevant, concise, and SEO-friendly tags or keywords. The tags should be lowercase and can be single or multi-word.
+  try {
+    if (!blogPost || blogPost.trim().length === 0) {
+      throw new Error('Blog post content is required to generate tags');
+    }
+
+    const prompt = `Based on the following blog post, generate a list of 5-7 relevant, concise, and SEO-friendly tags or keywords. The tags should be lowercase and can be single or multi-word.
 
 Blog Post:
 ${blogPost}`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          tags: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            tags: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
           },
+          required: ['tags'],
         },
-        required: ['tags'],
       },
-    },
-  });
+    });
 
-  if (!response.text) {
-    throw new Error('Failed to generate tags: No response text received');
+    if (!response.text) {
+      throw new Error('Failed to generate tags: No response text received');
+    }
+
+    const result = JSON.parse(response.text);
+    return result.tags || [];
+  } catch (error) {
+    console.error('Error generating tags:', error);
+    throw new Error(
+      `Unable to generate tags for your blog post. ${error instanceof Error ? error.message : 'Please try again.'}`
+    );
   }
-
-  const result = JSON.parse(response.text);
-  return result.tags || [];
 };
 
 export const generateHeadlines = async (blogPost: string): Promise<string[]> => {
-  const prompt = `Based on the following blog post, generate 5 alternative, catchy, and SEO-friendly headlines.
+  try {
+    if (!blogPost || blogPost.trim().length === 0) {
+      throw new Error('Blog post content is required to generate headlines');
+    }
+
+    const prompt = `Based on the following blog post, generate 5 alternative, catchy, and SEO-friendly headlines.
 
 Blog Post:
 ${blogPost}`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          headlines: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            headlines: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
           },
+          required: ['headlines'],
         },
-        required: ['headlines'],
       },
-    },
-  });
+    });
 
-  if (!response.text) {
-    throw new Error('Failed to generate headlines: No response text received');
+    if (!response.text) {
+      throw new Error('Failed to generate headlines: No response text received');
+    }
+
+    const result = JSON.parse(response.text);
+    return result.headlines || [];
+  } catch (error) {
+    console.error('Error generating headlines:', error);
+    throw new Error(
+      `Unable to generate alternative headlines. ${error instanceof Error ? error.message : 'Please try again.'}`
+    );
   }
-
-  const result = JSON.parse(response.text);
-  return result.headlines || [];
 };
 
 export const generateSummary = async (blogPost: string): Promise<string> => {
-  const prompt = `Summarize the following blog post into a concise, 2-3 sentence paragraph.
+  try {
+    if (!blogPost || blogPost.trim().length === 0) {
+      throw new Error('Blog post content is required to generate summary');
+    }
+
+    const prompt = `Summarize the following blog post into a concise, 2-3 sentence paragraph.
 
 Blog Post:
 ${blogPost}`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-  });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
 
-  if (!response.text) {
-    throw new Error('Failed to generate summary: No response text received');
+    if (!response.text) {
+      throw new Error('Failed to generate summary: No response text received');
+    }
+
+    return response.text;
+  } catch (error) {
+    console.error('Error generating summary:', error);
+    throw new Error(
+      `Unable to generate summary for your blog post. ${error instanceof Error ? error.message : 'Please try again.'}`
+    );
   }
-
-  return response.text;
 };
 
 export const generateSocialMediaPost = async (
@@ -148,41 +210,52 @@ export const generateSocialMediaPost = async (
   tone: string,
   audience: string
 ): Promise<string> => {
-  let prompt = `Based on the blog post below, write a social media post for ${platform}. The post should have a ${tone.toLowerCase()} tone and be targeted towards an audience of ${audience.toLowerCase()}.`;
+  try {
+    if (!platform || !blogPost || !tone || !audience) {
+      throw new Error('Platform, blog post, tone, and audience are all required');
+    }
 
-  switch (platform) {
-    case 'Twitter':
-      prompt += ` Keep it under 280 characters and include 2-3 relevant hashtags.`;
-      break;
-    case 'LinkedIn':
-      prompt += ` Make it professional and engaging. Include a few relevant hashtags.`;
-      break;
-    case 'Facebook':
-      prompt += ` Make it friendly and conversational, and ask a question. Include a few relevant hashtags.`;
-      break;
-    case 'Instagram':
-      prompt += ` Write a visually-driven caption. Suggest what kind of image or video should accompany it. Include 5-10 relevant hashtags.`;
-      break;
-    case 'Threads':
-      prompt += ` Make it conversational and engaging. It can be a bit longer than a tweet. Include 3-5 relevant hashtags.`;
-      break;
-    case 'Bluesky':
-      prompt += ` Keep it concise and witty, similar to a tweet. Include 2-3 relevant hashtags.`;
-      break;
+    let prompt = `Based on the blog post below, write a social media post for ${platform}. The post should have a ${tone.toLowerCase()} tone and be targeted towards an audience of ${audience.toLowerCase()}.`;
+
+    switch (platform) {
+      case 'Twitter':
+        prompt += ` Keep it under 280 characters and include 2-3 relevant hashtags.`;
+        break;
+      case 'LinkedIn':
+        prompt += ` Make it professional and engaging. Include a few relevant hashtags.`;
+        break;
+      case 'Facebook':
+        prompt += ` Make it friendly and conversational, and ask a question. Include a few relevant hashtags.`;
+        break;
+      case 'Instagram':
+        prompt += ` Write a visually-driven caption. Suggest what kind of image or video should accompany it. Include 5-10 relevant hashtags.`;
+        break;
+      case 'Threads':
+        prompt += ` Make it conversational and engaging. It can be a bit longer than a tweet. Include 3-5 relevant hashtags.`;
+        break;
+      case 'Bluesky':
+        prompt += ` Keep it concise and witty, similar to a tweet. Include 2-3 relevant hashtags.`;
+        break;
+    }
+
+    prompt += `\n\nBlog Post:\n${blogPost}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    if (!response.text) {
+      throw new Error('Failed to generate social media post: No response text received');
+    }
+
+    return response.text;
+  } catch (error) {
+    console.error('Error generating social media post:', error);
+    throw new Error(
+      `Unable to generate ${platform} post. ${error instanceof Error ? error.message : 'Please try again.'}`
+    );
   }
-
-  prompt += `\n\nBlog Post:\n${blogPost}`;
-
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-  });
-
-  if (!response.text) {
-    throw new Error('Failed to generate social media post: No response text received');
-  }
-
-  return response.text;
 };
 
 export const generateImagePrompts = async (blogPost: string): Promise<string[]> => {
