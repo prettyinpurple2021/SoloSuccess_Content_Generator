@@ -480,7 +480,7 @@ export class IntegrationService {
       });
 
       // Check recent logs for errors
-      const recentLogs = await db.getIntegrationLogs(id, 50);
+      const recentLogs = await db.getIntegrationLogs(id);
       const recentErrors = recentLogs.filter(
         (log) => log.level === 'error' && log.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000)
       );
@@ -532,7 +532,7 @@ export class IntegrationService {
     timeframe: string = '24h'
   ): Promise<IntegrationMetrics[]> {
     try {
-      return await db.getIntegrationMetrics(id, timeframe);
+      return await db.getIntegrationMetrics(id);
     } catch (error) {
       throw new Error(
         `Failed to fetch integration metrics: ${error instanceof Error ? error.message : 'Unknown error'}`

@@ -539,15 +539,53 @@ export const db = {
   },
 
   // Integration logs
-  getIntegrationLogs: async (integrationId: string, limit: number = 50): Promise<any[]> => {
+  getIntegrationLogs: async (
+    integrationId: string | null,
+    startTime?: Date,
+    endTime?: Date,
+    level?: string
+  ): Promise<any[]> => {
     try {
-      const result = await pool`
+      let query = pool`
         SELECT * FROM integration_logs 
-        WHERE integration_id = ${integrationId}
-        ORDER BY created_at DESC
-        LIMIT ${limit}
+        WHERE 1=1
       `;
 
+      if (integrationId) {
+        query = pool`
+          ${query}
+          AND integration_id = ${integrationId}
+        `;
+      }
+
+      if (startTime) {
+        query = pool`
+          ${query}
+          AND created_at >= ${startTime}
+        `;
+      }
+
+      if (endTime) {
+        query = pool`
+          ${query}
+          AND created_at <= ${endTime}
+        `;
+      }
+
+      if (level) {
+        query = pool`
+          ${query}
+          AND level = ${level}
+        `;
+      }
+
+      query = pool`
+        ${query}
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
+
+      const result = await query;
       return result;
     } catch (error) {
       console.error('Error fetching integration logs:', error);
@@ -572,16 +610,45 @@ export const db = {
   },
 
   // Integration metrics
-  getIntegrationMetrics: async (integrationId: string, timeframe?: string): Promise<any> => {
+  getIntegrationMetrics: async (
+    integrationId: string | null,
+    startTime?: Date,
+    endTime?: Date
+  ): Promise<any[]> => {
     try {
-      const result = await pool`
+      let query = pool`
         SELECT * FROM integration_metrics 
-        WHERE integration_id = ${integrationId}
-        ORDER BY created_at DESC
-        LIMIT 1
+        WHERE 1=1
       `;
 
-      return result[0] || null;
+      if (integrationId) {
+        query = pool`
+          ${query}
+          AND integration_id = ${integrationId}
+        `;
+      }
+
+      if (startTime) {
+        query = pool`
+          ${query}
+          AND created_at >= ${startTime}
+        `;
+      }
+
+      if (endTime) {
+        query = pool`
+          ${query}
+          AND created_at <= ${endTime}
+        `;
+      }
+
+      query = pool`
+        ${query}
+        ORDER BY created_at DESC
+      `;
+
+      const result = await query;
+      return result;
     } catch (error) {
       console.error('Error fetching integration metrics:', error);
       throw error;
@@ -669,24 +736,21 @@ export const db = {
   },
 
   // Integration alerts
-  getIntegrationAlerts: async (integrationId: string, status?: string): Promise<any[]> => {
+  getIntegrationAlerts: async (integrationId: string | null, status?: string): Promise<any[]> => {
     try {
-      let query = 'SELECT * FROM integration_alerts WHERE integration_id = $1';
-      const params: any[] = [integrationId];
+      let query = pool`SELECT * FROM integration_alerts WHERE 1=1`;
 
-      if (status) {
-        query += ' AND status = $2';
-        params.push(status);
+      if (integrationId) {
+        query = pool`${query} AND integration_id = ${integrationId}`;
       }
 
-      query += ' ORDER BY created_at DESC';
+      if (status) {
+        query = pool`${query} AND status = ${status}`;
+      }
 
-      const result = await pool`
-        SELECT * FROM integration_alerts 
-        WHERE integration_id = ${integrationId}
-        ORDER BY created_at DESC
-      `;
+      query = pool`${query} ORDER BY created_at DESC`;
 
+      const result = await query;
       return result;
     } catch (error) {
       console.error('Error fetching integration alerts:', error);

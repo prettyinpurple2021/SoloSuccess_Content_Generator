@@ -247,7 +247,7 @@ export class PerformanceMonitoringService {
         return 1.0; // Default to 100% success rate
       }
 
-      const latestMetrics = metrics[metrics.length - 1];
+      const latestMetrics = metrics[metrics.length - 1]!;
       return latestMetrics.successRate / 100;
     } catch (error) {
       return 0.95; // Default success rate
@@ -265,7 +265,7 @@ export class PerformanceMonitoringService {
         return 0.0; // Default to 0% error rate
       }
 
-      const latestMetrics = metrics[metrics.length - 1];
+      const latestMetrics = metrics[metrics.length - 1]!;
       return latestMetrics.errorRate / 100;
     } catch (error) {
       return 0.05; // Default error rate
@@ -283,7 +283,7 @@ export class PerformanceMonitoringService {
         return 0;
       }
 
-      const latestMetrics = metrics[metrics.length - 1];
+      const latestMetrics = metrics[metrics.length - 1]!;
       return latestMetrics.totalRequests / 60; // Requests per minute
     } catch (error) {
       return 0;
@@ -399,7 +399,7 @@ export class PerformanceMonitoringService {
 
     const sumX = x.reduce((sum, val) => sum + val, 0);
     const sumY = y.reduce((sum, val) => sum + val, 0);
-    const sumXY = x.reduce((sum, val, i) => sum + val * y[i], 0);
+    const sumXY = x.reduce((sum, val, i) => sum + val * y[i]!, 0);
     const sumXX = x.reduce((sum, val) => sum + val * val, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
@@ -448,7 +448,7 @@ export class PerformanceMonitoringService {
         return; // Need sufficient data for anomaly detection
       }
 
-      const latestMetrics = metrics[metrics.length - 1];
+      const latestMetrics = metrics[metrics.length - 1]!;
 
       // Check for anomalies in each metric
       await this.checkResponseTimeAnomaly(integration.id, metrics, latestMetrics);
@@ -618,7 +618,7 @@ export class PerformanceMonitoringService {
         throw new Error('No metrics available for benchmarking');
       }
 
-      const latestMetrics = metrics[metrics.length - 1];
+      const latestMetrics = metrics[metrics.length - 1]!;
 
       // Define performance benchmarks
       const benchmarks = {
@@ -877,7 +877,7 @@ export class PerformanceMonitoringService {
         try {
           const metrics = await monitoringService.getIntegrationMetrics(integration.id, '1h');
           if (metrics.length > 0) {
-            const latest = metrics[metrics.length - 1];
+            const latest = metrics[metrics.length - 1]!;
             totalResponseTime += latest.avgResponseTime;
             totalRequests += latest.totalRequests;
             totalSuccessRate += latest.successRate;
@@ -956,7 +956,7 @@ export class PerformanceMonitoringService {
         };
       }
 
-      const latestMetrics = metrics[metrics.length - 1];
+      const latestMetrics = metrics[metrics.length - 1]!;
 
       // Optimize response time if needed
       if (latestMetrics.avgResponseTime > 1000) {

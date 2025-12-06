@@ -97,17 +97,20 @@ export class SchedulingService {
         const currentPost = scheduledPosts[i];
         const nextPost = scheduledPosts[i + 1];
 
-        if (!currentPost.scheduleDate || !nextPost.scheduleDate) continue;
+        if (!currentPost || !nextPost || !currentPost.scheduleDate || !nextPost.scheduleDate)
+          continue;
 
         const timeDifference = nextPost.scheduleDate.getTime() - currentPost.scheduleDate.getTime();
         const hoursDifference = timeDifference / (1000 * 60 * 60);
 
         // Check for timing conflicts (posts too close together)
         if (hoursDifference < 2) {
+          const commonPlatforms = this.getCommonPlatforms(currentPost, nextPost);
+          const platform = commonPlatforms.length > 0 ? commonPlatforms[0]! : 'multiple';
           conflicts.push({
             postId1: currentPost.id,
             postId2: nextPost.id,
-            platform: this.getCommonPlatforms(currentPost, nextPost)[0] || 'multiple',
+            platform,
             conflictType: 'timing',
             severity: 'high',
             resolution: `Space posts at least 2 hours apart. Consider rescheduling one of the posts.`,
@@ -116,10 +119,12 @@ export class SchedulingService {
 
         // Check for topic conflicts (similar content too close together)
         if (this.areTopicsSimilar(currentPost.topic, nextPost.topic) && hoursDifference < 24) {
+          const commonPlatforms = this.getCommonPlatforms(currentPost, nextPost);
+          const platform = commonPlatforms.length > 0 ? commonPlatforms[0]! : 'multiple';
           conflicts.push({
             postId1: currentPost.id,
             postId2: nextPost.id,
-            platform: this.getCommonPlatforms(currentPost, nextPost)[0] || 'multiple',
+            platform,
             conflictType: 'topic',
             severity: 'medium',
             resolution: `Similar topics detected. Consider spacing similar content at least 24 hours apart.`,
@@ -128,10 +133,12 @@ export class SchedulingService {
 
         // Check for audience conflicts (same target audience too frequently)
         if (this.haveSameAudience(currentPost, nextPost) && hoursDifference < 12) {
+          const commonPlatforms = this.getCommonPlatforms(currentPost, nextPost);
+          const platform = commonPlatforms.length > 0 ? commonPlatforms[0]! : 'multiple';
           conflicts.push({
             postId1: currentPost.id,
             postId2: nextPost.id,
-            platform: this.getCommonPlatforms(currentPost, nextPost)[0] || 'multiple',
+            platform,
             conflictType: 'audience',
             severity: 'low',
             resolution: `Posts targeting same audience. Consider varying content or spacing posts further apart.`,
@@ -272,7 +279,9 @@ export class SchedulingService {
           } else if (spacing === 'even') {
             // Even distribution
             const slotIndex = Math.min(currentSlotIndex, availableSlots.length - 1);
-            suggestedTime = availableSlots[slotIndex];
+            const slot = availableSlots[slotIndex];
+            suggestedTime =
+              slot || new Date(startDate.getTime() + currentSlotIndex * 24 * 60 * 60 * 1000);
             reason = `Evenly distributed across the selected time period`;
             currentSlotIndex++;
           } else if (spacing === 'custom' && customSpacingHours) {
@@ -284,7 +293,9 @@ export class SchedulingService {
           } else {
             // Default to even spacing
             const slotIndex = Math.min(currentSlotIndex, availableSlots.length - 1);
-            suggestedTime = availableSlots[slotIndex];
+            const slot = availableSlots[slotIndex];
+            suggestedTime =
+              slot || new Date(startDate.getTime() + currentSlotIndex * 24 * 60 * 60 * 1000);
             reason = `Scheduled with default spacing`;
             currentSlotIndex++;
           }
@@ -294,9 +305,14 @@ export class SchedulingService {
             const timezoneAdjustments = this.adjustForTimezones(suggestedTime, targetTimezones);
             // Use the first timezone adjustment as the primary suggestion
             if (timezoneAdjustments.length > 0) {
-              suggestedTime = timezoneAdjustments[0].adjustedTime;
-              reason += ` (adjusted for ${targetTimezones[0]} timezone)`;
+              const adjustment = timezoneAdjustments[0];
+              if (adjustment) {
+                suggestedTime = adjustment.adjustedTime;
+              }
             }
+          }
+          if (targetTimezones && targetTimezones.length > 0) {
+            reason += ` (adjusted for ${targetTimezones[0]} timezone)`;
           }
 
           suggestions.push({
@@ -332,15 +348,17 @@ export class SchedulingService {
 
         if (optimalTimes.length > 0) {
           const bestTime = optimalTimes[0];
-          const suggestedTime = this.getNextOccurrenceOfTimeSlot(bestTime);
+          if (bestTime) {
+            const suggestedTime = this.getNextOccurrenceOfTimeSlot(bestTime);
 
-          suggestions.push({
-            postId: post.id,
-            platform,
-            suggestedTime,
-            reason: `Optimal time based on historical engagement data for ${platform}`,
-            confidence: bestTime.confidence,
-          });
+            suggestions.push({
+              postId: post.id,
+              platform,
+              suggestedTime,
+              reason: `Optimal time based on historical engagement data for ${platform}`,
+              confidence: bestTime.confidence,
+            });
+          }
         } else {
           // Fallback to general best practices
           const fallbackTime = this.getFallbackOptimalTime();
@@ -452,8 +470,8 @@ export class SchedulingService {
       .map(([key, data]) => {
         const [dayOfWeek, hour] = key.split('-').map(Number);
         return {
-          time: `${hour.toString().padStart(2, '0')}:00`,
-          dayOfWeek,
+          time: `${hour!.toString().padStart(2, '0')}:00`,
+          dayOfWeek: dayOfWeek!,
           engagementScore: data.engagement / data.count,
           confidence: Math.min(data.count / 10, 1),
         };
@@ -523,16 +541,16 @@ export class SchedulingService {
 
       const matchingOptimalTime = optimalTimes.find(
         (optimal) =>
-          optimal.dayOfWeek === slotDay && parseInt(optimal.time.split(':')[0]) === slotHour
+          optimal.dayOfWeek === slotDay && parseInt(optimal.time.split(':')[0]!) === slotHour
       );
 
       if (matchingOptimalTime) {
-        return { time: slot, slot: matchingOptimalTime, index: i };
+        return { time: slot!, slot: matchingOptimalTime, index: i };
       }
     }
 
     // Fallback to next available slot with best optimal time
-    const nextSlot = availableSlots[Math.min(startIndex, availableSlots.length - 1)];
+    const nextSlot = availableSlots[Math.min(startIndex, availableSlots.length - 1)]!;
     return {
       time: nextSlot,
       slot: optimalTimes[0] || { time: '12:00', dayOfWeek: 1, engagementScore: 0, confidence: 0.5 },
@@ -543,7 +561,7 @@ export class SchedulingService {
   private getNextOccurrenceOfTimeSlot(timeSlot: TimeSlot): Date {
     const now = new Date();
     const targetDay = timeSlot.dayOfWeek;
-    const targetHour = parseInt(timeSlot.time.split(':')[0]);
+    const targetHour = parseInt(timeSlot.time.split(':')[0]!);
 
     // Find next occurrence of this day and time
     const daysUntilTarget = (targetDay - now.getDay() + 7) % 7;

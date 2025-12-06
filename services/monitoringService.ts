@@ -230,9 +230,7 @@ export class MonitoringService {
   async getIntegrations(): Promise<any[]> {
     try {
       // Delegate to database service; tests may stub this
-      // @ts-expect-error - dynamic db shim may expose getIntegrations
       if (typeof (db as any).getIntegrations === 'function') {
-        // @ts-expect-error - invoking optional method on dynamic db shim
         return await (db as any).getIntegrations();
       }
     } catch {
@@ -281,12 +279,13 @@ export class MonitoringService {
     alert: Omit<IntegrationAlert, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<IntegrationAlert> {
     try {
-      const newAlert = await db.addIntegrationAlert({
+      const newAlert: IntegrationAlert = {
         ...alert,
         id: crypto.randomUUID(),
         createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+      };
+
+      await db.addIntegrationAlert(newAlert);
 
       // Clear cache
       this.alertsCache.clear();
@@ -317,6 +316,7 @@ export class MonitoringService {
         message,
         details,
         timestamp: new Date(),
+        metadata: {},
       };
 
       await db.addIntegrationLog(log);
@@ -387,7 +387,7 @@ export class MonitoringService {
         return 0;
       }
 
-      const latestMetrics = metrics[metrics.length - 1];
+      const latestMetrics = metrics[metrics.length - 1]!;
       let healthScore = 100;
 
       // Deduct points for low success rate
