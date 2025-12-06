@@ -16,7 +16,7 @@ export const AuthComponent: React.FC<AuthComponentProps> = ({ onAuthSuccess }) =
         className="max-w-md w-full space-y-8"
       >
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Welcome to SoloBoss AI</h2>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Welcome to solosuccess AI</h2>
           <p className="mt-2 text-sm text-gray-600">
             Sign in to access your content planning dashboard
           </p>

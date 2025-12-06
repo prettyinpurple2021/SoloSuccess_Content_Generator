@@ -132,4 +132,4 @@ Once deployed, your app will be available at:
 - **Production URL**: `https://your-project-name.vercel.app`
 - **Custom Domain**: Add your own domain in Vercel settings
 
-Your Soloboss AI Content Planner is now live on Vercel! 🚀
+Your solosuccess AI Content Planner is now live on Vercel! 🚀

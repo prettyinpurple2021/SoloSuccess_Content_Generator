@@ -9,7 +9,6 @@ interface WebhookManagerProps {
   integrationId: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const WebhookManager: React.FC<WebhookManagerProps> = ({
   integrationId,
 }: WebhookManagerProps): any => {
@@ -117,7 +116,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
       const testPayload = {
         event: 'test',
         timestamp: new Date().toISOString(),
-        message: 'This is a test webhook delivery from SoloBoss AI Content Planner',
+        message: 'This is a test webhook delivery from solosuccess AI Content Planner',
         test: true,
       };
 

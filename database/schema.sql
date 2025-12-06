@@ -1,4 +1,4 @@
--- Neon PostgreSQL Database Schema for Soloboss AI Content Factory
+-- Neon PostgreSQL Database Schema for solosuccess AI Content Factory
 -- Run this in your Neon SQL Editor
 -- 
 -- NOTE: This file is for reference only. For Neon + Stack Auth, use database/neon-complete-migration.sql instead.

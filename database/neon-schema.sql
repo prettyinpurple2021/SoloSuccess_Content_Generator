@@ -1,4 +1,4 @@
--- Neon Database Schema for Soloboss AI Content Factory
+-- Neon Database Schema for solosuccess AI Content Factory
 -- Run this in your Neon SQL Editor
 
 -- Enable UUID extension

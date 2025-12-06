@@ -1,4 +1,4 @@
--- Complete Database Migration for Soloboss AI Content Planner - Neon Version
+-- Complete Database Migration for solosuccess AI Content Planner - Neon Version
 -- Run this entire script in your Neon SQL Editor
 -- This will create all necessary tables for the application to work properly
 
@@ -617,6 +617,6 @@ CREATE TRIGGER post_analytics_performance_trigger
 
 -- This migration has been completed successfully!
 -- All tables, indexes, triggers, and functions have been created.
--- Your Soloboss AI Content Planner database is now ready to use.
+-- Your solosuccess AI Content Planner database is now ready to use.
 
 SELECT 'Neon database migration completed successfully! All tables are ready.' as status;
