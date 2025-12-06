@@ -481,10 +481,14 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
               <div className="grid gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="campaign-name"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Campaign Name *
                   </label>
                   <input
+                    id="campaign-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -494,10 +498,14 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="campaign-description"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Description
                   </label>
                   <textarea
+                    id="campaign-description"
                     value={formData.description}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, description: e.target.value }))
@@ -509,10 +517,14 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="campaign-theme"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Campaign Theme *
                   </label>
                   <input
+                    id="campaign-theme"
                     type="text"
                     value={formData.theme}
                     onChange={(e) => setFormData((prev) => ({ ...prev, theme: e.target.value }))}
@@ -523,10 +535,14 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="campaign-start"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Start Date *
                     </label>
                     <input
+                      id="campaign-start"
                       type="date"
                       value={formData.startDate}
                       onChange={(e) =>
@@ -536,10 +552,14 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="campaign-end"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       End Date *
                     </label>
                     <input
+                      id="campaign-end"
                       type="date"
                       value={formData.endDate}
                       onChange={(e) =>

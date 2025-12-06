@@ -329,28 +329,40 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">Date Range</label>
                   <div className="space-y-2">
-                    <input
-                      type="datetime-local"
-                      value={bulkOptions.startDate.toISOString().slice(0, 16)}
-                      onChange={(e) =>
-                        setBulkOptions((prev) => ({
-                          ...prev,
-                          startDate: new Date(e.target.value),
-                        }))
-                      }
-                      className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
-                    />
-                    <input
-                      type="datetime-local"
-                      value={bulkOptions.endDate.toISOString().slice(0, 16)}
-                      onChange={(e) =>
-                        setBulkOptions((prev) => ({
-                          ...prev,
-                          endDate: new Date(e.target.value),
-                        }))
-                      }
-                      className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
-                    />
+                    <div>
+                      <label htmlFor="bulk-start-datetime" className="text-xs text-white/60">
+                        Start
+                      </label>
+                      <input
+                        id="bulk-start-datetime"
+                        type="datetime-local"
+                        value={bulkOptions.startDate.toISOString().slice(0, 16)}
+                        onChange={(e) =>
+                          setBulkOptions((prev) => ({
+                            ...prev,
+                            startDate: new Date(e.target.value),
+                          }))
+                        }
+                        className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="bulk-end-datetime" className="text-xs text-white/60">
+                        End
+                      </label>
+                      <input
+                        id="bulk-end-datetime"
+                        type="datetime-local"
+                        value={bulkOptions.endDate.toISOString().slice(0, 16)}
+                        onChange={(e) =>
+                          setBulkOptions((prev) => ({
+                            ...prev,
+                            endDate: new Date(e.target.value),
+                          }))
+                        }
+                        className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -386,10 +398,14 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
 
                 {/* Spacing Options */}
                 <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
+                  <label
+                    htmlFor="bulk-spacing-strategy"
+                    className="block text-sm font-semibold text-white mb-2"
+                  >
                     Spacing Strategy
                   </label>
                   <select
+                    id="bulk-spacing-strategy"
                     value={bulkOptions.spacing}
                     onChange={(e) =>
                       setBulkOptions((prev) => ({
@@ -405,19 +421,25 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                   </select>
 
                   {bulkOptions.spacing === 'custom' && (
-                    <input
-                      type="number"
-                      value={bulkOptions.customSpacingHours}
-                      onChange={(e) =>
-                        setBulkOptions((prev) => ({
-                          ...prev,
-                          customSpacingHours: parseInt(e.target.value),
-                        }))
-                      }
-                      className="w-full mt-2 p-2 bg-white/10 border border-white/20 rounded text-white"
-                      placeholder="Hours between posts"
-                      min="1"
-                    />
+                    <div className="mt-2 space-y-1">
+                      <label htmlFor="bulk-custom-spacing-hours" className="text-xs text-white/60">
+                        Hours between posts
+                      </label>
+                      <input
+                        id="bulk-custom-spacing-hours"
+                        type="number"
+                        value={bulkOptions.customSpacingHours}
+                        onChange={(e) =>
+                          setBulkOptions((prev) => ({
+                            ...prev,
+                            customSpacingHours: parseInt(e.target.value),
+                          }))
+                        }
+                        className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                        min="1"
+                        aria-label="Custom spacing hours between bulk posts"
+                      />
+                    </div>
                   )}
                 </div>
               </div>
@@ -426,10 +448,14 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Timezone Selection */}
                 <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
+                  <label
+                    htmlFor="bulk-target-timezones"
+                    className="block text-sm font-semibold text-white mb-2"
+                  >
                     Target Timezones
                   </label>
                   <select
+                    id="bulk-target-timezones"
                     multiple
                     value={bulkOptions.targetTimezones}
                     onChange={(e) => {

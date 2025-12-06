@@ -4,7 +4,6 @@
 
 // Manual validation script for authentication system
 const fs = require('fs');
-const path = require('path');
 const { validatePath } = require('./utils/pathValidator.cjs');
 
 console.log('🔍 Validating Authentication and Authorization System...\n');

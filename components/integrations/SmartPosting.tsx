@@ -198,8 +198,14 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
 
       {/* Content Input */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <label className="block text-sm font-medium text-gray-700 mb-3">Content</label>
+        <label
+          htmlFor="smartposting-content"
+          className="block text-sm font-medium text-gray-700 mb-3"
+        >
+          Content
+        </label>
         <textarea
+          id="smartposting-content"
           value={content}
           onChange={(e) => handleContentChange(e.target.value)}
           placeholder="Write your content here... It will be automatically adapted for each platform."
@@ -267,8 +273,14 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tone Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Content Tone</label>
+              <label
+                htmlFor="smartposting-tone"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Content Tone
+              </label>
               <select
+                id="smartposting-tone"
                 value={postingOptions.tone}
                 onChange={(e) =>
                   setPostingOptions((prev) => ({

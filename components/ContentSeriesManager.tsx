@@ -477,10 +477,14 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
               <div className="grid gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="series-name"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Series Name *
                   </label>
                   <input
+                    id="series-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -490,10 +494,14 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="series-theme"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Series Theme *
                   </label>
                   <input
+                    id="series-theme"
                     type="text"
                     value={formData.theme}
                     onChange={(e) => setFormData((prev) => ({ ...prev, theme: e.target.value }))}
@@ -504,10 +512,14 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="series-total-posts"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Total Posts *
                     </label>
                     <input
+                      id="series-total-posts"
                       type="number"
                       min="1"
                       max="50"
@@ -522,10 +534,14 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="series-frequency"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Posting Frequency *
                     </label>
                     <select
+                      id="series-frequency"
                       value={formData.frequency}
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, frequency: e.target.value as any }))
@@ -540,10 +556,14 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="series-campaign"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Associated Campaign (Optional)
                   </label>
                   <select
+                    id="series-campaign"
                     value={formData.campaignId}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, campaignId: e.target.value }))

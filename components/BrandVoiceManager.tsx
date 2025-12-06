@@ -451,10 +451,14 @@ export default function BrandVoiceManager({
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="brand-voice-name"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Voice Name *
                   </label>
                   <input
+                    id="brand-voice-name"
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -464,8 +468,14 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tone *</label>
+                  <label
+                    htmlFor="brand-voice-tone"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Tone *
+                  </label>
                   <select
+                    id="brand-voice-tone"
                     value={form.tone}
                     onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -480,10 +490,14 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="brand-voice-style"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Writing Style
                   </label>
                   <select
+                    id="brand-voice-style"
                     value={form.writingStyle}
                     onChange={(e) => setForm((prev) => ({ ...prev, writingStyle: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -498,10 +512,14 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="brand-voice-audience"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Target Audience
                   </label>
                   <input
+                    id="brand-voice-audience"
                     type="text"
                     value={form.targetAudience}
                     onChange={(e) =>
@@ -515,11 +533,15 @@ export default function BrandVoiceManager({
 
               {/* Vocabulary Terms */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="brand-voice-vocabulary"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Key Vocabulary Terms
                 </label>
                 <div className="flex gap-2 mb-2">
                   <input
+                    id="brand-voice-vocabulary"
                     type="text"
                     value={newVocabularyTerm}
                     onChange={(e) => setNewVocabularyTerm(e.target.value)}
@@ -544,6 +566,7 @@ export default function BrandVoiceManager({
                       <button
                         onClick={() => removeVocabularyTerm(term)}
                         className="text-gray-400 hover:text-gray-600"
+                        aria-label={`Remove vocabulary term ${term}`}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -555,7 +578,12 @@ export default function BrandVoiceManager({
               {/* Sample Content */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Sample Content</label>
+                  <label
+                    htmlFor="brand-voice-sample"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Sample Content
+                  </label>
                   {form.sampleContent.length > 0 && (
                     <button
                       onClick={analyzeSampleContent}
@@ -573,6 +601,7 @@ export default function BrandVoiceManager({
                 </div>
                 <div className="space-y-2 mb-2">
                   <textarea
+                    id="brand-voice-sample"
                     value={newSampleContent}
                     onChange={(e) => setNewSampleContent(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -594,6 +623,7 @@ export default function BrandVoiceManager({
                         <button
                           onClick={() => removeSampleContent(content)}
                           className="ml-2 text-gray-400 hover:text-gray-600"
+                          aria-label="Remove sample content"
                         >
                           <X className="w-4 h-4" />
                         </button>
