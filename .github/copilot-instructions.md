@@ -1,0 +1,602 @@
+# GitHub Copilot Instructions - SoloSuccess AI Content Generator
+
+## ⚠️ PRODUCTION-GRADE CODEBASE
+
+**This application is built for production deployment.** All code must meet enterprise-grade quality standards:
+
+- ✅ **No mocks, demos, or simulated implementations** - Every feature must be fully functional and production-ready
+- ✅ **100% complete implementations** - No partial, stubbed, or placeholder code
+- ✅ **Zero tolerance for fake data flows** - Real integrations with live services
+- ✅ **Strict error handling & validation** - Handle all edge cases, network failures, and invalid states
+- ✅ **Security-first patterns** - Encryption at rest, secure auth, credential management
+- ✅ **Performance optimized** - Code splitting, lazy loading, memoization, query optimization
+- ✅ **Observable & monitorable** - Error tracking (Sentry), performance monitoring, audit logging
+- ✅ **Tested & validated** - Type-safe code, runtime validation (Zod), integration tests
+
+When implementing any feature, ask: "Would this pass a security audit? Does it handle failures gracefully? Is this scalable?"
+
+## Project Overview
+
+**SoloSuccess** is an AI-powered content planning and publishing platform for production use. Users create, schedule, and publish content across multiple social media platforms (Twitter, LinkedIn, Facebook, Instagram, Reddit, Pinterest) and blogs using AI generation (Google Gemini, OpenAI, Anthropic Claude).
+
+**Tech Stack:**
+- Frontend: Vite + React + TypeScript + TailwindCSS + Framer Motion
+- Auth: Stack Auth (enterprise authentication, replaces NextAuth.js and better-auth)
+- Database: Neon PostgreSQL (production-grade managed database)
+- AI: Google Gemini, OpenAI, Anthropic APIs (live AI service integrations)
+
+---
+
+## Critical Architecture Patterns
+
+### 1. **React Entry Point & Global State Setup**
+
+The app requires React to be available globally **before any imports**:
+
+```typescript
+// index.tsx - FIRST lines of code
+import React from 'react';
+(window as any).React = React;
+```
+
+Failure to do this causes "Cannot set properties of undefined (setting 'Children')" errors in Stack Auth. This is non-negotiable.
+
+**Root structure** (`index.tsx` → `AppWithErrorHandling` → `App.tsx`):
+- `index.tsx`: React initialization, Sentry setup, Router wrapping
+- `AppWithErrorHandling`: Error boundaries, loading states, notification system
+- `App.tsx`: Main dashboard with tab-based navigation
+
+### 2. **Service Layer & Data Abstraction**
+
+**Critical rule:** All external integrations and API calls stay in `services/`. Components never call third-party APIs directly.
+
+**Service patterns:**
+- Singleton instances: `export const serviceName = new ServiceClass()`
+- Database: `services/databaseService.ts` and `services/neonService.ts`
+- AI: `services/geminiService.ts`, `services/enhancedGeminiService.ts`
+- Integrations: `services/integrationOrchestrator.ts` orchestrates platform-specific integrations in `services/integrations/`
+- Encryption: `services/credentialEncryption.ts` with AES-256-GCM
+- Error handling: `services/apiErrorHandler.ts` with Zod validation
+
+**Data flow:**
+1. Component calls `apiService.*` (client-facing wrapper)
+2. `apiService` delegates to `db.*` (database operations)
+3. `db.*` uses Neon PostgreSQL client
+4. For AI: components call `geminiService.generateContent()` directly
+
+### 3. **Stack Auth Integration (Auth System)**
+
+Stack Auth replaces NextAuth.js. Configuration in `stack.ts`:
+
+```typescript
+// stack.ts - Server configuration
+export const stackServerApp = new StackServerApp({
+  projectId: process.env.VITE_STACK_PROJECT_ID,
+  publishableClientKey: process.env.VITE_STACK_PUBLISHABLE_CLIENT_KEY,
+  secretServerKey: process.env.STACK_SECRET_SERVER_KEY,
+});
+```
+
+**Authentication flow:**
+- Routes wrapped with `StackProvider` at `index.tsx`
+- `useUser()` hook gets current user in client components
+- Protected routes in `AppRouter.tsx` use `ProtectedRoute` wrapper
+- Auth pages: `/auth/signin`, `/auth/signup`, `/handler/[...stack]/page.tsx`
+
+### 4. **Database Schema & Types Mapping**
+
+Database types in `types.ts` with camelCase interfaces map to snake_case PostgreSQL columns.
+
+```typescript
+// Component uses camelCase
+interface Post { userId: string; scheduleDate?: Date; }
+
+// Database uses snake_case
+interface DatabasePost { user_id: string; schedule_date?: string; }
+```
+
+**Transform functions in `databaseService.ts`:**
+- `postToDatabase()` converts Post → DatabasePost
+- `postFromDatabase()` converts DatabasePost → Post
+
+**Schema files:** `database/neon-complete-migration.sql` includes posts, integrations, brand_voices, audience_profiles, campaigns tables.
+
+---
+
+## Component & UI Conventions
+
+### 1. **Styling**
+
+- **Only** TailwindCSS utility classes, no inline styles or CSS modules
+- Glassmorphic design: `bg-white/10 backdrop-blur-md` patterns
+- Framer Motion for all animations: `motion.div`, `motion.button` wrappers
+- Global theme provider: `HolographicTheme.tsx` provides gradient backgrounds
+
+### 2. **Component Structure**
+
+- Function components only, no class components
+- Lazy loading via `LazyComponents.tsx` (createLazyComponent pattern)
+- Error boundaries: `ErrorBoundaryEnhanced` with retry/reload/report options
+- Loading states managed by `LoadingStateManager.tsx`
+
+**Example:**
+```tsx
+import { LazyPerformanceInsights } from './LazyComponents';
+
+// Lazy loading in JSX:
+<Suspense fallback={<ComponentLoadingFallback name="PerformanceInsights" />}>
+  <LazyPerformanceInsights />
+</Suspense>
+```
+
+### 3. **Type Safety**
+
+- Strict TypeScript: no `any`, no `ts-ignore`
+- Use Zod for runtime validation in services: `z.object({...}).parse(data)`
+- Types in `types.ts` cover all domain entities (Post, Integration, BrandVoice, etc.)
+
+---
+
+## Key Services & Integration Points
+
+### AI Content Generation
+
+**`geminiService.ts` and `enhancedGeminiService.ts`:**
+- Generate blog ideas, posts, summaries, platform-specific content
+- Methods: `generateBlogIdeas()`, `generateBlogPost()`, `adaptContentForPlatform()`
+- Error handling: wrapped in try-catch, fallback to error messages
+
+**AI Usage Monitoring:**
+- `aiUsageMonitoringService.ts` tracks requests, tokens, costs
+- Rate limiting: `aiRequestQueueService.ts` queues and prioritizes requests
+
+### Integration Orchestration
+
+**`integrationOrchestrator.ts`:**
+- Manages OAuth flows for Twitter, LinkedIn, Facebook, Instagram, Reddit, Pinterest
+- Methods: `testConnection()`, `publishPost()`, `getAnalytics()`, `syncData()`
+- Platform configs define rate limits, feature sets, content limits
+- Each platform has service in `services/integrations/` (e.g., TwitterService)
+
+**Credential Encryption:**
+- `credentialEncryption.ts` encrypts user OAuth tokens with AES-256-GCM
+- Never store credentials unencrypted in database
+- Encrypt before DB insert, decrypt on retrieval
+
+### Scheduling & Publishing
+
+**`postScheduler.ts` and `schedulerService.ts`:**
+- Queue posts for scheduled publication
+- Cron-like execution for batch publishing
+- Fallback: `schedulingService.ts` handles scheduling logic
+
+**Data persistence:**
+- Calendar view syncs with `posts` table
+- Schedule date stored as ISO string, converted to Date on retrieval
+
+---
+
+## Development Workflows
+
+### Build & Validation
+
+```bash
+npm run dev                    # Start dev server (Vite)
+npm run build                  # Production build
+npm run typecheck              # Type check without emit
+npm run lint                   # ESLint check
+npm run format                 # Prettier formatting
+npm run validate:production    # Pre-deploy validation
+npm run validate:readiness     # Production readiness check
+```
+
+### Database Setup
+
+```bash
+npm run setup:database         # Initialize Neon database
+npm run migrate:neon           # Apply migrations
+npm run test:neon              # Test Neon connectivity
+```
+
+### Testing & Monitoring
+
+```bash
+npm run test                   # Integration tests (requires live credentials)
+npm run validate:security      # Security validation
+npm run validate:performance   # Performance validation
+npm run scan:secrets           # Secret scanning pre-commit
+```
+
+### Key Validation Scripts
+
+- `scripts/production-readiness-validation.js` - Comprehensive pre-deployment checks
+- `scripts/performance-validation.js` - Performance and lazy loading verification
+- `scripts/security-validation.js` - Security best practices audit
+
+---
+
+## Environment Variables
+
+**Required:**
+```
+VITE_STACK_PROJECT_ID=<your-project-id>
+VITE_STACK_PUBLISHABLE_CLIENT_KEY=<your-key>
+STACK_SECRET_SERVER_KEY=<your-secret>
+DATABASE_URL=postgresql://...
+GEMINI_API_KEY=<google-api-key>
+INTEGRATION_ENCRYPTION_SECRET=<64-char-hex>
+```
+
+**Optional:**
+```
+OPENAI_API_KEY=<openai-key>
+ANTHROPIC_API_KEY=<anthropic-key>
+```
+
+Generate encryption secret: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+
+---
+
+## Project-Specific Patterns
+
+### Content Generation Workflow
+
+1. User enters blog topic → calls `handleGenerateBlogContent()`
+2. `geminiService.generateBlogIdeas()` returns 3-5 ideas
+3. User picks idea → `geminiService.generateBlogPost()` creates full post
+4. Content adapted for each platform via `adaptContentForPlatform(topic, platform)`
+5. Posts stored in `posts` table with `socialMediaPosts: {platform: content}`
+
+### Post Publishing Workflow
+
+1. User schedules post → stored with `status: 'scheduled'`, `scheduleDate: ISO`
+2. `postScheduler` checks `scheduleDate` and publishes via `integrationOrchestrator`
+3. For each connected platform, `publishPost()` called
+4. Post status updated to `posted` with `postedAt: timestamp`
+5. Analytics tracked in `analytics` table via `analyticsService`
+
+### Error Handling
+
+**Component level:**
+- Try-catch blocks in all event handlers
+- Display user-friendly messages via `setErrorMessage()`
+- Clear messages after 5 seconds: `setTimeout(() => setErrorMessage(''), 5000)`
+- **Test with real network failures and edge cases**
+
+**Service level:**
+- `apiErrorHandler` catches and transforms errors
+- Zod validation errors converted to readable messages
+- Database errors wrapped with context and retried when appropriate
+- **All API calls must handle timeouts, rate limits, and connection errors**
+
+**Global level:**
+- `ErrorBoundaryEnhanced` catches render errors
+- Sentry captures unhandled exceptions
+- `useErrorReporting()` hook for user feedback
+- **Production monitoring enabled in all environments**
+
+---
+
+## Common Tasks & Patterns
+
+### Adding a New Service
+
+1. Create `services/newService.ts`
+2. Define class with static methods or instance methods
+3. Export singleton: `export const newService = new NewService()`
+4. **Wrap all external API calls in try-catch blocks**
+5. **Use Zod for runtime validation of all inputs and outputs**
+6. **Handle all error cases: timeouts, rate limits, invalid responses**
+7. Import in components via `apiService` or direct service import
+8. **Test with real APIs before merging, not mocks**
+
+### Adding a Database Table
+
+1. Add migration SQL to `database/neon-complete-migration.sql`
+2. Define TypeScript interfaces in `types.ts` (PascalCase + Database variant)
+3. Add **complete CRUD methods** to `databaseService.ts` (Create, Read, Update, Delete)
+4. **Include input validation and error handling**
+5. Wrap in `apiService` if client-facing
+6. Transform data with camelCase/snake_case helpers
+7. **Add database indexes for query performance**
+8. **Test migrations with real Neon database**
+
+### Adding a Platform Integration
+
+1. Create `services/integrations/YourPlatformService.ts`
+2. **Implement complete OAuth flow with refresh token handling**
+3. Add to `integrationOrchestrator.ts` platform configs
+4. **Test with real platform APIs (not sandboxes)**
+5. **Handle rate limits, retries, and exponential backoff**
+6. Implement `testConnection()`, `publishPost()`, `getAnalytics()`
+7. **Validate API responses with Zod schemas**
+8. **Document all required credentials and permissions**
+
+### Adding a Component
+
+1. Create in `components/` with TypeScript interfaces
+2. Use TailwindCSS + Framer Motion for styling/animation
+3. Lazy load if heavy: create wrapper in `LazyComponents.tsx`
+4. Wrap with `ErrorBoundary` if rendering complex logic
+5. Call services via `apiService`, never direct API calls
+
+---
+
+## Key Files Reference
+
+**Core:**
+- `App.tsx` - Main dashboard, tab routing, central state management
+- `index.tsx` - React initialization, Sentry, root rendering
+- `types.ts` - All TypeScript interfaces (~800 lines)
+
+**Authentication:**
+- `stack.ts` - Stack Auth configuration
+- `components/auth/ProtectedRoute.tsx` - Route protection
+- `components/Auth.tsx` - Auth UI components
+
+**Services (Essential):**
+- `services/databaseService.ts` - Neon PostgreSQL operations
+- `services/integrationOrchestrator.ts` - Multi-platform orchestration
+- `services/geminiService.ts` - AI content generation
+- `services/credentialEncryption.ts` - AES-256-GCM encryption
+- `services/apiErrorHandler.ts` - Error handling with Zod validation
+
+**Components (Key):**
+- `components/IntegrationManager.tsx` - OAuth/credential management
+- `components/CalendarView.tsx` - Scheduled post visualization
+- `components/SmartScheduler.tsx` - Scheduling UI
+- `components/AnalyticsDashboard.tsx` - Performance insights
+
+**Build & Config:**
+- `vite.config.ts` - Vite configuration with server module stubbing
+- `tsconfig.json` - TypeScript strict mode enabled
+- `tailwind.config.js` - Tailwind theme customization
+- `eslint.config.js` & `eslint.config.production.js` - Linting rules
+
+---
+
+## Performance Considerations
+
+- **Code splitting:** Chunk React, UI libs, AI libs separately (vite.config.ts)
+- **Lazy loading:** Use `Suspense` + `LazyComponents` for heavy features
+- **Memoization:** Use `useMemo()`, `useCallback()` for expensive computations
+- **Database:** Indexed queries, pagination in `PaginationControls.tsx`
+- **Monitoring:** Frontend performance tracked via `frontendPerformanceService.ts`
+
+---
+
+## Production Quality Standards
+
+This codebase **must maintain enterprise-grade quality** at all times:
+
+### Code Quality
+
+- ✅ **Real implementations only** - No mock data, fake API calls, or simulated features
+- ✅ **Complete features** - Every feature fully implemented, tested, and production-ready
+- ✅ **No placeholder code** - If a feature isn't ready, feature-flag it; don't commit stubs
+- ✅ **Proper error handling** - All async operations handle success, failure, timeout, and network error cases
+- ✅ **Type safety** - Strict TypeScript, no `any`, no `ts-ignore`
+- ✅ **Runtime validation** - Zod schemas validate all external data
+- ✅ **Security hardened** - Encrypt credentials, validate inputs, sanitize outputs, HTTPS only
+
+### Patterns to AVOID
+
+❌ Inline API calls in components (use services/)  
+❌ Store credentials in plain text (use credentialEncryption)  
+❌ Skip TypeScript types (strict mode enforced)  
+❌ Import Supabase (project uses Neon PostgreSQL)  
+❌ Use CSS Modules or inline styles (TailwindCSS only)  
+❌ Comment out code (remove or feature-flag instead)  
+❌ Class components (function components + hooks)  
+❌ **Mock/placeholder/simulated implementations** (real behavior only)  
+❌ **Stub functions that just log or return dummy data** (complete the feature or remove it)  
+❌ **"TODO: implement later" comments** (either implement now or create a GitHub issue)  
+❌ **Fake success/error states** (test with real API responses)  
+❌ **Disabled features with no cleanup** (remove code or add proper feature flags)  
+❌ **Environment-dependent behavior not documented** (document all config requirements)  
+
+---
+
+## Deployment
+
+**Vercel deployment:**
+- Configure environment variables in Vercel dashboard
+- Push to main branch → automatic deployment
+- SPA routing fallback configured in `vercel.json`
+- Check `VERCEL_DEPLOYMENT_GUIDE.md` for step-by-step instructions
+
+---
+
+## Enforcing These Instructions
+
+### 1. **Pre-Commit Hooks**
+
+Husky + lint-staged automatically validate code before commits:
+
+```bash
+npm run prepare  # Install husky hooks
+```
+
+**Enforced checks:**
+- ESLint (`eslint . --ext .ts,.tsx`)
+- Prettier formatting
+- Secret scanning (`npm run scan:secrets`)
+- Type checking prevented via `tsconfig.json` strict mode
+
+### 2. **Build-Time Validation**
+
+Run before shipping code:
+
+```bash
+npm run lint:production    # Production-grade ESLint rules
+npm run validate:security  # Security audit
+npm run validate:performance # Performance checks
+npm run validate:readiness # Comprehensive production readiness
+```
+
+**These scripts verify:**
+- No mocks or placeholder code
+- No commented-out code
+- Complete error handling
+- No direct API calls from components
+- Database transactions have proper error handling
+- All integrations use real services
+- No credentials in code
+
+### 3. **Pull Request Checklist**
+
+Before opening a PR, verify:
+
+- [ ] `npm run typecheck` passes (strict TypeScript)
+- [ ] `npm run lint:production` passes
+- [ ] `npm run format` was run
+- [ ] `npm run validate:security` passes
+- [ ] `npm run validate:performance` passes
+- [ ] All async operations handle errors (try-catch or .catch())
+- [ ] All external data validated with Zod
+- [ ] Database credentials encrypted
+- [ ] No mock data or stub functions remain
+- [ ] Feature is 100% complete (not partial/TODO)
+- [ ] Tested with real services, not mocks
+- [ ] Error messages are user-friendly
+- [ ] All new services have error handling
+- [ ] All database changes include indexes
+- [ ] Integration code handles rate limits/retries
+
+### 4. **Code Review Gates**
+
+Require review focus on:
+
+- **Real implementations:** Does this work with production services or does it use mocks?
+- **Error handling:** All edge cases covered? Network failures handled?
+- **Validation:** Zod schemas for external data? Input sanitization?
+- **Security:** No hardcoded secrets? Credentials encrypted? SQL injection prevention?
+- **Completeness:** Feature 100% done or is it stubbed/partial?
+- **Testing:** Tested with real APIs or just simulated responses?
+- **Performance:** Lazy loading? Database queries optimized? Memory leaks?
+- **Monitoring:** Errors tracked? Performance monitored? Audit logs?
+
+### 5. **CI/CD Pipeline Configuration**
+
+Add to your GitHub Actions `.github/workflows/`:
+
+```yaml
+# Example: .github/workflows/production-checks.yml
+name: Production Quality Checks
+on: [pull_request, push]
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint:production
+      - run: npm run validate:security
+      - run: npm run validate:performance
+      - run: npm run validate:readiness
+```
+
+### 6. **Code Patterns to Block (ESLint Rules)**
+
+Ensure `eslint.config.production.js` enforces:
+
+```javascript
+// Block patterns that indicate mocks/stubs:
+'no-console': ['error', { allow: ['warn', 'error'] }] // Debug logs only in dev
+'no-todo': 'error'  // No TODO comments
+'no-commented-code': 'error'  // No commented-out code
+'no-async-without-error-handling': 'error'  // All async ops must handle errors
+```
+
+### 7. **Automated Validation Scripts**
+
+Run validation regularly:
+
+```bash
+npm run scan:secrets              # Pre-commit secret detection
+npm run validate:production       # Full production validation
+npm run validate:readiness        # Pre-deployment readiness check
+npm run build:analyze             # Bundle size analysis
+```
+
+**Key validation checks in scripts:**
+
+- `scripts/production-readiness-validation.js` - Comprehensive checks
+- `scripts/security-validation.js` - Security audit
+- `scripts/performance-validation.js` - Performance validation
+- `scripts/validate-ai-services.js` - AI service validation
+
+### 8. **Monitoring in Production**
+
+Once deployed, monitor compliance:
+
+```bash
+# Sentry - Real error tracking
+import * as Sentry from '@sentry/react';
+
+# Performance monitoring
+frontendPerformanceService.trackPageLoad()
+aiUsageMonitoringService.trackTokenUsage()
+
+# Audit logging
+advancedSecurityService.logSecurityEvent()
+```
+
+### 9. **Manual Review Checklist for Complex Features**
+
+For critical features (integrations, auth, payments), verify:
+
+1. **Architecture Review**
+   - [ ] Service layer properly isolated
+   - [ ] Data flows correctly through types.ts
+   - [ ] Error handling at each layer
+   - [ ] No circular dependencies
+
+2. **Security Review**
+   - [ ] Credentials encrypted with AES-256-GCM
+   - [ ] No secrets in logs or error messages
+   - [ ] Input validation with Zod
+   - [ ] Output sanitization
+   - [ ] HTTPS enforcement
+
+3. **Testing Review**
+   - [ ] Works with real service APIs
+   - [ ] Handles network failures
+   - [ ] Rate limit behavior tested
+   - [ ] Token refresh tested (if OAuth)
+   - [ ] Error messages user-friendly
+
+4. **Performance Review**
+   - [ ] Database queries indexed
+   - [ ] Lazy loading implemented (if heavy)
+   - [ ] No N+1 queries
+   - [ ] Memoization for expensive ops
+
+5. **Observability Review**
+   - [ ] Errors logged with context
+   - [ ] Performance metrics tracked
+   - [ ] User feedback mechanism present
+   - [ ] Sentry integration configured
+
+### 10. **Continuous Learning & Documentation**
+
+Keep standards high by:
+
+- **Document patterns:** Update this file when discovering new critical patterns
+- **Record decisions:** Use GitHub issues to document why certain approaches are taken
+- **Review metrics:** Check validation logs regularly for patterns of non-compliance
+- **Team alignment:** Share validation reports with team weekly
+
+---
+
+## Additional Resources
+
+- `ARCHITECTURE.md` - System design overview
+- `INTEGRATION_MANAGER_README.md` - Integration details
+- `API_CREDENTIALS_SETUP.md` - User OAuth setup guide
+- `NEON_MIGRATION_GUIDE.md` - Database migration reference
+- `.cursor/.cursorrules` - Original Cursor IDE rules
