@@ -1,7 +1,7 @@
 import {
   GoogleAnalyticsCredentials,
-  FacebookAnalyticsCredentials,
-  TwitterAnalyticsCredentials,
+  FacebookCredentials,
+  TwitterCredentials,
   ConnectionTestResult,
   SyncResult,
 } from '../../types';
@@ -150,7 +150,7 @@ export class AnalyticsIntegrations {
    * Tests Facebook Analytics connection
    */
   static async testFacebookAnalyticsConnection(
-    credentials: FacebookAnalyticsCredentials
+    credentials: FacebookCredentials
   ): Promise<ConnectionTestResult> {
     const startTime = Date.now();
 
@@ -186,7 +186,7 @@ export class AnalyticsIntegrations {
    */
   static async syncFacebookAnalyticsData(
     integrationId: string,
-    credentials: FacebookAnalyticsCredentials
+    credentials: FacebookCredentials
   ): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
@@ -243,7 +243,7 @@ export class AnalyticsIntegrations {
    * Tests Twitter Analytics connection
    */
   static async testTwitterAnalyticsConnection(
-    credentials: TwitterAnalyticsCredentials
+    credentials: TwitterCredentials
   ): Promise<ConnectionTestResult> {
     const startTime = Date.now();
 
@@ -279,7 +279,7 @@ export class AnalyticsIntegrations {
    */
   static async syncTwitterAnalyticsData(
     integrationId: string,
-    credentials: TwitterAnalyticsCredentials
+    credentials: TwitterCredentials
   ): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
@@ -356,7 +356,7 @@ export class AnalyticsIntegrations {
   private static async makeFacebookAnalyticsRequest(
     method: string,
     url: string,
-    credentials: FacebookAnalyticsCredentials,
+    credentials: FacebookCredentials,
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
@@ -373,7 +373,7 @@ export class AnalyticsIntegrations {
   private static async makeTwitterAnalyticsRequest(
     method: string,
     url: string,
-    credentials: TwitterAnalyticsCredentials,
+    credentials: TwitterCredentials,
     data?: any
   ): Promise<any> {
     const headers: Record<string, string> = {
@@ -488,7 +488,7 @@ export class AnalyticsIntegrations {
   // ============================================================================
 
   private static async syncFacebookPageInsights(
-    credentials: FacebookAnalyticsCredentials
+    credentials: FacebookCredentials
   ): Promise<SyncResult> {
     // Implementation would sync page insights to local database
     return {
@@ -505,7 +505,7 @@ export class AnalyticsIntegrations {
   }
 
   private static async syncFacebookPostInsights(
-    credentials: FacebookAnalyticsCredentials
+    credentials: FacebookCredentials
   ): Promise<SyncResult> {
     // Implementation would sync post insights to local database
     return {
@@ -526,7 +526,7 @@ export class AnalyticsIntegrations {
   // ============================================================================
 
   private static async syncTwitterTweetMetrics(
-    credentials: TwitterAnalyticsCredentials
+    credentials: TwitterCredentials
   ): Promise<SyncResult> {
     // Implementation would sync tweet metrics to local database
     return {
@@ -543,7 +543,7 @@ export class AnalyticsIntegrations {
   }
 
   private static async syncTwitterFollowerMetrics(
-    credentials: TwitterAnalyticsCredentials
+    credentials: TwitterCredentials
   ): Promise<SyncResult> {
     // Implementation would sync follower metrics to local database
     return {

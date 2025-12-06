@@ -186,7 +186,11 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       if (formData.endDate) updates.endDate = new Date(formData.endDate);
       if (formData.platforms.length > 0) updates.platforms = formData.platforms;
 
-      const updatedCampaign = await campaignService.updateCampaign(selectedCampaign.id, updates);
+      const updatedCampaign = await campaignService.updateCampaign(
+        user?.id || '',
+        selectedCampaign.id,
+        updates
+      );
 
       setCampaigns((prev) => prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)));
       setSelectedCampaign(updatedCampaign);
@@ -206,7 +210,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
     try {
       setIsLoading(true);
-      await campaignService.deleteCampaign(campaignId, false); // Don't delete associated content
+      await campaignService.deleteCampaign(user?.id || '', campaignId, false); // Don't delete associated content
       setCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
       if (selectedCampaign?.id === campaignId) {
         setSelectedCampaign(null);

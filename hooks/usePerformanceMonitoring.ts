@@ -146,11 +146,10 @@ export const useMemoryMonitoring = (componentName: string, interval: number = 50
     }
 
     const updateMemoryMetrics = () => {
-      const memory = (
-        performance as {
-          memory: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
-        }
-      ).memory;
+      const perfWithMemory = performance as any;
+      if (!perfWithMemory.memory) return;
+
+      const memory = perfWithMemory.memory;
       const newMetrics = {
         usedJSHeapSize: memory.usedJSHeapSize,
         totalJSHeapSize: memory.totalJSHeapSize,
@@ -288,7 +287,9 @@ export const useWebVitals = () => {
     const lcpObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
       const lastEntry = entries[entries.length - 1];
-      setVitals((prev) => ({ ...prev, lcp: lastEntry.startTime }));
+      if (lastEntry) {
+        setVitals((prev) => ({ ...prev, lcp: lastEntry.startTime }));
+      }
     });
 
     // Cumulative Layout Shift

@@ -106,7 +106,9 @@ class FrontendPerformanceService {
     const lcpObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
       const lastEntry = entries[entries.length - 1];
-      this.performanceMetrics.largestContentfulPaint = lastEntry.startTime;
+      if (lastEntry) {
+        this.performanceMetrics.largestContentfulPaint = lastEntry.startTime;
+      }
     });
 
     try {
@@ -270,7 +272,9 @@ class FrontendPerformanceService {
     // LRU eviction if cache is too large
     if (this.cache.size >= 100) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
     }
 
     this.cache.set(key, {

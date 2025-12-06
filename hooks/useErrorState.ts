@@ -397,7 +397,7 @@ export const useBatchErrorState = <T = any>(options: ErrorStateOptions = {}) => 
           // Execute operations sequentially
           for (let i = 0; i < operations.length; i++) {
             try {
-              const data = await operations[i]();
+              const data = await operations[i]!();
               const result = { success: true, data };
               results.push(result);
               onItemComplete?.(i, result);

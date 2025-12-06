@@ -69,7 +69,6 @@ export class CredentialEncryption {
       return {
         encrypted: encryptedB64,
         // legacy alias used by some older tests
-        // @ts-expect-error: legacy field for compatibility
         data: encryptedB64,
         iv: this.arrayBufferToBase64(iv.buffer),
         authTag: this.arrayBufferToBase64(authTag.buffer),
@@ -325,7 +324,7 @@ export class CredentialEncryption {
     const bytes = new Uint8Array(buffer);
     let binary = '';
     for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
+      binary += String.fromCharCode(bytes[i]!);
     }
     return btoa(binary);
   }

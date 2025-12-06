@@ -405,7 +405,7 @@ export const useAIServiceErrorRecovery = <T = any>(
 // Helper function to extract retry-after header value
 function extractRetryAfter(errorMessage: string): number | undefined {
   const match = errorMessage.match(/retry[_\s-]?after[:\s]*(\d+)/i);
-  return match ? parseInt(match[1], 10) : undefined;
+  return match ? parseInt(match[1]!, 10) : undefined;
 }
 
 export default useErrorRecovery;

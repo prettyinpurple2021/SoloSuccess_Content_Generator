@@ -223,7 +223,7 @@ export const db = {
       const countResult = await pool`
         SELECT COUNT(*) FROM posts WHERE user_id = ${userId}
       `;
-      const totalCount = parseInt(countResult[0].count);
+      const totalCount = parseInt(countResult[0]?.count || '0');
 
       // Get paginated results
       const offset = (page - 1) * pageSize;

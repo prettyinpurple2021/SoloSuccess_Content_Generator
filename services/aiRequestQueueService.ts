@@ -299,7 +299,7 @@ class AIRequestQueueService {
       'Creative Problem-Solving Techniques',
     ];
 
-    return fallbackTopics[Math.floor(Math.random() * fallbackTopics.length)];
+    return fallbackTopics[Math.floor(Math.random() * fallbackTopics.length)]!;
   }
 
   private getFallbackIdeas(topic: string): string[] {
@@ -514,7 +514,7 @@ We're working to restore full AI content generation capabilities. Please try aga
 
     let insertIndex = this.queue.length;
     for (let i = 0; i < this.queue.length; i++) {
-      const queuePriority = priorityOrder[this.queue[i].priority];
+      const queuePriority = priorityOrder[this.queue[i]!.priority];
       if (requestPriority < queuePriority) {
         insertIndex = i;
         break;

@@ -60,7 +60,7 @@ export class ProductionQualityValidationService {
 
         if (validation.status === 'fulfilled') {
           return {
-            type: validationTypes[index],
+            type: validationTypes[index] || 'unknown',
             passed: validation.value.passed,
             score: validation.value.score,
             issues: validation.value.issues,
@@ -68,7 +68,7 @@ export class ProductionQualityValidationService {
           };
         } else {
           return {
-            type: validationTypes[index],
+            type: validationTypes[index] || 'unknown',
             passed: false,
             score: 0,
             issues: [`Validation failed: ${validation.reason}`],

@@ -357,10 +357,7 @@ class ReliableImageGenerationService {
   ): Promise<string[]> {
     try {
       const geminiService = await import('./geminiService.js');
-      const result = await geminiService.generateImage(prompt, {
-        style: request.style,
-        dimensions: request.dimensions,
-      });
+      const result = await geminiService.generateImage(prompt, {});
 
       return Array.isArray(result) ? result : [result];
     } catch (error) {
@@ -371,7 +368,7 @@ class ReliableImageGenerationService {
 
   /**
    * Generate with OpenAI DALL-E (NOT IMPLEMENTED)
-   * 
+   *
    * @throws Error - This feature is not yet implemented
    * To implement:
    * 1. Add OPENAI_API_KEY to environment variables
@@ -385,14 +382,14 @@ class ReliableImageGenerationService {
   ): Promise<string[]> {
     throw new Error(
       'OpenAI DALL-E integration not implemented. ' +
-      'Please use Gemini Imagen instead or implement OpenAI DALL-E integration. ' +
-      'See service documentation for implementation details.'
+        'Please use Gemini Imagen instead or implement OpenAI DALL-E integration. ' +
+        'See service documentation for implementation details.'
     );
   }
 
   /**
    * Generate with Stability AI (NOT IMPLEMENTED)
-   * 
+   *
    * @throws Error - This feature is not yet implemented
    * To implement:
    * 1. Add STABILITY_API_KEY to environment variables
@@ -406,8 +403,8 @@ class ReliableImageGenerationService {
   ): Promise<string[]> {
     throw new Error(
       'Stability AI integration not implemented. ' +
-      'Please use Gemini Imagen instead or implement Stability AI integration. ' +
-      'See service documentation for implementation details.'
+        'Please use Gemini Imagen instead or implement Stability AI integration. ' +
+        'See service documentation for implementation details.'
     );
   }
 

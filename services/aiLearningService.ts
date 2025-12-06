@@ -545,14 +545,23 @@ export class AILearningService {
 
       if (topicInTrends) {
         // Topic is trending, calculate score based on engagement
-        const engagementScore = topicInTrends.engagementRate || 0;
+        const engagementScore = topicInTrends.trendingScore || 0;
         const relevanceScore = this.calculateTopicRelevance(topic, {
-          contentTypes: [],
-          targetAudience: [],
+          userId: '',
           preferredTopics: (userInterests || []).map((interest) => ({
             topic: interest,
             score: 0.8,
           })),
+          preferredTones: [],
+          preferredPlatforms: [],
+          preferredTemplates: [],
+          contentPatterns: {
+            timeOfDay: [],
+            dayOfWeek: [],
+            contentLength: [],
+            hashtagCount: [],
+          },
+          lastUpdated: new Date(),
         });
 
         // Combine trending status with user relevance
