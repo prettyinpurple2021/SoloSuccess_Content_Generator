@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WebhookConfig, WebhookEvent } from '../../types';
-import { webhookService } from '../../services/webhookService';
-
-type IntegrationWebhook = WebhookConfig;
+// import { integrationService } from '../../services/integrationService';
 
 interface WebhookManagerProps {
   integrationId: string;
 }
 
-const WebhookManager: React.FC<WebhookManagerProps> = ({
-  integrationId,
-}: WebhookManagerProps): any => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [webhooks, setWebhooks] = useState<any[]>([]);
+const WebhookManager: React.FC<WebhookManagerProps> = ({ integrationId }) => {
+  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [showAddWebhook, setShowAddWebhook] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,7 +24,8 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
     try {
       setIsLoading(true);
       setError('');
-      const data = await webhookService.getWebhooksForIntegration(integrationId);
+      // const data = await integrationService.getWebhooks(integrationId);
+      const data: WebhookConfig[] = []; // Temporary placeholder
       setWebhooks(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load webhooks');
@@ -39,15 +35,13 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
   };
 
   // Add webhook
-  const handleAddWebhook = async (webhookData: Omit<WebhookConfig, 'id'>): Promise<void> => {
+  const handleAddWebhook = async (webhookData: Omit<WebhookConfig, 'id'>) => {
     try {
       setIsLoading(true);
       setError('');
-      const newWebhook = await webhookService.createWebhook(
-        integrationId,
-        webhookData as WebhookConfig
-      );
-      setWebhooks((prev: IntegrationWebhook[]): IntegrationWebhook[] => [...prev, newWebhook]);
+      // const newWebhook = await integrationService.addWebhook(integrationId, webhookData);
+      const newWebhook: WebhookConfig = { id: 'temp', ...webhookData }; // Temporary placeholder
+      setWebhooks((prev) => [...prev, newWebhook]);
       setShowAddWebhook(false);
       setSuccess('Webhook added successfully');
       setTimeout(() => setSuccess(''), 3000);
@@ -59,17 +53,13 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
   };
 
   // Update webhook
-  const handleUpdateWebhook = async (
-    webhookId: string,
-    updates: Partial<WebhookConfig>
-  ): Promise<void> => {
+  const handleUpdateWebhook = async (webhookId: string, updates: Partial<WebhookConfig>) => {
     try {
       setIsLoading(true);
       setError('');
-      const updatedWebhook = await webhookService.updateWebhook(webhookId, updates);
-      setWebhooks((prev: IntegrationWebhook[]): IntegrationWebhook[] =>
-        prev.map((w: IntegrationWebhook) => (w.id === webhookId ? updatedWebhook : w))
-      );
+      // const updatedWebhook = await integrationService.updateWebhook(webhookId, updates);
+      const updatedWebhook: WebhookConfig = { id: webhookId, ...updates } as WebhookConfig; // Temporary placeholder
+      setWebhooks((prev) => prev.map((w) => (w.id === webhookId ? updatedWebhook : w)));
       setSuccess('Webhook updated successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -80,7 +70,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
   };
 
   // Delete webhook
-  const handleDeleteWebhook = async (webhookId: string): Promise<void> => {
+  const handleDeleteWebhook = async (webhookId: string) => {
     if (!confirm('Are you sure you want to delete this webhook?')) {
       return;
     }
@@ -88,10 +78,9 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
     try {
       setIsLoading(true);
       setError('');
-      await webhookService.deleteWebhook(webhookId);
-      setWebhooks((prev: IntegrationWebhook[]): IntegrationWebhook[] =>
-        prev.filter((w: IntegrationWebhook) => w.id !== webhookId)
-      );
+      // await integrationService.deleteWebhook(webhookId);
+      // Temporary placeholder - just remove from local state
+      setWebhooks((prev) => prev.filter((w) => w.id !== webhookId));
       setSuccess('Webhook deleted successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -102,12 +91,12 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
   };
 
   // Test webhook
-  const handleTestWebhook = async (webhookId: string): Promise<void> => {
+  const handleTestWebhook = async (webhookId: string) => {
     try {
       setIsLoading(true);
       setError('');
 
-      const webhook = webhooks.find((w: IntegrationWebhook) => w.id === webhookId);
+      const webhook = webhooks.find((w) => w.id === webhookId);
       if (!webhook) {
         throw new Error('Webhook not found');
       }
@@ -116,13 +105,13 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
       const testPayload = {
         event: 'test',
         timestamp: new Date().toISOString(),
-        message: 'This is a test webhook delivery from solosuccess AI Content Planner',
+        message: 'This is a test webhook delivery from SoloSuccess AI Content Planner',
         test: true,
       };
 
       // Create signature for verification
-      const crypto = await import('crypto' as const);
-      const signature = (crypto.default as any)
+      const crypto = await import('crypto');
+      const signature = crypto
         .createHmac('sha256', webhook.secret)
         .update(JSON.stringify(testPayload))
         .digest('hex');
@@ -215,7 +204,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
-          {webhooks.map((webhook: IntegrationWebhook, index: number) => (
+          {webhooks.map((webhook, index) => (
             <motion.div
               key={webhook.id}
               initial={{ opacity: 0, y: 20 }}
@@ -424,17 +413,9 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label
-                  htmlFor="maxRetries"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Max Retries
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Max Retries</label>
                 <input
-                  id="maxRetries"
                   type="number"
-                  title="Maximum number of retry attempts"
-                  placeholder="3"
                   value={formData.retryPolicy.maxRetries}
                   onChange={(e) => handleRetryPolicyChange('maxRetries', parseInt(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -444,8 +425,6 @@ const AddWebhookModal: React.FC<AddWebhookModalProps> = ({ onClose, onAdd, isLoa
                 <label className="block text-sm font-medium text-gray-700 mb-2">Timeout (ms)</label>
                 <input
                   type="number"
-                  title="Webhook timeout in milliseconds"
-                  placeholder="30000"
                   value={formData.timeout}
                   onChange={(e) => handleInputChange('timeout', parseInt(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

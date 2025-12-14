@@ -169,7 +169,7 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
   private getErrorIcon = () => {
     const _severity = this.getErrorSeverity();
 
-    switch (_severity) {
+    switch (severity) {
       case 'critical':
         return '💀';
       case 'high':
@@ -229,7 +229,7 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
 
     return {
       showRetry: allowRetry && retryCount < this.maxRetries,
-      showReload: allowReload && (_severity === 'high' || _severity === 'critical'),
+      showReload: allowReload && (severity === 'high' || severity === 'critical'),
       showReport: allowReport,
       showDetails: this.props.showDetails !== false,
     };
@@ -247,7 +247,7 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
       const { error, errorInfo: _errorInfo, errorId, showDetails } = this.state;
 
       // For critical errors, show full-screen error
-      if (_severity === 'critical') {
+      if (severity === 'critical') {
         return (
           <div className="min-h-screen flex items-center justify-center p-4 relative">
             {/* Background effects */}

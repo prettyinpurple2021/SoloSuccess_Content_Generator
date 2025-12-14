@@ -162,7 +162,7 @@ export class RateLimitingService {
    * Checks sliding window rate limit
    */
   private checkSlidingWindowRateLimit(
-    entry: Record<string, unknown> & { requests: number[] },
+    entry: any,
     config: Partial<RateLimitConfig> | undefined,
     now: number
   ): RateLimitResult {
@@ -205,7 +205,7 @@ export class RateLimitingService {
    * Checks token bucket rate limit
    */
   private checkTokenBucketRateLimit(
-    entry: Record<string, unknown> & { tokens: number; lastRefill: number },
+    entry: any,
     config: Partial<RateLimitConfig> | undefined,
     now: number
   ): RateLimitResult {
@@ -250,14 +250,7 @@ export class RateLimitingService {
    * Checks fixed window rate limit
    */
   private checkFixedWindowRateLimit(
-    entry: {
-      requests: number[];
-      tokens: number;
-      lastRefill: number;
-      circuitBreakerState: 'closed' | 'open' | 'half-open';
-      circuitBreakerFailures: number;
-      circuitBreakerLastFailure: number;
-    },
+    entry: any,
     config: Partial<RateLimitConfig> | undefined,
     now: number
   ): RateLimitResult {
@@ -270,10 +263,7 @@ export class RateLimitingService {
     const windowEnd = windowStart + windowSize;
 
     // Reset requests if we're in a new window
-    if (
-      entry.requests.length === 0 ||
-      (entry.requests[0] !== undefined && entry.requests[0] < windowStart)
-    ) {
+    if (entry.requests.length === 0 || entry.requests[0] < windowStart) {
       entry.requests = [];
     }
 
@@ -311,14 +301,7 @@ export class RateLimitingService {
    * Checks circuit breaker state
    */
   private checkCircuitBreaker(
-    entry: {
-      requests: number[];
-      tokens: number;
-      lastRefill: number;
-      circuitBreakerState: 'closed' | 'open' | 'half-open';
-      circuitBreakerFailures: number;
-      circuitBreakerLastFailure: number;
-    },
+    entry: any,
     now: number
   ): {
     allowed: boolean;
@@ -359,14 +342,7 @@ export class RateLimitingService {
   /**
    * Updates circuit breaker state
    */
-  private updateCircuitBreaker(
-    entry: Record<string, unknown> & {
-      circuitBreakerFailures: number;
-      circuitBreakerOpenUntil?: number;
-    },
-    now: number,
-    success: boolean
-  ): void {
+  private updateCircuitBreaker(entry: any, now: number, success: boolean): void {
     const threshold = RateLimitingService.DEFAULT_CIRCUIT_BREAKER_THRESHOLD;
 
     if (success) {
@@ -498,7 +474,7 @@ export class RateLimitingService {
       activeKeys: 0,
       blockedRequests: 0,
       allowedRequests: 0,
-      circuitBreakerStates: { closed: 0, open: 0, half_open: 0 },
+      circuitBreakerStates: { closed: 0, open: 0, half_open: 0 } as Record<string, number>,
     };
 
     for (const [rateLimitKey, entry] of this.rateLimitStore.entries()) {
@@ -510,8 +486,7 @@ export class RateLimitingService {
 
       // Count circuit breaker states
       const stateKey = entry.circuitBreakerState.replace('-', '_');
-      (stats.circuitBreakerStates as Record<string, number>)[stateKey] =
-        ((stats.circuitBreakerStates as Record<string, number>)[stateKey] || 0) + 1;
+      stats.circuitBreakerStates[stateKey] = (stats.circuitBreakerStates[stateKey] || 0) + 1;
 
       // Count active entries (recent activity)
       const now = Date.now();
@@ -529,12 +504,12 @@ export class RateLimitingService {
     }
 
     if (key) {
-      // Legacy shape expected by some tests - cast to match return type
+      // Legacy shape expected by some tests
       return {
         activeLimits: stats.activeKeys,
         totalRequests: stats.allowedRequests + stats.blockedRequests,
         blockedRequests: stats.blockedRequests,
-      } as unknown as ReturnType<typeof this.getRateLimitStats>;
+      } as any;
     }
     return stats;
   }

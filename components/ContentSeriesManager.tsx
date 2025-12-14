@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@stackframe/react';
 import {
   ContentSeries,
   Campaign,
@@ -8,9 +7,8 @@ import {
   OptimizationSuggestion,
   SchedulingSuggestion,
 } from '../types';
-import { campaignService } from '../services/campaignService';
+import { campaignService } from '../services/clientCampaignService';
 import { apiService } from '../services/clientApiService';
-import { db } from '../services/databaseService';
 import { Spinner } from '../constants';
 
 interface ContentSeriesManagerProps {
@@ -28,7 +26,6 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
   campaigns,
   onPostUpdate,
 }) => {
-  const user = useUser();
   // State management
   const [contentSeries, setContentSeries] = useState<ContentSeries[]>([]);
   const [selectedSeries, setSelectedSeries] = useState<ContentSeries | null>(null);
@@ -166,7 +163,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
     try {
       setIsLoading(true);
-      await campaignService.deleteContentSeries('', seriesId, false); // Don't delete associated posts
+      await campaignService.deleteContentSeries(seriesId, false); // Don't delete associated posts
       setContentSeries((prev) => prev.filter((s) => s.id !== seriesId));
       if (selectedSeries?.id === seriesId) {
         setSelectedSeries(null);
@@ -197,12 +194,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
   const handleAssignPostToSeries = async (postId: string, seriesId: string) => {
     try {
-      if (!user?.id) {
-        setError('You must be signed in to assign posts to a series.');
-        return;
-      }
-
-      await db.updatePost(postId, { series_id: seriesId }, user.id);
+      await db.updatePost(postId, { series_id: seriesId });
       if (onPostUpdate) {
         const updatedPost = posts.find((p) => p.id === postId);
         if (updatedPost) {
@@ -477,14 +469,10 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
               <div className="grid gap-6">
                 <div>
-                  <label
-                    htmlFor="series-name"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Series Name *
                   </label>
                   <input
-                    id="series-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -494,14 +482,10 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="series-theme"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Series Theme *
                   </label>
                   <input
-                    id="series-theme"
                     type="text"
                     value={formData.theme}
                     onChange={(e) => setFormData((prev) => ({ ...prev, theme: e.target.value }))}
@@ -512,14 +496,10 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label
-                      htmlFor="series-total-posts"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Total Posts *
                     </label>
                     <input
-                      id="series-total-posts"
                       type="number"
                       min="1"
                       max="50"
@@ -534,14 +514,10 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="series-frequency"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Posting Frequency *
                     </label>
                     <select
-                      id="series-frequency"
                       value={formData.frequency}
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, frequency: e.target.value as any }))
@@ -556,14 +532,10 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="series-campaign"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Associated Campaign (Optional)
                   </label>
                   <select
-                    id="series-campaign"
                     value={formData.campaignId}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, campaignId: e.target.value }))

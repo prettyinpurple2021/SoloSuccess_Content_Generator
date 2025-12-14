@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ContentTemplate, TemplateSection, TemplateField } from '../types';
 import { apiService } from '../services/clientApiService';
-import { db } from '../services/databaseService';
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, Eye, Settings } from '../constants';
 
 interface TemplateEditorProps {
@@ -77,16 +76,15 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
 
       let savedTemplate: ContentTemplate;
       if (template?.id) {
-        // Update functionality not yet implemented
-        throw new Error(
-          'Template update not yet implemented. Please use the template library to manage existing templates.'
-        );
+        // Update existing template
+        savedTemplate = await db.updateContentTemplate(template.id, templateToSave);
       } else {
-        // Create new template - functionality pending database implementation
-        throw new Error(
-          'Template saving requires database configuration. Please use pre-built templates from the library.'
-        );
+        // Create new template
+        savedTemplate = await db.addContentTemplate(templateToSave);
       }
+
+      onSave(savedTemplate);
+      onClose();
     } catch (err) {
       setError('Failed to save template. Please try again.');
       console.error('Error saving template:', err);
@@ -131,11 +129,10 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
 
     setTemplateData((prev) => {
       const newStructure = [...(prev.structure || [])];
-      const tempSection = newStructure[index - 1];
-      if (tempSection && newStructure[index]) {
-        newStructure[index - 1] = newStructure[index];
-        newStructure[index] = tempSection;
-      }
+      [newStructure[index - 1], newStructure[index]] = [
+        newStructure[index],
+        newStructure[index - 1],
+      ];
       return { ...prev, structure: newStructure };
     });
   };
@@ -145,12 +142,10 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
 
     setTemplateData((prev) => {
       const newStructure = [...(prev.structure || [])];
-      const tempSection = newStructure[index];
-      const nextSection = newStructure[index + 1];
-      if (tempSection && nextSection) {
-        newStructure[index] = nextSection;
-        newStructure[index + 1] = tempSection;
-      }
+      [newStructure[index], newStructure[index + 1]] = [
+        newStructure[index + 1],
+        newStructure[index],
+      ];
       return { ...prev, structure: newStructure };
     });
   };

@@ -56,13 +56,24 @@ export const auth = {
   // Image Styles
   getImageStyles: async (userId?: string): Promise<ImageStyle[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM image_styles
         ${userId ? pool`WHERE user_id = ${userId}` : pool``}
         ORDER BY created_at DESC
-      `) as DatabaseImageStyle[];
-
-      return result.map(transformDatabaseImageStyleToImageStyle);
+      `;
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            stylePrompt: row.style_prompt,
+            colorPalette: row.color_palette,
+            visualElements: row.visual_elements,
+            brandAssets: row.brand_assets,
+            createdAt: new Date(row.created_at),
+          }) as ImageStyle
+      );
     } catch (error) {
       console.error('Error fetching image styles:', error);
       throw error;
@@ -72,13 +83,28 @@ export const auth = {
   // Content Templates (read-only for client)
   getContentTemplates: async (userId?: string): Promise<ContentTemplate[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM content_templates
         ${userId ? pool`WHERE user_id = ${userId} OR is_public = true` : pool``}
         ORDER BY created_at DESC
-      `) as DatabaseContentTemplate[];
-
-      return result.map(transformDatabaseContentTemplateToContentTemplate);
+      `;
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            category: row.category,
+            industry: row.industry,
+            contentType: row.content_type,
+            structure: row.structure,
+            customizableFields: row.customizable_fields,
+            usageCount: row.usage_count,
+            rating: row.rating,
+            isPublic: row.is_public,
+            createdAt: new Date(row.created_at),
+          }) as ContentTemplate
+      );
     } catch (error) {
       console.error('Error fetching content templates:', error);
       throw error;
@@ -88,24 +114,26 @@ export const auth = {
   // Content Series (read-only for client)
   getContentSeries: async (userId: string): Promise<ContentSeries[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM content_series
         WHERE user_id = ${userId}
         ORDER BY created_at DESC
-      `) as DatabaseContentSeries[];
-
-      return result.map((row) => ({
-        id: row.id,
-        userId: row.user_id,
-        campaignId: row.campaign_id,
-        name: row.name,
-        theme: row.theme,
-        totalPosts: row.total_posts,
-        frequency: row.frequency,
-        currentPost: row.current_post,
-        posts: [],
-        createdAt: new Date(row.created_at),
-      }));
+      `;
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            campaignId: row.campaign_id,
+            name: row.name,
+            theme: row.theme,
+            totalPosts: row.total_posts,
+            frequency: row.frequency,
+            currentPost: row.current_post,
+            posts: [],
+            createdAt: new Date(row.created_at),
+          }) as ContentSeries
+      );
     } catch (error) {
       console.error('Error fetching content series:', error);
       throw error;
@@ -113,7 +141,7 @@ export const auth = {
   },
 
   // Listen to auth state changes
-  onAuthStateChange: (callback: (user: unknown) => void) => {
+  onAuthStateChange: (callback: (user: any) => void) => {
     // This will be handled by Stack Auth on the frontend
     return () => {}; // Placeholder
   },
@@ -133,13 +161,13 @@ export const db = {
 
     return await contentCache.cacheUserPosts(userId, async () => {
       try {
-        const result = (await pool`
+        const result = await pool`
           SELECT * FROM posts 
           WHERE user_id = ${userId} 
           ORDER BY created_at DESC
-        `) as DatabasePost[];
+        `;
 
-        return result.map(transformDatabasePostToPost);
+        return result.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
       } catch (error) {
         console.error('Error fetching posts:', error);
         throw error;
@@ -150,14 +178,14 @@ export const db = {
   // Get all scheduled posts across all users (for global scheduler)
   getAllScheduledPosts: async (): Promise<Post[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM posts 
         WHERE status = 'scheduled' 
         AND schedule_date IS NOT NULL
         ORDER BY schedule_date ASC
-      `) as DatabasePost[];
+      `;
 
-      return result.map(transformDatabasePostToPost);
+      return result.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
     } catch (error) {
       console.error('Error fetching scheduled posts:', error);
       throw error;
@@ -195,18 +223,19 @@ export const db = {
       const countResult = await pool`
         SELECT COUNT(*) FROM posts WHERE user_id = ${userId}
       `;
-      const totalCount = parseInt(countResult[0]?.count || '0');
+      const countRow = countResult[0];
+      const totalCount = countRow ? parseInt(countRow.count) : 0;
 
       // Get paginated results
       const offset = (page - 1) * pageSize;
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM posts 
         WHERE user_id = ${userId}
         ORDER BY created_at DESC
         LIMIT ${pageSize} OFFSET ${offset}
-      `) as DatabasePost[];
+      `;
 
-      const posts = result.map(transformDatabasePostToPost);
+      const posts = result.map((row: any) => transformDatabasePostToPost(row as DatabasePost));
 
       // Cache optimization: Only cache a reasonable batch size on first page load
       // Rationale for 100 records:
@@ -217,14 +246,16 @@ export const db = {
       // - Adjust this value based on production analytics if users commonly navigate beyond 5 pages
       if (page === 1 && totalCount > pageSize) {
         const cacheLimit = Math.min(100, totalCount);
-        const fullData = (await pool`
+        const fullData = await pool`
           SELECT * FROM posts 
           WHERE user_id = ${userId}
           ORDER BY created_at DESC
           LIMIT ${cacheLimit}
-        `) as DatabasePost[];
+        `;
 
-        const fullPosts = fullData.map(transformDatabasePostToPost);
+        const fullPosts = fullData.map((row: any) =>
+          transformDatabasePostToPost(row as DatabasePost)
+        );
         paginationCache.set(cacheKey, fullPosts, totalCount);
       }
 
@@ -239,29 +270,89 @@ export const db = {
     }
   },
 
-  // Content Series (read-only for client)
   getContentSeries: async (userId: string): Promise<ContentSeries[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM content_series
         WHERE user_id = ${userId}
         ORDER BY created_at DESC
-      `) as DatabaseContentSeries[];
+      `;
 
-      return result.map((row) => ({
-        id: row.id,
-        userId: row.user_id,
-        campaignId: row.campaign_id,
-        name: row.name,
-        theme: row.theme,
-        totalPosts: row.total_posts,
-        frequency: row.frequency,
-        currentPost: row.current_post,
-        posts: [],
-        createdAt: new Date(row.created_at),
-      }));
+      return result.map((row: any) =>
+        transformDatabaseContentSeriesToContentSeries(row as DatabaseContentSeries)
+      );
     } catch (error) {
       console.error('Error fetching content series:', error);
+      throw error;
+    }
+  },
+
+  // Add new content series
+  addContentSeries: async (
+    series: Omit<DatabaseContentSeries, 'id' | 'user_id' | 'created_at'>,
+    userId: string
+  ): Promise<ContentSeries> => {
+    try {
+      const result = await pool`
+        INSERT INTO content_series (
+          user_id, campaign_id, name, theme, total_posts, frequency, current_post
+        ) VALUES (
+          ${userId}, ${series.campaign_id || null}, ${series.name}, ${series.theme},
+          ${series.total_posts}, ${series.frequency}, ${series.current_post}
+        ) RETURNING *
+      `;
+
+      return transformDatabaseContentSeriesToContentSeries(result[0] as DatabaseContentSeries);
+    } catch (error) {
+      console.error('Error adding content series:', error);
+      throw error;
+    }
+  },
+
+  // Update content series
+  updateContentSeries: async (
+    id: string,
+    updates: Partial<Omit<DatabaseContentSeries, 'id' | 'user_id'>>,
+    userId: string
+  ): Promise<ContentSeries> => {
+    try {
+      const result = await pool`
+        UPDATE content_series 
+        SET
+          campaign_id = COALESCE(${updates.campaign_id ?? null}, campaign_id),
+          name = COALESCE(${updates.name ?? null}, name),
+          theme = COALESCE(${updates.theme ?? null}, theme),
+          total_posts = COALESCE(${updates.total_posts ?? null}, total_posts),
+          frequency = COALESCE(${updates.frequency ?? null}, frequency),
+          current_post = COALESCE(${updates.current_post ?? null}, current_post)
+        WHERE id = ${id} AND user_id = ${userId}
+        RETURNING *
+      `;
+
+      if (result.length === 0) {
+        throw new Error('Content series not found or access denied');
+      }
+
+      return transformDatabaseContentSeriesToContentSeries(result[0] as DatabaseContentSeries);
+    } catch (error) {
+      console.error('Error updating content series:', error);
+      throw error;
+    }
+  },
+
+  // Delete content series
+  deleteContentSeries: async (id: string, userId: string): Promise<void> => {
+    try {
+      const result = await pool`
+        DELETE FROM content_series 
+        WHERE id = ${id} AND user_id = ${userId}
+      `;
+
+      if (result.length === 0) {
+        throw new Error('Content series not found or access denied');
+      }
+    } catch (error) {
+      console.error('Error deleting content series:', error);
       throw error;
     }
   },
@@ -381,13 +472,15 @@ export const db = {
   getBrandVoices: async (userId: string): Promise<BrandVoice[]> => {
     return await contentCache.cacheBrandVoices(userId, async () => {
       try {
-        const result = (await pool`
+        const result = await pool`
           SELECT * FROM brand_voices 
           WHERE user_id = ${userId} 
           ORDER BY created_at DESC
-        `) as DatabaseBrandVoice[];
+        `;
 
-        return result.map(transformDatabaseBrandVoiceToBrandVoice);
+        return result.map((row: any) =>
+          transformDatabaseBrandVoiceToBrandVoice(row as DatabaseBrandVoice)
+        );
       } catch (error) {
         console.error('Error fetching brand voices:', error);
         throw error;
@@ -471,13 +564,15 @@ export const db = {
   // Audience Profiles CRUD operations
   getAudienceProfiles: async (userId: string): Promise<AudienceProfile[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM audience_profiles 
         WHERE user_id = ${userId} 
         ORDER BY created_at DESC
-      `) as DatabaseAudienceProfile[];
+      `;
 
-      return result.map(transformDatabaseAudienceProfileToAudienceProfile);
+      return result.map((row: any) =>
+        transformDatabaseAudienceProfileToAudienceProfile(row as DatabaseAudienceProfile)
+      );
     } catch (error) {
       console.error('Error fetching audience profiles:', error);
       throw error;
@@ -574,13 +669,29 @@ export const db = {
   // Content Templates (read-only for client)
   getContentTemplates: async (userId?: string): Promise<ContentTemplate[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM content_templates
         ${userId ? pool`WHERE user_id = ${userId} OR is_public = true` : pool``}
         ORDER BY created_at DESC
-      `) as DatabaseContentTemplate[];
+      `;
 
-      return result.map(transformDatabaseContentTemplateToContentTemplate);
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            category: row.category,
+            industry: row.industry,
+            contentType: row.content_type,
+            structure: row.structure,
+            customizableFields: row.customizable_fields,
+            usageCount: row.usage_count,
+            rating: row.rating,
+            isPublic: row.is_public,
+            createdAt: new Date(row.created_at),
+          }) as ContentTemplate
+      );
     } catch (error) {
       console.error('Error fetching content templates:', error);
       throw error;
@@ -590,13 +701,13 @@ export const db = {
   // Campaigns CRUD operations
   getCampaigns: async (userId: string): Promise<Campaign[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM campaigns 
         WHERE user_id = ${userId} 
         ORDER BY created_at DESC
-      `) as DatabaseCampaign[];
+      `;
 
-      return result.map(transformDatabaseCampaignToCampaign);
+      return result.map((row: any) => transformDatabaseCampaignToCampaign(row as DatabaseCampaign));
     } catch (error) {
       console.error('Error fetching campaigns:', error);
       throw error;
@@ -677,27 +788,31 @@ export const db = {
     }
   },
 
+
+
   // Integration Alerts Operations
   getIntegrationAlerts: async (
     integrationId: string,
     includeResolved: boolean = false
   ): Promise<IntegrationAlert[]> => {
     try {
-      let result: DatabaseIntegrationAlert[];
+      let result;
       if (!includeResolved) {
-        result = (await pool`
+        result = await pool`
         SELECT * FROM integration_alerts 
           WHERE integration_id = ${integrationId} AND is_resolved = false
           ORDER BY created_at DESC
-        `) as DatabaseIntegrationAlert[];
+        `;
       } else {
-        result = (await pool`
+        result = await pool`
           SELECT * FROM integration_alerts 
           WHERE integration_id = ${integrationId}
           ORDER BY created_at DESC
-        `) as DatabaseIntegrationAlert[];
+        `;
       }
-      return result.map(transformDatabaseIntegrationAlertToIntegrationAlert);
+      return result.map((row: any) =>
+        transformDatabaseIntegrationAlertToIntegrationAlert(row as DatabaseIntegrationAlert)
+      );
     } catch (error) {
       console.error('Error fetching integration alerts:', error);
       throw error;
@@ -710,14 +825,16 @@ export const db = {
     limit: number = 100
   ): Promise<IntegrationLog[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM integration_logs 
         WHERE integration_id = ${integrationId}
         ORDER BY timestamp DESC
         LIMIT ${limit}
-      `) as DatabaseIntegrationLog[];
+      `;
 
-      return result.map(transformDatabaseIntegrationLogToIntegrationLog);
+      return result.map((row: any) =>
+        transformDatabaseIntegrationLogToIntegrationLog(row as DatabaseIntegrationLog)
+      );
     } catch (error) {
       console.error('Error fetching integration logs:', error);
       throw error;
@@ -748,13 +865,15 @@ export const db = {
 
   getPostAnalytics: async (postId: string): Promise<AnalyticsData[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM post_analytics 
         WHERE post_id = ${postId} 
         ORDER BY recorded_at DESC
-      `) as DatabaseAnalyticsData[];
+      `;
 
-      return result.map(transformDatabaseAnalyticsDataToAnalyticsData);
+      return result.map((row: any) =>
+        transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData)
+      );
     } catch (error) {
       console.error('Error fetching post analytics:', error);
       throw error;
@@ -764,29 +883,110 @@ export const db = {
   // Get analytics between dates
   getAnalyticsByTimeframe: async (startDate: Date, endDate: Date): Promise<AnalyticsData[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM post_analytics
         WHERE recorded_at >= ${startDate.toISOString()} AND recorded_at <= ${endDate.toISOString()}
         ORDER BY recorded_at DESC
-      `) as DatabaseAnalyticsData[];
+      `;
 
-      return result.map(transformDatabaseAnalyticsDataToAnalyticsData);
+      return result.map((row: any) =>
+        transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData)
+      );
     } catch (error) {
       console.error('Error fetching analytics by timeframe:', error);
       throw error;
     }
   },
 
+  batchInsertAnalytics: async (dataItems: Omit<DatabaseAnalyticsData, 'id' | 'recorded_at'>[]): Promise<AnalyticsData[]> => {
+    try {
+      if (dataItems.length === 0) return [];
+      
+      const result = await pool`
+        INSERT INTO post_analytics ${pool(dataItems, 'post_id', 'platform', 'likes', 'shares', 'comments', 'clicks', 'impressions', 'reach')}
+        RETURNING *
+      `;
+      return result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
+    } catch (error) {
+      console.error('Error batch inserting analytics:', error);
+      throw error;
+    }
+  },
+
+  generatePerformanceReport: async (timeframe: 'week' | 'month' | 'quarter' | 'year'): Promise<PerformanceReport> => {
+     try {
+       const now = new Date();
+       const startDate = new Date();
+       if (timeframe === 'week') startDate.setDate(now.getDate() - 7);
+       if (timeframe === 'month') startDate.setMonth(now.getMonth() - 1);
+       if (timeframe === 'quarter') startDate.setMonth(now.getMonth() - 3);
+       if (timeframe === 'year') startDate.setFullYear(now.getFullYear() - 1);
+
+       // Re-use internal method if possible, or query directly
+       const result = await pool`
+        SELECT * FROM post_analytics
+        WHERE recorded_at BETWEEN ${startDate.toISOString()} AND ${now.toISOString()}
+       `;
+       const analytics = result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
+
+       const totalEngagement = analytics.reduce((sum: number, a: AnalyticsData) => sum + a.likes + a.shares + a.comments + a.clicks, 0);
+       const totalImpressions = analytics.reduce((sum: number, a: AnalyticsData) => sum + a.impressions, 0);
+
+       return {
+         timeframe,
+         totalPosts: 0, // This should be populated by the caller or a separate query
+         totalEngagement,
+         avgEngagementRate: totalImpressions > 0 ? (totalEngagement / totalImpressions) * 100 : 0,
+         topContent: [],
+         platformBreakdown: {},
+         trends: [],
+         recommendations: []
+       };
+     } catch (error) {
+       console.error('Error generating performance report:', error);
+       throw error;
+     }
+  },
+
+  getTopPerformingContent: async (limit: number, timeframe?: 'week' | 'month' | 'quarter' | 'year'): Promise<AnalyticsData[]> => {
+     try {
+       const now = new Date();
+       const startDate = new Date(0); 
+       if (timeframe === 'week') startDate.setDate(now.getDate() - 7);
+       if (timeframe === 'month') startDate.setMonth(now.getMonth() - 1);
+       if (timeframe === 'quarter') startDate.setMonth(now.getMonth() - 3);
+       if (timeframe === 'year') startDate.setFullYear(now.getFullYear() - 1);
+
+       const result = await pool`
+         SELECT post_id, platform, MAX(likes) as likes, MAX(shares) as shares, 
+                MAX(comments) as comments, MAX(clicks) as clicks, 
+                MAX(impressions) as impressions, MAX(reach) as reach, 
+                MAX(recorded_at) as recorded_at, MAX(id) as id
+         FROM post_analytics
+         WHERE recorded_at >= ${startDate.toISOString()}
+         GROUP BY post_id, platform
+         ORDER BY (MAX(likes) + MAX(shares) * 2 + MAX(comments) * 3) DESC
+         LIMIT ${limit}
+       `;
+       return result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
+     } catch (error) {
+       console.error('Error getting top performing content:', error);
+       throw error;
+     }
+  },
+
   // Integration Management Operations
   getIntegrations: async (userId: string): Promise<Integration[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM integrations 
         WHERE user_id = ${userId} 
         ORDER BY created_at DESC
-      `) as DatabaseIntegration[];
+      `;
 
-      return result.map(transformDatabaseIntegrationToIntegration);
+      return result.map((row: any) =>
+        transformDatabaseIntegrationToIntegration(row as DatabaseIntegration)
+      );
     } catch (error) {
       console.error('Error fetching integrations:', error);
       throw error;
@@ -877,13 +1077,25 @@ export const db = {
   // Image Styles (read-only for client)
   getImageStyles: async (userId?: string): Promise<ImageStyle[]> => {
     try {
-      const result = (await pool`
+      const result = await pool`
         SELECT * FROM image_styles
         ${userId ? pool`WHERE user_id = ${userId}` : pool``}
         ORDER BY created_at DESC
-      `) as DatabaseImageStyle[];
+      `;
 
-      return result.map(transformDatabaseImageStyleToImageStyle);
+      return result.map(
+        (row: any) =>
+          ({
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            stylePrompt: row.style_prompt,
+            colorPalette: row.color_palette,
+            visualElements: row.visual_elements,
+            brandAssets: row.brand_assets,
+            createdAt: new Date(row.created_at),
+          }) as ImageStyle
+      );
     } catch (error) {
       console.error('Error fetching image styles:', error);
       throw error;
@@ -980,38 +1192,6 @@ function transformDatabaseAudienceProfileToAudienceProfile(
     preferredContentTypes: safeJsonParse(dbProfile.preferred_content_types, []),
     engagementPatterns: safeJsonParse(dbProfile.engagement_patterns, {}),
     createdAt: new Date(dbProfile.created_at),
-  };
-}
-
-function transformDatabaseContentTemplateToContentTemplate(
-  dbTemplate: DatabaseContentTemplate
-): ContentTemplate {
-  return {
-    id: dbTemplate.id,
-    userId: dbTemplate.user_id,
-    name: dbTemplate.name,
-    category: dbTemplate.category,
-    industry: dbTemplate.industry,
-    contentType: dbTemplate.content_type,
-    structure: dbTemplate.structure,
-    customizableFields: dbTemplate.customizable_fields,
-    usageCount: dbTemplate.usage_count,
-    rating: dbTemplate.rating,
-    isPublic: dbTemplate.is_public,
-    createdAt: new Date(dbTemplate.created_at),
-  };
-}
-
-function transformDatabaseImageStyleToImageStyle(dbStyle: DatabaseImageStyle): ImageStyle {
-  return {
-    id: dbStyle.id,
-    userId: dbStyle.user_id,
-    name: dbStyle.name,
-    stylePrompt: dbStyle.style_prompt,
-    colorPalette: dbStyle.color_palette,
-    visualElements: dbStyle.visual_elements,
-    brandAssets: dbStyle.brand_assets,
-    createdAt: new Date(dbStyle.created_at),
   };
 }
 
@@ -1148,3 +1328,20 @@ export const query = async (sql: string, params: any[] = []) => {
     throw error; // Re-throw the error so it can be handled by the caller
   }
 };
+// Helper functions for Content Series transformations
+function transformDatabaseContentSeriesToContentSeries(
+  dbSeries: DatabaseContentSeries
+): ContentSeries {
+  return {
+    id: dbSeries.id,
+    userId: dbSeries.user_id,
+    campaignId: dbSeries.campaign_id,
+    name: dbSeries.name,
+    theme: dbSeries.theme,
+    totalPosts: dbSeries.total_posts,
+    frequency: dbSeries.frequency,
+    currentPost: dbSeries.current_post,
+    posts: [], // Will be populated by separate query if needed
+    createdAt: new Date(dbSeries.created_at),
+  };
+}

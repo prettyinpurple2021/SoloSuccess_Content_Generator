@@ -17,18 +17,26 @@ export const ForgotPasswordPage: React.FC = () => {
     setMessage('');
 
     try {
-      const result = await app.sendForgotPasswordEmail(email);
+      const result = await app.sendPasswordResetEmail(email);
 
-      if (result.status === 'ok') {
+      if (result.status === 'success') {
         setMessage('Check your email for the password reset link!');
       } else {
         // Handle specific error cases
-        if (result.error) {
-          setError(
-            result.error.message || 'Failed to send password reset email. Please try again.'
-          );
-        } else {
-          setError('Failed to send password reset email. Please try again.');
+        switch (result.error?.code) {
+          case 'UserNotFound':
+            setError('No user found with this email address.');
+            break;
+          case 'RateLimitExceeded':
+            setError('Too many requests. Please try again later.');
+            break;
+          case 'InvalidEmail':
+            setError('Please enter a valid email address.');
+            break;
+          default:
+            setError(
+              result.error?.message || 'Failed to send password reset email. Please try again.'
+            );
         }
       }
     } catch (err) {
@@ -42,10 +50,13 @@ export const ForgotPasswordPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle sparkle-bg-1"></div>
-        <div className="sparkle sparkle-bg-2"></div>
-        <div className="sparkle sparkle-bg-3"></div>
-        <div className="sparkle sparkle-bg-4"></div>
+        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
+        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
+        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
+        <div
+          className="sparkle"
+          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
+        ></div>
       </div>
 
       {/* Navigation */}

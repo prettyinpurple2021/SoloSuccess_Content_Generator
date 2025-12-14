@@ -2,14 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { IntegrationType } from '../../types';
 
-interface CredentialField {
-  key: string;
-  label: string;
-  type: 'text' | 'password';
-  required: boolean;
-  placeholder: string;
-}
-
 interface IntegrationCredentialsFormProps {
   platform: string;
   type: IntegrationType;
@@ -37,6 +29,14 @@ const IntegrationCredentialsForm: React.FC<IntegrationCredentialsFormProps> = ({
   }, [credentials]);
 
   // Define credential fields for each platform
+  interface CredentialField {
+    key: string;
+    label: string;
+    type: 'text' | 'password';
+    required: boolean;
+    placeholder: string;
+  }
+
   const getCredentialFields = (platform: string, type: IntegrationType): CredentialField[] => {
     const fields: Record<string, CredentialField[]> = {
       // Social Media Platforms

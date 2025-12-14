@@ -80,23 +80,6 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
     return icons[type] || '🔗';
   };
 
-  const getHealthScore = (integration: Integration) => {
-    switch (integration.status) {
-      case 'connected':
-        return 95;
-      case 'syncing':
-        return 85;
-      case 'maintenance':
-        return 60;
-      case 'disconnected':
-        return 40;
-      case 'error':
-        return 20;
-      default:
-        return 50;
-    }
-  };
-
   return (
     <div className="space-y-8">
       {/* Integration Status Cards */}
@@ -134,26 +117,22 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
             </div>
 
             {/* Health Score */}
-            {(() => {
-              const healthScore = getHealthScore(integration);
-
-              return (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-white/70">Health Score</span>
-                    <span className={`text-lg font-bold ${getHealthScoreColor(healthScore)}`}>
-                      {healthScore}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-white/20 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${healthScore}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })()}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-white/70">Health Score</span>
+                <span
+                  className={`text-lg font-bold ${getHealthScoreColor(integration.status?.healthScore || 0)}`}
+                >
+                  {integration.status?.healthScore || 0}%
+                </span>
+              </div>
+              <div className="w-full bg-white/20 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${integration.status?.healthScore || 0}%` }}
+                />
+              </div>
+            </div>
 
             {/* Last Sync */}
             {integration.lastSync && (
@@ -307,7 +286,7 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
               <div>
                 <p className="text-2xl font-bold text-white">
                   {Math.round(
-                    integrations.reduce((sum, i) => sum + getHealthScore(i), 0) /
+                    integrations.reduce((sum, i) => sum + (i.status?.healthScore || 0), 0) /
                       integrations.length
                   )}
                   %

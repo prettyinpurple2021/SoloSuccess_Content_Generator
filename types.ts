@@ -459,7 +459,6 @@ export interface EncryptedCredentials {
   salt?: string; // Optional for backward compatibility
   iterations?: number; // PBKDF2 iterations
   version?: string; // Encryption version for key rotation
-  createdAt?: Date; // Credential creation timestamp
 }
 
 export interface IntegrationConfig {
@@ -469,17 +468,6 @@ export interface IntegrationConfig {
   errorHandling?: ErrorHandlingConfig;
   notifications?: NotificationConfig;
   customFields?: { [key: string]: unknown };
-  // Compliance and security properties
-  dataRetention?: boolean;
-  consentManagement?: boolean;
-  auditLogging?: boolean;
-  accessControls?: boolean;
-  dataIntegrity?: boolean;
-  accessLogging?: boolean;
-  backupAndRecovery?: boolean;
-  networkSecurity?: boolean;
-  vulnerabilityManagement?: boolean;
-  monitoringAndTesting?: boolean;
 }
 
 export interface WebhookConfig {
@@ -814,4 +802,63 @@ export interface WebhookDelivery {
   error?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Social Platform Service Types
+export interface SocialPlatformConfig {
+  platform: string;
+  apiKey?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  isConnected: boolean;
+  lastSync?: Date;
+}
+
+export interface PostEngagementData {
+  platform: string;
+  postId: string;
+  likes: number;
+  shares: number;
+  comments: number;
+  clicks: number;
+  impressions: number;
+  reach: number;
+  engagementRate: number;
+  timestamp: Date;
+}
+
+export interface HashtagPerformance {
+  hashtag: string;
+  platform: string;
+  usageCount: number;
+  avgEngagement: number;
+  trendingScore: number;
+  lastUpdated: Date;
+}
+
+export interface TrendingTopic {
+  topic: string;
+  platform: string;
+  volume: number;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  relatedHashtags: string[];
+  category: string;
+  trendingScore: number;
+  expiresAt: Date;
+}
+
+export interface PlatformOptimization {
+  platform: string;
+  bestPostingTimes: string[];
+  optimalContentLength: {
+    min: number;
+    max: number;
+  };
+  topPerformingContentTypes: string[];
+  recommendedHashtagCount: number;
+  audienceInsights: {
+    demographics: any;
+    interests: string[];
+    activeHours: string[];
+  };
 }

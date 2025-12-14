@@ -7,7 +7,7 @@ import {
   PlatformMetrics,
   LoadingState,
 } from '../types';
-import { analyticsService } from '../services/analyticsService';
+// import { analyticsService } from '../services/analyticsService';
 import { Spinner } from '../constants';
 
 interface AnalyticsDashboardProps {
@@ -137,7 +137,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     </div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${percentage}%` }}
@@ -223,7 +223,6 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <select
               value={selectedTimeframe}
               onChange={(e) => setSelectedTimeframe(e.target.value as any)}
-              aria-label="Select timeframe for analytics"
               className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="week">Last Week</option>
@@ -232,10 +231,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <option value="year">Last Year</option>
             </select>
             <button
-              type="button"
               onClick={onClose}
-              title="Close analytics dashboard"
-              aria-label="Close analytics dashboard"
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

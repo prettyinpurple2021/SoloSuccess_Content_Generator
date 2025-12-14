@@ -44,10 +44,9 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ isVisibl
           entries.forEach((entry) => {
             if (entry.entryType === 'navigation') {
               const navEntry = entry as PerformanceNavigationTiming;
-              const startTime = navEntry.fetchStart ?? 0;
               setMetrics((prev) => ({
                 ...prev,
-                pageLoadTime: Math.max(0, navEntry.loadEventEnd - startTime),
+                pageLoadTime: Math.max(0, navEntry.loadEventEnd - navEntry.navigationStart),
                 lastUpdated: new Date(),
               }));
             }

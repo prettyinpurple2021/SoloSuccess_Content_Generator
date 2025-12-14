@@ -50,8 +50,8 @@ export class SocialMediaIntegrations {
         success: true,
         responseTime: Date.now() - startTime,
         details: {
-          userId: (response as { data?: { id?: unknown } }).data?.id,
-          username: (response as { data?: { username?: unknown } }).data?.username,
+          userId: response.data?.id,
+          username: response.data?.username,
           apiVersion: '2.0',
         },
         timestamp: new Date(),
@@ -136,7 +136,7 @@ export class SocialMediaIntegrations {
     options?: TwitterPostOptions
   ): Promise<PostResult> {
     try {
-      const tweetData: Record<string, unknown> = {
+      const tweetData: any = {
         text: content,
       };
 
@@ -159,11 +159,10 @@ export class SocialMediaIntegrations {
         tweetData
       );
 
-      const r = response as { data?: { id?: string } };
       return {
         success: true,
-        postId: r.data?.id,
-        url: `https://twitter.com/user/status/${r.data?.id}`,
+        postId: response.data?.id,
+        url: `https://twitter.com/user/status/${response.data?.id}`,
         timestamp: new Date(),
         platform: 'twitter',
       };
@@ -200,11 +199,9 @@ export class SocialMediaIntegrations {
         success: true,
         responseTime: Date.now() - startTime,
         details: {
-          userId: (response as { id?: unknown }).id,
-          firstName: (response as { firstName?: { localized?: { en_US?: unknown } } }).firstName
-            ?.localized?.en_US,
-          lastName: (response as { lastName?: { localized?: { en_US?: unknown } } }).lastName
-            ?.localized?.en_US,
+          userId: response.id,
+          firstName: response.firstName?.localized?.en_US,
+          lastName: response.lastName?.localized?.en_US,
           apiVersion: '2.0',
         },
         timestamp: new Date(),
@@ -305,11 +302,10 @@ export class SocialMediaIntegrations {
         postData
       );
 
-      const r = response as { id?: string };
       return {
         success: true,
-        postId: r.id,
-        url: `https://www.linkedin.com/feed/update/${r.id}`,
+        postId: response.id,
+        url: `https://www.linkedin.com/feed/update/${response.id}`,
         timestamp: new Date(),
         platform: 'linkedin',
       };
@@ -346,8 +342,8 @@ export class SocialMediaIntegrations {
         success: true,
         responseTime: Date.now() - startTime,
         details: {
-          userId: (response as { id?: unknown }).id,
-          name: (response as { name?: unknown }).name,
+          userId: response.id,
+          name: response.name,
           apiVersion: 'v18.0',
         },
         timestamp: new Date(),
@@ -388,11 +384,10 @@ export class SocialMediaIntegrations {
         postData
       );
 
-      const r = response as { id?: string };
       return {
         success: true,
-        postId: r.id,
-        url: `https://www.facebook.com/${pageId}/posts/${r.id}`,
+        postId: response.id,
+        url: `https://www.facebook.com/${pageId}/posts/${response.id}`,
         timestamp: new Date(),
         platform: 'facebook',
       };
@@ -477,8 +472,8 @@ export class SocialMediaIntegrations {
         success: true,
         responseTime: Date.now() - startTime,
         details: {
-          userId: (response as { id?: unknown }).id,
-          username: (response as { username?: unknown }).username,
+          userId: response.id,
+          username: response.username,
           apiVersion: 'v18.0',
         },
         timestamp: new Date(),
@@ -552,8 +547,8 @@ export class SocialMediaIntegrations {
     method: string,
     url: string,
     credentials: TwitterCredentials,
-    data?: unknown
-  ): Promise<unknown> {
+    data?: any
+  ): Promise<any> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${credentials.bearerToken || credentials.accessToken}`,
       'Content-Type': 'application/json',
@@ -570,8 +565,8 @@ export class SocialMediaIntegrations {
     method: string,
     url: string,
     credentials: LinkedInCredentials,
-    data?: unknown
-  ): Promise<unknown> {
+    data?: any
+  ): Promise<any> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${credentials.accessToken}`,
       'Content-Type': 'application/json',
@@ -589,8 +584,8 @@ export class SocialMediaIntegrations {
     method: string,
     url: string,
     credentials: FacebookCredentials,
-    data?: unknown
-  ): Promise<unknown> {
+    data?: any
+  ): Promise<any> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -606,8 +601,8 @@ export class SocialMediaIntegrations {
     method: string,
     url: string,
     credentials: InstagramCredentials,
-    data?: unknown
-  ): Promise<unknown> {
+    data?: any
+  ): Promise<any> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -623,8 +618,8 @@ export class SocialMediaIntegrations {
     method: string,
     url: string,
     headers: Record<string, string>,
-    data?: unknown
-  ): Promise<unknown> {
+    data?: any
+  ): Promise<any> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {

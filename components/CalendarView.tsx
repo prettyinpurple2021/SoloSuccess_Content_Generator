@@ -7,7 +7,7 @@ import {
   ConflictAnalysis,
   AudienceProfile,
 } from '../types';
-import { schedulingService } from '../services/schedulingService';
+// import { schedulingService } from '../services/schedulingService';
 
 interface CalendarViewProps {
   posts: Post[];

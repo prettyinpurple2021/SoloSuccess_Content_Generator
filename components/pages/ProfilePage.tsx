@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '@stackframe/stack';
+// User type from Stack Auth
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
 
 interface ProfileData {
   display_name: string;
@@ -49,15 +55,11 @@ export const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      const metadataProfile = (user.clientMetadata as any)?.profile;
       setProfileData((prev) => ({
         ...prev,
-        display_name: user.displayName || user.primaryEmail?.split('@')[0] || '',
-        bio: metadataProfile?.bio || '',
-        website: metadataProfile?.website || '',
-        timezone: metadataProfile?.timezone || prev.timezone,
-        notifications: metadataProfile?.notifications || prev.notifications,
-        preferences: metadataProfile?.preferences || prev.preferences,
+        display_name: user.displayName || user.email?.split('@')[0] || '',
+        bio: user.profile?.bio || '',
+        website: user.profile?.website || '',
       }));
     }
   }, [user]);
@@ -70,11 +72,16 @@ export const ProfilePage: React.FC = () => {
     setMessage('');
 
     try {
-      await user.setDisplayName(profileData.display_name);
-      const existingMetadata = (user.clientMetadata as any) || {};
-      await user.setClientMetadata({
-        ...existingMetadata,
-        profile: profileData,
+      // Update user profile using Stack Auth
+      await user.update({
+        displayName: profileData.display_name,
+        profile: {
+          bio: profileData.bio,
+          website: profileData.website,
+          timezone: profileData.timezone,
+          notifications: profileData.notifications,
+          preferences: profileData.preferences,
+        },
       });
 
       setMessage('Profile updated successfully!');
@@ -94,6 +101,8 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
+      // Stack Auth handles password updates differently
+      // This would need to be implemented based on Stack Auth's API
       setMessage('Password update feature coming soon!');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
@@ -108,6 +117,8 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
+      // Stack Auth handles account deletion differently
+      // This would need to be implemented based on Stack Auth's API
       setMessage('Account deletion feature coming soon!');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
@@ -116,7 +127,6 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    if (!user) return;
     try {
       await user.signOut();
       navigate('/');
@@ -125,13 +135,8 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (user === null) {
-      navigate('/auth/signin');
-    }
-  }, [user, navigate]);
-
   if (!user) {
+    navigate('/auth/signin');
     return null;
   }
 
@@ -139,10 +144,13 @@ export const ProfilePage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle"></div>
-        <div className="sparkle"></div>
-        <div className="sparkle"></div>
-        <div className="sparkle"></div>
+        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
+        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
+        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
+        <div
+          className="sparkle"
+          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
+        ></div>
       </div>
 
       {/* Navigation */}
@@ -202,10 +210,8 @@ export const ProfilePage: React.FC = () => {
                 <label className="block text-sm font-medium text-white mb-2">Email</label>
                 <input
                   type="email"
-                  value={user.primaryEmail || ''}
+                  value={user.email || ''}
                   disabled
-                  title="Primary email"
-                  placeholder="Primary email"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/20 backdrop-blur-sm text-white/60 cursor-not-allowed"
                 />
               </div>
@@ -239,7 +245,6 @@ export const ProfilePage: React.FC = () => {
                   onChange={(e) =>
                     setProfileData((prev) => ({ ...prev, timezone: e.target.value }))
                   }
-                  title="Timezone"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="UTC">UTC</option>
@@ -334,7 +339,6 @@ export const ProfilePage: React.FC = () => {
                       },
                     }))
                   }
-                  title="Theme preference"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="dark">Dark</option>
@@ -353,7 +357,6 @@ export const ProfilePage: React.FC = () => {
                       preferences: { ...prev.preferences, language: e.target.value },
                     }))
                   }
-                  title="Language preference"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="en">English</option>
@@ -448,7 +451,6 @@ export const ProfilePage: React.FC = () => {
                 type="text"
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                title="Type DELETE to confirm"
                 className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="DELETE"
               />

@@ -1,4 +1,4 @@
--- Complete Database Migration for solosuccess AI Content Planner
+-- Complete Database Migration for SoloSuccess AI Content Planner
 -- 
 -- ⚠️ WARNING: This file contains Supabase-specific syntax (auth.users, auth.uid())
 -- For Neon + Stack Auth, use database/neon-complete-migration.sql instead!
@@ -651,6 +651,6 @@ CREATE TRIGGER post_analytics_performance_trigger
 
 -- This migration has been completed successfully!
 -- All tables, indexes, policies, triggers, and functions have been created.
--- Your solosuccess AI Content Planner database is now ready to use.
+-- Your SoloSuccess AI Content Planner database is now ready to use.
 
 SELECT 'Database migration completed successfully! All tables are ready.' as status;

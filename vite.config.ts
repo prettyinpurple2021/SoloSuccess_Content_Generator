@@ -157,7 +157,6 @@ const excludeServerModules = () => {
           originalId.startsWith('/services/redisService')
         ) {
           // Return a stub that exports empty objects/functions to prevent runtime errors
-          // This allows the code to compile but will fail gracefully if actually called
           return `
             // Server-only module stub - this should never be called in client-side code
             const error = () => {
@@ -255,16 +254,6 @@ export default defineConfig(({ mode }) => {
 
             // Vendor chunks with better splitting
             if (id.includes('node_modules')) {
-              // Ensure React, ReactDOM, and scheduler are in the same chunk
-              // This is critical for React to initialize properly
-              if (
-                id.includes('react') ||
-                id.includes('react-dom') ||
-                id.includes('react/jsx-runtime') ||
-                id.includes('scheduler')
-              ) {
-                return 'vendor-react';
-              }
               if (id.includes('lucide-react') || id.includes('@stackframe/stack')) {
                 return 'vendor-ui';
               }
@@ -304,22 +293,6 @@ export default defineConfig(({ mode }) => {
             if (id.includes('geminiService') || id.includes('aiLearningService')) {
               return 'ai-services';
             }
-
-            // Heavy components
-            if (
-              id.includes('IntegrationManager') ||
-              id.includes('RepurposingWorkflow') ||
-              id.includes('AnalyticsDashboard') ||
-              id.includes('PerformanceInsights') ||
-              id.includes('DragDropContentBuilder')
-            ) {
-              return 'components-heavy';
-            }
-
-            // Lazy components
-            if (id.includes('LazyComponents')) {
-              return 'lazy-components';
-            }
           },
           // Optimize chunk sizes
           chunkFileNames: (chunkInfo) => {
@@ -352,7 +325,7 @@ export default defineConfig(({ mode }) => {
         'react/jsx-runtime',
         'lucide-react',
         '@stackframe/react',
-        '@stackframe/stack',
+        // '@stackframe/stack',
         'framer-motion',
       ],
       exclude: [
@@ -371,27 +344,25 @@ export default defineConfig(({ mode }) => {
       drop: mode === 'production' ? ['console', 'debugger'] : [],
     },
     define: {
+      // ✅ FIX: Define global to prevent the "Uncaught ReferenceError" crash
+      global: 'window',
+
       // Only expose client-safe environment variables
-      // Server-side secrets should NEVER be exposed to the client
       'process.env.GOOGLE_CLIENT_ID': JSON.stringify(env.GOOGLE_CLIENT_ID || ''),
       'process.env.VITE_STACK_PROJECT_ID': JSON.stringify(env.VITE_STACK_PROJECT_ID || ''),
       'process.env.VITE_STACK_PUBLISHABLE_CLIENT_KEY': JSON.stringify(
         env.VITE_STACK_PUBLISHABLE_CLIENT_KEY || ''
       ),
-      // Note: API keys, database URLs, and secret keys should NOT be exposed to client
-      // They should only be used server-side in API routes
+      // GEMINI_API_KEY removed for security
     },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
         // Alias server-only packages to empty stubs for client builds
         // API routes run server-side and will use the real packages from node_modules
-        postgres: path.resolve(__dirname, 'vite.server-stub.js'),
-        '@upstash/redis': path.resolve(__dirname, 'vite.server-stub.js'),
         ioredis: path.resolve(__dirname, 'vite.server-stub.js'),
       },
       // Ensure React is deduplicated - prevents multiple React instances
-      // This is CRITICAL to prevent "Cannot set properties of undefined (setting 'Children')" errors
       dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
     },
   };

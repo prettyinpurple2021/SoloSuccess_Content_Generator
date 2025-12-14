@@ -1,9 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <title>API Key Exposure Test</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <h1>API Key Exposure Test</h1>
@@ -32,12 +30,8 @@
             }
             
             // Check import.meta.env
-            try {
-                if (import.meta && import.meta.env && import.meta.env[varName]) {
-                    exposedVars.push(`import.meta.env.${varName}: ${import.meta.env[varName].substring(0, 10)}...`);
-                }
-            } catch (e) {
-                // import.meta not available in this context
+            if (typeof import !== 'undefined' && import.meta && import.meta.env && import.meta.env[varName]) {
+                exposedVars.push(`import.meta.env.${varName}: ${import.meta.env[varName].substring(0, 10)}...`);
             }
         });
         

@@ -89,7 +89,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     const data = apiErrorHandler.validateBody(req.body, createPostSchema, context);
 
     // Sanitize input data
-    const sanitizedData = apiErrorHandler.sanitizeInput(data) as typeof data;
+    const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
       const created = await db.addPost(
@@ -148,7 +148,7 @@ async function postsHandler(req: ApiRequest, res: ApiResponse) {
     const data = apiErrorHandler.validateBody(req.body, updatePostSchema, context);
 
     // Sanitize input data
-    const sanitizedData = apiErrorHandler.sanitizeInput(data) as typeof data;
+    const sanitizedData = apiErrorHandler.sanitizeInput(data);
 
     try {
       const updated = await db.updatePost(

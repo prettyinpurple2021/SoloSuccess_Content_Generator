@@ -1,4 +1,4 @@
-import { Integration, IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
+import { IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
 import { db } from './neonService';
 
 export class MonitoringService {
@@ -227,17 +227,13 @@ export class MonitoringService {
   /**
    * Gets list of integrations (helper used by tests)
    */
-  async getIntegrations(): Promise<unknown[]> {
+  async getIntegrations(): Promise<any[]> {
     try {
       // Delegate to database service; tests may stub this
-      // Note: db.getIntegrations requires userId, so this is a test helper only
-      if (
-        typeof (db as unknown as { getIntegrations?: () => Promise<unknown[]> }).getIntegrations ===
-        'function'
-      ) {
-        return await (
-          db as unknown as { getIntegrations: () => Promise<unknown[]> }
-        ).getIntegrations();
+      // @ts-expect-error - dynamic db shim may expose getIntegrations
+      if (typeof (db as any).getIntegrations === 'function') {
+        // @ts-expect-error - invoking optional method on dynamic db shim
+        return await (db as any).getIntegrations();
       }
     } catch {
       // ignore
@@ -285,13 +281,12 @@ export class MonitoringService {
     alert: Omit<IntegrationAlert, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<IntegrationAlert> {
     try {
-      const newAlert: IntegrationAlert = {
+      const newAlert = await db.addIntegrationAlert({
         ...alert,
         id: crypto.randomUUID(),
         createdAt: new Date(),
-      };
-
-      await db.addIntegrationAlert(newAlert);
+        updatedAt: new Date(),
+      });
 
       // Clear cache
       this.alertsCache.clear();
@@ -312,7 +307,7 @@ export class MonitoringService {
     integrationId: string,
     level: 'info' | 'warn' | 'error',
     message: string,
-    details?: unknown
+    details?: any
   ): Promise<void> {
     try {
       const log: IntegrationLog = {
@@ -322,7 +317,6 @@ export class MonitoringService {
         message,
         details,
         timestamp: new Date(),
-        metadata: {},
       };
 
       await db.addIntegrationLog(log);
@@ -341,37 +335,31 @@ export class MonitoringService {
   async updateMetrics(integrationId: string, metrics: Partial<IntegrationMetrics>): Promise<void> {
     try {
       const existingMetrics = await db.getIntegrationMetrics(integrationId);
-      const latestMetrics = Array.isArray(existingMetrics)
-        ? existingMetrics[existingMetrics.length - 1]
-        : existingMetrics || null;
+      const latestMetrics = existingMetrics[existingMetrics.length - 1];
 
-      const baseMetrics: IntegrationMetrics = {
-        integrationId,
-        totalRequests: latestMetrics?.totalRequests ?? 0,
-        successfulRequests: latestMetrics?.successfulRequests ?? 0,
-        failedRequests: latestMetrics?.failedRequests ?? 0,
-        averageResponseTime:
-          latestMetrics?.averageResponseTime ?? latestMetrics?.avgResponseTime ?? 0,
-        avgResponseTime: latestMetrics?.avgResponseTime ?? latestMetrics?.averageResponseTime ?? 0,
-        successRate: latestMetrics?.successRate ?? 0,
-        lastRequestTime: latestMetrics?.lastRequestTime ?? new Date(),
-        errorRate: latestMetrics?.errorRate ?? 0,
-        uptime: latestMetrics?.uptime ?? 0,
-        dataProcessed: latestMetrics?.dataProcessed ?? 0,
-        syncCount: latestMetrics?.syncCount ?? 0,
-        lastSyncDuration: latestMetrics?.lastSyncDuration ?? 0,
-      };
-
-      const updatedMetrics: IntegrationMetrics = {
-        ...baseMetrics,
-        ...metrics,
-        avgResponseTime:
-          metrics.avgResponseTime ?? metrics.averageResponseTime ?? baseMetrics.avgResponseTime,
-        averageResponseTime:
-          metrics.averageResponseTime ?? metrics.avgResponseTime ?? baseMetrics.averageResponseTime,
-      };
-
-      await db.updateIntegrationMetrics(integrationId, updatedMetrics);
+      if (latestMetrics) {
+        // Update existing metrics
+        const updatedMetrics: IntegrationMetrics = {
+          ...latestMetrics,
+          ...metrics,
+          timestamp: new Date(),
+        };
+        await db.updateIntegrationMetrics(latestMetrics.id, updatedMetrics);
+      } else {
+        // Create new metrics record
+        const newMetrics: IntegrationMetrics = {
+          id: crypto.randomUUID(),
+          integrationId,
+          totalRequests: metrics.totalRequests || 0,
+          successfulRequests: metrics.successfulRequests || 0,
+          failedRequests: metrics.failedRequests || 0,
+          avgResponseTime: metrics.avgResponseTime || 0,
+          successRate: metrics.successRate || 0,
+          errorRate: metrics.errorRate || 0,
+          timestamp: new Date(),
+        };
+        await db.updateIntegrationMetrics(newMetrics.id, newMetrics);
+      }
 
       // Clear cache
       this.metricsCache.clear();
@@ -393,7 +381,7 @@ export class MonitoringService {
         return 0;
       }
 
-      const latestMetrics = metrics[metrics.length - 1]!;
+      const latestMetrics = metrics[metrics.length - 1];
       let healthScore = 100;
 
       // Deduct points for low success rate

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@stackframe/react';
 import { BrandVoice } from '../types';
 import { apiService } from '../services/clientApiService';
-import { db } from '../services/databaseService';
 import { analyzeBrandVoice } from '../services/geminiService';
 import { X, Plus, Edit2, Trash2, Eye, Upload, Loader2, Save, AlertCircle } from 'lucide-react';
 
@@ -58,7 +56,6 @@ export default function BrandVoiceManager({
   brandVoices,
   onBrandVoicesUpdate,
 }: BrandVoiceManagerProps) {
-  const user = useUser();
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'edit' | 'preview'>('list');
   const [editingVoice, setEditingVoice] = useState<BrandVoice | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -131,12 +128,7 @@ export default function BrandVoiceManager({
     setError(null);
 
     try {
-      if (!user?.id) {
-        setError('You must be signed in to delete brand voices.');
-        return;
-      }
-
-      await db.deleteBrandVoice(voice.id, user.id);
+      await db.deleteBrandVoice(voice.id);
       const updatedVoices = brandVoices.filter((v) => v.id !== voice.id);
       onBrandVoicesUpdate(updatedVoices);
 
@@ -198,7 +190,7 @@ export default function BrandVoiceManager({
     setError(null);
 
     try {
-      const analysis = await analyzeBrandVoice(form.sampleContent);
+      const analysis = await analyzeBrandVoice(form.sampleContent.join('\n\n'));
       setAnalysisResults(analysis);
 
       // Auto-populate form with analysis results
@@ -238,11 +230,6 @@ export default function BrandVoiceManager({
     setError(null);
 
     try {
-      if (!user?.id) {
-        setError('You must be signed in to save brand voices.');
-        return;
-      }
-
       const voiceData = {
         name: form.name.trim(),
         tone: form.tone,
@@ -255,12 +242,12 @@ export default function BrandVoiceManager({
       let savedVoice: BrandVoice;
 
       if (activeTab === 'edit' && editingVoice) {
-        savedVoice = await db.updateBrandVoice(editingVoice.id, voiceData, user.id);
+        savedVoice = await db.updateBrandVoice(editingVoice.id, voiceData);
         const updatedVoices = brandVoices.map((v) => (v.id === editingVoice.id ? savedVoice : v));
         onBrandVoicesUpdate(updatedVoices);
         setSuccess('Brand voice updated successfully');
       } else {
-        savedVoice = await db.addBrandVoice(voiceData, user.id);
+        savedVoice = await db.addBrandVoice(voiceData);
         onBrandVoicesUpdate([savedVoice, ...brandVoices]);
         setSuccess('Brand voice created successfully');
       }
@@ -286,12 +273,7 @@ export default function BrandVoiceManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Brand Voice Manager</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close brand voice manager"
-            title="Close"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -417,7 +399,6 @@ export default function BrandVoiceManager({
                           <button
                             onClick={() => handlePreview(voice)}
                             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                            aria-label={`Preview ${voice.name}`}
                             title="Preview"
                           >
                             <Eye className="w-4 h-4" />
@@ -425,7 +406,6 @@ export default function BrandVoiceManager({
                           <button
                             onClick={() => handleEdit(voice)}
                             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                            aria-label={`Edit ${voice.name}`}
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -433,7 +413,6 @@ export default function BrandVoiceManager({
                           <button
                             onClick={() => handleDelete(voice)}
                             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                            aria-label={`Delete ${voice.name}`}
                             title="Delete"
                             disabled={isLoading}
                           >
@@ -459,14 +438,10 @@ export default function BrandVoiceManager({
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label
-                    htmlFor="brand-voice-name"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Voice Name *
                   </label>
                   <input
-                    id="brand-voice-name"
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -476,14 +451,8 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="brand-voice-tone"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Tone *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tone *</label>
                   <select
-                    id="brand-voice-tone"
                     value={form.tone}
                     onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -498,14 +467,10 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="brand-voice-style"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Writing Style
                   </label>
                   <select
-                    id="brand-voice-style"
                     value={form.writingStyle}
                     onChange={(e) => setForm((prev) => ({ ...prev, writingStyle: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -520,14 +485,10 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="brand-voice-audience"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Target Audience
                   </label>
                   <input
-                    id="brand-voice-audience"
                     type="text"
                     value={form.targetAudience}
                     onChange={(e) =>
@@ -541,15 +502,11 @@ export default function BrandVoiceManager({
 
               {/* Vocabulary Terms */}
               <div>
-                <label
-                  htmlFor="brand-voice-vocabulary"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Key Vocabulary Terms
                 </label>
                 <div className="flex gap-2 mb-2">
                   <input
-                    id="brand-voice-vocabulary"
                     type="text"
                     value={newVocabularyTerm}
                     onChange={(e) => setNewVocabularyTerm(e.target.value)}
@@ -574,8 +531,6 @@ export default function BrandVoiceManager({
                       <button
                         onClick={() => removeVocabularyTerm(term)}
                         className="text-gray-400 hover:text-gray-600"
-                        aria-label={`Remove vocabulary term ${term}`}
-                        title={`Remove ${term}`}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -587,12 +542,7 @@ export default function BrandVoiceManager({
               {/* Sample Content */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label
-                    htmlFor="brand-voice-sample"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Sample Content
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Sample Content</label>
                   {form.sampleContent.length > 0 && (
                     <button
                       onClick={analyzeSampleContent}
@@ -610,7 +560,6 @@ export default function BrandVoiceManager({
                 </div>
                 <div className="space-y-2 mb-2">
                   <textarea
-                    id="brand-voice-sample"
                     value={newSampleContent}
                     onChange={(e) => setNewSampleContent(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -632,8 +581,6 @@ export default function BrandVoiceManager({
                         <button
                           onClick={() => removeSampleContent(content)}
                           className="ml-2 text-gray-400 hover:text-gray-600"
-                          aria-label="Remove sample content"
-                          title="Remove sample content"
                         >
                           <X className="w-4 h-4" />
                         </button>

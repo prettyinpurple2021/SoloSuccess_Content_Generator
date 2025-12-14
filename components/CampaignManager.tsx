@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@stackframe/react';
 import { Campaign, ContentSeries, Post, CampaignMetrics, OptimizationSuggestion } from '../types';
-import { campaignService } from '../services/campaignService';
+import { campaignService } from '../services/clientCampaignService';
 import { apiService } from '../services/clientApiService';
-import { db } from '../services/databaseService';
 import { PLATFORMS, Spinner } from '../constants';
 
 interface CampaignManagerProps {
@@ -70,8 +68,6 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       setIsLoading(false);
     }
   };
-
-  const user = useUser();
 
   const loadCampaignPerformance = async (campaignId: string) => {
     try {
@@ -186,11 +182,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       if (formData.endDate) updates.endDate = new Date(formData.endDate);
       if (formData.platforms.length > 0) updates.platforms = formData.platforms;
 
-      const updatedCampaign = await campaignService.updateCampaign(
-        user?.id || '',
-        selectedCampaign.id,
-        updates
-      );
+      const updatedCampaign = await campaignService.updateCampaign(selectedCampaign.id, updates);
 
       setCampaigns((prev) => prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)));
       setSelectedCampaign(updatedCampaign);
@@ -210,7 +202,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
     try {
       setIsLoading(true);
-      await campaignService.deleteCampaign(user?.id || '', campaignId, false); // Don't delete associated content
+      await campaignService.deleteCampaign(campaignId, false); // Don't delete associated content
       setCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
       if (selectedCampaign?.id === campaignId) {
         setSelectedCampaign(null);
@@ -225,12 +217,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
   const handleAssignPostToCampaign = async (postId: string, campaignId: string) => {
     try {
-      if (!user?.id) {
-        setError('You must be signed in to assign posts to campaigns.');
-        return;
-      }
-
-      await db.updatePost(postId, { campaign_id: campaignId }, user.id);
+      await db.updatePost(postId, { campaign_id: campaignId });
       if (onPostUpdate) {
         const updatedPost = posts.find((p) => p.id === postId);
         if (updatedPost) {
@@ -259,8 +246,8 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       name: campaign.name,
       description: campaign.description,
       theme: campaign.theme,
-      startDate: campaign.startDate?.toISOString().split('T')[0] ?? '',
-      endDate: campaign.endDate?.toISOString().split('T')[0] ?? '',
+      startDate: campaign.startDate.toISOString().split('T')[0],
+      endDate: campaign.endDate.toISOString().split('T')[0],
       platforms: campaign.platforms,
     });
   };
@@ -481,14 +468,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
               <div className="grid gap-6">
                 <div>
-                  <label
-                    htmlFor="campaign-name"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Campaign Name *
                   </label>
                   <input
-                    id="campaign-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -498,14 +481,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="campaign-description"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
                   </label>
                   <textarea
-                    id="campaign-description"
                     value={formData.description}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, description: e.target.value }))
@@ -517,14 +496,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="campaign-theme"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Campaign Theme *
                   </label>
                   <input
-                    id="campaign-theme"
                     type="text"
                     value={formData.theme}
                     onChange={(e) => setFormData((prev) => ({ ...prev, theme: e.target.value }))}
@@ -535,14 +510,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label
-                      htmlFor="campaign-start"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Start Date *
                     </label>
                     <input
-                      id="campaign-start"
                       type="date"
                       value={formData.startDate}
                       onChange={(e) =>
@@ -552,14 +523,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="campaign-end"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       End Date *
                     </label>
                     <input
-                      id="campaign-end"
                       type="date"
                       value={formData.endDate}
                       onChange={(e) =>

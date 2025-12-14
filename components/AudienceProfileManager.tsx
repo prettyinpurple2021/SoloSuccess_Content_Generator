@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@stackframe/react';
 import { AudienceProfile, EngagementData } from '../types';
 import { apiService } from '../services/clientApiService';
-import { db } from '../services/databaseService';
 import { generateAudienceInsights } from '../services/geminiService';
 import {
   X,
@@ -83,7 +81,6 @@ export default function AudienceProfileManager({
   audienceProfiles,
   onAudienceProfilesUpdate,
 }: AudienceProfileManagerProps) {
-  const user = useUser();
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'edit' | 'preview' | 'insights'>(
     'list'
   );
@@ -169,12 +166,7 @@ export default function AudienceProfileManager({
     setError(null);
 
     try {
-      if (!user?.id) {
-        setError('You must be signed in to delete audience profiles.');
-        return;
-      }
-
-      await db.deleteAudienceProfile(profile.id, user.id);
+      await db.deleteAudienceProfile(profile.id);
       const updatedProfiles = audienceProfiles.filter((p) => p.id !== profile.id);
       onAudienceProfilesUpdate(updatedProfiles);
 
@@ -299,11 +291,6 @@ export default function AudienceProfileManager({
     setError(null);
 
     try {
-      if (!user?.id) {
-        setError('You must be signed in to save audience profiles.');
-        return;
-      }
-
       const profileData = {
         name: form.name.trim(),
         age_range: form.ageRange,
@@ -317,14 +304,14 @@ export default function AudienceProfileManager({
       let savedProfile: AudienceProfile;
 
       if (activeTab === 'edit' && editingProfile) {
-        savedProfile = await db.updateAudienceProfile(editingProfile.id, profileData, user.id);
+        savedProfile = await db.updateAudienceProfile(editingProfile.id, profileData);
         const updatedProfiles = audienceProfiles.map((p) =>
           p.id === editingProfile.id ? savedProfile : p
         );
         onAudienceProfilesUpdate(updatedProfiles);
         setSuccess('Audience profile updated successfully');
       } else {
-        savedProfile = await db.addAudienceProfile(profileData, user.id);
+        savedProfile = await db.addAudienceProfile(profileData);
         onAudienceProfilesUpdate([savedProfile, ...audienceProfiles]);
         setSuccess('Audience profile created successfully');
       }
@@ -350,12 +337,7 @@ export default function AudienceProfileManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Audience Profile Manager</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close audience profile manager"
-            title="Close"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -507,7 +489,6 @@ export default function AudienceProfileManager({
                           <button
                             onClick={() => handleViewInsights(profile)}
                             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                            aria-label={`View insights for ${profile.name}`}
                             title="View Insights"
                           >
                             <BarChart3 className="w-4 h-4" />
@@ -515,7 +496,6 @@ export default function AudienceProfileManager({
                           <button
                             onClick={() => handlePreview(profile)}
                             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                            aria-label={`Preview ${profile.name}`}
                             title="Preview"
                           >
                             <Eye className="w-4 h-4" />
@@ -523,17 +503,14 @@ export default function AudienceProfileManager({
                           <button
                             onClick={() => handleEdit(profile)}
                             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                            aria-label={`Edit ${profile.name}`}
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            type="button"
                             onClick={() => handleDelete(profile)}
                             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                            title="Delete profile"
-                            aria-label="Delete profile"
+                            title="Delete"
                             disabled={isLoading}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -590,7 +567,6 @@ export default function AudienceProfileManager({
                     value={form.ageRange}
                     onChange={(e) => setForm((prev) => ({ ...prev, ageRange: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label="Select age range"
                   >
                     <option value="">Select age range</option>
                     {AGE_RANGE_OPTIONS.map((range) => (
@@ -607,7 +583,6 @@ export default function AudienceProfileManager({
                     value={form.industry}
                     onChange={(e) => setForm((prev) => ({ ...prev, industry: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label="Select industry"
                   >
                     <option value="">Select industry</option>
                     {INDUSTRY_OPTIONS.map((industry) => (
@@ -650,8 +625,6 @@ export default function AudienceProfileManager({
                       <button
                         onClick={() => removeInterest(interest)}
                         className="text-blue-400 hover:text-blue-600"
-                        aria-label={`Remove ${interest} interest`}
-                        title={`Remove ${interest}`}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -691,8 +664,6 @@ export default function AudienceProfileManager({
                       <button
                         onClick={() => removePainPoint(painPoint)}
                         className="text-red-400 hover:text-red-600"
-                        aria-label={`Remove ${painPoint} pain point`}
-                        title={`Remove ${painPoint}`}
                       >
                         <X className="w-3 h-3" />
                       </button>

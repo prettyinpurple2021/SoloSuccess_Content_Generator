@@ -154,7 +154,7 @@ class EnhancedGeminiService {
     const recentRequests = this.requestQueue.filter((req) => now - req.timestamp < 60000);
     if (recentRequests.length >= this.rateLimitConfig.requestsPerMinute) {
       this.usageMetrics.rateLimitHits++;
-      const waitTime = 60000 - (now - recentRequests[0]!.timestamp);
+      const waitTime = 60000 - (now - recentRequests[0].timestamp);
 
       console.warn(`Rate limit reached for ${operationType}, waiting ${waitTime}ms`);
       await this.sleep(waitTime);
@@ -312,7 +312,7 @@ class EnhancedGeminiService {
   /**
    * Generate fallback content when AI service is unavailable
    */
-  private generateFallbackContent(type: string, input?: string): string | string[] {
+  private generateFallbackContent(type: string, input?: string): any {
     const fallbacks = {
       topic: 'Productivity Tips for Solo Entrepreneurs',
       ideas: [
@@ -614,7 +614,7 @@ export const generateSocialMediaPost = (
   tone: string,
   audience: string
 ) => enhancedGeminiService.generateSocialMediaPost(platform, blogPost, tone, audience);
-export const generateImage = (prompt: string, options?: Record<string, unknown>) =>
+export const generateImage = (prompt: string, options?: any) =>
   enhancedGeminiService.generateImage(prompt, options);
 export const generateImagePrompts = (blogPost: string) =>
   enhancedGeminiService.generateImagePrompts(blogPost);

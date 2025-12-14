@@ -14,10 +14,7 @@ export class SimpleCredentialEncryption {
   /**
    * Encrypts credentials using AES-GCM with a simple key derivation
    */
-  static async encrypt(
-    credentials: Record<string, unknown>,
-    userKey: string
-  ): Promise<EncryptedCredentials> {
+  static async encrypt(credentials: any, userKey: string): Promise<EncryptedCredentials> {
     try {
       // Validate inputs
       if (!credentials || typeof credentials !== 'object') {
@@ -70,10 +67,7 @@ export class SimpleCredentialEncryption {
   /**
    * Decrypts credentials using AES-GCM
    */
-  static async decrypt(
-    encryptedCredentials: EncryptedCredentials,
-    userKey: string
-  ): Promise<Record<string, unknown>> {
+  static async decrypt(encryptedCredentials: EncryptedCredentials, userKey: string): Promise<any> {
     try {
       // Validate inputs
       if (!encryptedCredentials || typeof encryptedCredentials !== 'object') {
@@ -160,16 +154,17 @@ export class SimpleCredentialEncryption {
   /**
    * Validates encrypted credentials format
    */
-  static validateEncryptedCredentials(encryptedCredentials: unknown): boolean {
+  static validateEncryptedCredentials(encryptedCredentials: any): boolean {
     if (!encryptedCredentials || typeof encryptedCredentials !== 'object') {
       return false;
     }
 
     const requiredFields = ['encrypted', 'iv', 'algorithm'];
-    const creds = encryptedCredentials as Record<string, unknown>;
     return requiredFields.every(
       (field) =>
-        creds[field] && typeof creds[field] === 'string' && (creds[field] as string).length > 0
+        encryptedCredentials[field] &&
+        typeof encryptedCredentials[field] === 'string' &&
+        encryptedCredentials[field].length > 0
     );
   }
 
@@ -177,24 +172,14 @@ export class SimpleCredentialEncryption {
    * Converts ArrayBuffer to base64 string
    */
   private static arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]!);
-    }
-    return btoa(binary);
+    return Buffer.from(buffer).toString('base64');
   }
 
   /**
    * Converts base64 string to ArrayBuffer
    */
   private static base64ToArrayBuffer(base64: string): ArrayBuffer {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
+    return Buffer.from(base64, 'base64').buffer as ArrayBuffer;
   }
 }
 

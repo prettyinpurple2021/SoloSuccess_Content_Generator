@@ -5,7 +5,7 @@
  * with advanced pooling, monitoring, and failover capabilities.
  */
 
-import postgres, { PostgresType } from 'postgres';
+import postgres from 'postgres';
 
 interface ConnectionPoolConfig {
   max: number;
@@ -113,12 +113,9 @@ class EnhancedDatabaseService {
     try {
       console.log('🔌 Connecting to database...');
 
-      const { types, ...configWithoutTypes } = this.config;
-
       // Primary connection pool
       this.pool = postgres(process.env.DATABASE_URL, {
-        ...configWithoutTypes,
-        types: types as Record<string, PostgresType<unknown>>,
+        ...this.config,
         connection: {
           application_name: 'solosuccess_primary',
         },
@@ -131,8 +128,7 @@ class EnhancedDatabaseService {
       // Read-only connection pool (for read replicas if available)
       const readOnlyUrl = process.env.DATABASE_READ_URL || process.env.DATABASE_URL;
       this.readOnlyPool = postgres(readOnlyUrl, {
-        ...configWithoutTypes,
-        types: types as Record<string, PostgresType<unknown>>,
+        ...this.config,
         max: Math.ceil(this.config.max * 0.6), // 60% of max for read-only
         connection: {
           application_name: 'solosuccess_readonly',
@@ -178,7 +174,7 @@ class EnhancedDatabaseService {
 
       const result = await this.pool`SELECT 1 as test, NOW() as timestamp`;
 
-      if (result.length > 0 && result[0]!.test === 1) {
+      if (result.length > 0 && result[0].test === 1) {
         return true;
       }
 
@@ -213,10 +209,7 @@ class EnhancedDatabaseService {
       const queryString = this.formatQuery(query, params);
 
       try {
-        const result = await this.pool.unsafe(
-          queryString,
-          params as postgres.ParameterOrJSON<never>[]
-        );
+        const result = await this.pool(query, ...params);
 
         const duration = Date.now() - startTime;
         this.recordQueryMetrics(queryString, duration, true);
@@ -257,7 +250,7 @@ class EnhancedDatabaseService {
       const queryString = this.formatQuery(query, params);
 
       try {
-        const result = await pool.unsafe(queryString, params as postgres.ParameterOrJSON<never>[]);
+        const result = await pool(query, ...params);
 
         const duration = Date.now() - startTime;
         this.recordQueryMetrics(`[READ] ${queryString}`, duration, true);
@@ -283,7 +276,7 @@ class EnhancedDatabaseService {
       const startTime = Date.now();
 
       try {
-        const result = await (this.pool.begin(callback) as Promise<T>);
+        const result = await this.pool.begin(callback);
 
         const duration = Date.now() - startTime;
         this.recordQueryMetrics('[TRANSACTION]', duration, true);
@@ -487,9 +480,9 @@ class EnhancedDatabaseService {
    * Utility methods
    */
   private formatQuery(query: TemplateStringsArray, params: unknown[]): string {
-    let formatted: string = query[0] as string;
+    let formatted = query[0];
     for (let i = 0; i < params.length; i++) {
-      formatted += `$${i + 1}${query[i + 1] || ''}`;
+      formatted += `$${i + 1}${query[i + 1]}`;
     }
     return formatted;
   }

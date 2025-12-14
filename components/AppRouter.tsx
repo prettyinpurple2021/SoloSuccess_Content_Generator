@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { StackProvider, StackTheme } from '@stackframe/stack';
 import { stackServerApp } from '../stack';
-import App from '../App';
+import App from './App';
 import SignInPage from './auth/SignInPage';
 import SignUpPage from './auth/SignUpPage';
 import ProtectedRoute from './auth/ProtectedRoute';

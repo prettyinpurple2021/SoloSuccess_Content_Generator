@@ -9,7 +9,7 @@ The Neon MCP (Model Context Protocol) Resource allows you to interact with your 
 1. **Open your terminal** in the project directory:
 
    ```bash
-   cd C:\Users\prett\Desktop\solosuccess-ai-content-planner
+   cd C:\Users\prett\Desktop\SoloSuccess-ai-content-planner
    ```
 
 2. **Initialize Neon MCP integration**:

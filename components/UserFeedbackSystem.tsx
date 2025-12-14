@@ -1,72 +1,17 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Bug } from '../constants';
-
-// Simple SVG icon components to replace lucide-react dependencies
-const Lightbulb: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15h4v2h-4v-2zm0-6h4v4h-4v-4zm0-6h4v4h-4V5z" />
-  </svg>
-);
-
-const Star: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-  </svg>
-);
-
-const ThumbsUp: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l5.15-12.15c.1-.23.16-.49.16-.77z" />
-  </svg>
-);
-
-const ThumbsDown: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M23 3H7c-.83 0-1.54.5-1.84 1.22l-5.15 12.15c-.1.23-.16.49-.16.77v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm-4 12h4V3h-4v12z" />
-  </svg>
-);
-
-const MessageSquare: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-  </svg>
-);
-
-const AlertTriangle: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
-  </svg>
-);
-
-const CheckCircle: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-  </svg>
-);
-
-const X: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
-  </svg>
-);
-
-const User: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-  </svg>
-);
-
-const Mail: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-  </svg>
-);
-
-const Send: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M16.6915026,12.4744748 L3.50612381,13.2599618 C3.19218622,13.2599618 3.03521743,13.4170592 3.03521743,13.5741566 L1.15159189,20.0151496 C0.8376543,20.8006365 0.99,21.89 1.77946707,22.52 C2.41,22.99 3.50612381,23.1 4.13399899,22.8429026 L21.714504,14.0454487 C22.6563168,13.5741566 23.1272231,12.6315722 22.9702544,11.6889879 L4.13399899,1.16820253 C3.34915502,0.9110051 2.40734225,1.0681025 1.77946707,1.4754973 C0.994623095,2.10604706 0.837654326,3.0486314 1.15159189,3.99701575 L3.03521743,10.4379088 C3.03521743,10.5950061 3.34915502,10.7521035 3.50612381,10.7521035 L16.6915026,11.5375905 C16.6915026,11.5375905 17.1624089,11.5375905 17.1624089,12.0088826 C17.1624089,12.4744748 16.6915026,12.4744748 16.6915026,12.4744748 Z" />
-  </svg>
-);
+import {
+  MessageSquare,
+  Send,
+  X,
+  ThumbsUp,
+  ThumbsDown,
+  Star,
+  Lightbulb,
+  AlertTriangle,
+  CheckCircle,
+  User,
+  Mail
+} from 'lucide-react';
 
 export type FeedbackType = 'bug' | 'feature' | 'improvement' | 'compliment' | 'question' | 'error';
 export type FeedbackPriority = 'low' | 'medium' | 'high' | 'critical';
@@ -305,11 +250,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
               <MessageSquare className="w-5 h-5" />
               Feedback
             </h3>
-            <button
-              onClick={onClose}
-              className="text-white/80 hover:text-white transition-colors"
-              title="Close feedback"
-            >
+            <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -331,7 +272,6 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
                     className={`w-full text-left p-3 rounded-lg border transition-colors hover:bg-gray-50 ${
                       feedbackType === type ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
                     }`}
-                    title={`Select ${label} type`}
                   >
                     <div className="flex items-center gap-3">
                       <Icon className={`w-5 h-5 ${color}`} />
@@ -394,7 +334,6 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
                         className={`p-1 transition-colors ${
                           star <= rating ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'
                         }`}
-                        title={`Rate ${star} stars`}
                       >
                         <Star className="w-6 h-6 fill-current" />
                       </button>
@@ -447,7 +386,6 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
                       <button
                         onClick={() => removeAttachment(index)}
                         className="text-red-600 hover:text-red-800"
-                        title={`Remove ${file.name}`}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -469,8 +407,6 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
                   onChange={handleFileUpload}
                   className="hidden"
                   accept="image/*,text/*,.pdf,.json"
-                  title="Upload attachments"
-                  aria-label="File input"
                 />
               </div>
 
@@ -636,7 +572,6 @@ export const QuickFeedback: React.FC<{
               ? 'text-green-600 bg-green-50'
               : 'text-gray-400 hover:text-green-600'
           }`}
-          title="This was helpful"
         >
           <ThumbsUp className="w-4 h-4" />
         </button>
@@ -647,7 +582,6 @@ export const QuickFeedback: React.FC<{
               ? 'text-red-600 bg-red-50'
               : 'text-gray-400 hover:text-red-600'
           }`}
-          title="This was not helpful"
         >
           <ThumbsDown className="w-4 h-4" />
         </button>

@@ -276,7 +276,7 @@ export class AILearningService {
     ];
 
     const trendPromises = globalTrends.map(async (trend) => {
-      const personalRelevance = this.calculateTopicRelevance(trend, preferences);
+      const personalRelevance = this.calculateTopicRelevance(trend, preferences.preferredTopics);
       // Calculate real trend score based on social media engagement
       const trendScore = await this.calculateTrendScore(trend, userInterests);
 
@@ -511,8 +511,8 @@ export class AILearningService {
     return Math.min(1, engagementRate * 10); // Normalize to 0-1 scale
   }
 
-  private calculateTopicRelevance(topic: string, preferences: UserPreferences): number {
-    const matchingTopic = preferences.preferredTopics.find(
+  private calculateTopicRelevance(topic: string, preferredTopics: { topic: string; score: number }[]): number {
+    const matchingTopic = preferredTopics.find(
       (t) =>
         t.topic.toLowerCase().includes(topic.toLowerCase()) ||
         topic.toLowerCase().includes(t.topic.toLowerCase())
@@ -538,31 +538,22 @@ export class AILearningService {
 
       // Find if our topic is trending
       const topicInTrends = trendingTopics.find(
-        (t: any) =>
+        (t) =>
           t.topic.toLowerCase().includes(topic.toLowerCase()) ||
           topic.toLowerCase().includes(t.topic.toLowerCase())
       );
 
       if (topicInTrends) {
         // Topic is trending, calculate score based on engagement
-        const engagementScore = topicInTrends.trendingScore || 0;
-        const relevanceScore = this.calculateTopicRelevance(topic, {
-          userId: '',
-          preferredTopics: (userInterests || []).map((interest) => ({
-            topic: interest,
-            score: 0.8,
-          })),
-          preferredTones: [],
-          preferredPlatforms: [],
-          preferredTemplates: [],
-          contentPatterns: {
-            timeOfDay: [],
-            dayOfWeek: [],
-            contentLength: [],
-            hashtagCount: [],
-          },
-          lastUpdated: new Date(),
-        });
+        const engagementScore = (topicInTrends as any).engagementRate || 0;
+        
+        // Formatted interests for relevance calculation
+        const formattedInterests = userInterests.map(interest => ({
+          topic: interest,
+          score: 1.0
+        }));
+
+        const relevanceScore = this.calculateTopicRelevance(topic, formattedInterests);
 
         // Combine trending status with user relevance
         return Math.min(engagementScore * 0.7 + relevanceScore * 0.3, 1.0);
@@ -585,10 +576,9 @@ export class AILearningService {
 
     const best = lengths.sort((a, b) => b.score - a.score)[0];
     if (!best) return null;
-
-    const rangeParts = best.range.split('-').map(Number);
-    const min = rangeParts[0] ?? 100;
-    const max = rangeParts[1] ?? 500;
+    
+    const [min, max] = best.range.split('-').map(Number);
+    if (min === undefined || max === undefined) return null;
 
     return {
       target: (min + max) / 2,

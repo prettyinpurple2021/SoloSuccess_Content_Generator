@@ -7,12 +7,15 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle sparkle-bg-1"></div>
-        <div className="sparkle sparkle-bg-2"></div>
-        <div className="sparkle sparkle-bg-3"></div>
-        <div className="sparkle sparkle-bg-4"></div>
-        <div className="sparkle sparkle-bg-5"></div>
-        <div className="sparkle sparkle-bg-6"></div>
+        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
+        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
+        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
+        <div
+          className="sparkle"
+          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
+        ></div>
+        <div className="sparkle" style={{ top: '50%', left: '5%', animationDelay: '2s' }}></div>
+        <div className="sparkle" style={{ top: '70%', right: '25%', animationDelay: '2.5s' }}></div>
       </div>
 
       {/* Navigation */}
@@ -58,8 +61,8 @@ export const LandingPage: React.FC = () => {
         >
           <h1 className="text-6xl sm:text-8xl font-display gradient-text tracking-wider mb-8 relative">
             SoloSuccess AI
-            <div className="sparkle sparkle-hero-1"></div>
-            <div className="sparkle sparkle-hero-2"></div>
+            <div className="sparkle" style={{ top: '10px', right: '10px' }}></div>
+            <div className="sparkle" style={{ bottom: '10px', left: '10px' }}></div>
           </h1>
 
           <motion.h2

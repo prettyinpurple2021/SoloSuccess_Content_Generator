@@ -197,7 +197,7 @@ export class ApiErrorHandler {
   /**
    * Sanitizes input data to prevent injection attacks
    */
-  sanitizeInput(data: unknown): unknown {
+  sanitizeInput(data: any): any {
     if (typeof data === 'string') {
       // Basic XSS prevention
       return data
@@ -213,7 +213,7 @@ export class ApiErrorHandler {
     }
 
     if (data && typeof data === 'object') {
-      const sanitized: Record<string, unknown> = {};
+      const sanitized: any = {};
       for (const [key, value] of Object.entries(data)) {
         sanitized[key] = this.sanitizeInput(value);
       }

@@ -3,7 +3,7 @@
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 
-console.log('🚀 index.tsx: Application starting...');
+console.log('🚀 index.tsx: Application starting (imports loaded)...');
 
 // Ensure React is available globally immediately
 if (typeof window !== 'undefined') {
@@ -26,19 +26,11 @@ import './styles/holographic-theme.css';
 import { stackClientApp } from './stack/client';
 
 // Then import Stack Auth components (which depend on React being available)
-import { StackProvider, StackTheme } from '@stackframe/react';
-const StackHandler = React.lazy(() =>
-  import('@stackframe/react').then((module) => ({ default: module.StackHandler }))
-);
+import { StackHandler, StackProvider, StackTheme } from '@stackframe/react';
 
 // Import app components
-const HolographicThemeProvider = React.lazy(() =>
-  import('./components/HolographicTheme').then((module) => ({
-    default: module.HolographicThemeProvider,
-  }))
-);
-const AppWithErrorHandling = React.lazy(() => import('./components/AppWithErrorHandling'));
-// ErrorBoundaryEnhanced must be static or very safe, but let's keep it static for now as it's the safety net
+import { HolographicThemeProvider } from './components/HolographicTheme';
+import AppWithErrorHandling from './components/AppWithErrorHandling';
 import { ErrorBoundaryEnhanced } from './components/ErrorBoundaryEnhanced';
 
 // Import Sentry last (after all React dependencies)

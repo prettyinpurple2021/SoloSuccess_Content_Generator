@@ -27,8 +27,7 @@
       "@/*": ["./*"]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "forceConsistentCasingInFileNames": true
+    "noEmit": true
   },
   "exclude": ["node_modules", "dist"]
 }

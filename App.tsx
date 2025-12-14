@@ -107,9 +107,6 @@ const App: React.FC = () => {
   const [imagePrompts, setImagePrompts] = useState<string[]>([]);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImages>({});
   const [selectedImageForPost, setSelectedImageForPost] = useState<string | null>(null);
-  const defaultTone = TONES[0] ?? 'Neutral';
-  const defaultAudience = AUDIENCES[0] ?? 'General';
-  const primaryImagePrompt = imagePrompts[0] ?? '';
 
   // Repurposing Modal State
   const [showRepurposeModal, setShowRepurposeModal] = useState(false);
@@ -225,6 +222,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Handle Stack Auth user state
+    console.log('App: Stack user check', { stackUser, isAuthReady });
     if (stackUser !== undefined) {
       if (stackUser) {
         // Convert Stack user to our User type
@@ -247,6 +245,8 @@ const App: React.FC = () => {
         setUser(null);
         setIsAuthReady(true);
       }
+    } else {
+      console.log('⏳ Stack user is undefined (loading)');
     }
 
     // Blogger integration now handled through Integration Manager
@@ -481,16 +481,13 @@ const App: React.FC = () => {
     setIsLoading((prev) => ({ ...prev, [key]: true }));
     setErrorMessage('');
     try {
-      const tone = socialMediaTones[platform] ?? defaultTone;
+      const tone = socialMediaTones[platform] || TONES[0] || 'Professional';
 
       // Enhanced social media generation with personalization
       // personalization used via generatePersonalizedContent elsewhere
 
-      const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
-      if (!config) {
-        throw new Error(`Missing platform configuration for ${platform}`);
-      }
-      const length = config.charLimit ?? 200;
+      const config = PLATFORM_CONFIG[platform];
+      const length = config?.charLimit || 200;
       const gemini = geminiService as unknown as GeminiSocialClient;
       const result = await (async () => {
         if (gemini.generateSocialMediaPost) {
@@ -519,12 +516,9 @@ const App: React.FC = () => {
 
     const gemini = geminiService as unknown as GeminiSocialClient;
     const promises = PLATFORMS.map(async (platform) => {
-      const tone = socialMediaTones[platform] ?? defaultTone;
-      const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
-      if (!config) {
-        return { platform, post: `Error: Missing platform configuration for ${platform}.` };
-      }
-      const length = config.charLimit ?? 200;
+      const tone = socialMediaTones[platform] || TONES[0] || 'Professional';
+      const config = PLATFORM_CONFIG[platform];
+      const length = config?.charLimit || 200;
       try {
         if (!gemini.generateSocialMediaPost) throw new Error('Social generation unavailable');
         const res = await gemini.generateSocialMediaPost(
@@ -965,20 +959,23 @@ const App: React.FC = () => {
     <div className="min-h-screen p-4 sm:p-6 lg:p-8 relative">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle absolute top-[10%] left-[10%] [animation-delay:0s]"></div>
-        <div className="sparkle absolute top-[20%] right-[15%] [animation-delay:0.5s]"></div>
-        <div className="sparkle absolute bottom-[30%] left-[20%] [animation-delay:1s]"></div>
-        <div className="sparkle absolute bottom-[10%] right-[10%] [animation-delay:1.5s]"></div>
-        <div className="sparkle absolute top-[50%] left-[5%] [animation-delay:2s]"></div>
-        <div className="sparkle absolute top-[70%] right-[25%] [animation-delay:2.5s]"></div>
+        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
+        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
+        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
+        <div
+          className="sparkle"
+          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
+        ></div>
+        <div className="sparkle" style={{ top: '50%', left: '5%', animationDelay: '2s' }}></div>
+        <div className="sparkle" style={{ top: '70%', right: '25%', animationDelay: '2.5s' }}></div>
       </div>
 
       <header className="text-center mb-16 relative">
         <div className="relative inline-block">
           <h1 className="text-6xl sm:text-8xl font-display gradient-text tracking-wider mb-4 relative">
             SoloSuccess AI
-            <div className="sparkle absolute top-[10px] right-[10px]"></div>
-            <div className="sparkle absolute bottom-[10px] left-[10px]"></div>
+            <div className="sparkle" style={{ top: '10px', right: '10px' }}></div>
+            <div className="sparkle" style={{ bottom: '10px', left: '10px' }}></div>
           </h1>
         </div>
         <h2 className="text-2xl sm:text-3xl font-accent text-white mb-6 font-bold">
@@ -1206,7 +1203,6 @@ const App: React.FC = () => {
                           handleBrandVoiceSelect(voice || null);
                         }}
                         className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
-                        aria-label="Select brand voice"
                       >
                         <option value="">No specific brand voice</option>
                         {brandVoices.map((voice) => (
@@ -1246,7 +1242,6 @@ const App: React.FC = () => {
                           handleAudienceProfileSelect(profile || null);
                         }}
                         className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
-                        aria-label="Select target audience"
                       >
                         <option value="">No specific audience</option>
                         {audienceProfiles.map((profile) => (
@@ -1287,7 +1282,6 @@ const App: React.FC = () => {
                           handleTemplateSelect(template || null);
                         }}
                         className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
-                        aria-label="Select content template"
                       >
                         <option value="">No template (free-form)</option>
                         {contentTemplates.map((template) => (
@@ -1412,10 +1406,8 @@ const App: React.FC = () => {
                     </div>
                     <div className="space-y-4">
                       {PLATFORMS.map((platform) => {
-                        const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
-                        if (!config) {
-                          return null;
-                        }
+                        const config = PLATFORM_CONFIG[platform];
+                        if (!config) return null;
                         const Icon = config.icon;
                         const post = socialMediaPosts[platform] || '';
                         const platformLoadingKey = `social-${platform}`;
@@ -1448,7 +1440,7 @@ const App: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-3">
                               <select
-                                value={socialMediaTones[platform] ?? defaultTone}
+                                value={socialMediaTones[platform] || TONES[0]}
                                 onChange={(e) =>
                                   setSocialMediaTones((prev) => ({
                                     ...prev,
@@ -1456,7 +1448,6 @@ const App: React.FC = () => {
                                   }))
                                 }
                                 className="bg-muted border border-border rounded-lg px-2 py-1.5 w-full text-sm"
-                                aria-label={`${platform} tone selection`}
                               >
                                 {TONES.map((t) => (
                                   <option key={t} value={t}>
@@ -1465,7 +1456,7 @@ const App: React.FC = () => {
                                 ))}
                               </select>
                               <select
-                                value={socialMediaAudiences[platform] ?? defaultAudience}
+                                value={socialMediaAudiences[platform] || AUDIENCES[0]}
                                 onChange={(e) =>
                                   setSocialMediaAudiences((prev) => ({
                                     ...prev,
@@ -1473,7 +1464,6 @@ const App: React.FC = () => {
                                   }))
                                 }
                                 className="bg-muted border border-border rounded-lg px-2 py-1.5 w-full text-sm"
-                                aria-label={`${platform} audience selection`}
                               >
                                 {AUDIENCES.map((a) => (
                                   <option key={a} value={a}>
@@ -1563,7 +1553,6 @@ const App: React.FC = () => {
                               setSelectedImageStyle(style || null);
                             }}
                             className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
-                            aria-label="Select image style"
                           >
                             <option value="">No specific style</option>
                             {imageStyles.map((style) => (
@@ -1582,7 +1571,6 @@ const App: React.FC = () => {
                             value={selectedPlatformForImage}
                             onChange={(e) => setSelectedPlatformForImage(e.target.value)}
                             className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
-                            aria-label="Select target platform for image"
                           >
                             <option value="general">General (16:9)</option>
                             <option value="instagram">Instagram (1:1)</option>
@@ -1610,23 +1598,12 @@ const App: React.FC = () => {
                               {selectedImageStyle.colorPalette
                                 .slice(0, 5)
                                 .map((color: string, index: number) => (
-                                  <svg
+                                  <div
                                     key={index}
-                                    className="w-4 h-4 rounded border border-border overflow-hidden"
-                                    role="img"
-                                    aria-label={`Palette color ${color}`}
-                                    viewBox="0 0 16 16"
-                                  >
-                                    <rect
-                                      x="0"
-                                      y="0"
-                                      width="16"
-                                      height="16"
-                                      rx="4"
-                                      ry="4"
-                                      fill={color}
-                                    />
-                                  </svg>
+                                    className="w-4 h-4 rounded border border-border"
+                                    style={{ backgroundColor: color }}
+                                    title={color}
+                                  />
                                 ))}
                             </div>
                           )}
@@ -1646,9 +1623,12 @@ const App: React.FC = () => {
                           ? 'Generate Style-Consistent Ideas'
                           : 'Generate Image Ideas'}
                       </button>
-                      {selectedImageStyle && primaryImagePrompt && (
+                      {selectedImageStyle && imagePrompts.length > 0 && (
                         <button
-                          onClick={() => handleGenerateImageVariations(primaryImagePrompt)}
+                          onClick={() => {
+                            const prompt = imagePrompts[0];
+                            if (prompt) handleGenerateImageVariations(prompt);
+                          }}
                           disabled={isLoading.variations}
                           className="bg-secondary/80 hover:bg-secondary text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
                         >
@@ -1718,40 +1698,39 @@ const App: React.FC = () => {
                     ))}
 
                     {/* Image Variations */}
-                    {primaryImagePrompt &&
-                      generatedImages[`${primaryImagePrompt} (variations)`] && (
-                        <div className="glass-card p-4">
-                          <h5 className="font-semibold text-primary-foreground mb-3">
-                            Style Variations
-                          </h5>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {generatedImages[`${primaryImagePrompt} (variations)`]?.map(
-                              (imgSrc, index) => (
-                                <div key={imgSrc} className="relative group">
-                                  <img
-                                    src={imgSrc}
-                                    onClick={() => setSelectedImageForPost(imgSrc)}
-                                    className={`w-full h-32 object-cover rounded-lg cursor-pointer border-4 transition-all ${
-                                      selectedImageForPost === imgSrc
-                                        ? 'border-accent shadow-lg'
-                                        : 'border-transparent hover:border-primary/50'
-                                    }`}
-                                    alt={`Variation ${index + 1}`}
-                                  />
-                                  {selectedImageForPost === imgSrc && (
-                                    <div className="absolute top-2 right-2 bg-accent text-white text-xs px-2 py-1 rounded">
-                                      Selected
-                                    </div>
-                                  )}
-                                  <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Variation {index + 1}
+                    {generatedImages[`${imagePrompts[0]} (variations)`] && (
+                      <div className="glass-card p-4">
+                        <h5 className="font-semibold text-primary-foreground mb-3">
+                          Style Variations
+                        </h5>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {generatedImages[`${imagePrompts[0]} (variations)`]?.map(
+                            (imgSrc, index) => (
+                              <div key={imgSrc} className="relative group">
+                                <img
+                                  src={imgSrc}
+                                  onClick={() => setSelectedImageForPost(imgSrc)}
+                                  className={`w-full h-32 object-cover rounded-lg cursor-pointer border-4 transition-all ${
+                                    selectedImageForPost === imgSrc
+                                      ? 'border-accent shadow-lg'
+                                      : 'border-transparent hover:border-primary/50'
+                                  }`}
+                                  alt={`Variation ${index + 1}`}
+                                />
+                                {selectedImageForPost === imgSrc && (
+                                  <div className="absolute top-2 right-2 bg-accent text-white text-xs px-2 py-1 rounded">
+                                    Selected
                                   </div>
+                                )}
+                                <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                  Variation {index + 1}
                                 </div>
-                              )
-                            )}
-                          </div>
+                              </div>
+                            )
+                          )}
                         </div>
-                      )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1776,7 +1755,6 @@ const App: React.FC = () => {
                           handleCampaignSelect(campaign || null);
                         }}
                         className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
-                        aria-label="Select campaign"
                       >
                         <option value="">No campaign (standalone post)</option>
                         {campaigns.map((campaign) => (
@@ -1830,7 +1808,6 @@ const App: React.FC = () => {
                           handleContentSeriesSelect(series || null);
                         }}
                         className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
-                        aria-label="Select content series"
                       >
                         <option value="">No series (standalone post)</option>
                         {contentSeries.map((series) => (
@@ -1852,12 +1829,14 @@ const App: React.FC = () => {
                             <span>Frequency: {selectedContentSeries.frequency}</span>
                             {selectedContentSeries.campaignId && <span>Part of campaign</span>}
                           </div>
-                          <progress
-                            value={selectedContentSeries.currentPost}
-                            max={selectedContentSeries.totalPosts || 1}
-                            className="w-full h-2 mt-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-muted/50 [&::-webkit-progress-value]:bg-secondary [&::-moz-progress-bar]:bg-secondary"
-                            aria-label="Content series progress"
-                          />
+                          <div className="w-full bg-muted/50 rounded-full h-2 mt-2">
+                            <div
+                              className="bg-secondary h-2 rounded-full transition-all duration-300"
+                              style={{
+                                width: `${(selectedContentSeries.currentPost / selectedContentSeries.totalPosts) * 100}%`,
+                              }}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2549,11 +2528,11 @@ const App: React.FC = () => {
                               </span>
                             </div>
                             <div className="w-full bg-white/10 rounded-full h-1 mt-2">
-                              <progress
-                                value={series.currentPost}
-                                max={series.totalPosts || 1}
-                                className="w-full h-1 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-white/10 [&::-webkit-progress-value]:bg-secondary [&::-moz-progress-bar]:bg-secondary"
-                                aria-label={`${series.name} progress`}
+                              <div
+                                className="bg-secondary h-1 rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${(series.currentPost / series.totalPosts) * 100}%`,
+                                }}
                               />
                             </div>
                           </div>

@@ -37,13 +37,25 @@ export class CampaignService {
     startDate: Date;
     endDate: Date;
     platforms: string[];
-  }): Promise<Campaign> {
+  }, userId: string): Promise<Campaign> {
     try {
-      // Campaign creation requires userId from authentication context
-      // Currently requires manual implementation with user context
-      throw new Error(
-        'Campaign creation requires proper authentication context setup. Contact administrator.'
-      );
+      const campaign = await db.addCampaign({
+        name: campaignData.name,
+        description: campaignData.description,
+        theme: campaignData.theme,
+        start_date: campaignData.startDate.toISOString(),
+        end_date: campaignData.endDate.toISOString(),
+        platforms: campaignData.platforms,
+        status: 'draft',
+        performance: {
+          totalPosts: 0,
+          totalEngagement: 0,
+          avgEngagementRate: 0,
+          platformPerformance: {},
+        },
+      }, userId);
+
+      return campaign;
     } catch (error) {
       throw new Error(
         `Failed to create campaign: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -54,11 +66,7 @@ export class CampaignService {
   /**
    * Updates an existing campaign
    */
-  async updateCampaign(
-    userId: string = '',
-    campaignId: string = '',
-    updates: Partial<Campaign> = {}
-  ): Promise<Campaign> {
+  async updateCampaign(campaignId: string, updates: Partial<Campaign>, userId: string): Promise<Campaign> {
     try {
       const dbUpdates: any = {};
 
@@ -82,9 +90,9 @@ export class CampaignService {
   /**
    * Gets all campaigns for the current user
    */
-  async getCampaigns(userId: string = ''): Promise<Campaign[]> {
+  async getCampaigns(userId: string): Promise<Campaign[]> {
     try {
-      return await db.getCampaigns(userId || '');
+      return await db.getCampaigns(userId);
     } catch (error) {
       throw new Error(
         `Failed to fetch campaigns: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -95,9 +103,9 @@ export class CampaignService {
   /**
    * Gets a specific campaign by ID with associated posts
    */
-  async getCampaignById(userId: string = '', campaignId: string = ''): Promise<Campaign | null> {
+  async getCampaignById(campaignId: string, userId: string): Promise<Campaign | null> {
     try {
-      const campaigns = await db.getCampaigns(userId || '');
+      const campaigns = await db.getCampaigns(userId);
       const campaign = campaigns.find((c) => c.id === campaignId);
 
       if (!campaign) return null;
@@ -121,18 +129,18 @@ export class CampaignService {
    * Deletes a campaign and optionally its associated content
    */
   async deleteCampaign(
-    userId: string = '',
-    campaignId: string = '',
+    campaignId: string,
+    userId: string,
     deleteAssociatedContent: boolean = false
   ): Promise<void> {
     try {
       if (deleteAssociatedContent) {
         // Delete associated content series
-        const series = await db.getContentSeries(userId || '');
+        const series = await db.getContentSeries(userId);
         const campaignSeries = series.filter((s) => s.campaignId === campaignId);
 
         for (const s of campaignSeries) {
-          await this.deleteContentSeries(userId, s.id, true);
+          await this.deleteContentSeries(s.id, userId, true);
         }
 
         // Remove campaign association from posts
@@ -144,8 +152,7 @@ export class CampaignService {
         }
       }
 
-      // Note: deleteCampaign method might not exist on db, wrap in try-catch
-      // await db.deleteCampaign(campaignId);
+      await db.deleteCampaign(campaignId, userId);
     } catch (error) {
       throw new Error(
         `Failed to delete campaign: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -165,22 +172,17 @@ export class CampaignService {
     totalPosts: number;
     frequency: 'daily' | 'weekly' | 'biweekly';
     campaignId?: string;
-    userId?: string;
-  }): Promise<ContentSeries> {
+  }, userId: string): Promise<ContentSeries> {
     try {
-      // Note: addContentSeries method might not exist on db
-      // Return a placeholder ContentSeries object
-      const series: ContentSeries = {
-        id: `series-${Date.now()}`,
+      const series = await db.addContentSeries({
         name: seriesData.name,
         theme: seriesData.theme,
-        totalPosts: seriesData.totalPosts,
+        total_posts: seriesData.totalPosts,
         frequency: seriesData.frequency,
-        campaignId: seriesData.campaignId,
-        currentPost: 0,
-        posts: [],
-        createdAt: new Date(),
-      };
+        campaign_id: seriesData.campaignId,
+        current_post: 0,
+      }, userId);
+
       return series;
     } catch (error) {
       throw new Error(
@@ -194,23 +196,20 @@ export class CampaignService {
    */
   async updateContentSeries(
     seriesId: string,
-    updates: Partial<ContentSeries>
+    updates: Partial<ContentSeries>,
+    userId: string
   ): Promise<ContentSeries> {
     try {
-      // Note: updateContentSeries method might not exist on db
-      // Return updated placeholder
-      const updated: ContentSeries = {
-        id: seriesId,
-        name: updates.name || '',
-        theme: updates.theme || '',
-        totalPosts: updates.totalPosts || 0,
-        frequency: updates.frequency || 'weekly',
-        campaignId: updates.campaignId,
-        currentPost: updates.currentPost || 0,
-        posts: updates.posts || [],
-        createdAt: new Date(),
-      };
-      return updated;
+      const dbUpdates: any = {};
+
+      if (updates.name) dbUpdates.name = updates.name;
+      if (updates.theme) dbUpdates.theme = updates.theme;
+      if (updates.totalPosts) dbUpdates.total_posts = updates.totalPosts;
+      if (updates.frequency) dbUpdates.frequency = updates.frequency;
+      if (updates.campaignId) dbUpdates.campaign_id = updates.campaignId;
+      if (updates.currentPost !== undefined) dbUpdates.current_post = updates.currentPost;
+
+      return await db.updateContentSeries(seriesId, dbUpdates, userId);
     } catch (error) {
       throw new Error(
         `Failed to update content series: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -221,9 +220,9 @@ export class CampaignService {
   /**
    * Gets all content series for the current user
    */
-  async getContentSeries(userId: string = ''): Promise<ContentSeries[]> {
+  async getContentSeries(userId: string): Promise<ContentSeries[]> {
     try {
-      const series = await db.getContentSeries(userId || '');
+      const series = await db.getContentSeries(userId);
 
       // Populate posts for each series
       const posts = await db.getPosts(userId);
@@ -242,10 +241,7 @@ export class CampaignService {
   /**
    * Gets a specific content series by ID with associated posts
    */
-  async getContentSeriesById(
-    userId: string = '',
-    seriesId: string = ''
-  ): Promise<ContentSeries | null> {
+  async getContentSeriesById(seriesId: string, userId: string): Promise<ContentSeries | null> {
     try {
       const allSeries = await this.getContentSeries(userId);
       return allSeries.find((s) => s.id === seriesId) || null;
@@ -260,8 +256,8 @@ export class CampaignService {
    * Deletes a content series and optionally its associated posts
    */
   async deleteContentSeries(
-    userId: string = '',
-    seriesId: string = '',
+    seriesId: string,
+    userId: string,
     deleteAssociatedPosts: boolean = false
   ): Promise<void> {
     try {
@@ -281,7 +277,8 @@ export class CampaignService {
           await db.updatePost(post.id, { series_id: undefined }, userId);
         }
       }
-      // Note: deleteContentSeries method might not exist on db
+
+      await db.deleteContentSeries(seriesId, userId);
     } catch (error) {
       throw new Error(
         `Failed to delete content series: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -293,9 +290,9 @@ export class CampaignService {
    * Advances a content series to the next post
    * Requirement 2.2: Series content that builds upon previous posts
    */
-  async advanceContentSeries(seriesId: string): Promise<ContentSeries> {
+  async advanceContentSeries(seriesId: string, userId: string): Promise<ContentSeries> {
     try {
-      const series = await this.getContentSeriesById(seriesId);
+      const series = await this.getContentSeriesById(seriesId, userId);
       if (!series) {
         throw new Error('Content series not found');
       }
@@ -306,7 +303,7 @@ export class CampaignService {
 
       return await this.updateContentSeries(seriesId, {
         currentPost: series.currentPost + 1,
-      });
+      }, userId);
     } catch (error) {
       throw new Error(
         `Failed to advance content series: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -320,12 +317,9 @@ export class CampaignService {
    * Tracks and updates campaign performance metrics
    * Requirement 2.5: Performance tracking for active series
    */
-  async updateCampaignPerformance(
-    userId: string = '',
-    campaignId: string = ''
-  ): Promise<CampaignMetrics> {
+  async updateCampaignPerformance(campaignId: string, userId: string): Promise<CampaignMetrics> {
     try {
-      const campaign = await this.getCampaignById(userId, campaignId);
+      const campaign = await this.getCampaignById(campaignId, userId);
       if (!campaign) {
         throw new Error('Campaign not found');
       }
@@ -335,9 +329,7 @@ export class CampaignService {
       const campaignPosts = posts.filter((post) => post.campaignId === campaignId);
 
       // Get analytics data for campaign posts
-      const analyticsPromises = campaignPosts.map(
-        (post) => db.getPostAnalytics?.(post.id) || Promise.resolve([])
-      );
+      const analyticsPromises = campaignPosts.map((post) => db.getPostAnalytics(post.id));
       const analyticsResults = await Promise.all(analyticsPromises);
       const allAnalytics = analyticsResults.flat();
 
@@ -345,7 +337,7 @@ export class CampaignService {
       const metrics = this.calculateCampaignMetrics(campaignPosts, allAnalytics);
 
       // Update campaign with new performance data
-      await this.updateCampaign(userId, campaignId, { performance: metrics });
+      await this.updateCampaign(campaignId, { performance: metrics }, userId);
 
       return metrics;
     } catch (error) {
@@ -358,12 +350,9 @@ export class CampaignService {
   /**
    * Gets performance metrics for a specific campaign
    */
-  async getCampaignPerformance(
-    userId: string = '',
-    campaignId: string = ''
-  ): Promise<CampaignMetrics> {
+  async getCampaignPerformance(campaignId: string, userId: string): Promise<CampaignMetrics> {
     try {
-      const campaign = await this.getCampaignById(userId, campaignId);
+      const campaign = await this.getCampaignById(campaignId, userId);
       if (!campaign) {
         throw new Error('Campaign not found');
       }
@@ -380,13 +369,14 @@ export class CampaignService {
    * Gets performance comparison across multiple campaigns
    */
   async compareCampaignPerformance(
-    campaignIds: string[]
+    campaignIds: string[],
+    userId: string
   ): Promise<{ [campaignId: string]: CampaignMetrics }> {
     try {
       const results: { [campaignId: string]: CampaignMetrics } = {};
 
       for (const campaignId of campaignIds) {
-        results[campaignId] = await this.getCampaignPerformance(campaignId);
+        results[campaignId] = await this.getCampaignPerformance(campaignId, userId);
       }
 
       return results;
@@ -404,18 +394,18 @@ export class CampaignService {
    * Requirement 2.3: Campaign coordination across multiple platforms
    */
   async coordinateCampaignAcrossPlatforms(
-    userId: string = '',
-    campaignId: string = '',
+    campaignId: string,
     platforms: string[],
+    userId: string,
     audienceProfile?: AudienceProfile
   ): Promise<SchedulingSuggestion[]> {
     try {
-      const campaign = await this.getCampaignById(userId, campaignId);
+      const campaign = await this.getCampaignById(campaignId, userId);
       if (!campaign) {
         throw new Error('Campaign not found');
       }
 
-      const posts = await db.getPosts(userId);
+      const posts = await db.getPosts();
       const campaignPosts = posts.filter((post) => post.campaignId === campaignId);
 
       const suggestions: SchedulingSuggestion[] = [];
@@ -425,17 +415,19 @@ export class CampaignService {
           // Get optimal timing for this platform
           const optimalTimes = await this.getOptimalPostingTimes(platform, audienceProfile);
 
-          if (optimalTimes && optimalTimes.length > 0) {
+          if (optimalTimes.length > 0) {
             const bestTime = optimalTimes[0];
-            const suggestedDate = this.calculateNextAvailableSlot(bestTime!, post.scheduleDate);
+            if (bestTime) {
+                const suggestedDate = this.calculateNextAvailableSlot(bestTime, post.scheduleDate);
 
-            suggestions.push({
-              postId: post.id,
-              platform,
-              suggestedTime: suggestedDate,
-              reason: `Optimal engagement time for ${platform} based on audience patterns`,
-              confidence: bestTime!.confidence,
-            });
+                suggestions.push({
+                postId: post.id,
+                platform,
+                suggestedTime: suggestedDate,
+                reason: `Optimal engagement time for ${platform} based on audience patterns`,
+                confidence: bestTime.confidence,
+                });
+            }
           }
         }
       }
@@ -451,12 +443,12 @@ export class CampaignService {
   /**
    * Ensures consistent messaging across platforms for a campaign
    */
-  async ensureConsistentMessaging(campaignId: string): Promise<{
+  async ensureConsistentMessaging(campaignId: string, userId: string): Promise<{
     inconsistencies: string[];
     suggestions: string[];
   }> {
     try {
-      const campaign = await this.getCampaignById(campaignId);
+      const campaign = await this.getCampaignById(campaignId, userId);
       if (!campaign) {
         throw new Error('Campaign not found');
       }
@@ -527,10 +519,11 @@ export class CampaignService {
    */
   async optimizeSeriesScheduling(
     seriesId: string,
+    userId: string,
     audienceProfile?: AudienceProfile
   ): Promise<SchedulingSuggestion[]> {
     try {
-      const series = await this.getContentSeriesById(seriesId);
+      const series = await this.getContentSeriesById(seriesId, userId);
       if (!series) {
         throw new Error('Content series not found');
       }
@@ -545,7 +538,8 @@ export class CampaignService {
       const intervalDays = this.getFrequencyIntervalDays(series.frequency);
 
       for (let i = 0; i < seriesPosts.length; i++) {
-        const post = seriesPosts[i]!;
+        const post = seriesPosts[i];
+        if (!post) continue;
 
         // Get optimal times for the post's platforms
         const platforms = Object.keys(post.socialMediaPosts || {});
@@ -555,19 +549,23 @@ export class CampaignService {
 
           if (optimalTimes.length > 0) {
             const bestTime = optimalTimes[0];
+            if (!bestTime) continue;
+            
             const scheduledDate = new Date(currentDate);
             scheduledDate.setDate(scheduledDate.getDate() + i * intervalDays);
 
             // Adjust to optimal time of day
-            const [hours, minutes] = bestTime!.time.split(':').map(Number);
-            scheduledDate.setHours(hours!, minutes!, 0, 0);
+            const parts = bestTime.time.split(':').map(Number);
+            const hours = parts[0] || 0;
+            const minutes = parts[1] || 0;
+            scheduledDate.setHours(hours, minutes, 0, 0);
 
             suggestions.push({
-              postId: post!.id,
+              postId: post.id,
               platform,
               suggestedTime: scheduledDate,
               reason: `Optimized for ${series.frequency} series posting with ${platform} engagement patterns`,
-              confidence: bestTime!.confidence,
+              confidence: bestTime.confidence,
             });
           }
         }
@@ -585,9 +583,9 @@ export class CampaignService {
    * Suggests adjustments for active series based on performance
    * Requirement 2.5: Performance tracking and adjustment suggestions
    */
-  async suggestSeriesAdjustments(seriesId: string): Promise<OptimizationSuggestion[]> {
+  async suggestSeriesAdjustments(seriesId: string, userId: string): Promise<OptimizationSuggestion[]> {
     try {
-      const series = await this.getContentSeriesById(seriesId);
+      const series = await this.getContentSeriesById(seriesId, userId);
       if (!series) {
         throw new Error('Content series not found');
       }
@@ -646,11 +644,12 @@ export class CampaignService {
         // Platform-specific suggestions
         const platformPerformance: { [platform: string]: number } = {};
         allAnalytics.forEach((analytics) => {
-          if (!platformPerformance[analytics.platform]) {
-            platformPerformance[analytics.platform] = 0;
+          let perf = platformPerformance[analytics.platform];
+          if (!perf) {
+            perf = 0;
+            platformPerformance[analytics.platform] = perf;
           }
-          platformPerformance[analytics.platform]! +=
-            analytics.likes + analytics.shares + analytics.comments;
+          platformPerformance[analytics.platform] = perf + analytics.likes + analytics.shares + analytics.comments;
         });
 
         const bestPlatform = Object.entries(platformPerformance).sort(([, a], [, b]) => b - a)[0];
@@ -721,10 +720,12 @@ export class CampaignService {
     // Find top performing post
     const postEngagement: { [postId: string]: number } = {};
     analytics.forEach((data) => {
-      if (!postEngagement[data.postId]) {
-        postEngagement[data.postId] = 0;
+      let engagement = postEngagement[data.postId];
+      if (!engagement) {
+        engagement = 0;
+        postEngagement[data.postId] = engagement;
       }
-      postEngagement[data.postId]! += data.likes + data.shares + data.comments + data.clicks;
+      postEngagement[data.postId] = engagement + data.likes + data.shares + data.comments + data.clicks;
     });
 
     const topPerformingPost = Object.entries(postEngagement).sort(([, a], [, b]) => b - a)[0]?.[0];
@@ -733,26 +734,29 @@ export class CampaignService {
     const platformPerformance: { [platform: string]: PlatformMetrics } = {};
 
     analytics.forEach((data) => {
-      if (!platformPerformance[data.platform]) {
-        platformPerformance[data.platform] = {
+      let perf = platformPerformance[data.platform];
+      if (!perf) {
+        perf = {
           posts: 0,
           totalLikes: 0,
           totalShares: 0,
           totalComments: 0,
           avgEngagementRate: 0,
         };
+        platformPerformance[data.platform] = perf;
       }
 
-      platformPerformance[data.platform]!.totalLikes += data.likes;
-      platformPerformance[data.platform]!.totalShares += data.shares;
-      platformPerformance[data.platform]!.totalComments += data.comments;
+      perf.totalLikes += data.likes;
+      perf.totalShares += data.shares;
+      perf.totalComments += data.comments;
     });
 
     // Count posts per platform and calculate engagement rates
     posts.forEach((post) => {
       Object.keys(post.socialMediaPosts || {}).forEach((platform) => {
-        if (platformPerformance[platform]) {
-          platformPerformance[platform].posts += 1;
+        const metrics = platformPerformance[platform];
+        if (metrics) {
+          metrics.posts += 1;
         }
       });
     });
@@ -768,8 +772,11 @@ export class CampaignService {
         0
       );
 
-      platformPerformance[platform]!.avgEngagementRate =
-        platformImpressions > 0 ? (platformEngagement / platformImpressions) * 100 : 0;
+      const perf = platformPerformance[platform];
+      if (perf) {
+        perf.avgEngagementRate =
+          platformImpressions > 0 ? (platformEngagement / platformImpressions) * 100 : 0;
+      }
     });
 
     return {
@@ -806,9 +813,11 @@ export class CampaignService {
     };
 
     // If audience profile is provided, adjust times based on engagement patterns
-    if (audienceProfile && audienceProfile.engagementPatterns[platform]) {
+    if (audienceProfile && audienceProfile.engagementPatterns && audienceProfile.engagementPatterns[platform]) {
       const patterns = audienceProfile.engagementPatterns[platform];
-      return patterns.bestPostingTimes || defaultOptimalTimes[platform] || [];
+      if (patterns) {
+        return patterns.bestPostingTimes || defaultOptimalTimes[platform] || [];
+      }
     }
 
     return defaultOptimalTimes[platform] || [];
@@ -824,8 +833,10 @@ export class CampaignService {
     nextDate.setDate(nextDate.getDate() + daysUntilTarget);
 
     // Set the optimal time
-    const [hours, minutes] = timeSlot.time.split(':').map(Number);
-    nextDate.setHours(hours!, minutes!, 0, 0);
+    const parts = timeSlot.time.split(':').map(Number);
+    const hours = parts[0] || 0;
+    const minutes = parts[1] || 0;
+    nextDate.setHours(hours, minutes, 0, 0);
 
     // If the calculated time is in the past, move to next week
     if (nextDate <= now) {

@@ -1,7 +1,7 @@
 import {
   GoogleAnalyticsCredentials,
-  FacebookCredentials,
-  TwitterCredentials,
+  FacebookAnalyticsCredentials,
+  TwitterAnalyticsCredentials,
   ConnectionTestResult,
   SyncResult,
 } from '../../types';
@@ -67,9 +67,7 @@ export class AnalyticsIntegrations {
         details: {
           viewId: credentials.viewId,
           apiVersion: 'v4',
-          hasData:
-            (response as { reports?: unknown[] }).reports &&
-            (response as { reports: unknown[] }).reports.length > 0,
+          hasData: response.reports && response.reports.length > 0,
         },
         timestamp: new Date(),
       };
@@ -152,7 +150,7 @@ export class AnalyticsIntegrations {
    * Tests Facebook Analytics connection
    */
   static async testFacebookAnalyticsConnection(
-    credentials: FacebookCredentials
+    credentials: FacebookAnalyticsCredentials
   ): Promise<ConnectionTestResult> {
     const startTime = Date.now();
 
@@ -169,9 +167,7 @@ export class AnalyticsIntegrations {
         details: {
           pageId: credentials.pageId,
           apiVersion: 'v18.0',
-          hasData:
-            (response as { data?: unknown[] }).data &&
-            (response as { data: unknown[] }).data.length > 0,
+          hasData: response.data && response.data.length > 0,
         },
         timestamp: new Date(),
       };
@@ -190,7 +186,7 @@ export class AnalyticsIntegrations {
    */
   static async syncFacebookAnalyticsData(
     integrationId: string,
-    credentials: FacebookCredentials
+    credentials: FacebookAnalyticsCredentials
   ): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
@@ -247,7 +243,7 @@ export class AnalyticsIntegrations {
    * Tests Twitter Analytics connection
    */
   static async testTwitterAnalyticsConnection(
-    credentials: TwitterCredentials
+    credentials: TwitterAnalyticsCredentials
   ): Promise<ConnectionTestResult> {
     const startTime = Date.now();
 
@@ -262,8 +258,8 @@ export class AnalyticsIntegrations {
         success: true,
         responseTime: Date.now() - startTime,
         details: {
-          userId: (response as { data?: { id?: unknown } }).data?.id,
-          username: (response as { data?: { username?: unknown } }).data?.username,
+          userId: response.data?.id,
+          username: response.data?.username,
           apiVersion: '2.0',
         },
         timestamp: new Date(),
@@ -283,7 +279,7 @@ export class AnalyticsIntegrations {
    */
   static async syncTwitterAnalyticsData(
     integrationId: string,
-    credentials: TwitterCredentials
+    credentials: TwitterAnalyticsCredentials
   ): Promise<SyncResult> {
     const startTime = Date.now();
     let recordsProcessed = 0;
@@ -343,8 +339,8 @@ export class AnalyticsIntegrations {
     method: string,
     url: string,
     credentials: GoogleAnalyticsCredentials,
-    data?: unknown
-  ): Promise<unknown> {
+    data?: any
+  ): Promise<any> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${credentials.accessToken}`,
       'Content-Type': 'application/json',
@@ -360,9 +356,9 @@ export class AnalyticsIntegrations {
   private static async makeFacebookAnalyticsRequest(
     method: string,
     url: string,
-    credentials: FacebookCredentials,
-    data?: unknown
-  ): Promise<unknown> {
+    credentials: FacebookAnalyticsCredentials,
+    data?: any
+  ): Promise<any> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -377,9 +373,9 @@ export class AnalyticsIntegrations {
   private static async makeTwitterAnalyticsRequest(
     method: string,
     url: string,
-    credentials: TwitterCredentials,
-    data?: unknown
-  ): Promise<unknown> {
+    credentials: TwitterAnalyticsCredentials,
+    data?: any
+  ): Promise<any> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${credentials.bearerToken}`,
       'Content-Type': 'application/json',
@@ -396,8 +392,8 @@ export class AnalyticsIntegrations {
     method: string,
     url: string,
     headers: Record<string, string>,
-    data?: unknown
-  ): Promise<unknown> {
+    data?: any
+  ): Promise<any> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
@@ -492,7 +488,7 @@ export class AnalyticsIntegrations {
   // ============================================================================
 
   private static async syncFacebookPageInsights(
-    credentials: FacebookCredentials
+    credentials: FacebookAnalyticsCredentials
   ): Promise<SyncResult> {
     // Implementation would sync page insights to local database
     return {
@@ -509,7 +505,7 @@ export class AnalyticsIntegrations {
   }
 
   private static async syncFacebookPostInsights(
-    credentials: FacebookCredentials
+    credentials: FacebookAnalyticsCredentials
   ): Promise<SyncResult> {
     // Implementation would sync post insights to local database
     return {
@@ -530,7 +526,7 @@ export class AnalyticsIntegrations {
   // ============================================================================
 
   private static async syncTwitterTweetMetrics(
-    credentials: TwitterCredentials
+    credentials: TwitterAnalyticsCredentials
   ): Promise<SyncResult> {
     // Implementation would sync tweet metrics to local database
     return {
@@ -547,7 +543,7 @@ export class AnalyticsIntegrations {
   }
 
   private static async syncTwitterFollowerMetrics(
-    credentials: TwitterCredentials
+    credentials: TwitterAnalyticsCredentials
   ): Promise<SyncResult> {
     // Implementation would sync follower metrics to local database
     return {

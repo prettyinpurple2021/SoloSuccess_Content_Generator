@@ -53,48 +53,6 @@ export const useErrorState = (options: ErrorStateOptions = {}) => {
         showSuccess: () => {},
       };
 
-  // Retry mechanism - defined early for use in dependencies
-  const retry = useCallback(() => {
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-    }
-
-    setErrorState((prev) => ({
-      ...prev,
-      isRecovering: true,
-      retryCount: prev.retryCount + 1,
-    }));
-
-    // Return a promise that resolves when retry is ready
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        setErrorState((prev) => ({
-          ...prev,
-          error: null,
-          userFriendlyError: null,
-          isRecovering: false,
-        }));
-        resolve();
-      }, 100);
-    });
-  }, []);
-
-  // Schedule automatic retry
-  const scheduleRetry = useCallback(() => {
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-    }
-
-    setErrorState((prev) => ({
-      ...prev,
-      isRecovering: true,
-    }));
-
-    retryTimeoutRef.current = setTimeout(() => {
-      retry();
-    }, autoRetryDelay);
-  }, [autoRetryDelay, retry]);
-
   // Set error with user-friendly message
   const setError = useCallback(
     (error: Error | string, autoRetry: boolean = false) => {
@@ -164,6 +122,48 @@ export const useErrorState = (options: ErrorStateOptions = {}) => {
       lastErrorTime: null,
     });
   }, []);
+
+  // Retry mechanism
+  const retry = useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+    }
+
+    setErrorState((prev) => ({
+      ...prev,
+      isRecovering: true,
+      retryCount: prev.retryCount + 1,
+    }));
+
+    // Return a promise that resolves when retry is ready
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        setErrorState((prev) => ({
+          ...prev,
+          error: null,
+          userFriendlyError: null,
+          isRecovering: false,
+        }));
+        resolve();
+      }, 100);
+    });
+  }, []);
+
+  // Schedule automatic retry
+  const scheduleRetry = useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+    }
+
+    setErrorState((prev) => ({
+      ...prev,
+      isRecovering: true,
+    }));
+
+    retryTimeoutRef.current = setTimeout(() => {
+      retry();
+    }, autoRetryDelay);
+  }, [autoRetryDelay, retry]);
 
   // Mark as resolved
   const markResolved = useCallback(() => {
@@ -397,7 +397,7 @@ export const useBatchErrorState = <T = any>(options: ErrorStateOptions = {}) => 
           // Execute operations sequentially
           for (let i = 0; i < operations.length; i++) {
             try {
-              const data = await operations[i]!();
+              const data = await operations[i]();
               const result = { success: true, data };
               results.push(result);
               onItemComplete?.(i, result);

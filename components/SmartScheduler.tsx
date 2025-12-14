@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Post, TimeSlot, SchedulingSuggestion, ConflictAnalysis, AudienceProfile } from '../types';
+// import { schedulingService } from '../services/schedulingService';
 
 interface SmartSchedulerProps {
   posts: Post[];
@@ -24,7 +25,6 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
   const [schedulingSuggestions, setSchedulingSuggestions] = useState<SchedulingSuggestion[]>([]);
   const [conflictAnalysis, setConflictAnalysis] = useState<ConflictAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Bulk scheduling options
   const [bulkOptions, setBulkOptions] = useState({
@@ -69,16 +69,14 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
     if (!selectedPost) return;
 
     setLoading(true);
-    setError(null);
     try {
-      // TODO: Integrate with actual scheduling service
-      setError('Smart scheduling feature requires configuration. Please schedule posts manually.');
-      setOptimalTimes([
-        { time: '09:00', dayOfWeek: 1, engagementScore: 8.5, confidence: 0.92 },
-        { time: '14:00', dayOfWeek: 2, engagementScore: 8.2, confidence: 0.89 },
-      ]);
-    } catch (err) {
-      setError('Failed to load optimal times');
+      const audienceProfile = audienceProfiles.find(
+        (ap) => ap.id === selectedPost.audienceProfileId
+      );
+      const times = await schedulingService.analyzeOptimalTimes(undefined, audienceProfile);
+      setOptimalTimes(times);
+    } catch (error) {
+      console.error('Error loading optimal times:', error);
     } finally {
       setLoading(false);
     }
@@ -88,30 +86,38 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
     if (!selectedPost) return;
 
     try {
-      // TODO: Integrate with actual scheduling service
-      setError(null);
-    } catch (err) {
-      setError('Failed to load scheduling suggestions');
+      const audienceProfile = audienceProfiles.find(
+        (ap) => ap.id === selectedPost.audienceProfileId
+      );
+      const suggestions = await schedulingService.getSchedulingSuggestions(
+        selectedPost,
+        bulkOptions.platforms,
+        audienceProfile
+      );
+      setSchedulingSuggestions(suggestions);
+    } catch (error) {
+      console.error('Error loading scheduling suggestions:', error);
     }
   };
 
   const analyzeConflicts = async () => {
     try {
-      // TODO: Integrate with actual conflict analysis service
-      setError(null);
-    } catch (err) {
-      setError('Failed to analyze conflicts');
+      const analysis = await schedulingService.analyzeContentConflicts(posts);
+      setConflictAnalysis(analysis);
+    } catch (error) {
+      console.error('Error analyzing conflicts:', error);
     }
   };
 
   const handleBulkSchedule = async () => {
     setLoading(true);
-    setError(null);
     try {
-      // TODO: Integrate with actual bulk scheduling service
-      setError('Bulk scheduling requires configuration. Please schedule posts individually.');
-    } catch (err) {
-      setError('Error bulk scheduling posts');
+      const postsToSchedule = posts.filter((post) => selectedPosts.includes(post.id));
+      const suggestions = await schedulingService.bulkSchedulePosts(postsToSchedule, bulkOptions);
+      setSchedulingSuggestions(suggestions);
+      onBulkSchedule(suggestions);
+    } catch (error) {
+      console.error('Error bulk scheduling:', error);
     } finally {
       setLoading(false);
     }
@@ -329,40 +335,28 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">Date Range</label>
                   <div className="space-y-2">
-                    <div>
-                      <label htmlFor="bulk-start-datetime" className="text-xs text-white/60">
-                        Start
-                      </label>
-                      <input
-                        id="bulk-start-datetime"
-                        type="datetime-local"
-                        value={bulkOptions.startDate.toISOString().slice(0, 16)}
-                        onChange={(e) =>
-                          setBulkOptions((prev) => ({
-                            ...prev,
-                            startDate: new Date(e.target.value),
-                          }))
-                        }
-                        className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="bulk-end-datetime" className="text-xs text-white/60">
-                        End
-                      </label>
-                      <input
-                        id="bulk-end-datetime"
-                        type="datetime-local"
-                        value={bulkOptions.endDate.toISOString().slice(0, 16)}
-                        onChange={(e) =>
-                          setBulkOptions((prev) => ({
-                            ...prev,
-                            endDate: new Date(e.target.value),
-                          }))
-                        }
-                        className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
-                      />
-                    </div>
+                    <input
+                      type="datetime-local"
+                      value={bulkOptions.startDate.toISOString().slice(0, 16)}
+                      onChange={(e) =>
+                        setBulkOptions((prev) => ({
+                          ...prev,
+                          startDate: new Date(e.target.value),
+                        }))
+                      }
+                      className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                    />
+                    <input
+                      type="datetime-local"
+                      value={bulkOptions.endDate.toISOString().slice(0, 16)}
+                      onChange={(e) =>
+                        setBulkOptions((prev) => ({
+                          ...prev,
+                          endDate: new Date(e.target.value),
+                        }))
+                      }
+                      className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                    />
                   </div>
                 </div>
 
@@ -398,14 +392,10 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
 
                 {/* Spacing Options */}
                 <div>
-                  <label
-                    htmlFor="bulk-spacing-strategy"
-                    className="block text-sm font-semibold text-white mb-2"
-                  >
+                  <label className="block text-sm font-semibold text-white mb-2">
                     Spacing Strategy
                   </label>
                   <select
-                    id="bulk-spacing-strategy"
                     value={bulkOptions.spacing}
                     onChange={(e) =>
                       setBulkOptions((prev) => ({
@@ -421,25 +411,19 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                   </select>
 
                   {bulkOptions.spacing === 'custom' && (
-                    <div className="mt-2 space-y-1">
-                      <label htmlFor="bulk-custom-spacing-hours" className="text-xs text-white/60">
-                        Hours between posts
-                      </label>
-                      <input
-                        id="bulk-custom-spacing-hours"
-                        type="number"
-                        value={bulkOptions.customSpacingHours}
-                        onChange={(e) =>
-                          setBulkOptions((prev) => ({
-                            ...prev,
-                            customSpacingHours: parseInt(e.target.value),
-                          }))
-                        }
-                        className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
-                        min="1"
-                        aria-label="Custom spacing hours between bulk posts"
-                      />
-                    </div>
+                    <input
+                      type="number"
+                      value={bulkOptions.customSpacingHours}
+                      onChange={(e) =>
+                        setBulkOptions((prev) => ({
+                          ...prev,
+                          customSpacingHours: parseInt(e.target.value),
+                        }))
+                      }
+                      className="w-full mt-2 p-2 bg-white/10 border border-white/20 rounded text-white"
+                      placeholder="Hours between posts"
+                      min="1"
+                    />
                   )}
                 </div>
               </div>
@@ -448,14 +432,10 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Timezone Selection */}
                 <div>
-                  <label
-                    htmlFor="bulk-target-timezones"
-                    className="block text-sm font-semibold text-white mb-2"
-                  >
+                  <label className="block text-sm font-semibold text-white mb-2">
                     Target Timezones
                   </label>
                   <select
-                    id="bulk-target-timezones"
                     multiple
                     value={bulkOptions.targetTimezones}
                     onChange={(e) => {

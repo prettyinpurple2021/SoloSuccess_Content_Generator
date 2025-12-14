@@ -194,11 +194,10 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
       setResults((prev) => ({
         ...prev,
         [format]: {
-          ...((prev[format] as RepurposingResult) || { format, content: '', parsedContent: '' }),
+          ...prev[format],
           optimizationScore: optimization.optimizationScore,
           suggestions: optimization.suggestions,
-          content:
-            optimization.optimizedVersion || (prev[format] as RepurposingResult)?.content || '',
+          content: optimization.optimizedVersion || prev[format].content,
           parsedContent: optimizedParsedContent,
         },
       }));
@@ -248,14 +247,8 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
         <h4 className="text-lg font-bold text-white mb-4">Customization Options</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label
-              htmlFor="repurpose-target-audience"
-              className="block text-sm font-medium text-white/80 mb-2"
-            >
-              Target Audience
-            </label>
+            <label className="block text-sm font-medium text-white/80 mb-2">Target Audience</label>
             <input
-              id="repurpose-target-audience"
               type="text"
               value={customization.targetAudience}
               onChange={(e) =>
@@ -266,14 +259,8 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
             />
           </div>
           <div>
-            <label
-              htmlFor="repurpose-brand-tone"
-              className="block text-sm font-medium text-white/80 mb-2"
-            >
-              Brand Tone
-            </label>
+            <label className="block text-sm font-medium text-white/80 mb-2">Brand Tone</label>
             <select
-              id="repurpose-brand-tone"
               value={customization.brandTone}
               onChange={(e) => setCustomization((prev) => ({ ...prev, brandTone: e.target.value }))}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-purple-400"
@@ -286,14 +273,8 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
             </select>
           </div>
           <div>
-            <label
-              htmlFor="repurpose-brand-style"
-              className="block text-sm font-medium text-white/80 mb-2"
-            >
-              Writing Style
-            </label>
+            <label className="block text-sm font-medium text-white/80 mb-2">Writing Style</label>
             <select
-              id="repurpose-brand-style"
               value={customization.brandStyle}
               onChange={(e) =>
                 setCustomization((prev) => ({ ...prev, brandStyle: e.target.value }))
@@ -308,14 +289,10 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
             </select>
           </div>
           <div>
-            <label
-              htmlFor="repurpose-platform"
-              className="block text-sm font-medium text-white/80 mb-2"
-            >
+            <label className="block text-sm font-medium text-white/80 mb-2">
               Platform (Optional)
             </label>
             <input
-              id="repurpose-platform"
               type="text"
               value={customization.platform}
               onChange={(e) => setCustomization((prev) => ({ ...prev, platform: e.target.value }))}

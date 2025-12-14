@@ -43,21 +43,22 @@ function isAllowedUpstashHost(hostname: string): boolean {
   if (!hostname) return false;
   if (hostname === 'upstash.io' || hostname === 'upstash.com') return true;
   // Allow only direct subdomains (e.g., "eu1.upstash.io", "xyz.upstash.com")
-  if (hostname.endsWith('.upstash.io') || hostname.endsWith('.upstash.com')) {
+  if (
+    hostname.endsWith('.upstash.io') ||
+    hostname.endsWith('.upstash.com')
+  ) {
     // Only allow single-level and multi-level subdomains (no tricks)
     // Check: ensure left-side label(s) only contain valid hostname characters
     const subdomain = hostname.replace(/\.upstash\.(com|io)$/, '');
     // Subdomain segments, RFC 1035: a-z, A-Z, 0-9, hyphen; cannot start/end with hyphen
     const labels = subdomain.split('.');
-    return labels.every(
-      (label) => /^[a-zA-Z0-9-]+$/.test(label) && !label.startsWith('-') && !label.endsWith('-')
-    );
+    return labels.every(label => /^[a-zA-Z0-9-]+$/.test(label) && !label.startsWith('-') && !label.endsWith('-'));
   }
   return false;
 }
 
 class RedisService {
-  private client: any = null;
+  private client: UpstashRedis | IORedis | null = null;
   private clientType: 'upstash' | 'ioredis' | null = null;
   private isInitialized = false;
 
@@ -86,14 +87,13 @@ class RedisService {
 
         // Check if it's an Upstash URL (hostname ends with upstash.io or upstash.com, or starts with https://)
         const urlObj = (() => {
-          try {
-            return new URL(redisUrl);
-          } catch {
-            return null;
-          }
+          try { return new URL(redisUrl); } catch { return null; }
         })();
         const hostname = urlObj ? urlObj.hostname : '';
-        if (isAllowedUpstashHost(hostname) || redisUrl.startsWith('https://')) {
+        if (
+          isAllowedUpstashHost(hostname) ||
+          redisUrl.startsWith('https://')
+        ) {
           try {
             const { Redis } = await import('@upstash/redis');
 
@@ -314,7 +314,7 @@ class RedisService {
         // Note: This is not recommended for production with large key sets
         const keys = await this.client.keys(pattern);
         if (keys && keys.length > 0) {
-          await this.client.del(keys);
+          await this.client.del(...keys);
           deletedCount = keys.length;
         }
       } else {
@@ -335,7 +335,7 @@ class RedisService {
         });
 
         if (keys.length > 0) {
-          await this.client.del(keys);
+          await this.client.del(...keys);
           deletedCount = keys.length;
         }
       }

@@ -227,7 +227,7 @@ Content: "${content}"`;
       return {
         success: true,
         sentiment: sentimentMatch?.[1]?.toLowerCase() || 'neutral',
-        confidence: confidenceMatch ? parseFloat(confidenceMatch[1]!) : 0.5,
+        confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0.5,
       };
     }
 

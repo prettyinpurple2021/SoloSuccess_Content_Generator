@@ -1,70 +1,14 @@
-import { db } from './neonService';
-import { query, databaseService } from './databaseService';
-import type {
-  TwitterCredentials,
-  LinkedInCredentials,
-  FacebookCredentials,
-  InstagramCredentials,
-} from '../types';
+import { db } from './databaseService';
+import { query } from './databaseService';
 
 // Types for social platform integrations
-export interface SocialPlatformConfig {
-  platform: string;
-  apiKey?: string;
-  accessToken?: string;
-  refreshToken?: string;
-  isConnected: boolean;
-  lastSync?: Date;
-}
-
-export interface EngagementData {
-  platform: string;
-  postId: string;
-  likes: number;
-  shares: number;
-  comments: number;
-  clicks: number;
-  impressions: number;
-  reach: number;
-  engagementRate: number;
-  timestamp: Date;
-}
-
-export interface HashtagPerformance {
-  hashtag: string;
-  platform: string;
-  usageCount: number;
-  avgEngagement: number;
-  trendingScore: number;
-  lastUpdated: Date;
-}
-
-export interface TrendingTopic {
-  topic: string;
-  platform: string;
-  volume: number;
-  sentiment: 'positive' | 'negative' | 'neutral';
-  relatedHashtags: string[];
-  category: string;
-  trendingScore: number;
-  expiresAt: Date;
-}
-
-export interface PlatformOptimization {
-  platform: string;
-  bestPostingTimes: string[];
-  optimalContentLength: {
-    min: number;
-    max: number;
-  };
-  topPerformingContentTypes: string[];
-  recommendedHashtagCount: number;
-  audienceInsights: {
-    demographics: Record<string, unknown>;
-    interests: string[];
-    activeHours: string[];
-  };
-}
+import {
+  SocialPlatformConfig,
+  PostEngagementData as EngagementData,
+  HashtagPerformance,
+  TrendingTopic,
+  PlatformOptimization,
+} from '../types';
 
 class SocialPlatformService {
   private platformConfigs: Map<string, SocialPlatformConfig> = new Map();
@@ -87,7 +31,7 @@ class SocialPlatformService {
   }
 
   // Platform Configuration Management
-  async connectPlatform(platform: string, credentials: Record<string, unknown>): Promise<boolean> {
+  async connectPlatform(platform: string, credentials: any): Promise<boolean> {
     try {
       const config = this.platformConfigs.get(platform);
       if (!config) {
@@ -98,14 +42,9 @@ class SocialPlatformService {
       const isValid = await this.validatePlatformCredentials(platform, credentials);
 
       if (isValid) {
-        const creds = credentials as {
-          apiKey?: string;
-          accessToken?: string;
-          refreshToken?: string;
-        };
-        config.apiKey = creds.apiKey;
-        config.accessToken = creds.accessToken;
-        config.refreshToken = creds.refreshToken;
+        config.apiKey = credentials.apiKey;
+        config.accessToken = credentials.accessToken;
+        config.refreshToken = credentials.refreshToken;
         config.isConnected = true;
         config.lastSync = new Date();
 
@@ -307,33 +246,30 @@ class SocialPlatformService {
   }
 
   // Private helper methods
-  private async validatePlatformCredentials(
-    platform: string,
-    credentials: Record<string, unknown>
-  ): Promise<boolean> {
+  private async validatePlatformCredentials(platform: string, credentials: any): Promise<boolean> {
     try {
       switch (platform) {
         case 'twitter': {
           const { default: TwitterClient } = await import('./platforms/twitterClient');
-          const client = new TwitterClient(credentials as unknown as TwitterCredentials);
+          const client = new TwitterClient(credentials);
           const result = await client.testConnection();
           return result.success;
         }
         case 'linkedin': {
           const { default: LinkedInClient } = await import('./platforms/linkedInClient');
-          const client = new LinkedInClient(credentials as unknown as LinkedInCredentials);
+          const client = new LinkedInClient(credentials);
           const result = await client.testConnection();
           return result.success;
         }
         case 'facebook': {
           const { default: FacebookClient } = await import('./platforms/facebookClient');
-          const client = new FacebookClient(credentials as unknown as FacebookCredentials);
+          const client = new FacebookClient(credentials);
           const result = await client.testConnection();
           return result.success;
         }
         case 'instagram': {
           const { default: InstagramClient } = await import('./platforms/instagramClient');
-          const client = new InstagramClient(credentials as unknown as InstagramCredentials);
+          const client = new InstagramClient(credentials);
           const result = await client.testConnection();
           return result.success;
         }
@@ -347,10 +283,7 @@ class SocialPlatformService {
     }
   }
 
-  private async storePlatformCredentials(
-    platform: string,
-    credentials: Record<string, unknown>
-  ): Promise<void> {
+  private async storePlatformCredentials(platform: string, credentials: any): Promise<void> {
     // Store encrypted credentials in database
     // Note: This would need to be implemented in neonService if needed
     console.log('Storing platform credentials for:', platform);
@@ -542,35 +475,15 @@ class SocialPlatformService {
 
     for (const postId of postIds) {
       try {
-        const analytics = await databaseService.getPostAnalytics(postId);
-        const platformAnalytics = analytics.filter(
-          (item: { platform: string }) => item.platform === platform
-        );
+        const analytics = await db.getPostAnalytics(postId);
+        const platformAnalytics = analytics.filter((item) => item.platform === platform);
 
         if (platformAnalytics.length === 0) {
           continue;
         }
 
         const aggregated = platformAnalytics.reduce(
-          (
-            acc: {
-              likes: number;
-              shares: number;
-              comments: number;
-              clicks: number;
-              impressions: number;
-              reach: number;
-              samples: number;
-            },
-            item: {
-              likes?: number;
-              shares?: number;
-              comments?: number;
-              clicks?: number;
-              impressions?: number;
-              reach?: number;
-            }
-          ) => {
+          (acc: { likes: number; shares: number; comments: number; clicks: number; impressions: number; reach: number; samples: number; }, item: any) => {
             acc.likes += item.likes || 0;
             acc.shares += item.shares || 0;
             acc.comments += item.comments || 0;
@@ -787,24 +700,14 @@ class SocialPlatformService {
 
       const result = await query(sqlQuery, [platform, ...hashtags]);
 
-      return result.map((row: unknown) => {
-        const r = row as {
-          hashtag: string;
-          platform: string;
-          usage_count: number;
-          avg_engagement: number;
-          trending_score: number;
-          last_updated: string;
-        };
-        return {
-          hashtag: r.hashtag,
-          platform: r.platform,
-          usageCount: r.usage_count,
-          avgEngagement: r.avg_engagement,
-          trendingScore: r.trending_score,
-          lastUpdated: new Date(r.last_updated),
-        };
-      });
+      return result.map((row: any) => ({
+        hashtag: row.hashtag,
+        platform: row.platform,
+        usageCount: row.usage_count,
+        avgEngagement: row.avg_engagement,
+        trendingScore: row.trending_score,
+        lastUpdated: new Date(row.last_updated),
+      }));
     } catch (error) {
       console.error('Error fetching hashtag performance history:', error);
       return [];
@@ -861,7 +764,7 @@ class SocialPlatformService {
             bearerToken: config.accessToken,
           });
 
-          const trendingTopics = await client.getTrendingTopics(categories || []);
+          const trendingTopics = await client.getTrendingTopics(categories);
           return trendingTopics;
         }
         case 'linkedin': {
@@ -873,7 +776,7 @@ class SocialPlatformService {
             refreshToken: config.refreshToken,
           });
 
-          const trendingTopics = await client.getTrendingTopics(categories || []);
+          const trendingTopics = await client.getTrendingTopics(categories);
           return trendingTopics;
         }
         case 'facebook': {
@@ -884,7 +787,7 @@ class SocialPlatformService {
             accessToken: config.accessToken || '',
           });
 
-          const trendingTopics = await client.getTrendingTopics(categories || []);
+          const trendingTopics = await client.getTrendingTopics(categories);
           return trendingTopics;
         }
         case 'instagram': {
@@ -896,7 +799,7 @@ class SocialPlatformService {
             clientSecret: '',
           });
 
-          const trendingTopics = await client.getTrendingTopics(categories || []);
+          const trendingTopics = await client.getTrendingTopics(categories);
           return trendingTopics;
         }
         default:
@@ -1059,31 +962,18 @@ Return only the content text, no additional formatting.`;
 
       const result = await query(sqlQuery, [platform, startDate]);
 
-      return result.map((row: unknown) => {
-        const r = row as {
-          platform: string;
-          post_id: string;
-          likes: number;
-          shares: number;
-          comments: number;
-          clicks: number;
-          impressions: number;
-          reach: number;
-          recorded_at: string;
-        };
-        return {
-          platform: r.platform,
-          postId: r.post_id,
-          likes: r.likes,
-          shares: r.shares,
-          comments: r.comments,
-          clicks: r.clicks,
-          impressions: r.impressions,
-          reach: r.reach,
-          engagementRate: (r.likes + r.shares + r.comments) / Math.max(r.impressions, 1),
-          timestamp: new Date(r.recorded_at),
-        };
-      });
+      return result.map((row: any) => ({
+        platform: row.platform,
+        postId: row.post_id,
+        likes: row.likes,
+        shares: row.shares,
+        comments: row.comments,
+        clicks: row.clicks,
+        impressions: row.impressions,
+        reach: row.reach,
+        engagementRate: (row.likes + row.shares + row.comments) / Math.max(row.impressions, 1),
+        timestamp: new Date(row.recorded_at),
+      }));
     } catch (error) {
       console.error('Error fetching historical engagement:', error);
       return [];
@@ -1161,7 +1051,7 @@ Return only the content text, no additional formatting.`;
   private async getAudienceDemographics(
     platform: string,
     engagementData: EngagementData[]
-  ): Promise<Record<string, unknown>> {
+  ): Promise<any> {
     // In production, this would fetch from platform APIs
     // For now, return generic demographics
     return {

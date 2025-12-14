@@ -1,4 +1,4 @@
 import { StackHandler } from '@stackframe/stack';
 import { stackServerApp } from '../../../stack';
 
-export default StackHandler({ app: stackServerApp, fullPage: true });
+export default StackHandler(stackServerApp);

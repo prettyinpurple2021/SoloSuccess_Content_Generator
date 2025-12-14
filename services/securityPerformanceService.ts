@@ -61,7 +61,7 @@ export class SecurityPerformanceService {
    */
   async performSecurityScan(): Promise<void> {
     try {
-      const integrations = await integrationService.getIntegrations();
+      const integrations = await integrationService.getAllIntegrations();
 
       for (const integration of integrations) {
         await this.scanIntegrationSecurity(integration);
@@ -247,16 +247,19 @@ export class SecurityPerformanceService {
       }
 
       const latestMetrics = metrics[metrics.length - 1];
-      const avgRequestsPerHour = latestMetrics!.totalRequests / 24;
+      if (!latestMetrics) {
+        return { isNormal: true, issues, recommendations };
+      }
+      const avgRequestsPerHour = latestMetrics.totalRequests / 24;
 
       // Check for unusual request volume
-      if (latestMetrics!.totalRequests > avgRequestsPerHour * 3) {
+      if (latestMetrics.totalRequests > avgRequestsPerHour * 3) {
         issues.push('Unusual request volume detected');
         recommendations.push('Review recent activity and consider implementing request throttling');
       }
 
       // Check for high error rate
-      if (latestMetrics!.errorRate > 10) {
+      if (latestMetrics.errorRate > 10) {
         issues.push('High error rate detected');
         recommendations.push('Investigate error patterns and review integration configuration');
       }
@@ -381,7 +384,7 @@ export class SecurityPerformanceService {
    */
   async performPerformanceCheck(): Promise<void> {
     try {
-      const integrations = await integrationService.getIntegrations();
+      const integrations = await integrationService.getAllIntegrations();
 
       for (const integration of integrations) {
         await this.checkIntegrationPerformance(integration);
@@ -467,7 +470,10 @@ export class SecurityPerformanceService {
       }
 
       const latestMetrics = metrics[metrics.length - 1];
-      const avgResponseTime = latestMetrics!.averageResponseTime;
+      if (!latestMetrics) {
+        return { isOptimal: true, issues, recommendations };
+      }
+      const avgResponseTime = latestMetrics.averageResponseTime;
 
       // Check if response time is too high
       if (avgResponseTime > SecurityPerformanceService.PERFORMANCE_THRESHOLD) {
@@ -527,7 +533,10 @@ export class SecurityPerformanceService {
       }
 
       const latestMetrics = metrics[metrics.length - 1];
-      const totalRequests = latestMetrics!.totalRequests;
+      if (!latestMetrics) {
+        return { isOptimal: true, issues, recommendations };
+      }
+      const totalRequests = latestMetrics.totalRequests;
 
       // Check for excessive resource usage
       if (totalRequests > 10000) {
@@ -536,7 +545,7 @@ export class SecurityPerformanceService {
       }
 
       // Check for inefficient error handling
-      const errorRate = latestMetrics!.errorRate;
+      const errorRate = latestMetrics.errorRate;
       if (errorRate > 5) {
         issues.push('High error rate indicates inefficient resource usage');
         recommendations.push('Optimize error handling and retry logic');
@@ -737,14 +746,13 @@ export class SecurityPerformanceService {
    */
   private async takeEmergencyActions(integrationId: string, incident: any): Promise<void> {
     try {
+      const integration = await integrationService.getIntegrationById(integrationId);
+      if (!integration) return;
+
       // Disable integration temporarily
-      await integrationService.updateIntegration(
-        integrationId,
-        {
-          isActive: false,
-        },
-        'system'
-      );
+      await integrationService.updateIntegration(integrationId, {
+        isActive: false,
+      }, integration.userId);
 
       // Stop all sync jobs
       await integrationService.stopSync(integrationId);
@@ -816,24 +824,20 @@ export class SecurityPerformanceService {
 
       // Apply optimizations
       if (optimizations.length > 0) {
-        await integrationService.updateIntegration(
-          integrationId,
-          {
-            configuration: {
-              ...integration.configuration,
-              syncSettings: {
-                ...integration.configuration.syncSettings,
-                ...syncOptimization.config,
-                ...batchOptimization.config,
-              },
-              rateLimits: {
-                ...integration.configuration.rateLimits,
-                ...rateLimitOptimization.config,
-              },
+        await integrationService.updateIntegration(integrationId, {
+          configuration: {
+            ...integration.configuration,
+            syncSettings: {
+              ...integration.configuration.syncSettings,
+              ...syncOptimization.config,
+              ...batchOptimization.config,
+            },
+            rateLimits: {
+              ...integration.configuration.rateLimits,
+              ...rateLimitOptimization.config,
             },
           },
-          'system'
-        );
+        }, integration.userId);
       }
 
       return {
@@ -980,7 +984,7 @@ export class SecurityPerformanceService {
     recommendations: string[];
   }> {
     try {
-      const integrations = await integrationService.getIntegrations();
+      const integrations = await integrationService.getAllIntegrations();
       let totalSecurityIssues = 0;
       let totalPerformanceIssues = 0;
       let criticalIssues = 0;
@@ -1002,13 +1006,13 @@ export class SecurityPerformanceService {
         // Collect recommendations
         securityAlerts.forEach((alert) => {
           if (alert.metadata?.recommendations && Array.isArray(alert.metadata.recommendations)) {
-            allRecommendations.push(...alert.metadata.recommendations);
+            allRecommendations.push(...(alert.metadata.recommendations as string[]));
           }
         });
 
         performanceAlerts.forEach((alert) => {
           if (alert.metadata?.recommendations && Array.isArray(alert.metadata.recommendations)) {
-            allRecommendations.push(...alert.metadata.recommendations);
+            allRecommendations.push(...(alert.metadata.recommendations as string[]));
           }
         });
       }

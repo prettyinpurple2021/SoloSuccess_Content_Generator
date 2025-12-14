@@ -576,13 +576,11 @@ class IntegrationOrchestrator {
       // Import the appropriate service based on platform
       const service = await this.getIntegrationService(integration.platform);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const svc = service as any;
-      if (!svc || !svc.testConnection) {
+      if (!service || !service.testConnection) {
         throw new Error(`No test connection method available for ${integration.platform}`);
       }
 
-      const result = await svc.testConnection(integration.credentials);
+      const result = await service.testConnection(integration.credentials);
 
       return {
         success: true,
@@ -634,14 +632,12 @@ class IntegrationOrchestrator {
 
       // Get integration service
       const service = await this.getIntegrationService(integration.platform);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const svc = service as any;
-      if (!svc || !svc.post) {
+      if (!service || !service.post) {
         throw new Error(`No posting service available for ${integration.platform}`);
       }
 
       // Attempt to post
-      const result = await svc.post(integration.credentials, adaptedContent);
+      const result = await service.post(integration.credentials, adaptedContent);
 
       // Update health status
       this.updateHealthStatus(integration.platform, true, Date.now() - startTime);
@@ -671,7 +667,7 @@ class IntegrationOrchestrator {
   /**
    * Get integration service for platform
    */
-  private async getIntegrationService(platform: string): Promise<{ default: unknown } | null> {
+  private async getIntegrationService(platform: string): Promise<any> {
     try {
       switch (platform) {
         case 'twitter':
@@ -684,15 +680,15 @@ class IntegrationOrchestrator {
           return await import('./platforms/instagramClient.js');
         case 'threads':
           // Threads not yet implemented, return null for graceful degradation
-          return null as { default: unknown } | null;
+          return null;
         case 'bluesky':
           return await import('./platforms/blueSkyClient.js');
         default:
-          return null as { default: unknown } | null;
+          return null;
       }
     } catch (error) {
       console.error(`Failed to load service for ${platform}:`, error);
-      return null as { default: unknown } | null;
+      return null;
     }
   }
 
