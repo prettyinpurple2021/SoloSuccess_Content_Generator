@@ -808,4 +808,57 @@ export const testConnection = async (): Promise<boolean> => {
   }
 };
 
+// Account deletion methods
+export const deleteUserData = {
+  // Delete all posts for a user
+  deleteUserPosts: async (userId: string): Promise<number> => {
+    try {
+      const result = await pool`DELETE FROM posts WHERE user_id = ${userId}`;
+      return result.count || 0;
+    } catch (error) {
+      console.error('Error deleting user posts:', error);
+      throw error;
+    }
+  },
+
+  // Delete all integrations for a user
+  deleteUserIntegrations: async (userId: string): Promise<number> => {
+    try {
+      const result = await pool`DELETE FROM integrations WHERE user_id = ${userId}`;
+      return result.count || 0;
+    } catch (error) {
+      console.error('Error deleting user integrations:', error);
+      throw error;
+    }
+  },
+
+  // Delete all notifications for a user
+  deleteUserNotifications: async (userId: string): Promise<number> => {
+    try {
+      const result = await pool`DELETE FROM notifications WHERE user_id = ${userId}`;
+      return result.count || 0;
+    } catch (error) {
+      console.error('Error deleting user notifications:', error);
+      throw error;
+    }
+  },
+
+  // Delete all drafts for a user (posts with status='draft')
+  deleteUserDrafts: async (userId: string): Promise<number> => {
+    try {
+      const result = await pool`DELETE FROM posts WHERE user_id = ${userId} AND status = 'draft'`;
+      return result.count || 0;
+    } catch (error) {
+      console.error('Error deleting user drafts:', error);
+      throw error;
+    }
+  },
+};
+
+// Add convenience methods to db object
+db.deleteUserPosts = deleteUserData.deleteUserPosts;
+db.deleteUserIntegrations = deleteUserData.deleteUserIntegrations;
+db.deleteUserNotifications = deleteUserData.deleteUserNotifications;
+db.deleteUserDrafts = deleteUserData.deleteUserDrafts;
+
 export default db;

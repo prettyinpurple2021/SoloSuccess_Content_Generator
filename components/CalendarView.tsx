@@ -158,6 +158,44 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     return colors[index];
   };
 
+  // Calculate days until post is scheduled (for 30-day lookahead validation)
+  const getDaysUntilPost = (scheduleDate: Date | null | undefined): number | null => {
+    if (!scheduleDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const postDate = new Date(scheduleDate);
+    postDate.setHours(0, 0, 0, 0);
+    const diffTime = postDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 ? diffDays : null;
+  };
+
+  // Get 30-day lookahead indicator color and warning level
+  const getLookaheadIndicator = (
+    daysUntil: number | null
+  ): { color: string; label: string; isWarning: boolean } => {
+    if (daysUntil === null) return { color: '', label: '', isWarning: false };
+    if (daysUntil > 30) {
+      return {
+        color: 'bg-red-500/30 border-red-400 ring-2 ring-red-400/50',
+        label: '⚠️ Beyond 30-day window',
+        isWarning: true,
+      };
+    }
+    if (daysUntil > 7) {
+      return {
+        color: 'bg-yellow-500/20 border-yellow-400 ring-1 ring-yellow-400/30',
+        label: `📅 ${daysUntil} days out`,
+        isWarning: false,
+      };
+    }
+    return {
+      color: 'bg-green-500/20 border-green-400',
+      label: `✓ ${daysUntil} days out`,
+      isWarning: false,
+    };
+  };
+
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, post: Post) => {
     setDraggedPost(post);
@@ -278,6 +316,23 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             <div className="w-3 h-3 bg-red-500/30 border border-red-400 rounded"></div>
             <span className="text-white/70">Conflicts</span>
           </div>
+          {/* 30-day Lookahead Legend */}
+          <div className="w-full border-t border-white/10 pt-3 mt-2">
+            <div className="flex flex-wrap gap-4 text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-green-500/20 border border-green-400 rounded"></div>
+                <span className="text-white/70">✓ 1-7 days out</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-yellow-500/20 border border-yellow-400 rounded ring-1 ring-yellow-400/30"></div>
+                <span className="text-white/70">📅 8-30 days out</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-red-500/30 border border-red-400 rounded ring-2 ring-red-400/50"></div>
+                <span className="text-white/70">⚠️ Beyond 30-day window</span>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="grid grid-cols-7 gap-2 text-center">
           {daysOfWeek.map((day) => (
@@ -357,39 +412,51 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   )}
 
                   {/* Posts */}
-                  {dayInfo.posts.map((post) => (
-                    <div
-                      key={post.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, post)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => onPostClick(post)}
-                      className={`text-xs p-2 mt-1 rounded-lg cursor-move transition-all hover:scale-105 font-semibold relative ${getStatusColor(post.status)} ${
-                        draggedPost?.id === post.id ? 'opacity-50' : ''
-                      }`}
-                      title={`${post.idea} - Drag to reschedule`}
-                    >
-                      <div className="truncate">{post.idea}</div>
-                      {post.scheduleDate && (
-                        <div className="text-xs opacity-75 mt-1">
-                          {post.scheduleDate.toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </div>
-                      )}
-                      {/* Conflict indicator */}
-                      {conflictAnalysis?.conflicts.some(
-                        (conflict) => conflict.postId1 === post.id || conflict.postId2 === post.id
-                      ) && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></div>
-                      )}
-                      {/* Series indicator */}
-                      {post.seriesId && (
-                        <div className="absolute -top-1 -left-1 w-3 h-3 bg-purple-500 rounded-full border border-white"></div>
-                      )}
-                    </div>
-                  ))}
+                  {dayInfo.posts.map((post) => {
+                    const daysUntil = getDaysUntilPost(post.scheduleDate);
+                    const lookaheadIndicator = getLookaheadIndicator(daysUntil);
+
+                    return (
+                      <div
+                        key={post.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, post)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => onPostClick(post)}
+                        className={`text-xs p-2 mt-1 rounded-lg cursor-move transition-all hover:scale-105 font-semibold relative ${getStatusColor(post.status)} ${
+                          draggedPost?.id === post.id ? 'opacity-50' : ''
+                        } ${lookaheadIndicator.color}`}
+                        title={`${post.idea}${lookaheadIndicator.label ? ' - ' + lookaheadIndicator.label : ''} - Drag to reschedule`}
+                      >
+                        <div className="truncate">{post.idea}</div>
+                        {post.scheduleDate && (
+                          <div className="text-xs opacity-75 mt-1">
+                            {post.scheduleDate.toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                        )}
+                        {/* Lookahead warning badge */}
+                        {lookaheadIndicator.isWarning && (
+                          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold whitespace-nowrap">
+                            ⚠️ 30+d
+                          </div>
+                        )}
+                        {/* Conflict indicator */}
+                        {conflictAnalysis?.conflicts.some(
+                          (conflict) =>
+                            conflict.postId1 === post.id || conflict.postId2 === post.id
+                        ) && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></div>
+                        )}
+                        {/* Series indicator */}
+                        {post.seriesId && (
+                          <div className="absolute -top-1 -left-1 w-3 h-3 bg-purple-500 rounded-full border border-white"></div>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   {/* Drop zone indicator when dragging */}
                   {draggedPost && (

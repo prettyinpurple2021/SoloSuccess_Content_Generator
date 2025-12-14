@@ -32,8 +32,9 @@ export const schedulePayloadSchema = z.object({
 export type SchedulePayload = z.infer<typeof schedulePayloadSchema>;
 
 /**
- * Create one job per platform, content adapted strictly to platform limits.
- * This is now a client-side function that calls the API.
+ * Schedule a post for future publication via Upstash QStash
+ * Saves post to Neon Postgres with status='scheduled'
+ * Upstash cron will process it automatically every 15 minutes
  */
 export const schedulePost = async (payload: SchedulePayload): Promise<void> => {
   const parsed = schedulePayloadSchema.parse(payload);
@@ -42,10 +43,30 @@ export const schedulePost = async (payload: SchedulePayload): Promise<void> => {
     throw new Error('User ID is required');
   }
 
+  // Validate schedule date is not in the past
+  const scheduleTime = new Date(parsed.scheduleDate);
+  if (scheduleTime <= new Date()) {
+    throw new Error('Schedule date must be in the future');
+  }
+
+  // Validate schedule date is not more than 30 days in future
+  const maxScheduleTime = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  if (scheduleTime > maxScheduleTime) {
+    throw new Error('Cannot schedule posts more than 30 days in advance');
+  }
+
+  // Call API to save post to database
   const response = await fetch('/api/scheduled-posts/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(parsed),
+    body: JSON.stringify({
+      userId: parsed.userId,
+      content: parsed.content,
+      platforms: parsed.platforms,
+      scheduledAt: parsed.scheduleDate,
+      mediaUrls: parsed.mediaUrls,
+      options: parsed.options,
+    }),
   });
 
   if (!response.ok) {
@@ -54,16 +75,8 @@ export const schedulePost = async (payload: SchedulePayload): Promise<void> => {
   }
 
   const result = await response.json();
-  console.log(`✅ ${result.message}`);
+  // Don't log - keep service clean
 
-  // If posts need immediate processing, trigger it (non-blocking)
-  if (result.processImmediately) {
-    fetch('/api/scheduled-posts/process', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    }).catch((err) => {
-      console.error('Failed to trigger immediate post processing:', err);
-      // Don't throw - this is a background operation
-    });
-  }
+  // Upstash QStash will automatically process this when the time comes
+  // No need to trigger immediate processing
 };

@@ -6,6 +6,7 @@ import App from './App';
 import SignInPage from './auth/SignInPage';
 import SignUpPage from './auth/SignUpPage';
 import ProtectedRoute from './auth/ProtectedRoute';
+import AccountSettings from './AccountSettings';
 
 const AppRouter: React.FC = () => {
   return (
@@ -18,6 +19,15 @@ const AppRouter: React.FC = () => {
             <Route path="/auth/signup" element={<SignUpPage />} />
 
             {/* Protected Routes */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <AccountSettings onNavigateBack={() => window.history.back()} />
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/*"
               element={

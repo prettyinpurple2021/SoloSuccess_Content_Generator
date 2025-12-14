@@ -238,6 +238,68 @@ class SocialMediaOrchestrator {
   /**
    * Orchestrate multi-platform posting with intelligent content adaptation
    */
+  async publishToMultiplePlatformsWithRetry(
+    content: string,
+    platforms: string[],
+    options: {
+      images?: string[];
+      scheduleTime?: Date;
+      userId: string;
+      campaignId?: string;
+      priority?: 'low' | 'normal' | 'high';
+      postId?: string;
+      maxRetries?: number;
+      retryBackoffMs?: number;
+    }
+  ): Promise<PostingResult[]> {
+    const maxRetries = options.maxRetries || parseInt(process.env.SCHEDULER_MAX_RETRIES || '3');
+    const retryBackoffMs = options.retryBackoffMs || parseInt(process.env.SCHEDULER_RETRY_BACKOFF_MS || '5000');
+
+    return this.publishToMultiplePlatformsInternal(content, platforms, options, 0, maxRetries, retryBackoffMs);
+  }
+
+  /**
+   * Internal method for publishing with retry logic and exponential backoff
+   */
+  private async publishToMultiplePlatformsInternal(
+    content: string,
+    platforms: string[],
+    options: any,
+    attemptNumber: number,
+    maxRetries: number,
+    retryBackoffMs: number
+  ): Promise<PostingResult[]> {
+    try {
+      return await this.publishToMultiplePlatforms(content, platforms, options);
+    } catch (error) {
+      if (attemptNumber < maxRetries) {
+        // Calculate exponential backoff: backoff * 2^attempt
+        const delay = retryBackoffMs * Math.pow(2, attemptNumber);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        // Retry with increased attempt number
+        return this.publishToMultiplePlatformsInternal(
+          content,
+          platforms,
+          options,
+          attemptNumber + 1,
+          maxRetries,
+          retryBackoffMs
+        );
+      } else {
+        // Max retries exceeded, return error result for all platforms
+        return platforms.map((platformId) => ({
+          success: false,
+          platformId,
+          error: `Failed to publish after ${maxRetries} retries: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        }));
+      }
+    }
+  }
+
+  /**
+   * Orchestrate multi-platform posting with intelligent content adaptation
+   */
   async publishToMultiplePlatforms(
     content: string,
     platforms: string[],
