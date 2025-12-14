@@ -44,6 +44,9 @@ export const auth = {
   },
 };
 
+// Expose raw sql client for services that need custom queries
+export const sql = pool;
+
 // Database functions
 export const db = {
   // Get all posts for current user

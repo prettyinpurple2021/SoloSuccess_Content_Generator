@@ -4,3 +4,13 @@
 
 /* Import your existing holographic theme */
 @import '../styles/holographic-theme.css';
+
+/* Sparkle positioning helpers to avoid inline styles */
+.sparkle-hero-1 { top: 10%; left: 10%; animation-delay: 0s; }
+.sparkle-hero-2 { top: 20%; right: 15%; animation-delay: 0.5s; }
+.sparkle-hero-3 { bottom: 30%; left: 20%; animation-delay: 1s; }
+.sparkle-hero-4 { bottom: 10%; right: 10%; animation-delay: 1.5s; }
+.sparkle-hero-5 { top: 50%; left: 5%; animation-delay: 2s; }
+.sparkle-hero-6 { top: 70%; right: 25%; animation-delay: 2.5s; }
+.sparkle-title-1 { top: 10px; right: 10px; }
+.sparkle-title-2 { bottom: 10px; left: 10px; }

@@ -379,6 +379,8 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
           className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
             isListening ? 'animate-pulse neon-glow' : ''
           }`}
+          aria-label={isListening ? 'Stop listening' : 'Start listening'}
+          title={isListening ? 'Stop listening' : 'Start listening'}
         >
           {isListening ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
           {isListening && <SparkleEffect count={6} size="small" />}
@@ -399,6 +401,8 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         <button
           onClick={() => setShowCommands(!showCommands)}
           className="w-14 h-14 glass-card rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+          aria-label={showCommands ? 'Hide voice commands' : 'Show voice commands'}
+          title={showCommands ? 'Hide voice commands' : 'Show voice commands'}
         >
           <Sparkles className="w-5 h-5 text-purple-400" />
         </button>
@@ -409,6 +413,8 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         <button
           onClick={() => setVoiceEnabled(!voiceEnabled)}
           className="w-14 h-14 glass-card rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+          aria-label={voiceEnabled ? 'Mute voice feedback' : 'Enable voice feedback'}
+          title={voiceEnabled ? 'Mute voice feedback' : 'Enable voice feedback'}
         >
           {voiceEnabled ? (
             <Volume2 className="w-5 h-5 text-green-400" />

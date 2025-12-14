@@ -1,8 +1,6 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # SoloSuccess AI Content Planner
+
+![GHBanner](https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6)
 
 An AI-powered content planning and publishing platform that helps users create, schedule, and publish content across multiple social media platforms and blogs.
 
@@ -55,6 +53,7 @@ An AI-powered content planning and publishing platform that helps users create, 
      - `INTEGRATION_ENCRYPTION_SECRET` - Run: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
 5. **Run the app:**
+
    ```bash
    npm run dev
    ```
@@ -100,6 +99,7 @@ See [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md) for deployment in
 **📚 [Complete Documentation Index](./docs/README.md)** - All documentation organized by topic
 
 **Quick Links:**
+
 - [API Credentials Setup](./API_CREDENTIALS_SETUP.md) - User guide for connecting social media accounts
 - [Setup Checklist](./docs/setup/SETUP_CHECKLIST.md) - Step-by-step setup verification
 - [Stack Auth Setup](./docs/setup/STACK_AUTH_SETUP.md) - Authentication configuration

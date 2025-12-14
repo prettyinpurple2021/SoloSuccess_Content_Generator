@@ -959,23 +959,20 @@ const App: React.FC = () => {
     <div className="min-h-screen p-4 sm:p-6 lg:p-8 relative">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
-        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
-        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
-        <div
-          className="sparkle"
-          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
-        ></div>
-        <div className="sparkle" style={{ top: '50%', left: '5%', animationDelay: '2s' }}></div>
-        <div className="sparkle" style={{ top: '70%', right: '25%', animationDelay: '2.5s' }}></div>
+        <div className="sparkle sparkle-hero-1" />
+        <div className="sparkle sparkle-hero-2" />
+        <div className="sparkle sparkle-hero-3" />
+        <div className="sparkle sparkle-hero-4" />
+        <div className="sparkle sparkle-hero-5" />
+        <div className="sparkle sparkle-hero-6" />
       </div>
 
       <header className="text-center mb-16 relative">
         <div className="relative inline-block">
           <h1 className="text-6xl sm:text-8xl font-display gradient-text tracking-wider mb-4 relative">
             SoloSuccess AI
-            <div className="sparkle" style={{ top: '10px', right: '10px' }}></div>
-            <div className="sparkle" style={{ bottom: '10px', left: '10px' }}></div>
+            <div className="sparkle sparkle-title-1" />
+            <div className="sparkle sparkle-title-2" />
           </h1>
         </div>
         <h2 className="text-2xl sm:text-3xl font-accent text-white mb-6 font-bold">
@@ -1197,6 +1194,8 @@ const App: React.FC = () => {
                         </button>
                       </div>
                       <select
+                        aria-label="Select brand voice"
+                        title="Select brand voice"
                         value={selectedBrandVoice?.id || ''}
                         onChange={(e) => {
                           const voice = brandVoices.find((v) => v.id === e.target.value);
@@ -1236,6 +1235,8 @@ const App: React.FC = () => {
                         </button>
                       </div>
                       <select
+                        aria-label="Select audience profile"
+                        title="Select audience profile"
                         value={selectedAudienceProfile?.id || ''}
                         onChange={(e) => {
                           const profile = audienceProfiles.find((p) => p.id === e.target.value);
@@ -1276,6 +1277,8 @@ const App: React.FC = () => {
                         </button>
                       </div>
                       <select
+                        aria-label="Select content template"
+                        title="Select content template"
                         value={selectedTemplate?.id || ''}
                         onChange={(e) => {
                           const template = contentTemplates.find((t) => t.id === e.target.value);
@@ -1440,6 +1443,8 @@ const App: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-3">
                               <select
+                                aria-label={`${platform} tone`}
+                                title={`${platform} tone`}
                                 value={socialMediaTones[platform] || TONES[0]}
                                 onChange={(e) =>
                                   setSocialMediaTones((prev) => ({
@@ -1456,6 +1461,8 @@ const App: React.FC = () => {
                                 ))}
                               </select>
                               <select
+                                aria-label={`${platform} audience`}
+                                title={`${platform} audience`}
                                 value={socialMediaAudiences[platform] || AUDIENCES[0]}
                                 onChange={(e) =>
                                   setSocialMediaAudiences((prev) => ({
@@ -1547,6 +1554,8 @@ const App: React.FC = () => {
                             Image Style
                           </label>
                           <select
+                            aria-label="Select image style"
+                            title="Select image style"
                             value={selectedImageStyle?.id || ''}
                             onChange={(e) => {
                               const style = imageStyles.find((s) => s.id === e.target.value);
@@ -1568,6 +1577,8 @@ const App: React.FC = () => {
                             Target Platform
                           </label>
                           <select
+                            aria-label="Select target platform"
+                            title="Select target platform"
                             value={selectedPlatformForImage}
                             onChange={(e) => setSelectedPlatformForImage(e.target.value)}
                             className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground"
@@ -1749,6 +1760,8 @@ const App: React.FC = () => {
                         </button>
                       </div>
                       <select
+                        aria-label="Select campaign"
+                        title="Select campaign"
                         value={selectedCampaign?.id || ''}
                         onChange={(e) => {
                           const campaign = campaigns.find((c) => c.id === e.target.value);
@@ -1802,6 +1815,8 @@ const App: React.FC = () => {
                         </button>
                       </div>
                       <select
+                        aria-label="Select content series"
+                        title="Select content series"
                         value={selectedContentSeries?.id || ''}
                         onChange={(e) => {
                           const series = contentSeries.find((s) => s.id === e.target.value);

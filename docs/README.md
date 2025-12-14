@@ -7,6 +7,7 @@ Complete documentation for the SoloSuccess AI Content Generator platform.
 ### Getting Started
 
 **For first-time setup:**
+
 1. [Main README](../README.md) - Project overview and quick start
 2. [Setup Checklist](setup/SETUP_CHECKLIST.md) - Step-by-step setup verification
 3. [Stack Auth Setup](setup/STACK_AUTH_SETUP.md) - Authentication configuration
@@ -15,16 +16,19 @@ Complete documentation for the SoloSuccess AI Content Generator platform.
 6. [Setup Guide](setup/SETUP_GUIDE.md) - Platform-specific content adaptation
 
 **For users:**
+
 - [API Credentials Setup](../API_CREDENTIALS_SETUP.md) - How users connect their social media accounts
 
 ### Architecture & Development
 
 **Core architecture:**
+
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture overview (Vite+React+TypeScript, Stack Auth, Neon, AI services)
 - [STYLEGUIDE.md](STYLEGUIDE.md) - UI/code conventions (Tailwind, Framer Motion, service-layer patterns)
 - [INTEGRATIONS.md](INTEGRATIONS.md) - Integration patterns and orchestration
 
 **Development resources:**
+
 - [Integration Manager README](integrations/INTEGRATION_MANAGER_README.md) - Integration system implementation
 - [Integration Services Documentation](integrations/INTEGRATION_SERVICES_DOCUMENTATION.md) - Platform-specific integration details
 - [Database README](../database/README.md) - Database schema documentation
@@ -32,11 +36,13 @@ Complete documentation for the SoloSuccess AI Content Generator platform.
 - [Utils README](../utils/README.md) - Utility functions and performance helpers
 
 **AI coding agents:**
+
 - [GitHub Copilot Instructions](../.github/copilot-instructions.md) - Production-grade agent guidance
 
 ### Deployment & Operations
 
 **Deployment:**
+
 - [Vercel Deployment Guide](deployment/VERCEL_DEPLOYMENT_GUIDE.md) - Complete deployment steps
 - [Vercel Troubleshooting](deployment/VERCEL_TROUBLESHOOTING.md) - Common deployment issues
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Deployment configuration reference
@@ -45,6 +51,7 @@ Complete documentation for the SoloSuccess AI Content Generator platform.
 - [Production Deployment Complete](PRODUCTION_DEPLOYMENT_COMPLETE.md) - Post-deployment verification
 
 **Operations:**
+
 - [OPERATIONS.md](OPERATIONS.md) - Runbooks and monitoring
 - [Production Readiness Summary](deployment/PRODUCTION_READINESS_SUMMARY.md) - Production validation status
 - [Performance Optimization Guide](PERFORMANCE_OPTIMIZATION_GUIDE.md) - Performance best practices
@@ -62,6 +69,7 @@ Complete documentation for the SoloSuccess AI Content Generator platform.
 ### Historical/Archive
 
 Outdated documentation moved to [archive/](archive/) for reference:
+
 - [archive/PRODUCTION_UPGRADE_GUIDE.md](archive/PRODUCTION_UPGRADE_GUIDE.md) - Obsolete upgrade patterns
 - [archive/DISABLE_RENDER_DEPLOYMENT.md](archive/DISABLE_RENDER_DEPLOYMENT.md) - Render platform (not used)
 - [archive/README_DEPLOYMENT.md](archive/README_DEPLOYMENT.md) - Superseded by Vercel guides

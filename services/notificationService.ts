@@ -1,4 +1,4 @@
-import { db } from './neonService';
+import { sql } from './neonService';
 
 export interface CreateNotificationInput {
     userId: string;
@@ -19,6 +19,14 @@ export interface Notification {
     metadata?: Record<string, any>;
 }
 
+const parseCount = (row?: { count?: string | number }): number => {
+    if (!row || row.count === undefined || row.count === null) {
+        return 0;
+    }
+    const value = typeof row.count === 'string' ? Number(row.count) : row.count;
+    return Number.isFinite(value) ? value : 0;
+};
+
 /**
  * Notification Service
  * Manages user notifications for post publishing, failures, and other events
@@ -29,13 +37,13 @@ class NotificationService {
      */
     async createNotification(input: CreateNotificationInput): Promise<Notification> {
         try {
-            const notification = await db<Notification>`
+            const notification = await sql<Notification[]>`
         INSERT INTO notifications (user_id, title, message, type, read, created_at, metadata)
         VALUES (${input.userId}, ${input.title}, ${input.message}, ${input.type}, false, NOW(), ${JSON.stringify(input.metadata || {})})
         RETURNING *
       `;
 
-            if (!notification || notification.length === 0) {
+            if (!notification || notification.length === 0 || !notification[0]) {
                 throw new Error('Failed to create notification');
             }
 
@@ -51,7 +59,7 @@ class NotificationService {
      */
     async getUnreadNotifications(userId: string): Promise<Notification[]> {
         try {
-            const notifications = await db<Notification[]>`
+            const notifications = await sql<Notification[]>`
         SELECT * FROM notifications 
         WHERE user_id = ${userId} AND read = false
         ORDER BY created_at DESC
@@ -71,7 +79,7 @@ class NotificationService {
      */
     async getUserNotifications(userId: string, limit = 20, offset = 0): Promise<Notification[]> {
         try {
-            const notifications = await db<Notification[]>`
+            const notifications = await sql<Notification[]>`
         SELECT * FROM notifications 
         WHERE user_id = ${userId}
         ORDER BY created_at DESC
@@ -91,14 +99,14 @@ class NotificationService {
      */
     async markAsRead(notificationId: string): Promise<Notification | null> {
         try {
-            const result = await db<Notification>`
+            const result = await sql<Notification[]>`
         UPDATE notifications 
         SET read = true 
         WHERE id = ${notificationId}
         RETURNING *
       `;
 
-            return result && result.length > 0 ? result[0] : null;
+            return result && result.length > 0 && result[0] ? result[0] : null;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error(`Failed to mark notification as read: ${errorMessage}`);
@@ -111,19 +119,19 @@ class NotificationService {
      */
     async markAllAsRead(userId: string): Promise<number> {
         try {
-            await db`
+            await sql`
         UPDATE notifications 
         SET read = true 
         WHERE user_id = ${userId} AND read = false
       `;
 
             // Return count of updated notifications
-            const result = await db<{ count: number }>`
+            const result = await sql<{ count: string }[]>`
         SELECT COUNT(*) as count FROM notifications 
         WHERE user_id = ${userId} AND read = true
       `;
 
-            return result && result.length > 0 ? result[0].count : 0;
+            return parseCount(result?.[0]);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error(`Failed to mark all notifications as read: ${errorMessage}`);
@@ -136,7 +144,7 @@ class NotificationService {
      */
     async deleteNotification(notificationId: string): Promise<boolean> {
         try {
-            await db`
+            await sql`
         DELETE FROM notifications 
         WHERE id = ${notificationId}
       `;
@@ -155,15 +163,15 @@ class NotificationService {
     async deleteAllUserNotifications(userId: string): Promise<number> {
         try {
             // First get the count
-            const countResult = await db<{ count: number }>`
+            const countResult = await sql<{ count: string }[]>`
         SELECT COUNT(*) as count FROM notifications 
         WHERE user_id = ${userId}
       `;
 
-            const count = countResult && countResult.length > 0 ? countResult[0].count : 0;
+            const count = parseCount(countResult?.[0]);
 
             // Then delete
-            await db`
+            await sql`
         DELETE FROM notifications 
         WHERE user_id = ${userId}
       `;
@@ -181,12 +189,12 @@ class NotificationService {
      */
     async getUnreadCount(userId: string): Promise<number> {
         try {
-            const result = await db<{ count: number }>`
+            const result = await sql<{ count: string }[]>`
         SELECT COUNT(*) as count FROM notifications 
         WHERE user_id = ${userId} AND read = false
       `;
 
-            return result && result.length > 0 ? result[0].count : 0;
+            return parseCount(result?.[0]);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error(`Failed to get unread count: ${errorMessage}`);

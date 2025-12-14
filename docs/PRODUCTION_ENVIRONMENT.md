@@ -194,7 +194,7 @@ Content-Security-Policy:
 1. **Add Domain**: Add custom domain in Vercel dashboard
 2. **DNS Configuration**: Configure DNS records:
 
-   ```
+   ```text
    Type: CNAME
    Name: www
    Value: cname.vercel-dns.com
@@ -314,10 +314,10 @@ Content-Security-Policy:
 
 ### Support Resources
 
-- **Vercel Documentation**: https://vercel.com/docs
+- **Vercel Documentation**: <https://vercel.com/docs>
 - **Vercel Support**: Available for Pro and Enterprise plans
 - **Community Forum**: Vercel community discussions
-- **Status Page**: https://vercel-status.com
+- **Status Page**: <https://vercel-status.com>
 
 ## Success Metrics
 

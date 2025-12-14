@@ -144,13 +144,10 @@ export const ProfilePage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Background Sparkles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="sparkle" style={{ top: '10%', left: '10%', animationDelay: '0s' }}></div>
-        <div className="sparkle" style={{ top: '20%', right: '15%', animationDelay: '0.5s' }}></div>
-        <div className="sparkle" style={{ bottom: '30%', left: '20%', animationDelay: '1s' }}></div>
-        <div
-          className="sparkle"
-          style={{ bottom: '10%', right: '10%', animationDelay: '1.5s' }}
-        ></div>
+        <div className="sparkle sparkle-hero-1" />
+        <div className="sparkle sparkle-hero-2" />
+        <div className="sparkle sparkle-hero-3" />
+        <div className="sparkle sparkle-hero-4" />
       </div>
 
       {/* Navigation */}
@@ -212,6 +209,8 @@ export const ProfilePage: React.FC = () => {
                   type="email"
                   value={user.email || ''}
                   disabled
+                  aria-label="Email"
+                  title="Email"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/20 backdrop-blur-sm text-white/60 cursor-not-allowed"
                 />
               </div>
@@ -245,6 +244,8 @@ export const ProfilePage: React.FC = () => {
                   onChange={(e) =>
                     setProfileData((prev) => ({ ...prev, timezone: e.target.value }))
                   }
+                  aria-label="Timezone"
+                  title="Timezone"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="UTC">UTC</option>
@@ -279,6 +280,8 @@ export const ProfilePage: React.FC = () => {
                       notifications: { ...prev.notifications, email: e.target.checked },
                     }))
                   }
+                  aria-label="Email notifications"
+                  title="Email notifications"
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
               </div>
@@ -297,6 +300,8 @@ export const ProfilePage: React.FC = () => {
                       notifications: { ...prev.notifications, push: e.target.checked },
                     }))
                   }
+                  aria-label="Push notifications"
+                  title="Push notifications"
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
               </div>
@@ -315,6 +320,8 @@ export const ProfilePage: React.FC = () => {
                       notifications: { ...prev.notifications, marketing: e.target.checked },
                     }))
                   }
+                  aria-label="Marketing notifications"
+                  title="Marketing notifications"
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
               </div>
@@ -339,6 +346,8 @@ export const ProfilePage: React.FC = () => {
                       },
                     }))
                   }
+                  aria-label="Theme preference"
+                  title="Theme preference"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="dark">Dark</option>
@@ -357,6 +366,8 @@ export const ProfilePage: React.FC = () => {
                       preferences: { ...prev.preferences, language: e.target.value },
                     }))
                   }
+                  aria-label="Language preference"
+                  title="Language preference"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="en">English</option>
