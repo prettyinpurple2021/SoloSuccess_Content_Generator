@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Post, TimeSlot, SchedulingSuggestion, ConflictAnalysis, AudienceProfile } from '../types';
-// import { schedulingService } from '../services/schedulingService';
+import { schedulingService } from '../services/schedulingService';
 
 interface SmartSchedulerProps {
   posts: Post[];

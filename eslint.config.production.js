@@ -66,10 +66,18 @@ export default [
         Response: 'readonly',
         AbortController: 'readonly',
         AbortSignal: 'readonly',
+        PromiseRejectionEvent: 'readonly',
+        ErrorEvent: 'readonly',
+        EventListener: 'readonly',
+        PerformanceNavigationTiming: 'readonly',
+        SpeechSynthesis: 'readonly',
+        SpeechSynthesisUtterance: 'readonly',
 
         // DOM APIs
         HTMLElement: 'readonly',
         HTMLImageElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLDivElement: 'readonly',
         Element: 'readonly',
         Event: 'readonly',
         EventTarget: 'readonly',
@@ -106,6 +114,8 @@ export default [
         WebAssembly: 'readonly',
         CustomEvent: 'readonly',
         MSApp: 'readonly',
+        WebSocket: 'readonly',
+        EventSource: 'readonly',
         HTMLButtonElement: 'readonly',
         PerformanceEventTiming: 'readonly',
         require: 'readonly',
@@ -115,6 +125,7 @@ export default [
         __SENTRY_TRACING__: 'readonly',
         __SENTRY_RELEASE__: 'readonly',
         __REACT_DEVTOOLS_GLOBAL_HOOK__: 'readonly',
+        module: 'readonly',
       },
     },
     plugins: {
@@ -126,6 +137,7 @@ export default [
       // PRODUCTION-OPTIMIZED: Suppress all non-critical warnings
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-unused-vars': 'off',
       'react-hooks/exhaustive-deps': 'off',
       'react/no-unescaped-entities': 'off',
       'react/display-name': 'off',
@@ -152,6 +164,40 @@ export default [
       'use-isnan': 'error',
       'valid-typeof': 'error',
       'react-hooks/rules-of-hooks': 'error', // Keep this - breaks React
+    },
+  },
+  {
+    files: ['scripts/**/*.{js,cjs,ts}'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        __dirname: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+      },
+    },
+    rules: {
+      'no-undef': 'off',
+      'no-unused-vars': 'off',
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['.eslintrc.local.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
+      globals: {
+        module: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
+      },
+    },
+    rules: {
+      'no-undef': 'off',
     },
   },
 ];

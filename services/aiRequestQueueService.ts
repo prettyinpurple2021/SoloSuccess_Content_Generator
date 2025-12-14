@@ -225,17 +225,20 @@ class AIRequestQueueService {
       case 'ideas':
         return await geminiService.generateIdeas(request.payload as string);
 
-      case 'content':
+      case 'content': {
         const { idea, brandVoice, audienceProfile } = request.payload as any;
         return await geminiService.generatePersonalizedContent(idea, brandVoice, audienceProfile);
+      }
 
-      case 'social':
+      case 'social': {
         const { topic, platform, tone, length } = request.payload as any;
         return await geminiService.generateSocialMediaPost(topic, platform, tone, length);
+      }
 
-      case 'image':
+      case 'image': {
         const { prompt, options } = request.payload as any;
         return await geminiService.generateImage(prompt, options);
+      }
 
       case 'summary':
         return await geminiService.generateSummary(request.payload as string);

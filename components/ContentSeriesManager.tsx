@@ -10,6 +10,7 @@ import {
 import { campaignService } from '../services/clientCampaignService';
 import { apiService } from '../services/clientApiService';
 import { Spinner } from '../constants';
+import { db } from '../services/databaseService';
 
 interface ContentSeriesManagerProps {
   isOpen: boolean;

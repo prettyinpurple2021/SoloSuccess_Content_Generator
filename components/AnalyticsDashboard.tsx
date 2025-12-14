@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  PerformanceReport,
-  AnalyticsData,
-  ContentInsight,
-  PerformanceTrend,
-  PlatformMetrics,
-  LoadingState,
-} from '../types';
-// import { analyticsService } from '../services/analyticsService';
+import { PerformanceReport, PerformanceTrend, LoadingState } from '../types';
+import { analyticsService } from '../services/analyticsService';
 import { Spinner } from '../constants';
 
 interface AnalyticsDashboardProps {

@@ -469,10 +469,10 @@ const App: React.FC = () => {
 
   type GeminiSocialClient = {
     generateSocialMediaPost?: (
-      topic: string,
-      platform: string,
-      tone: string,
-      length: number
+      _topic: string,
+      _platform: string,
+      _tone: string,
+      _length: number
     ) => Promise<{ content: string }>;
   };
 
@@ -1609,12 +1609,15 @@ const App: React.FC = () => {
                               {selectedImageStyle.colorPalette
                                 .slice(0, 5)
                                 .map((color: string, index: number) => (
-                                  <div
+                                  <svg
                                     key={index}
                                     className="w-4 h-4 rounded border border-border"
-                                    style={{ backgroundColor: color }}
-                                    title={color}
-                                  />
+                                    viewBox="0 0 16 16"
+                                    role="img"
+                                    aria-label={`Color ${color}`}
+                                  >
+                                    <rect x="0" y="0" width="16" height="16" rx="4" fill={color} />
+                                  </svg>
                                 ))}
                             </div>
                           )}
@@ -1844,14 +1847,12 @@ const App: React.FC = () => {
                             <span>Frequency: {selectedContentSeries.frequency}</span>
                             {selectedContentSeries.campaignId && <span>Part of campaign</span>}
                           </div>
-                          <div className="w-full bg-muted/50 rounded-full h-2 mt-2">
-                            <div
-                              className="bg-secondary h-2 rounded-full transition-all duration-300"
-                              style={{
-                                width: `${(selectedContentSeries.currentPost / selectedContentSeries.totalPosts) * 100}%`,
-                              }}
-                            />
-                          </div>
+                          <progress
+                            aria-label="Content series progress"
+                            value={selectedContentSeries.currentPost}
+                            max={selectedContentSeries.totalPosts}
+                            className="progress-bar mt-2"
+                          />
                         </div>
                       )}
                     </div>
@@ -2542,14 +2543,12 @@ const App: React.FC = () => {
                                 {series.currentPost}/{series.totalPosts} • {series.frequency}
                               </span>
                             </div>
-                            <div className="w-full bg-white/10 rounded-full h-1 mt-2">
-                              <div
-                                className="bg-secondary h-1 rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${(series.currentPost / series.totalPosts) * 100}%`,
-                                }}
-                              />
-                            </div>
+                            <progress
+                              aria-label="Series progress"
+                              value={series.currentPost}
+                              max={series.totalPosts}
+                              className="progress-bar progress-bar--compact mt-2"
+                            />
                           </div>
                           <button
                             onClick={() => handleContentSeriesSelect(series)}

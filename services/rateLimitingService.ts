@@ -316,7 +316,7 @@ export class RateLimitingService {
         // Circuit is closed, allow requests
         return { allowed: true };
 
-      case 'open':
+      case 'open': {
         // Circuit is open, check if timeout has passed
         if (now - entry.circuitBreakerLastFailure > timeout) {
           entry.circuitBreakerState = 'half-open';
@@ -329,6 +329,7 @@ export class RateLimitingService {
           resetTime: entry.circuitBreakerLastFailure + timeout,
           retryAfter,
         };
+      }
 
       case 'half-open':
         // Circuit is half-open, allow one request to test

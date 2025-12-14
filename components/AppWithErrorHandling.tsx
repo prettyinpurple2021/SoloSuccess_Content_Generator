@@ -1,3 +1,4 @@
+/* eslint-env browser */
 import React, { useEffect, useState } from 'react';
 import { ErrorBoundaryEnhanced, PageErrorBoundary } from './ErrorBoundaryEnhanced';
 import { LoadingProvider } from './LoadingStateManager';

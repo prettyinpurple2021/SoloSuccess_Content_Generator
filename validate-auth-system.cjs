@@ -4,7 +4,7 @@
 
 // Manual validation script for authentication system
 const fs = require('fs');
-const path = require('path');
+const path = require('path'); // eslint-disable-line no-unused-vars
 const { validatePath } = require('./utils/pathValidator.cjs');
 
 console.log('🔍 Validating Authentication and Authorization System...\n');

@@ -4,6 +4,7 @@
  */
 
 import type { Sql, ParameterOrJSON } from 'postgres';
+import postgres from 'postgres';
 import { errorHandler } from './errorHandlingService';
 
 // Performance monitoring interface

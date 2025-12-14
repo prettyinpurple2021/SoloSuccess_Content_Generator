@@ -553,7 +553,7 @@ export const repurposeContent = async (
   }
 
   switch (format) {
-    case 'Video Script':
+    case 'Video Script': {
       const videoDuration = duration || '30-60 second';
       prompt = `Transform the following blog post into a detailed, engaging script for a ${videoDuration} video${platform ? ` for ${platform}` : ''}. 
 
@@ -575,8 +575,9 @@ Structure the script with:
 Blog Post:
 ${blogPost}`;
       break;
+    }
 
-    case 'Email Newsletter':
+    case 'Email Newsletter': {
       prompt = `Adapt the following blog post into a compelling email newsletter segment optimized for high engagement and click-through rates.
 
 REQUIREMENTS:
@@ -599,6 +600,7 @@ Structure the email with:
 Blog Post:
 ${blogPost}`;
       break;
+    }
 
     case 'LinkedIn Article':
       prompt = `Repurpose the following blog post into a professional LinkedIn article optimized for maximum engagement and reach.
@@ -626,7 +628,7 @@ Blog Post:
 ${blogPost}`;
       break;
 
-    case 'Podcast Script':
+    case 'Podcast Script': {
       const podcastDuration = duration || '5-10 minute';
       prompt = `Transform the following blog post into a conversational podcast script for a ${podcastDuration} segment.
 
@@ -650,6 +652,7 @@ Structure the script with:
 Blog Post:
 ${blogPost}`;
       break;
+    }
 
     case 'Twitter Thread':
       prompt = `Convert the following blog post into an engaging Twitter thread optimized for maximum engagement and retweets.

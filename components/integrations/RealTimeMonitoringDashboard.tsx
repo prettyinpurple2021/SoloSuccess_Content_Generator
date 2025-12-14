@@ -7,7 +7,7 @@ import {
   IntegrationAlert,
   WebhookDelivery,
 } from '../../types';
-// import { monitoringService } from '../../services/monitoringService';
+import { monitoringService } from '../../services/monitoringService';
 // import { webhookService } from '../../services/webhookService';
 
 interface RealTimeMonitoringDashboardProps {

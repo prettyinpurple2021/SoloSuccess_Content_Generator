@@ -167,7 +167,7 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
   };
 
   private getErrorIcon = () => {
-    const _severity = this.getErrorSeverity();
+    const severity = this.getErrorSeverity();
 
     switch (severity) {
       case 'critical':
@@ -183,7 +183,7 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
 
   private getErrorTitle = () => {
     const { featureName, level } = this.props;
-    const _severity = this.getErrorSeverity();
+    const severity = this.getErrorSeverity();
 
     if (featureName) {
       return `${featureName} Error ${this.getErrorIcon()}`;
@@ -225,7 +225,7 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
   private getRecoveryOptions = () => {
     const { allowRetry = true, allowReload = true, allowReport = true } = this.props;
     const { retryCount } = this.state;
-    const _severity = this.getErrorSeverity();
+    const severity = this.getErrorSeverity();
 
     return {
       showRetry: allowRetry && retryCount < this.maxRetries,
@@ -242,7 +242,7 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      const _severity = this.getErrorSeverity();
+      const severity = this.getErrorSeverity();
       const options = this.getRecoveryOptions();
       const { error, errorInfo: _errorInfo, errorId, showDetails } = this.state;
 

@@ -7,6 +7,7 @@ import {
   ThumbsDown,
   Star,
   Lightbulb,
+  Bug,
   AlertTriangle,
   CheckCircle,
   User,

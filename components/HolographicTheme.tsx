@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 interface HolographicThemeContextType {
   sparkleIntensity: 'low' | 'medium' | 'high';
@@ -89,28 +89,31 @@ export const HolographicThemeProvider: React.FC<{ children: React.ReactNode }> =
 export const SparkleEffect: React.FC<{
   count?: number;
   size?: 'small' | 'medium' | 'large';
-  color?: string;
-}> = ({ count = 5, size = 'medium', color = '#ff69b4' }) => {
-  const [sparkles, setSparkles] = useState<
-    Array<{
-      id: number;
-      x: number;
-      y: number;
-      delay: number;
-      duration: number;
-    }>
-  >([]);
+  color?: 'pink' | 'cyan' | 'purple';
+}> = ({ count = 5, size = 'medium', color = 'pink' }) => {
+  const sparklePresets = useMemo(
+    () => [
+      'sparkle-pos-1',
+      'sparkle-pos-2',
+      'sparkle-pos-3',
+      'sparkle-pos-4',
+      'sparkle-pos-5',
+      'sparkle-pos-6',
+      'sparkle-pos-7',
+      'sparkle-pos-8',
+      'sparkle-pos-9',
+      'sparkle-pos-10',
+    ],
+    []
+  );
+
+  const [sparkles, setSparkles] = useState<Array<{ id: number; className: string }>>([]);
 
   useEffect(() => {
-    const newSparkles = Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      delay: Math.random() * 2,
-      duration: 1 + Math.random() * 2,
-    }));
-    setSparkles(newSparkles);
-  }, [count]);
+    const shuffled = [...sparklePresets].sort(() => Math.random() - 0.5);
+    const limited = shuffled.slice(0, Math.min(count, sparklePresets.length));
+    setSparkles(limited.map((className, index) => ({ id: index, className })));
+  }, [count, sparklePresets]);
 
   const getSizeClass = () => {
     switch (size) {
@@ -123,19 +126,23 @@ export const SparkleEffect: React.FC<{
     }
   };
 
+  const getColorClass = () => {
+    switch (color) {
+      case 'cyan':
+        return 'text-cyan-200';
+      case 'purple':
+        return 'text-purple-200';
+      default:
+        return 'text-pink-300';
+    }
+  };
+
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {sparkles.map((sparkle) => (
         <div
           key={sparkle.id}
-          className={`absolute ${getSizeClass()}`}
-          style={{
-            left: `${sparkle.x}%`,
-            top: `${sparkle.y}%`,
-            color,
-            animation: `sparkle ${sparkle.duration}s infinite`,
-            animationDelay: `${sparkle.delay}s`,
-          }}
+          className={`sparkle-base ${getSizeClass()} ${getColorClass()} ${sparkle.className}`}
         >
           ✨
         </div>
@@ -291,19 +298,21 @@ export const RainbowProgress: React.FC<{
   className?: string;
   showSparkles?: boolean;
 }> = ({ value, max = 100, className = '', showSparkles = true }) => {
-  const percentage = Math.min((value / max) * 100, 100);
+  const safeMax = Math.max(max, 1);
+  const normalizedValue = Math.min(Math.max(value, 0), safeMax);
+  const sparkleCount = Math.max(2, Math.ceil((normalizedValue / safeMax) * 4));
 
   return (
     <div className={`relative ${className}`}>
-      <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-        <div
-          className="rainbow-progress h-full transition-all duration-500 ease-out"
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-      {showSparkles && percentage > 0 && (
-        <div className="absolute top-0 h-full" style={{ width: `${percentage}%` }}>
-          <SparkleEffect count={Math.ceil(percentage / 25)} size="small" />
+      <progress
+        aria-label="Rainbow progress"
+        value={normalizedValue}
+        max={safeMax}
+        className="progress-bar progress-bar--rainbow"
+      />
+      {showSparkles && normalizedValue > 0 && (
+        <div className="absolute inset-0 pointer-events-none">
+          <SparkleEffect count={sparkleCount} size="small" />
         </div>
       )}
     </div>

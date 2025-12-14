@@ -18,7 +18,7 @@ Use this condensed guide to be productive fast, then refer to the full sections 
 
 - **Dev:** `npm run dev`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm run format`.
 - **Lint (prod rules):** `npm run lint:production` (uses eslint.config.production.js).
-- **DB Setup:** See [DATABASE_SETUP_INSTRUCTIONS.md](../SoloSuccess_Content_Generator/DATABASE_SETUP_INSTRUCTIONS.md) and [NEON_MIGRATION_GUIDE.md](../SoloSuccess_Content_Generator/NEON_MIGRATION_GUIDE.md). Scripts: `npm run setup:database`, `npm run migrate:neon`, `npm run test:neon`.
+- **DB Setup:** See [DATABASE_SETUP_INSTRUCTIONS.md](../docs/setup/DATABASE_SETUP_INSTRUCTIONS.md) and [NEON_MIGRATION_GUIDE.md](../docs/NEON_MIGRATION_GUIDE.md). Scripts: `npm run setup:database`, `npm run migrate:neon`, `npm run test:neon`.
 - **Validation (Prod readiness):** `npm run validate:production`, `npm run validate:security`, `npm run validate:performance`, `npm run validate:readiness`.
 - **Env Vars:** Required: `VITE_STACK_PROJECT_ID`, `VITE_STACK_PUBLISHABLE_CLIENT_KEY`, `STACK_SECRET_SERVER_KEY`, `DATABASE_URL`, `GEMINI_API_KEY`, `INTEGRATION_ENCRYPTION_SECRET`. Optional: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, platform‑specific.
 
