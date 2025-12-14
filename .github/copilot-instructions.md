@@ -1,5 +1,58 @@
 # GitHub Copilot Instructions - SoloSuccess AI Content Generator
 
+## AI Coding Agent Quickstart (SoloSuccess)
+
+Use this condensed guide to be productive fast, then refer to the full sections below for deep details.
+
+- **Architecture Overview:** Vite + React + TypeScript + Tailwind + Framer Motion; Auth via Stack Auth; DB via Neon PostgreSQL; AI via Google Gemini, OpenAI, Anthropic.
+- **Root App Flow:** `index.tsx` → `AppWithErrorHandling` → `App.tsx` with routing in `components/AppRouter.tsx`.
+- **React Initialization Gotcha:** First lines in `index.tsx` must assign React globally to prevent Stack Auth errors:
+   ```ts
+   import React from 'react';
+   (window as any).React = React;
+   ```
+- **Service Layer Only:** External calls live in `services/` (AI, DB, integrations, webhooks, encryption). Components never call third‑party APIs or `fetch()` directly.
+- **Types + Transformations:** Domain types in `types.ts` (camelCase). DB uses snake_case; convert in `services/databaseService.ts` via helpers like `postToDatabase()` and `postFromDatabase()`.
+
+### Workflows
+- **Dev:** `npm run dev`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm run format`.
+- **Lint (prod rules):** `npm run lint:production` (uses eslint.config.production.js).
+- **DB Setup:** See [DATABASE_SETUP_INSTRUCTIONS.md](../../DATABASE_SETUP_INSTRUCTIONS.md) and [NEON_MIGRATION_GUIDE.md](../../NEON_MIGRATION_GUIDE.md). Scripts: `npm run setup:database`, `npm run migrate:neon`, `npm run test:neon`.
+- **Validation (Prod readiness):** `npm run validate:production`, `npm run validate:security`, `npm run validate:performance`, `npm run validate:readiness`.
+- **Env Vars:** Required: `VITE_STACK_PROJECT_ID`, `VITE_STACK_PUBLISHABLE_CLIENT_KEY`, `STACK_SECRET_SERVER_KEY`, `DATABASE_URL`, `GEMINI_API_KEY`, `INTEGRATION_ENCRYPTION_SECRET`. Optional: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, platform‑specific.
+
+### Conventions
+- **UI:** Tailwind utility classes only; glassmorphic design; Framer Motion for animations.
+- **Components:** Function components + hooks; heavy views are lazy‑loaded via `components/LazyComponents.tsx` with `Suspense` fallbacks.
+- **Error Handling:** Try‑catch in services; user‑friendly messages; runtime validation with Zod; global boundaries in `components/ErrorBoundaryEnhanced.tsx`.
+- **Service Patterns:** Singleton instances, strict input/output validation, retries/backoff for network calls, rate limiting via service helpers.
+- **Tests:** Add/extend tests for new services/components; prefer integration coverage for I/O paths.
+
+### Integration Points
+- **Auth:** Config in `stack.ts`; provider wrapping in `index.tsx`; `useUser()` in client components; route protection in `components/auth/ProtectedRoute.tsx`.
+- **AI Services:** `services/geminiService.ts` (+ `enhancedGeminiService.ts`) for generation; usage and rate limits via `aiUsageMonitoringService.ts` and `aiRequestQueueService.ts`.
+- **Social Integrations:** Orchestrated by `services/integrationOrchestrator.ts`; per‑platform services in `services/integrations/*` implement `testConnection()`, `publishPost()`, `getAnalytics()` with retries and rate limits.
+- **Webhooks:** `services/webhookService.ts` provides CRUD + delivery with HMAC‑SHA256 signatures, exponential backoff, and `processPendingDeliveries()` for failed deliveries.
+- **Credential Security:** `services/credentialEncryption.ts` (AES‑256‑GCM) for OAuth token storage — never store plaintext.
+- **Scheduling/Publishing:** `services/postScheduler.ts` / `services/schedulerService.ts` run queued publications; status transitions persisted in DB.
+
+### Files To Know
+- Entry + Router: `index.tsx`, `components/AppWithErrorHandling.tsx`, `components/AppRouter.tsx`, `App.tsx`.
+- Config: `vite.config.ts`, `tailwind.config.js`, `tsconfig.json`, `eslint.config.production.js`.
+- Data + Services: `types.ts`, `services/databaseService.ts`, `services/integrationOrchestrator.ts`, `services/webhookService.ts`, `services/geminiService.ts`.
+- Docs: `STACK_AUTH_SETUP.md`, `NEON_MIGRATION_GUIDE.md`, `VERCEL_DEPLOYMENT_GUIDE.md`, root `README.md`.
+
+### Non‑Negotiables
+- React must be globally assigned in `index.tsx` before any imports.
+- Components never call external APIs — use the service layer.
+- Strict TypeScript, Zod validation, comprehensive error handling.
+- Use Neon (not Supabase); encrypt credentials; add DB indexes for new tables.
+- No TODO comments, commented-out code, mocks, placeholders, or disabled/stubbed code anywhere.
+- Run production lint/validation before merge: `npm run lint:production`, `npm run validate:production`, `npm run validate:security`, `npm run validate:performance`, `npm run validate:readiness`.
+
+---
+# GitHub Copilot Instructions - SoloSuccess AI Content Generator
+
 ## ⚠️ PRODUCTION-GRADE CODEBASE
 
 **This application is built for production deployment.** All code must meet enterprise-grade quality standards:

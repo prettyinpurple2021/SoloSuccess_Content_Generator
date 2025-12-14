@@ -22,8 +22,14 @@ VITE_STACK_PROJECT_ID=your_project_id_here
 VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_client_key_here
 STACK_SECRET_SERVER_KEY=your_secret_server_key_here
 
-# Database Configuration (if using Neon)
-VITE_NEON_DATABASE_URL=your_neon_database_url_here
+# Database Configuration
+DATABASE_URL=your_neon_database_url_here
+
+# Integration encryption
+INTEGRATION_ENCRYPTION_SECRET=64_char_hex_secret
+
+# AI provider
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
 ### 3. Restart Development Server

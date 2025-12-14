@@ -30,19 +30,16 @@ This is a common issue with React apps on Vercel. Here's how to fix it:
 4. **Verify these variables are set**:
 
 ```
-VITE_STACK_PROJECT_ID=d36a87a3-7f57-44a0-9c1b-9c5c07c93677
-VITE_STACK_PUBLISHABLE_CLIENT_KEY=pck_hjbjmtkkfb5n0zxhkgwz5swftj4bhps2bgdygt4rb8xsg
-STACK_SECRET_SERVER_KEY=ssk_j6xj3ge4smta510tadxgetkwecaf99x7db2qdkcgzxc30
-DATABASE_URL=postgresql://neondb_owner:npg_Z4Ti5vRBVdKy@ep-damp-mud-a4mygxyl-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
-VITE_NEON_DATABASE_URL=postgresql://neondb_owner:npg_Z4Ti5vRBVdKy@ep-damp-mud-a4mygxyl-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
-GEMINI_API_KEY=AIzaSyAeVGu8ypyiePvd0TGMkCMFy_oo_jv4Pk8
-GOOGLE_CLIENT_ID=534250069964-mgu5agco450c25n6vs5ipqdt4q7hmicn.apps.googleusercontent.com
-GOOGLE_API_KEY=AIzaSyBLz7tFt3QeJH11SMxi3GNOBRKBX3yEBNc
-GOOGLE_BLOGGER_API_KEY=AIzaSyBI19127AZQ7Ac4q2QHk07yqHuNrJIRBCo
-INTEGRATION_ENCRYPTION_SECRET=8fc98f42ebb9812919ce2b58ee1d53f1765c0ac694183054fa538bca1ba1707d
-INTEGRATION_RATE_LIMIT_DEFAULT=100
-INTEGRATION_MONITORING_ENABLED=true
-INTEGRATION_LOG_LEVEL=info
+VITE_STACK_PROJECT_ID=your_stack_project_id
+VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_stack_publishable_client_key
+STACK_SECRET_SERVER_KEY=your_stack_secret_server_key
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+GEMINI_API_KEY=your_gemini_api_key
+INTEGRATION_ENCRYPTION_SECRET=64_char_hex_secret
+OPENAI_API_KEY=your_openai_api_key (optional)
+ANTHROPIC_API_KEY=your_anthropic_api_key (optional)
+GOOGLE_CLIENT_ID=your_google_client_id (optional)
+GOOGLE_API_KEY=your_google_api_key (optional)
 ```
 
 ### Important Notes:

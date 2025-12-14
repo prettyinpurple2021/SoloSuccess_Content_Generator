@@ -8,15 +8,13 @@ The Integration Manager has been updated to use Neon PostgreSQL database instead
 
 ## What Changed
 
-### 1. Database Service (`services/neonService.ts`)
+### 1. Database Service (`services/databaseService.ts` / `services/neonService.ts`)
 
-- **New**: Complete Neon database service using the `postgres` package
+- **Current**: Neon-backed database helpers using the `postgres` package
 - **Features**:
-  - All CRUD operations for integrations, logs, alerts, metrics, and webhooks
-  - Secure credential encryption/decryption
-  - Real-time subscriptions (mock implementation)
-  - Caching support
-  - Health monitoring and metrics
+  - CRUD for integrations, logs, alerts, metrics, and webhooks
+  - Credential encryption/decryption
+  - Health monitoring hooks
 
 ### 2. Database Schema (`database/neon-integration-schema-migration.sql`)
 
@@ -43,10 +41,9 @@ The Integration Manager has been updated to use Neon PostgreSQL database instead
 
 ### 4. Environment Configuration
 
-- **Updated**: Added Neon database URL support
+- **Updated**: Neon database URL support
 - **Variables**:
-  - `VITE_NEON_DATABASE_URL` - Primary Neon database URL
-  - `DATABASE_URL` - Alternative environment variable name
+  - `DATABASE_URL` - Primary Neon database URL
 
 ## Setup Instructions
 
@@ -63,13 +60,10 @@ Create a `.env.local` file in your project root:
 
 ```bash
 # Neon Database Configuration
-VITE_NEON_DATABASE_URL=postgresql://username:password@hostname/database?sslmode=require
-
-# Alternative environment variable name
 DATABASE_URL=postgresql://username:password@hostname/database?sslmode=require
 
 # Integration Manager Configuration
-INTEGRATION_APP_SECRET=your_secure_secret_key_here
+INTEGRATION_ENCRYPTION_SECRET=64-char-hex-secret
 ```
 
 ### 3. Run Database Migrations

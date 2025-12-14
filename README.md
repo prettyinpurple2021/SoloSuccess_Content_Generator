@@ -97,8 +97,12 @@ See [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md) for deployment in
 
 ## Documentation
 
-- [API_CREDENTIALS_SETUP.md](./API_CREDENTIALS_SETUP.md) - User guide for connecting social media accounts
-- [DATABASE_SETUP_INSTRUCTIONS.md](./DATABASE_SETUP_INSTRUCTIONS.md) - Database setup guide
-- [STACK_AUTH_SETUP.md](./STACK_AUTH_SETUP.md) - Stack Auth configuration guide
-- [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md) - Deployment instructions
-- [docs/](./docs/) - Additional documentation
+**📚 [Complete Documentation Index](./docs/README.md)** - All documentation organized by topic
+
+**Quick Links:**
+- [API Credentials Setup](./API_CREDENTIALS_SETUP.md) - User guide for connecting social media accounts
+- [Setup Checklist](./docs/setup/SETUP_CHECKLIST.md) - Step-by-step setup verification
+- [Stack Auth Setup](./docs/setup/STACK_AUTH_SETUP.md) - Authentication configuration
+- [Database Setup](./docs/setup/DATABASE_SETUP_INSTRUCTIONS.md) - Neon PostgreSQL setup
+- [Vercel Deployment Guide](./docs/deployment/VERCEL_DEPLOYMENT_GUIDE.md) - Deployment instructions
+- [GitHub Copilot Instructions](./.github/copilot-instructions.md) - AI agent guidance

@@ -105,7 +105,7 @@ Add the following environment variables to your `.env.local`:
 
 ```env
 # Integration Manager
-INTEGRATION_APP_SECRET=your-secure-app-secret-here
+INTEGRATION_ENCRYPTION_SECRET=64_char_hex_secret
 
 # Existing variables (keep these)
 GEMINI_API_KEY=your_gemini_key

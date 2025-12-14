@@ -51,22 +51,24 @@ Your project is ready for Vercel deployment! Here's what we've verified:
 
 In your Vercel project dashboard, add these environment variables:
 
-### Required Variables:
+### Required Variables (set in Vercel dashboard):
 
 ```
-VITE_STACK_PROJECT_ID=d36a87a3-7f57-44a0-9c1b-9c5c07c93677
-VITE_STACK_PUBLISHABLE_CLIENT_KEY=pck_hjbjmtkkfb5n0zxhkgwz5swftj4bhps2bgdygt4rb8xsg
-STACK_SECRET_SERVER_KEY=ssk_j6xj3ge4smta510tadxgetkwecaf99x7db2qdkcgzxc30
-DATABASE_URL=postgresql://neondb_owner:npg_Z4Ti5vRBVdKy@ep-damp-mud-a4mygxyl-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
-VITE_NEON_DATABASE_URL=postgresql://neondb_owner:npg_Z4Ti5vRBVdKy@ep-damp-mud-a4mygxyl-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
-GEMINI_API_KEY=AIzaSyAeVGu8ypyiePvd0TGMkCMFy_oo_jv4Pk8
-GOOGLE_CLIENT_ID=534250069964-mgu5agco450c25n6vs5ipqdt4q7hmicn.apps.googleusercontent.com
-GOOGLE_API_KEY=AIzaSyBLz7tFt3QeJH11SMxi3GNOBRKBX3yEBNc
-GOOGLE_BLOGGER_API_KEY=AIzaSyBI19127AZQ7Ac4q2QHk07yqHuNrJIRBCo
-INTEGRATION_ENCRYPTION_SECRET=8fc98f42ebb9812919ce2b58ee1d53f1765c0ac694183054fa538bca1ba1707d
-INTEGRATION_RATE_LIMIT_DEFAULT=100
-INTEGRATION_MONITORING_ENABLED=true
-INTEGRATION_LOG_LEVEL=info
+VITE_STACK_PROJECT_ID=your-stack-project-id
+VITE_STACK_PUBLISHABLE_CLIENT_KEY=your-stack-publishable-client-key
+STACK_SECRET_SERVER_KEY=your-stack-secret-server-key
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+GEMINI_API_KEY=your-gemini-api-key
+INTEGRATION_ENCRYPTION_SECRET=64-char-hex
+```
+
+### Optional Providers
+
+```
+OPENAI_API_KEY=your-openai-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_API_KEY=your-google-api-key
 ```
 
 ### How to Add Environment Variables:

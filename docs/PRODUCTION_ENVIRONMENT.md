@@ -46,31 +46,30 @@ Production deployment includes comprehensive security headers:
 
 ```bash
 # Authentication (Stack Auth)
-# Get these from your Stack Auth dashboard: https://app.stack-auth.com/
 VITE_STACK_PROJECT_ID=your_stack_project_id_here
 VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_stack_publishable_client_key_here
 STACK_SECRET_SERVER_KEY=your_stack_secret_server_key_here
 
 # Database (Neon PostgreSQL)
-# Get this from your Neon dashboard: https://console.neon.tech/
 DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
 
 # AI Services (Google Gemini)
-# Get from Google AI Studio: https://aistudio.google.com/app/apikey
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# Google Services
-# Get from Google Cloud Console: https://console.cloud.google.com/
+# Integration credential encryption
+INTEGRATION_ENCRYPTION_SECRET=your_64_character_hex_encryption_secret_here
+```
+
+### Optional Providers
+
+```bash
+# Additional AI providers
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Google services (only if used)
 GOOGLE_CLIENT_ID=your_google_client_id_here
 GOOGLE_API_KEY=your_google_api_key_here
-GOOGLE_BLOGGER_API_KEY=your_google_blogger_api_key_here
-
-# Integration Services
-# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-INTEGRATION_ENCRYPTION_SECRET=your_64_character_hex_encryption_secret_here
-INTEGRATION_RATE_LIMIT_DEFAULT=100
-INTEGRATION_MONITORING_ENABLED=true
-INTEGRATION_LOG_LEVEL=info
 ```
 
 **Important:** Set these environment variables in the Vercel Dashboard (Settings → Environment Variables) rather than in `vercel.json`. The `vercel.json` file should never contain secrets.
@@ -182,86 +181,11 @@ Content-Security-Policy:
 
 ## Monitoring and Observability
 
-### Built-in Vercel Analytics
-
-- **Web Vitals**: Core Web Vitals monitoring
-- **Performance Metrics**: Page load times, TTFB, FCP, LCP
-- **Error Tracking**: JavaScript errors and stack traces
-- **Usage Analytics**: Page views, unique visitors, bounce rate
-
-### Custom Monitoring Setup
-
-```typescript
-// Performance monitoring configuration
-const monitoringConfig = {
-  // Web Vitals tracking
-  webVitals: {
-    enabled: true,
-    reportingEndpoint: '/api/analytics/web-vitals',
-    sampleRate: 1.0,
-  },
-
-  // Error tracking
-  errorTracking: {
-    enabled: true,
-    reportingEndpoint: '/api/analytics/errors',
-    includeStackTrace: true,
-  },
-
-  // Custom metrics
-  customMetrics: {
-    enabled: true,
-    aiGenerationTime: true,
-    databaseQueryTime: true,
-    integrationResponseTime: true,
-  },
-};
-```
-
-### Health Checks
-
-```typescript
-// API health check endpoint
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const healthChecks = {
-    database: await checkDatabaseConnection(),
-    aiService: await checkGeminiAPI(),
-    authentication: await checkStackAuth(),
-    integrations: await checkIntegrationServices(),
-  };
-
-  const isHealthy = Object.values(healthChecks).every((check) => check.status === 'healthy');
-
-  res.status(isHealthy ? 200 : 503).json({
-    status: isHealthy ? 'healthy' : 'unhealthy',
-    timestamp: new Date().toISOString(),
-    checks: healthChecks,
-  });
-}
-```
-
-### Alerting Configuration
-
-```typescript
-// Alert thresholds
-const alertConfig = {
-  errorRate: {
-    threshold: 5, // 5% error rate
-    window: '5m',
-    severity: 'high',
-  },
-  responseTime: {
-    threshold: 2000, // 2 seconds
-    window: '5m',
-    severity: 'medium',
-  },
-  availability: {
-    threshold: 99.9, // 99.9% uptime
-    window: '1h',
-    severity: 'critical',
-  },
-};
-```
+- **Vercel Analytics/Logs**: Web Vitals, function logs, deployment status
+- **Neon Monitoring**: Connection health, query performance, connection counts
+- **Sentry (frontend)**: Capture errors/perf if enabled
+- **Synthetic checks**: Smoke-test auth, content generation, scheduler/publishing flows after deploy
+- **Validation scripts**: `npm run validate:production`, `npm run validate:security`, `npm run validate:performance`, `npm run validate:readiness` before release
 
 ## Domain and SSL Configuration
 

@@ -11,11 +11,13 @@
 1. Connect your GitHub repository to Vercel.
 2. Import the project in Vercel dashboard.
 3. Configure environment variables in Vercel dashboard:
-   - `GEMINI_API_KEY` (optional)
-   - `GOOGLE_CLIENT_ID`, `GOOGLE_API_KEY` (optional)
-   - `NEXT_PUBLIC_STACK_PROJECT_ID`
-   - `NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY`
+   - `VITE_STACK_PROJECT_ID`
+   - `VITE_STACK_PUBLISHABLE_CLIENT_KEY`
    - `STACK_SECRET_SERVER_KEY`
+   - `DATABASE_URL`
+   - `GEMINI_API_KEY`
+   - `INTEGRATION_ENCRYPTION_SECRET`
+   - Optional providers: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_API_KEY`
 4. Deploy automatically on push to main branch.
 
 ## Environments
@@ -31,7 +33,7 @@
 
 ## Security
 
-- Environment variables managed through Vercel dashboard.
+- Environment variables managed through Vercel dashboard (never commit secrets).
 - No secrets in client code; all sensitive data in environment variables.
 - Automatic HTTPS and security headers.
 

@@ -13,8 +13,10 @@
 ## Code
 
 - Strict TypeScript, no `any`
-- Services validate inputs/outputs (Zod planned)
-- Function components + hooks only
+- Services validate inputs/outputs with Zod (required, not optional)
+- Function components + hooks only; no class components
+- All third-party calls stay in `services/`; components never `fetch()` external APIs
+- No mocks/placeholders/TODOs or commented-out code in production paths
 
 ## Accessibility
 

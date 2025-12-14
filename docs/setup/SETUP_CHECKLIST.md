@@ -48,11 +48,16 @@
 
 ```env
 # Required
-GEMINI_API_KEY=your_gemini_key
-DATABASE_URL=your_neon_database_url
 VITE_STACK_PROJECT_ID=your_stack_project_id
 VITE_STACK_PUBLISHABLE_CLIENT_KEY=your_stack_publishable_key
 STACK_SECRET_SERVER_KEY=your_stack_secret_key
+DATABASE_URL=your_neon_database_url
+GEMINI_API_KEY=your_gemini_key
+INTEGRATION_ENCRYPTION_SECRET=64_char_hex_secret
+
+# Optional AI providers
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
 
 # Optional (for Blogger publishing)
 GOOGLE_CLIENT_ID=your_google_client_id
