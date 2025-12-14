@@ -11,12 +11,18 @@ import postgres from 'postgres';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load environment variables from .env, .env.local, or .env.production
+dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
+dotenv.config({ path: '.env.production' });
+
 // Get database URL from environment variables
-const databaseUrl = process.env.VITE_NEON_DATABASE_URL || process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL || process.env.VITE_NEON_DATABASE_URL || process.env.VITE_DATABASE_URL;
 
 if (!databaseUrl) {
   console.error(
@@ -42,7 +48,7 @@ async function applyMigrations() {
       __dirname,
       '..',
       'database',
-      'neon-integration-schema-migration.sql'
+      'neon-complete-migration.sql'
     );
 
     if (!fs.existsSync(migrationPath)) {
@@ -55,42 +61,10 @@ async function applyMigrations() {
     console.log('📄 Reading migration file...');
     console.log(`📁 Migration file: ${migrationPath}`);
 
-    // Split the migration into individual statements
-    // Remove comments and split by semicolon, but be careful with function definitions
-    const statements = migrationSQL
-      .split(';')
-      .map((stmt) => stmt.trim())
-      .filter((stmt) => stmt.length > 0 && !stmt.startsWith('--'))
-      .filter((stmt) => !stmt.startsWith('COMMENT ON')); // Skip comments for now
-
-    console.log(`📊 Found ${statements.length} SQL statements to execute`);
-
-    // Execute each statement
-    for (let i = 0; i < statements.length; i++) {
-      const statement = statements[i];
-
-      if (statement.trim()) {
-        try {
-          console.log(`⏳ Executing statement ${i + 1}/${statements.length}...`);
-          await sql.unsafe(statement);
-          console.log(`✅ Statement ${i + 1} executed successfully`);
-        } catch (error) {
-          // Some statements might fail if they already exist, which is okay
-          if (
-            error.message.includes('already exists') ||
-            error.message.includes('duplicate key') ||
-            error.message.includes('relation already exists')
-          ) {
-            console.log(
-              `⚠️  Statement ${i + 1} skipped (already exists): ${error.message.split('\n')[0]}`
-            );
-          } else {
-            console.error(`❌ Error executing statement ${i + 1}:`, error.message);
-            throw error;
-          }
-        }
-      }
-    }
+    // Execute the entire migration file as one transaction
+    console.log('⏳ Executing migration...');
+    await sql.unsafe(migrationSQL);
+    console.log('✅ Migration executed successfully');
 
     console.log('🎉 All migrations completed successfully!');
 

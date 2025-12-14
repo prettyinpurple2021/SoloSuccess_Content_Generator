@@ -4,7 +4,7 @@ import React from 'react';
 // Ensure React is available globally before importing Stack Auth
 // This prevents "Cannot set properties of undefined (setting 'Children')" errors
 if (typeof window !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (window as any).React = React;
   // Also ensure React.Children exists
   if (React && !React.Children) {

@@ -109,7 +109,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
   const [showCommands, setShowCommands] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
-  /* eslint-disable-next-line no-undef */
+   
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 

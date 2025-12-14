@@ -3,22 +3,10 @@ import crypto from 'crypto';
 
 /**
  * Cron handler for processing scheduled posts via Upstash QStash
- *
- * Security: Validates Upstash-Signature header to ensure legitimate requests only
  * Invoked every 15 minutes by QStash scheduler
- *
- * Flow:
- * 1. Verify Upstash signature
- * 2. Query scheduled posts (status='scheduled' AND scheduled_at <= NOW)
- * 3. Publish each post with retries and concurrency control
- * 4. Update post status and notify user
- * 5. Return detailed results
  */
 
 const QSTASH_SIGNING_KEY = process.env.QSTASH_CURRENT_SIGNING_KEY || '';
-const MAX_RETRIES = parseInt(process.env.SCHEDULER_MAX_RETRIES || '3');
-const RETRY_BACKOFF_MS = parseInt(process.env.SCHEDULER_RETRY_BACKOFF_MS || '5000');
-const PUBLISH_CONCURRENCY = parseInt(process.env.SCHEDULER_PUBLISH_CONCURRENCY || '5');
 
 /**
  * Verify Upstash signature using HMAC-SHA256
@@ -71,13 +59,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         console.log(`[${requestId}] Processing scheduled posts...`);
 
-        // In production, this would:
-        // 1. Query database for scheduled posts WHERE status='scheduled' AND scheduled_at <= NOW()
-        // 2. Process in chunks of PUBLISH_CONCURRENCY (default: 5 posts at a time)
-        // 3. For each post, publish via socialMediaOrchestrator.publishToMultiplePlatformsWithRetry()
-        // 4. Update post status: 'published' (success), 'scheduled' with next_retry_at (retry needed)
-        // 5. Create notifications via notificationService for success/failure
-        // 6. Return detailed metrics
+        // Production implementation would:
+        // 1. Query DB for scheduled posts WHERE status='scheduled' AND scheduled_at <= NOW()
+        // 2. Publish via socialMediaOrchestrator.publishToMultiplePlatformsWithRetry()
+        // 3. Update post status and create notifications
+        // 4. Return metrics
 
         const results = {
             success: true,
@@ -88,8 +74,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             durationMs: Date.now() - startTime,
             requestId,
             timestamp: new Date().toISOString(),
-            message: 'Cron job executed successfully',
-            nextRunIn: '15 minutes',
         };
 
         console.log(`[${requestId}] Cron job completed:`, results);
