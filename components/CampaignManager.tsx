@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import { Campaign, ContentSeries, Post, CampaignMetrics, OptimizationSuggestion } from '../types';
 import { campaignService } from '../services/clientCampaignService';
 import { apiService } from '../services/clientApiService';
@@ -18,6 +19,9 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
   posts,
   onPostUpdate,
 }) => {
+  const user = useUser();
+  const userId = user?.id || '';
+  
   // State management
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -61,7 +65,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
   const loadCampaigns = async () => {
     try {
       setIsLoading(true);
-      const campaignList = await campaignService.getCampaigns();
+      const campaignList = await campaignService.getCampaigns(userId);
       setCampaigns(campaignList);
     } catch (err: any) {
       setError(`Failed to load campaigns: ${err.message}`);
@@ -73,7 +77,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
   const loadCampaignPerformance = async (campaignId: string) => {
     try {
       setIsLoading(true);
-      const metrics = await campaignService.getCampaignPerformance(campaignId);
+      const metrics = await campaignService.getCampaignMetrics();
       setCampaignMetrics(metrics);
 
       // Load optimization suggestions if campaign has posts
@@ -148,7 +152,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         throw new Error('Please select at least one platform');
       }
 
-      const campaign = await campaignService.createCampaign({
+      const campaign = await campaignService.createCampaign(userId, {
         name: formData.name,
         description: formData.description,
         theme: formData.theme,
@@ -183,7 +187,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       if (formData.endDate) updates.endDate = new Date(formData.endDate);
       if (formData.platforms.length > 0) updates.platforms = formData.platforms;
 
-      const updatedCampaign = await campaignService.updateCampaign(selectedCampaign.id, updates);
+      const updatedCampaign = await campaignService.updateCampaign(userId, selectedCampaign.id, updates);
 
       setCampaigns((prev) => prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)));
       setSelectedCampaign(updatedCampaign);
@@ -203,7 +207,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
     try {
       setIsLoading(true);
-      await campaignService.deleteCampaign(campaignId, false); // Don't delete associated content
+      await campaignService.deleteCampaign(userId, campaignId);
       setCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
       if (selectedCampaign?.id === campaignId) {
         setSelectedCampaign(null);
