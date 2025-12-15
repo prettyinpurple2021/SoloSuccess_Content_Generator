@@ -143,7 +143,7 @@ export const auth = {
   // Listen to auth state changes
   onAuthStateChange: (callback: (user: any) => void) => {
     // This will be handled by Stack Auth on the frontend
-    return () => {}; // Placeholder
+    return () => { }; // Placeholder
   },
 
   // Sign out
@@ -401,10 +401,11 @@ export const db = {
   updatePost: async (
     id: string,
     updates: Partial<Omit<DatabasePost, 'id' | 'user_id'>>,
-    userId: string
+    userId?: string
   ): Promise<Post> => {
     try {
-      const result = await pool`
+      const result = userId
+        ? await pool`
         UPDATE posts 
         SET
           topic = COALESCE(${updates.topic || null}, topic),
@@ -430,6 +431,33 @@ export const db = {
           updated_at = NOW()
         WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
+      `
+        : await pool`
+        UPDATE posts 
+        SET
+          topic = COALESCE(${updates.topic || null}, topic),
+          idea = COALESCE(${updates.idea || null}, idea),
+          content = COALESCE(${updates.content || null}, content),
+          status = COALESCE(${updates.status || null}, status),
+          tags = COALESCE(${updates.tags || null}, tags),
+          summary = COALESCE(${updates.summary || null}, summary),
+          headlines = COALESCE(${updates.headlines || null}, headlines),
+          social_media_posts = COALESCE(${JSON.stringify(updates.social_media_posts) || null}, social_media_posts),
+          social_media_tones = COALESCE(${JSON.stringify(updates.social_media_tones) || null}, social_media_tones),
+          social_media_audiences = COALESCE(${JSON.stringify(updates.social_media_audiences) || null}, social_media_audiences),
+          selected_image = COALESCE(${updates.selected_image || null}, selected_image),
+          schedule_date = COALESCE(${updates.schedule_date || null}, schedule_date),
+          brand_voice_id = COALESCE(${updates.brand_voice_id || null}, brand_voice_id),
+          audience_profile_id = COALESCE(${updates.audience_profile_id || null}, audience_profile_id),
+          campaign_id = COALESCE(${updates.campaign_id || null}, campaign_id),
+          series_id = COALESCE(${updates.series_id || null}, series_id),
+          template_id = COALESCE(${updates.template_id || null}, template_id),
+          performance_score = COALESCE(${updates.performance_score || null}, performance_score),
+          optimization_suggestions = COALESCE(${JSON.stringify(updates.optimization_suggestions) || null}, optimization_suggestions),
+          image_style_id = COALESCE(${updates.image_style_id || null}, image_style_id),
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
       `;
 
       if (result.length === 0) {
@@ -437,7 +465,9 @@ export const db = {
       }
 
       // Invalidate related caches
-      contentCache.invalidateUserCache(userId);
+      if (userId) {
+        contentCache.invalidateUserCache(userId);
+      }
       contentCache.invalidatePostCache(id);
 
       return transformDatabasePostToPost(result[0] as DatabasePost);
@@ -490,14 +520,24 @@ export const db = {
 
   addBrandVoice: async (
     brandVoice: Omit<DatabaseBrandVoice, 'id' | 'user_id' | 'created_at'>,
-    userId: string
+    userId?: string
   ): Promise<BrandVoice> => {
     try {
-      const result = await pool`
+      const result = userId
+        ? await pool`
         INSERT INTO brand_voices (
           user_id, name, tone, vocabulary, writing_style, target_audience, sample_content
         ) VALUES (
           ${userId}, ${brandVoice.name}, ${brandVoice.tone},
+          ${JSON.stringify(brandVoice.vocabulary)}, ${brandVoice.writing_style},
+          ${brandVoice.target_audience}, ${JSON.stringify(brandVoice.sample_content)}
+        ) RETURNING *
+      `
+        : await pool`
+        INSERT INTO brand_voices (
+          name, tone, vocabulary, writing_style, target_audience, sample_content
+        ) VALUES (
+          ${brandVoice.name}, ${brandVoice.tone},
           ${JSON.stringify(brandVoice.vocabulary)}, ${brandVoice.writing_style},
           ${brandVoice.target_audience}, ${JSON.stringify(brandVoice.sample_content)}
         ) RETURNING *
@@ -513,7 +553,7 @@ export const db = {
   updateBrandVoice: async (
     id: string,
     updates: Partial<Omit<DatabaseBrandVoice, 'id' | 'user_id'>>,
-    userId: string
+    userId?: string
   ): Promise<BrandVoice> => {
     try {
       const vocabularyJson = updates.vocabulary ? JSON.stringify(updates.vocabulary) : null;
@@ -521,7 +561,8 @@ export const db = {
         ? JSON.stringify(updates.sample_content)
         : null;
 
-      const result = await pool`
+      const result = userId
+        ? await pool`
         UPDATE brand_voices 
         SET
           name = COALESCE(${updates.name || null}, name),
@@ -531,6 +572,18 @@ export const db = {
           target_audience = COALESCE(${updates.target_audience || null}, target_audience),
           sample_content = COALESCE(${sampleContentJson}, sample_content)
         WHERE id = ${id} AND user_id = ${userId}
+        RETURNING *
+      `
+        : await pool`
+        UPDATE brand_voices 
+        SET
+          name = COALESCE(${updates.name || null}, name),
+          tone = COALESCE(${updates.tone || null}, tone),
+          vocabulary = COALESCE(${vocabularyJson}, vocabulary),
+          writing_style = COALESCE(${updates.writing_style || null}, writing_style),
+          target_audience = COALESCE(${updates.target_audience || null}, target_audience),
+          sample_content = COALESCE(${sampleContentJson}, sample_content)
+        WHERE id = ${id}
         RETURNING *
       `;
 
@@ -545,11 +598,16 @@ export const db = {
     }
   },
 
-  deleteBrandVoice: async (id: string, userId: string): Promise<void> => {
+  deleteBrandVoice: async (id: string, userId?: string): Promise<void> => {
     try {
-      const result = await pool`
+      const result = userId
+        ? await pool`
         DELETE FROM brand_voices 
         WHERE id = ${id} AND user_id = ${userId}
+      `
+        : await pool`
+        DELETE FROM brand_voices 
+        WHERE id = ${id}
       `;
 
       if (result.length === 0) {
@@ -581,7 +639,7 @@ export const db = {
 
   addAudienceProfile: async (
     profile: Omit<DatabaseAudienceProfile, 'id' | 'user_id' | 'created_at'>,
-    userId: string
+    userId?: string
   ): Promise<AudienceProfile> => {
     try {
       const interestsJson = JSON.stringify(profile.interests);
@@ -589,12 +647,22 @@ export const db = {
       const preferredContentTypesJson = JSON.stringify(profile.preferred_content_types);
       const engagementPatternsJson = JSON.stringify(profile.engagement_patterns);
 
-      const result = await pool`
+      const result = userId
+        ? await pool`
         INSERT INTO audience_profiles (
           user_id, name, age_range, industry, interests, pain_points, 
           preferred_content_types, engagement_patterns
         ) VALUES (
           ${userId}, ${profile.name}, ${profile.age_range}, ${profile.industry},
+          ${interestsJson}, ${painPointsJson}, ${preferredContentTypesJson}, ${engagementPatternsJson}
+        ) RETURNING *
+      `
+        : await pool`
+        INSERT INTO audience_profiles (
+          name, age_range, industry, interests, pain_points, 
+          preferred_content_types, engagement_patterns
+        ) VALUES (
+          ${profile.name}, ${profile.age_range}, ${profile.industry},
           ${interestsJson}, ${painPointsJson}, ${preferredContentTypesJson}, ${engagementPatternsJson}
         ) RETURNING *
       `;
@@ -611,7 +679,7 @@ export const db = {
   updateAudienceProfile: async (
     id: string,
     updates: Partial<Omit<DatabaseAudienceProfile, 'id' | 'user_id'>>,
-    userId: string
+    userId?: string
   ): Promise<AudienceProfile> => {
     try {
       const interestsJson = updates.interests ? JSON.stringify(updates.interests) : null;
@@ -623,7 +691,8 @@ export const db = {
         ? JSON.stringify(updates.engagement_patterns)
         : null;
 
-      const result = await pool`
+      const result = userId
+        ? await pool`
         UPDATE audience_profiles 
         SET
           name = COALESCE(${updates.name || null}, name),
@@ -634,6 +703,19 @@ export const db = {
           preferred_content_types = COALESCE(${preferredContentTypesJson}, preferred_content_types),
           engagement_patterns = COALESCE(${engagementPatternsJson}, engagement_patterns)
         WHERE id = ${id} AND user_id = ${userId}
+        RETURNING *
+      `
+        : await pool`
+        UPDATE audience_profiles 
+        SET
+          name = COALESCE(${updates.name || null}, name),
+          age_range = COALESCE(${updates.age_range || null}, age_range),
+          industry = COALESCE(${updates.industry || null}, industry),
+          interests = COALESCE(${interestsJson}, interests),
+          pain_points = COALESCE(${painPointsJson}, pain_points),
+          preferred_content_types = COALESCE(${preferredContentTypesJson}, preferred_content_types),
+          engagement_patterns = COALESCE(${engagementPatternsJson}, engagement_patterns)
+        WHERE id = ${id}
         RETURNING *
       `;
 
@@ -650,11 +732,16 @@ export const db = {
     }
   },
 
-  deleteAudienceProfile: async (id: string, userId: string): Promise<void> => {
+  deleteAudienceProfile: async (id: string, userId?: string): Promise<void> => {
     try {
-      const result = await pool`
+      const result = userId
+        ? await pool`
         DELETE FROM audience_profiles 
         WHERE id = ${id} AND user_id = ${userId}
+      `
+        : await pool`
+        DELETE FROM audience_profiles 
+        WHERE id = ${id}
       `;
 
       if (result.length === 0) {
@@ -901,7 +988,7 @@ export const db = {
   batchInsertAnalytics: async (dataItems: Omit<DatabaseAnalyticsData, 'id' | 'recorded_at'>[]): Promise<AnalyticsData[]> => {
     try {
       if (dataItems.length === 0) return [];
-      
+
       const result = await pool`
         INSERT INTO post_analytics ${pool(dataItems, 'post_id', 'platform', 'likes', 'shares', 'comments', 'clicks', 'impressions', 'reach')}
         RETURNING *
@@ -914,50 +1001,50 @@ export const db = {
   },
 
   generatePerformanceReport: async (timeframe: 'week' | 'month' | 'quarter' | 'year'): Promise<PerformanceReport> => {
-     try {
-       const now = new Date();
-       const startDate = new Date();
-       if (timeframe === 'week') startDate.setDate(now.getDate() - 7);
-       if (timeframe === 'month') startDate.setMonth(now.getMonth() - 1);
-       if (timeframe === 'quarter') startDate.setMonth(now.getMonth() - 3);
-       if (timeframe === 'year') startDate.setFullYear(now.getFullYear() - 1);
+    try {
+      const now = new Date();
+      const startDate = new Date();
+      if (timeframe === 'week') startDate.setDate(now.getDate() - 7);
+      if (timeframe === 'month') startDate.setMonth(now.getMonth() - 1);
+      if (timeframe === 'quarter') startDate.setMonth(now.getMonth() - 3);
+      if (timeframe === 'year') startDate.setFullYear(now.getFullYear() - 1);
 
-       // Re-use internal method if possible, or query directly
-       const result = await pool`
+      // Re-use internal method if possible, or query directly
+      const result = await pool`
         SELECT * FROM post_analytics
         WHERE recorded_at BETWEEN ${startDate.toISOString()} AND ${now.toISOString()}
        `;
-       const analytics = result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
+      const analytics = result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
 
-       const totalEngagement = analytics.reduce((sum: number, a: AnalyticsData) => sum + a.likes + a.shares + a.comments + a.clicks, 0);
-       const totalImpressions = analytics.reduce((sum: number, a: AnalyticsData) => sum + a.impressions, 0);
+      const totalEngagement = analytics.reduce((sum: number, a: AnalyticsData) => sum + a.likes + a.shares + a.comments + a.clicks, 0);
+      const totalImpressions = analytics.reduce((sum: number, a: AnalyticsData) => sum + a.impressions, 0);
 
-       return {
-         timeframe,
-         totalPosts: 0, // This should be populated by the caller or a separate query
-         totalEngagement,
-         avgEngagementRate: totalImpressions > 0 ? (totalEngagement / totalImpressions) * 100 : 0,
-         topContent: [],
-         platformBreakdown: {},
-         trends: [],
-         recommendations: []
-       };
-     } catch (error) {
-       console.error('Error generating performance report:', error);
-       throw error;
-     }
+      return {
+        timeframe,
+        totalPosts: 0, // This should be populated by the caller or a separate query
+        totalEngagement,
+        avgEngagementRate: totalImpressions > 0 ? (totalEngagement / totalImpressions) * 100 : 0,
+        topContent: [],
+        platformBreakdown: {},
+        trends: [],
+        recommendations: []
+      };
+    } catch (error) {
+      console.error('Error generating performance report:', error);
+      throw error;
+    }
   },
 
   getTopPerformingContent: async (limit: number, timeframe?: 'week' | 'month' | 'quarter' | 'year'): Promise<AnalyticsData[]> => {
-     try {
-       const now = new Date();
-       const startDate = new Date(0); 
-       if (timeframe === 'week') startDate.setDate(now.getDate() - 7);
-       if (timeframe === 'month') startDate.setMonth(now.getMonth() - 1);
-       if (timeframe === 'quarter') startDate.setMonth(now.getMonth() - 3);
-       if (timeframe === 'year') startDate.setFullYear(now.getFullYear() - 1);
+    try {
+      const now = new Date();
+      const startDate = new Date(0);
+      if (timeframe === 'week') startDate.setDate(now.getDate() - 7);
+      if (timeframe === 'month') startDate.setMonth(now.getMonth() - 1);
+      if (timeframe === 'quarter') startDate.setMonth(now.getMonth() - 3);
+      if (timeframe === 'year') startDate.setFullYear(now.getFullYear() - 1);
 
-       const result = await pool`
+      const result = await pool`
          SELECT post_id, platform, MAX(likes) as likes, MAX(shares) as shares, 
                 MAX(comments) as comments, MAX(clicks) as clicks, 
                 MAX(impressions) as impressions, MAX(reach) as reach, 
@@ -968,11 +1055,11 @@ export const db = {
          ORDER BY (MAX(likes) + MAX(shares) * 2 + MAX(comments) * 3) DESC
          LIMIT ${limit}
        `;
-       return result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
-     } catch (error) {
-       console.error('Error getting top performing content:', error);
-       throw error;
-     }
+      return result.map((row: any) => transformDatabaseAnalyticsDataToAnalyticsData(row as DatabaseAnalyticsData));
+    } catch (error) {
+      console.error('Error getting top performing content:', error);
+      throw error;
+    }
   },
 
   // Integration Management Operations

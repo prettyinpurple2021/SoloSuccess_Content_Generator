@@ -110,11 +110,9 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
       }
 
       const series = await campaignService.createContentSeries({
-        name: formData.name,
+        title: formData.name,
         theme: formData.theme,
-        totalPosts: formData.totalPosts,
-        frequency: formData.frequency,
-        campaignId: formData.campaignId || undefined,
+        postingFrequency: formData.frequency === 'daily' ? 7 : formData.frequency === 'weekly' ? 1 : 0,
       });
 
       setContentSeries((prev) => [...prev, series]);

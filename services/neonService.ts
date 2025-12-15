@@ -453,7 +453,7 @@ export const db = {
   },
 
   addIntegration: async (
-    integration: Omit<Integration, 'id' | 'user_id' | 'created_at'>,
+    integration: Omit<Integration, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
     userId: string
   ): Promise<Integration> => {
     try {

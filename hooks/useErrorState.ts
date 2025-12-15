@@ -53,62 +53,7 @@ export const useErrorState = (options: ErrorStateOptions = {}) => {
       showSuccess: () => { },
     };
 
-  // Set error with user-friendly message
-  const setError = useCallback(
-    (error: Error | string, autoRetry: boolean = false) => {
-      const errorObj = typeof error === 'string' ? new Error(error) : error;
-      const userFriendlyError = getUserFriendlyError(errorObj, context);
-
-      setErrorState((prev) => ({
-        error: errorObj,
-        userFriendlyError,
-        isRecovering: false,
-        retryCount: prev.retryCount,
-        lastErrorTime: Date.now(),
-      }));
-
-      // Log error if enabled
-      if (logErrors) {
-        logUserError(errorObj, {
-          operation: 'error_state',
-          component,
-          feature,
-          metadata: { context, retryCount: errorState.retryCount },
-        });
-      }
-
-      // Show notification if enabled
-      if (showNotifications) {
-        showError(userFriendlyError.title, userFriendlyError.message, {
-          action: userFriendlyError.recoverable
-            ? {
-              label: 'Retry',
-              onClick: () => retry(),
-            }
-            : undefined,
-        });
-      }
-
-      // Auto retry if enabled and recoverable
-      if (autoRetry && userFriendlyError.recoverable && errorState.retryCount < maxRetries) {
-        scheduleRetry();
-      }
-    },
-    [
-      context,
-      component,
-      feature,
-      logErrors,
-      showNotifications,
-      showError,
-      errorState.retryCount,
-      maxRetries,
-      retry,
-      scheduleRetry,
-    ]
-  );
-
-  // Clear error state
+  // Clear error state (define before retry)
   const clearError = useCallback(() => {
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
@@ -164,6 +109,61 @@ export const useErrorState = (options: ErrorStateOptions = {}) => {
       retry();
     }, autoRetryDelay);
   }, [autoRetryDelay, retry]);
+
+  // Set error with user-friendly message
+  const setError = useCallback(
+    (error: Error | string, autoRetry: boolean = false) => {
+      const errorObj = typeof error === 'string' ? new Error(error) : error;
+      const userFriendlyError = getUserFriendlyError(errorObj, context);
+
+      setErrorState((prev) => ({
+        error: errorObj,
+        userFriendlyError,
+        isRecovering: false,
+        retryCount: prev.retryCount,
+        lastErrorTime: Date.now(),
+      }));
+
+      // Log error if enabled
+      if (logErrors) {
+        logUserError(errorObj, {
+          operation: 'error_state',
+          component,
+          feature,
+          metadata: { context, retryCount: errorState.retryCount },
+        });
+      }
+
+      // Show notification if enabled
+      if (showNotifications) {
+        showError(userFriendlyError.title, userFriendlyError.message, {
+          action: userFriendlyError.recoverable
+            ? {
+              label: 'Retry',
+              onClick: () => retry(),
+            }
+            : undefined,
+        });
+      }
+
+      // Auto retry if enabled and recoverable
+      if (autoRetry && userFriendlyError.recoverable && errorState.retryCount < maxRetries) {
+        scheduleRetry();
+      }
+    },
+    [
+      context,
+      component,
+      feature,
+      logErrors,
+      showNotifications,
+      showError,
+      errorState.retryCount,
+      maxRetries,
+      retry,
+      scheduleRetry,
+    ]
+  );
 
   // Mark as resolved
   const markResolved = useCallback(() => {

@@ -776,3 +776,6 @@ export interface InstagramPostOptions {
   imageUrl?: string;
   caption?: string;
 }
+
+// Export singleton instance for convenience
+export const socialMediaIntegrations = SocialMediaIntegrations;

@@ -381,7 +381,6 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
             isListening ? 'animate-pulse neon-glow' : ''
           }`}
           aria-label={isListening ? 'Stop listening' : 'Start listening'}
-          title={isListening ? 'Stop listening' : 'Start listening'}
         >
           {isListening ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
           {isListening && <SparkleEffect count={6} size="small" />}

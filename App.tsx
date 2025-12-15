@@ -520,7 +520,7 @@ const App: React.FC = () => {
     // personalization used via generatePersonalizedContent elsewhere
 
     const gemini = geminiService as unknown as GeminiSocialClient;
-    const promises = PLATFORMS.map(async (platform) => {
+    const promises = PLATFORMS.map(async (platform: SocialPlatform) => {
       const tone = socialMediaTones[platform] || TONES[0] || 'Professional';
       const config = PLATFORM_CONFIG[platform];
       const length = config?.charLimit || 200;
@@ -1413,7 +1413,7 @@ const App: React.FC = () => {
                       </button>
                     </div>
                     <div className="space-y-4">
-                      {PLATFORMS.map((platform) => {
+                      {PLATFORMS.map((platform: SocialPlatform) => {
                         const config = PLATFORM_CONFIG[platform];
                         if (!config) return null;
                         const Icon = config.icon;

@@ -2,12 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '@stackframe/stack';
-// User type from Stack Auth
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-}
 
 interface ProfileData {
   display_name: string;
@@ -55,11 +49,22 @@ export const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
+      const clientMetadata = (user.clientMetadata as Record<string, unknown>) || {};
       setProfileData((prev) => ({
         ...prev,
-        display_name: user.displayName || user.email?.split('@')[0] || '',
-        bio: user.profile?.bio || '',
-        website: user.profile?.website || '',
+        display_name:
+          user.displayName ||
+          (typeof clientMetadata.display_name === 'string' ? clientMetadata.display_name : undefined) ||
+          user.primaryEmail?.split('@')[0] ||
+          '',
+        bio: typeof clientMetadata.bio === 'string' ? clientMetadata.bio : '',
+        website: typeof clientMetadata.website === 'string' ? clientMetadata.website : '',
+        timezone:
+          typeof clientMetadata.timezone === 'string' ? clientMetadata.timezone : prev.timezone,
+        notifications:
+          (clientMetadata.notifications as ProfileData['notifications']) || prev.notifications,
+        preferences:
+          (clientMetadata.preferences as ProfileData['preferences']) || prev.preferences,
       }));
     }
   }, [user]);
@@ -75,7 +80,7 @@ export const ProfilePage: React.FC = () => {
       // Update user profile using Stack Auth
       await user.update({
         displayName: profileData.display_name,
-        profile: {
+        clientMetadata: {
           bio: profileData.bio,
           website: profileData.website,
           timezone: profileData.timezone,
@@ -127,6 +132,11 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleSignOut = async () => {
+    if (!user) {
+      navigate('/auth/signin');
+      return;
+    }
+
     try {
       await user.signOut();
       navigate('/');
@@ -207,22 +217,9 @@ export const ProfilePage: React.FC = () => {
                 <label className="block text-sm font-medium text-white mb-2">Email</label>
                 <input
                   type="email"
-                  value={user.email || ''}
+                  value={user.primaryEmail || ''}
                   disabled
-                  aria-label="Email"
-                  title="Email"
                   className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/20 backdrop-blur-sm text-white/60 cursor-not-allowed"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-white mb-2">Bio</label>
-                <textarea
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, bio: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Tell us about yourself"
                 />
               </div>
 

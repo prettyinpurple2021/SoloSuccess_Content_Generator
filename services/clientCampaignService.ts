@@ -62,21 +62,40 @@ export class CampaignService {
   }
 
   async createContentSeries(
-    userId: string,
-    campaignId: string,
-    seriesData: { title: string; theme: string; postingFrequency: number }
+    userIdOrData: string | { title: string; theme: string; postingFrequency: number },
+    campaignIdOrData?: string | { title: string; theme: string; postingFrequency: number },
+    seriesData?: { title: string; theme: string; postingFrequency: number }
   ): Promise<ContentSeries> {
+    // Handle overloaded signatures
+    let actualSeriesData: { title: string; theme: string; postingFrequency: number };
+    let actualCampaignId = '';
+
+    if (typeof userIdOrData === 'object') {
+      // Called with just seriesData as first arg
+      actualSeriesData = userIdOrData;
+    } else if (typeof campaignIdOrData === 'object') {
+      // Called with userId, seriesData (or userId, campaignId, seriesData where campaignId is missing)
+      actualSeriesData = campaignIdOrData;
+      actualCampaignId = '';
+    } else if (seriesData) {
+      // Called with userId, campaignId, seriesData
+      actualSeriesData = seriesData;
+      actualCampaignId = campaignIdOrData as string;
+    } else {
+      actualSeriesData = { title: '', theme: '', postingFrequency: 1 };
+    }
+
     const frequency: 'daily' | 'weekly' | 'biweekly' =
-      seriesData.postingFrequency >= 7
+      actualSeriesData.postingFrequency >= 7
         ? 'daily'
-        : seriesData.postingFrequency >= 1
+        : actualSeriesData.postingFrequency >= 1
           ? 'weekly'
           : 'biweekly';
     return {
       id: `series_${Date.now()}`,
-      campaignId,
-      name: seriesData.title,
-      theme: seriesData.theme,
+      campaignId: actualCampaignId,
+      name: actualSeriesData.title,
+      theme: actualSeriesData.theme,
       totalPosts: 0,
       frequency,
       currentPost: 0,
@@ -91,6 +110,66 @@ export class CampaignService {
       totalEngagement: 0,
       avgEngagementRate: 0,
       platformPerformance: {},
+    };
+  }
+
+  async getContentSeries(): Promise<ContentSeries[]> {
+    // Placeholder implementation - would fetch from database
+    return [];
+  }
+
+  async updateContentSeries(
+    seriesId: string,
+    updates: Partial<ContentSeries>
+  ): Promise<ContentSeries> {
+    // Placeholder implementation - would update in database
+    return {
+      id: seriesId,
+      campaignId: '',
+      name: updates.name || '',
+      theme: updates.theme || '',
+      totalPosts: updates.totalPosts || 0,
+      frequency: updates.frequency || 'weekly',
+      currentPost: updates.currentPost || 0,
+      posts: updates.posts || [],
+      createdAt: new Date(),
+    };
+  }
+
+  async deleteContentSeries(seriesId: string, deleteAssociatedPosts?: boolean): Promise<void> {
+    // Placeholder implementation - would delete from database
+  }
+
+  async suggestSeriesAdjustments(
+    seriesId: string
+  ): Promise<
+    Array<{ type: string; title: string; description: string; priority: string; impact: number; effort: number }>
+  > {
+    // Placeholder implementation - would analyze series and return suggestions
+    return [];
+  }
+
+  async optimizeSeriesScheduling(
+    seriesId: string
+  ): Promise<
+    Array<{ date: string; suggestedTime: string; reason: string; postId: string; platform: string; confidence: number }>
+  > {
+    // Placeholder implementation - would suggest optimal scheduling
+    return [];
+  }
+
+  async advanceContentSeries(seriesId: string): Promise<ContentSeries> {
+    // Placeholder implementation - would advance to next post in series
+    return {
+      id: seriesId,
+      campaignId: '',
+      name: '',
+      theme: '',
+      totalPosts: 0,
+      frequency: 'weekly',
+      currentPost: 1,
+      posts: [],
+      createdAt: new Date(),
     };
   }
 

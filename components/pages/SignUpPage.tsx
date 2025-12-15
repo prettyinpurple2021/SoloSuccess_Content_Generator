@@ -39,13 +39,13 @@ export const SignUpPage: React.FC = () => {
         noRedirect: true, // Prevent automatic redirection
       });
 
-      if (result.status === 'success') {
+      if (result.status === 'ok') {
         setMessage('Check your email for the confirmation link!');
         setTimeout(() => {
           navigate('/signin');
         }, 3000);
       } else {
-        setError(result.error?.message || 'Sign up failed');
+        setError((result.error as { message?: string })?.message || 'Sign up failed');
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -56,9 +56,7 @@ export const SignUpPage: React.FC = () => {
 
   const handleGoogleSignUp = async () => {
     try {
-      await app.signInWithOAuth('google', {
-        redirectTo: `${window.location.origin}/dashboard`,
-      });
+      await app.signInWithOAuth('google');
     } catch (err) {
       setError('Google sign-up failed');
     }
@@ -66,9 +64,7 @@ export const SignUpPage: React.FC = () => {
 
   const handleGitHubSignUp = async () => {
     try {
-      await app.signInWithOAuth('github', {
-        redirectTo: `${window.location.origin}/dashboard`,
-      });
+      await app.signInWithOAuth('github');
     } catch (err) {
       setError('GitHub sign-up failed');
     }

@@ -357,6 +357,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const currentStepData = steps[currentStep];
   const isLastStep = currentStep === steps.length - 1;
 
+  if (!currentStepData) return null;
+
   if (!isOpen) return null;
 
   return (

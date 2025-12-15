@@ -78,10 +78,10 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
       let savedTemplate: ContentTemplate;
       if (template?.id) {
         // Update existing template
-        savedTemplate = await db.updateContentTemplate(template.id, templateToSave);
+        savedTemplate = await (db.updateContentTemplate?.(template.id, templateToSave) || Promise.reject(new Error('updateContentTemplate not available')));
       } else {
         // Create new template
-        savedTemplate = await db.addContentTemplate(templateToSave);
+        savedTemplate = await (db.addContentTemplate?.(templateToSave) || Promise.reject(new Error('addContentTemplate not available')));
       }
 
       onSave(savedTemplate);
