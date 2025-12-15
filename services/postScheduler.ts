@@ -1,5 +1,7 @@
-import { db } from './databaseService';
 import { Post } from '../types';
+
+// Use HTTP API instead of direct database access for client-side code
+const API_BASE_URL = '/api';
 
 /**
  * Simple client-side post scheduler that checks for and publishes scheduled posts
@@ -43,7 +45,11 @@ export class PostScheduler {
    */
   private async checkAndPublishPosts() {
     try {
-      const posts = await db.getAllScheduledPosts();
+      // Fetch posts via HTTP API instead of direct database access
+      const response = await fetch(`${API_BASE_URL}/posts?status=scheduled`);
+      if (!response.ok) throw new Error('Failed to fetch scheduled posts');
+      const posts = await response.json();
+
       const now = new Date();
 
       // Find posts that are scheduled and ready to publish
@@ -79,27 +85,36 @@ export class PostScheduler {
       }
 
       // Update status to 'posting' to prevent duplicate publishing
-      await db.updatePost(
-        post.id,
+      const updateResponse = await fetch(
+        `${API_BASE_URL}/posts?id=${encodeURIComponent(post.id)}`,
         {
-          status: 'posting',
-        },
-        post.userId
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'posting',
+            userId: post.userId,
+          }),
+        }
       );
-
+      if (!updateResponse.ok) throw new Error('Failed to update post status');
       // Publish to Blogger (you can add other platforms here)
       const success = await this.publishToBloggerSafely(post);
 
       if (success) {
         // Mark as posted
-        await db.updatePost(
-          post.id,
+        const postedResponse = await fetch(
+          `${API_BASE_URL}/posts?id=${encodeURIComponent(post.id)}`,
           {
-            status: 'posted',
-            posted_at: new Date().toISOString(),
-          },
-          post.userId
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'posted',
+              posted_at: new Date().toISOString(),
+              userId: post.userId,
+            }),
+          }
         );
+        if (!postedResponse.ok) throw new Error('Failed to mark post as posted');
 
         console.log(`Successfully published post: ${post.idea}`);
 
@@ -109,13 +124,18 @@ export class PostScheduler {
         }
       } else {
         // Revert to scheduled if publishing failed
-        await db.updatePost(
-          post.id,
+        const revertResponse = await fetch(
+          `${API_BASE_URL}/posts?id=${encodeURIComponent(post.id)}`,
           {
-            status: 'scheduled',
-          },
-          post.userId
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'scheduled',
+              userId: post.userId,
+            }),
+          }
         );
+        if (!revertResponse.ok) throw new Error('Failed to revert post status');
 
         console.error(`Failed to publish post: ${post.idea}`);
 
@@ -130,13 +150,18 @@ export class PostScheduler {
       // Revert status on error
       try {
         if (post.userId) {
-          await db.updatePost(
-            post.id,
+          const revertResponse = await fetch(
+            `${API_BASE_URL}/posts?id=${encodeURIComponent(post.id)}`,
             {
-              status: 'scheduled',
-            },
-            post.userId
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                status: 'scheduled',
+                userId: post.userId,
+              }),
+            }
           );
+          if (!revertResponse.ok) throw new Error('Failed to revert post status');
         }
       } catch (updateError) {
         console.error('Error reverting post status:', updateError);

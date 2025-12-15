@@ -31,13 +31,21 @@ const StackHandler = React.lazy(() =>
   import('@stackframe/react').then((module) => ({ default: module.StackHandler }))
 );
 
-// Import app components
-const HolographicThemeProvider = React.lazy(() =>
-  import('./components/HolographicTheme').then((module) => ({
-    default: module.HolographicThemeProvider,
-  }))
-);
+// Import app components - HolographicThemeProvider should NOT be lazy since it wraps main content
+import { HolographicThemeProvider } from './components/HolographicTheme';
 const AppWithErrorHandling = React.lazy(() => import('./components/AppWithErrorHandling'));
+const LandingPage = React.lazy(() =>
+  import('./components/pages/LandingPage').then((module) => ({ default: module.LandingPage }))
+);
+const SignInPage = React.lazy(() =>
+  import('./components/pages/SignInPage').then((module) => ({ default: module.SignInPage }))
+);
+const SignUpPage = React.lazy(() =>
+  import('./components/pages/SignUpPage').then((module) => ({ default: module.SignUpPage }))
+);
+const ProtectedRoute = React.lazy(() =>
+  import('./components/auth/ProtectedRoute').then((module) => ({ default: module }))
+);
 // ErrorBoundaryEnhanced must be static or very safe, but let's keep it static for now as it's the safety net
 import { ErrorBoundaryEnhanced } from './components/ErrorBoundaryEnhanced';
 
@@ -173,7 +181,62 @@ try {
                 <HolographicThemeProvider>
                   <Routes>
                     <Route path="/handler/*" element={<HandlerRoutes />} />
-                    <Route path="/*" element={<AppWithErrorHandling />} />
+                    {/* Public Routes */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/signin" element={<SignInPage />} />
+                    <Route path="/signup" element={<SignUpPage />} />
+                    <Route path="/auth/signin" element={<SignInPage />} />
+                    <Route path="/auth/signup" element={<SignUpPage />} />
+                    {/* Protected Routes */}
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <Suspense
+                          fallback={
+                            <div
+                              style={{
+                                minHeight: '100vh',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                              }}
+                            >
+                              Loading...
+                            </div>
+                          }
+                        >
+                          <ProtectedRoute>
+                            <AppWithErrorHandling />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    {/* Catch all - redirect to dashboard for authenticated users, landing for others */}
+                    <Route
+                      path="*"
+                      element={
+                        <Suspense
+                          fallback={
+                            <div
+                              style={{
+                                minHeight: '100vh',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                              }}
+                            >
+                              Loading...
+                            </div>
+                          }
+                        >
+                          <ProtectedRoute>
+                            <AppWithErrorHandling />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
                   </Routes>
                 </HolographicThemeProvider>
               </ErrorBoundaryEnhanced>
