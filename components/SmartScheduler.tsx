@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Post, TimeSlot, SchedulingSuggestion, ConflictAnalysis, AudienceProfile } from '../types';
-import { schedulingService } from '../services/schedulingService';
 
 interface SmartSchedulerProps {
   posts: Post[];
@@ -333,7 +332,12 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Date Range */}
                 <div>
-                  <label htmlFor="startDate" className="block text-sm font-semibold text-white mb-2">Date Range</label>
+                  <label
+                    htmlFor="startDate"
+                    className="block text-sm font-semibold text-white mb-2"
+                  >
+                    Date Range
+                  </label>
                   <div className="space-y-2">
                     <input
                       id="startDate"

@@ -7,7 +7,6 @@ import {
   ConflictAnalysis,
   AudienceProfile,
 } from '../types';
-import { schedulingService } from '../services/schedulingService';
 
 interface CalendarViewProps {
   posts: Post[];
@@ -445,8 +444,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         )}
                         {/* Conflict indicator */}
                         {conflictAnalysis?.conflicts.some(
-                          (conflict) =>
-                            conflict.postId1 === post.id || conflict.postId2 === post.id
+                          (conflict) => conflict.postId1 === post.id || conflict.postId2 === post.id
                         ) && (
                           <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></div>
                         )}

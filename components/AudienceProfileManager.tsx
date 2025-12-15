@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import { AudienceProfile, EngagementData } from '../types';
 import { apiService } from '../services/clientApiService';
 import { generateAudienceInsights } from '../services/geminiService';
-import { db } from '../services/databaseService';
 import {
   X,
   Plus,
@@ -82,6 +82,8 @@ export default function AudienceProfileManager({
   audienceProfiles,
   onAudienceProfilesUpdate,
 }: AudienceProfileManagerProps) {
+  const user = useUser();
+  const userId = user?.id || '';
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'edit' | 'preview' | 'insights'>(
     'list'
   );
@@ -167,7 +169,7 @@ export default function AudienceProfileManager({
     setError(null);
 
     try {
-      await db.deleteAudienceProfile(profile.id);
+      await apiService.deleteAudienceProfile(userId, profile.id);
       const updatedProfiles = audienceProfiles.filter((p) => p.id !== profile.id);
       onAudienceProfilesUpdate(updatedProfiles);
 
@@ -305,14 +307,18 @@ export default function AudienceProfileManager({
       let savedProfile: AudienceProfile;
 
       if (activeTab === 'edit' && editingProfile) {
-        savedProfile = await db.updateAudienceProfile(editingProfile.id, profileData);
+        savedProfile = await apiService.updateAudienceProfile(
+          userId,
+          editingProfile.id,
+          profileData
+        );
         const updatedProfiles = audienceProfiles.map((p) =>
           p.id === editingProfile.id ? savedProfile : p
         );
         onAudienceProfilesUpdate(updatedProfiles);
         setSuccess('Audience profile updated successfully');
       } else {
-        savedProfile = await db.addAudienceProfile(profileData);
+        savedProfile = await apiService.addAudienceProfile(userId, profileData);
         onAudienceProfilesUpdate([savedProfile, ...audienceProfiles]);
         setSuccess('Audience profile created successfully');
       }
@@ -338,7 +344,11 @@ export default function AudienceProfileManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Audience Profile Manager</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close modal">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close modal"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>

@@ -3,7 +3,6 @@ import { useUser } from '@stackframe/react';
 import { Campaign, ContentSeries, Post, CampaignMetrics, OptimizationSuggestion } from '../types';
 import { campaignService } from '../services/clientCampaignService';
 import { apiService } from '../services/clientApiService';
-import { db } from '../services/databaseService';
 import { PLATFORMS, Spinner } from '../constants';
 
 interface CampaignManagerProps {
@@ -21,7 +20,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 }) => {
   const user = useUser();
   const userId = user?.id || '';
-  
+
   // State management
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -194,7 +193,11 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
       if (formData.endDate) updates.endDate = new Date(formData.endDate);
       if (formData.platforms.length > 0) updates.platforms = formData.platforms;
 
-      const updatedCampaign = await campaignService.updateCampaign(userId, selectedCampaign.id, updates);
+      const updatedCampaign = await campaignService.updateCampaign(
+        userId,
+        selectedCampaign.id,
+        updates
+      );
 
       setCampaigns((prev) => prev.map((c) => (c.id === updatedCampaign.id ? updatedCampaign : c)));
       setSelectedCampaign(updatedCampaign);
@@ -229,7 +232,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
   const handleAssignPostToCampaign = async (postId: string, campaignId: string) => {
     try {
-      await db.updatePost(postId, { campaign_id: campaignId });
+      await apiService.updatePost(userId, postId, { campaign_id: campaignId });
       if (onPostUpdate) {
         const updatedPost = posts.find((p) => p.id === postId);
         if (updatedPost) {
@@ -522,7 +525,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="startDate"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Start Date *
                     </label>
                     <input
@@ -537,7 +543,10 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     />
                   </div>
                   <div>
-                    <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="endDate"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       End Date *
                     </label>
                     <input

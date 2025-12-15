@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import { BrandVoice } from '../types';
 import { apiService } from '../services/clientApiService';
 import { analyzeBrandVoice } from '../services/geminiService';
-import { db } from '../services/databaseService';
 import { X, Plus, Edit2, Trash2, Eye, Upload, Loader2, Save, AlertCircle } from 'lucide-react';
 
 interface BrandVoiceManagerProps {
@@ -129,7 +129,7 @@ export default function BrandVoiceManager({
     setError(null);
 
     try {
-      await db.deleteBrandVoice(voice.id);
+      await apiService.deleteBrandVoice(userId, voice.id);
       const updatedVoices = brandVoices.filter((v) => v.id !== voice.id);
       onBrandVoicesUpdate(updatedVoices);
 
@@ -243,12 +243,12 @@ export default function BrandVoiceManager({
       let savedVoice: BrandVoice;
 
       if (activeTab === 'edit' && editingVoice) {
-        savedVoice = await db.updateBrandVoice(editingVoice.id, voiceData);
+        savedVoice = await apiService.updateBrandVoice(userId, editingVoice.id, voiceData);
         const updatedVoices = brandVoices.map((v) => (v.id === editingVoice.id ? savedVoice : v));
         onBrandVoicesUpdate(updatedVoices);
         setSuccess('Brand voice updated successfully');
       } else {
-        savedVoice = await db.addBrandVoice(voiceData);
+        savedVoice = await apiService.addBrandVoice(userId, voiceData);
         onBrandVoicesUpdate([savedVoice, ...brandVoices]);
         setSuccess('Brand voice created successfully');
       }
@@ -274,7 +274,11 @@ export default function BrandVoiceManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Brand Voice Manager</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close modal">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close modal"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -452,7 +456,12 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label htmlFor="toneSelect" className="block text-sm font-medium text-gray-700 mb-2">Tone *</label>
+                  <label
+                    htmlFor="toneSelect"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Tone *
+                  </label>
                   <select
                     id="toneSelect"
                     value={form.tone}
@@ -470,7 +479,10 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label htmlFor="writingStyleSelect" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="writingStyleSelect"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Writing Style
                   </label>
                   <select

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import {
   ContentSeries,
   Campaign,
@@ -10,7 +11,6 @@ import {
 import { campaignService } from '../services/clientCampaignService';
 import { apiService } from '../services/clientApiService';
 import { Spinner } from '../constants';
-import { db } from '../services/databaseService';
 
 interface ContentSeriesManagerProps {
   isOpen: boolean;
@@ -27,6 +27,8 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
   campaigns,
   onPostUpdate,
 }) => {
+  const user = useUser();
+  const userId = user?.id || '';
   // State management
   const [contentSeries, setContentSeries] = useState<ContentSeries[]>([]);
   const [selectedSeries, setSelectedSeries] = useState<ContentSeries | null>(null);
@@ -84,19 +86,35 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
       // Load optimization suggestions
       const suggestions = await campaignService.suggestSeriesAdjustments(seriesId);
-      setOptimizationSuggestions(suggestions.map(s => ({
-        ...s,
-        type: s.type as 'timing' | 'content' | 'hashtags' | 'format',
-        impact: (typeof s.impact === 'number' ? (s.impact > 70 ? 'high' : s.impact > 40 ? 'medium' : 'low') : s.impact) as 'high' | 'medium' | 'low',
-        effort: (typeof s.effort === 'number' ? (s.effort > 70 ? 'high' : s.effort > 40 ? 'medium' : 'low') : s.effort) as 'high' | 'medium' | 'low'
-      })));
+      setOptimizationSuggestions(
+        suggestions.map((s) => ({
+          ...s,
+          type: s.type as 'timing' | 'content' | 'hashtags' | 'format',
+          impact: (typeof s.impact === 'number'
+            ? s.impact > 70
+              ? 'high'
+              : s.impact > 40
+                ? 'medium'
+                : 'low'
+            : s.impact) as 'high' | 'medium' | 'low',
+          effort: (typeof s.effort === 'number'
+            ? s.effort > 70
+              ? 'high'
+              : s.effort > 40
+                ? 'medium'
+                : 'low'
+            : s.effort) as 'high' | 'medium' | 'low',
+        }))
+      );
 
       // Load scheduling suggestions
       const scheduleSuggestions = await campaignService.optimizeSeriesScheduling(seriesId);
-      setSchedulingSuggestions(scheduleSuggestions.map(s => ({
-        ...s,
-        suggestedTime: new Date(s.suggestedTime)
-      })));
+      setSchedulingSuggestions(
+        scheduleSuggestions.map((s) => ({
+          ...s,
+          suggestedTime: new Date(s.suggestedTime),
+        }))
+      );
     } catch (err: any) {
       setError(`Failed to load suggestions: ${err.message}`);
     } finally {
@@ -120,7 +138,8 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
       const series = await campaignService.createContentSeries({
         title: formData.name,
         theme: formData.theme,
-        postingFrequency: formData.frequency === 'daily' ? 7 : formData.frequency === 'weekly' ? 1 : 0,
+        postingFrequency:
+          formData.frequency === 'daily' ? 7 : formData.frequency === 'weekly' ? 1 : 0,
       });
 
       setContentSeries((prev) => [...prev, series]);
@@ -201,7 +220,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
   const handleAssignPostToSeries = async (postId: string, seriesId: string) => {
     try {
-      await db.updatePost(postId, { series_id: seriesId });
+      await apiService.updatePost(userId, postId, { series_id: seriesId });
       if (onPostUpdate) {
         const updatedPost = posts.find((p) => p.id === postId);
         if (updatedPost) {

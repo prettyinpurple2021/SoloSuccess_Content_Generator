@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@stackframe/react';
 import { ContentTemplate, TemplateSection, TemplateField } from '../types';
 import { apiService } from '../services/clientApiService';
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, Eye, Settings } from '../constants';
-import { db } from '../services/databaseService';
 
 interface TemplateEditorProps {
   isOpen: boolean;
@@ -12,6 +12,8 @@ interface TemplateEditorProps {
 }
 
 export default function TemplateEditor({ isOpen, onClose, template, onSave }: TemplateEditorProps) {
+  const user = useUser();
+  const userId = user?.id || '';
   const [templateData, setTemplateData] = useState<Partial<ContentTemplate>>({
     name: '',
     category: 'marketing',
@@ -78,16 +80,16 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
 
       let savedTemplate: ContentTemplate;
       if (template?.id) {
-        savedTemplate = await (db.updateContentTemplate?.(template.id, templateToSave) || Promise.reject(new Error('updateContentTemplate not available')));
+        savedTemplate = await apiService.updateTemplate(userId, template.id, templateToSave);
       } else {
-        savedTemplate = await (db.addContentTemplate?.(templateToSave) || Promise.reject(new Error('addContentTemplate not available')));
+        savedTemplate = await apiService.addTemplate(userId, templateToSave);
       }
 
       onSave(savedTemplate);
       onClose();
     } catch (error: any) {
-        setError('Failed to save template. Please try again.');
-        console.error('Error saving template:', error.message);
+      setError('Failed to save template. Please try again.');
+      console.error('Error saving template:', error.message);
     } finally {
       setLoading(false);
     }
@@ -326,7 +328,12 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor={`field-name-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
+                  <label
+                    htmlFor={`field-name-${index}`}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Field Name
+                  </label>
                   <input
                     id={`field-name-${index}`}
                     type="text"
@@ -337,7 +344,12 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                 </div>
 
                 <div>
-                  <label htmlFor={`field-type-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Field Type</label>
+                  <label
+                    htmlFor={`field-type-${index}`}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Field Type
+                  </label>
                   <select
                     id={`field-type-${index}`}
                     value={field.type}
@@ -352,7 +364,12 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                 </div>
 
                 <div>
-                  <label htmlFor={`field-label-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                  <label
+                    htmlFor={`field-label-${index}`}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Label
+                  </label>
                   <input
                     id={`field-label-${index}`}
                     type="text"
@@ -363,7 +380,10 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                 </div>
 
                 <div>
-                  <label htmlFor={`field-placeholder-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={`field-placeholder-${index}`}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Placeholder
                   </label>
                   <input
@@ -440,7 +460,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
         </div>
 
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            Category
+          </label>
           <select
             id="category"
             value={templateData.category || 'marketing'}
@@ -456,7 +478,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
         </div>
 
         <div>
-          <label htmlFor="contentType" className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
+          <label htmlFor="contentType" className="block text-sm font-medium text-gray-700 mb-2">
+            Content Type
+          </label>
           <select
             id="contentType"
             value={templateData.contentType || 'blog'}
@@ -473,7 +497,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
         </div>
 
         <div>
-          <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+          <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
+            Industry
+          </label>
           <select
             id="industry"
             value={templateData.industry || 'general'}
