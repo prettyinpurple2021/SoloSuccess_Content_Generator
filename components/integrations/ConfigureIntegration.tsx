@@ -199,6 +199,7 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                     value={formData.name || ''}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                    aria-label="Integration name"
                   />
                 </div>
                 <div>
@@ -211,6 +212,7 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                       setFormData((prev) => ({ ...prev, syncFrequency: e.target.value as any }))
                     }
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                    aria-label="Sync frequency"
                   >
                     <option value="realtime">Real-time</option>
                     <option value="hourly">Hourly</option>
@@ -340,6 +342,7 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                         }))
                       }
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                      aria-label="Sync interval in minutes"
                     />
                   </div>
                 </div>
@@ -369,6 +372,7 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                         }))
                       }
                       className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                      aria-label="Batch size"
                     />
                   </div>
                   <div>
@@ -378,6 +382,7 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                     <input
                       type="number"
                       value={formData.configuration?.syncSettings?.retryAttempts || 3}
+                      aria-label="Retry attempts"
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,

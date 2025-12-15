@@ -511,6 +511,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                       min="1"
                       max="50"
                       value={formData.totalPosts}
+                      aria-label="Total posts"
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -530,6 +531,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                         setFormData((prev) => ({ ...prev, frequency: e.target.value as any }))
                       }
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      aria-label="Posting frequency"
                     >
                       <option value="daily">Daily</option>
                       <option value="weekly">Weekly</option>
@@ -548,6 +550,7 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
                       setFormData((prev) => ({ ...prev, campaignId: e.target.value }))
                     }
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    aria-label="Associated campaign"
                   >
                     <option value="">No Campaign</option>
                     {campaigns.map((campaign) => (

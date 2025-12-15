@@ -338,7 +338,7 @@ export default function AudienceProfileManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Audience Profile Manager</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close modal">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -568,6 +568,7 @@ export default function AudienceProfileManager({
                     value={form.ageRange}
                     onChange={(e) => setForm((prev) => ({ ...prev, ageRange: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Age Range"
                   >
                     <option value="">Select age range</option>
                     {AGE_RANGE_OPTIONS.map((range) => (
@@ -584,6 +585,7 @@ export default function AudienceProfileManager({
                     value={form.industry}
                     onChange={(e) => setForm((prev) => ({ ...prev, industry: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Industry"
                   >
                     <option value="">Select industry</option>
                     {INDUSTRY_OPTIONS.map((industry) => (
@@ -626,6 +628,7 @@ export default function AudienceProfileManager({
                       <button
                         onClick={() => removeInterest(interest)}
                         className="text-blue-400 hover:text-blue-600"
+                        aria-label={`Remove ${interest}`}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -665,6 +668,7 @@ export default function AudienceProfileManager({
                       <button
                         onClick={() => removePainPoint(painPoint)}
                         className="text-red-400 hover:text-red-600"
+                        aria-label={`Remove ${painPoint}`}
                       >
                         <X className="w-3 h-3" />
                       </button>

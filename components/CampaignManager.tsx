@@ -532,6 +532,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                         setFormData((prev) => ({ ...prev, startDate: e.target.value }))
                       }
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      aria-label="Campaign start date"
                     />
                   </div>
                   <div>
@@ -544,6 +545,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, endDate: e.target.value }))
                       }
+                      aria-label="Campaign end date"
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>

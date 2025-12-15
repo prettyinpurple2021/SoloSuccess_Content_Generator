@@ -217,6 +217,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               value={selectedTimeframe}
               onChange={(e) => setSelectedTimeframe(e.target.value as any)}
               className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Timeframe selector"
             >
               <option value="week">Last Week</option>
               <option value="month">Last Month</option>
@@ -226,6 +227,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close analytics dashboard"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path

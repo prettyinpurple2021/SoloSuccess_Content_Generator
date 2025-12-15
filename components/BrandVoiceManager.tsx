@@ -274,7 +274,7 @@ export default function BrandVoiceManager({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">Brand Voice Manager</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close modal">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -457,6 +457,7 @@ export default function BrandVoiceManager({
                     value={form.tone}
                     onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Tone"
                   >
                     <option value="">Select a tone</option>
                     {TONE_OPTIONS.map((tone) => (
@@ -475,6 +476,7 @@ export default function BrandVoiceManager({
                     value={form.writingStyle}
                     onChange={(e) => setForm((prev) => ({ ...prev, writingStyle: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Writing Style"
                   >
                     <option value="">Select a writing style</option>
                     {WRITING_STYLE_OPTIONS.map((style) => (
@@ -532,6 +534,7 @@ export default function BrandVoiceManager({
                       <button
                         onClick={() => removeVocabularyTerm(term)}
                         className="text-gray-400 hover:text-gray-600"
+                        aria-label={`Remove ${term}`}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -582,6 +585,7 @@ export default function BrandVoiceManager({
                         <button
                           onClick={() => removeSampleContent(content)}
                           className="ml-2 text-gray-400 hover:text-gray-600"
+                          aria-label="Remove sample content"
                         >
                           <X className="w-4 h-4" />
                         </button>
