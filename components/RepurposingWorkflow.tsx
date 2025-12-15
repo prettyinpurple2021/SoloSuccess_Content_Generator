@@ -268,11 +268,13 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">Brand Tone</label>
+            <label htmlFor="brandTone" className="block text-sm font-medium text-white/80 mb-2">Brand Tone</label>
             <select
+              id="brandTone"
               value={customization.brandTone}
               onChange={(e) => setCustomization((prev) => ({ ...prev, brandTone: e.target.value }))}
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-purple-400"
+              aria-label="Brand tone"
             >
               <option value="professional">Professional</option>
               <option value="casual">Casual</option>
@@ -282,13 +284,15 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">Writing Style</label>
+            <label htmlFor="brandStyle" className="block text-sm font-medium text-white/80 mb-2">Writing Style</label>
             <select
+              id="brandStyle"
               value={customization.brandStyle}
               onChange={(e) =>
                 setCustomization((prev) => ({ ...prev, brandStyle: e.target.value }))
               }
               className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-purple-400"
+              aria-label="Writing style"
             >
               <option value="informative">Informative</option>
               <option value="conversational">Conversational</option>

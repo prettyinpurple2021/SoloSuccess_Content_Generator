@@ -452,8 +452,9 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tone *</label>
+                  <label htmlFor="toneSelect" className="block text-sm font-medium text-gray-700 mb-2">Tone *</label>
                   <select
+                    id="toneSelect"
                     value={form.tone}
                     onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -469,10 +470,11 @@ export default function BrandVoiceManager({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="writingStyleSelect" className="block text-sm font-medium text-gray-700 mb-2">
                     Writing Style
                   </label>
                   <select
+                    id="writingStyleSelect"
                     value={form.writingStyle}
                     onChange={(e) => setForm((prev) => ({ ...prev, writingStyle: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -534,7 +536,7 @@ export default function BrandVoiceManager({
                       <button
                         onClick={() => removeVocabularyTerm(term)}
                         className="text-gray-400 hover:text-gray-600"
-                        aria-label={`Remove ${term}`}
+                        aria-label={`Remove vocabulary term ${term}`}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -585,7 +587,7 @@ export default function BrandVoiceManager({
                         <button
                           onClick={() => removeSampleContent(content)}
                           className="ml-2 text-gray-400 hover:text-gray-600"
-                          aria-label="Remove sample content"
+                          aria-label={`Remove sample content: ${content.substring(0, 20)}...`}
                         >
                           <X className="w-4 h-4" />
                         </button>

@@ -308,6 +308,8 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 isRealTimeEnabled ? 'bg-blue-600' : 'bg-gray-200'
               }`}
+              aria-label={`${isRealTimeEnabled ? 'Disable' : 'Enable'} real-time monitoring`}
+              aria-pressed={isRealTimeEnabled}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -327,9 +329,11 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
           </div>
 
           <select
+            id="integrationFilter"
             value={selectedIntegration}
             onChange={(e) => setSelectedIntegration(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            aria-label="Filter by integration"
           >
             <option value="all">All Integrations</option>
             {integrations.map((integration) => (
@@ -339,9 +343,11 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
             ))}
           </select>
           <select
+            id="timeRangeFilter"
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as any)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            aria-label="Filter by time range"
           >
             <option value="1h">Last Hour</option>
             <option value="24h">Last 24 Hours</option>

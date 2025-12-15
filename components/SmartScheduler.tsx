@@ -333,9 +333,10 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Date Range */}
                 <div>
-                  <label className="block text-sm font-semibold text-white mb-2">Date Range</label>
+                  <label htmlFor="startDate" className="block text-sm font-semibold text-white mb-2">Date Range</label>
                   <div className="space-y-2">
                     <input
+                      id="startDate"
                       type="datetime-local"
                       value={bulkOptions.startDate.toISOString().slice(0, 16)}
                       onChange={(e) =>
@@ -345,8 +346,10 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                         }))
                       }
                       className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                      aria-label="Start date"
                     />
                     <input
+                      id="endDate"
                       type="datetime-local"
                       value={bulkOptions.endDate.toISOString().slice(0, 16)}
                       onChange={(e) =>
@@ -356,6 +359,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                         }))
                       }
                       className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                      aria-label="End date"
                     />
                   </div>
                 </div>
@@ -396,6 +400,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                     Spacing Strategy
                   </label>
                   <select
+                    id="spacing-strategy"
                     value={bulkOptions.spacing}
                     onChange={(e) =>
                       setBulkOptions((prev) => ({
@@ -404,6 +409,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                       }))
                     }
                     className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                    aria-label="Spacing strategy"
                   >
                     <option value="optimal">Optimal Times</option>
                     <option value="even">Even Distribution</option>
@@ -436,6 +442,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                     Target Timezones
                   </label>
                   <select
+                    id="target-timezones"
                     multiple
                     value={bulkOptions.targetTimezones}
                     onChange={(e) => {

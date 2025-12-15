@@ -213,6 +213,7 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                     value={section.type}
                     onChange={(e) => updateSection(index, { type: e.target.value as any })}
                     className="text-sm border border-gray-300 rounded px-2 py-1"
+                    aria-label={`Section ${index + 1} type`}
                   >
                     <option value="heading">Heading</option>
                     <option value="paragraph">Paragraph</option>
@@ -226,6 +227,7 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                     onClick={() => moveSectionUp(index)}
                     disabled={index === 0}
                     className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                    aria-label="Move section up"
                   >
                     <ArrowUp className="w-4 h-4" />
                   </button>
@@ -233,12 +235,14 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                     onClick={() => moveSectionDown(index)}
                     disabled={index === (templateData.structure?.length || 0) - 1}
                     className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                    aria-label="Move section down"
                   >
                     <ArrowDown className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => removeSection(index)}
                     className="p-1 text-red-400 hover:text-red-600"
+                    aria-label="Remove section"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -314,6 +318,7 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                 <button
                   onClick={() => removeCustomField(index)}
                   className="p-1 text-red-400 hover:text-red-600"
+                  aria-label="Remove field"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -321,8 +326,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
+                  <label htmlFor={`field-name-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
                   <input
+                    id={`field-name-${index}`}
                     type="text"
                     value={field.name}
                     onChange={(e) => updateCustomField(index, { name: e.target.value })}
@@ -331,8 +337,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Field Type</label>
+                  <label htmlFor={`field-type-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Field Type</label>
                   <select
+                    id={`field-type-${index}`}
                     value={field.type}
                     onChange={(e) => updateCustomField(index, { type: e.target.value as any })}
                     className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
@@ -345,8 +352,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                  <label htmlFor={`field-label-${index}`} className="block text-sm font-medium text-gray-700 mb-1">Label</label>
                   <input
+                    id={`field-label-${index}`}
                     type="text"
                     value={field.label}
                     onChange={(e) => updateCustomField(index, { label: e.target.value })}
@@ -355,10 +363,11 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor={`field-placeholder-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
                     Placeholder
                   </label>
                   <input
+                    id={`field-placeholder-${index}`}
                     type="text"
                     value={field.placeholder || ''}
                     onChange={(e) => updateCustomField(index, { placeholder: e.target.value })}
@@ -431,8 +440,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">Category</label>
           <select
+            id="category"
             value={templateData.category || 'marketing'}
             onChange={(e) => setTemplateData((prev) => ({ ...prev, category: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
@@ -446,8 +456,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
+          <label htmlFor="contentType" className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
           <select
+            id="contentType"
             value={templateData.contentType || 'blog'}
             onChange={(e) =>
               setTemplateData((prev) => ({ ...prev, contentType: e.target.value as any }))
@@ -462,8 +473,9 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+          <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
           <select
+            id="industry"
             value={templateData.industry || 'general'}
             onChange={(e) => setTemplateData((prev) => ({ ...prev, industry: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
@@ -557,6 +569,7 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
                     <select
                       className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                       disabled
+                      aria-label={`${field.label} select`}
                     >
                       <option>{field.placeholder || 'Select an option'}</option>
                       {field.options?.map((option, i) => (

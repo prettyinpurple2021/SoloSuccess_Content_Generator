@@ -332,13 +332,15 @@ export const PerformanceInsights: React.FC<PerformanceInsightsProps> = ({
 
       {/* Post Selector */}
       <div className="bg-gray-50 p-4 rounded-lg">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="postSelector" className="block text-sm font-medium text-gray-700 mb-2">
           Select a post to analyze:
         </label>
         <select
+          id="postSelector"
           value={selectedPost}
           onChange={(e) => setSelectedPost(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Select post for analysis"
         >
           <option value="">Choose a post...</option>
           {posts
@@ -456,7 +458,7 @@ export const PerformanceInsights: React.FC<PerformanceInsightsProps> = ({
               Content analysis and optimization recommendations
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close content analysis">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"

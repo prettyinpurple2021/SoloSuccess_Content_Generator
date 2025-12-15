@@ -214,8 +214,9 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">Email</label>
+                <label htmlFor="emailInput" className="block text-sm font-medium text-white mb-2">Email</label>
                 <input
+                  id="emailInput"
                   type="email"
                   value={user.primaryEmail || ''}
                   disabled

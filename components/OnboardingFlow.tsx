@@ -380,6 +380,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
+            aria-label="Close onboarding"
           >
             <X className="w-5 h-5" />
           </button>

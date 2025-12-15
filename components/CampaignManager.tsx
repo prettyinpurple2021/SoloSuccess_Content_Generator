@@ -522,10 +522,11 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
                       Start Date *
                     </label>
                     <input
+                      id="startDate"
                       type="date"
                       value={formData.startDate}
                       onChange={(e) =>
@@ -536,10 +537,11 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
                       End Date *
                     </label>
                     <input
+                      id="endDate"
                       type="date"
                       value={formData.endDate}
                       onChange={(e) =>

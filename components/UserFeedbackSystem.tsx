@@ -251,7 +251,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
               <MessageSquare className="w-5 h-5" />
               Feedback
             </h3>
-            <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
+            <button onClick={onClose} className="text-white/80 hover:text-white transition-colors" aria-label="Close feedback">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -332,6 +332,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
                       <button
                         key={star}
                         onClick={() => setRating(star)}
+                        aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
                         className={`p-1 transition-colors ${
                           star <= rating ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'
                         }`}
@@ -387,6 +388,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
                       <button
                         onClick={() => removeAttachment(index)}
                         className="text-red-600 hover:text-red-800"
+                        aria-label={`Remove ${file.name}`}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -408,6 +410,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({
                   onChange={handleFileUpload}
                   className="hidden"
                   accept="image/*,text/*,.pdf,.json"
+                  aria-label="Upload attachment files"
                 />
               </div>
 
@@ -573,6 +576,7 @@ export const QuickFeedback: React.FC<{
               ? 'text-green-600 bg-green-50'
               : 'text-gray-400 hover:text-green-600'
           }`}
+          aria-label="Mark as helpful"
         >
           <ThumbsUp className="w-4 h-4" />
         </button>
@@ -583,6 +587,7 @@ export const QuickFeedback: React.FC<{
               ? 'text-red-600 bg-red-50'
               : 'text-gray-400 hover:text-red-600'
           }`}
+          aria-label="Mark as unhelpful"
         >
           <ThumbsDown className="w-4 h-4" />
         </button>
