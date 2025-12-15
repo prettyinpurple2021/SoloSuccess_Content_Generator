@@ -23,3 +23,23 @@ export class RedisService {
     throw error();
   }
 }
+
+// Named exports for databaseService and neonService
+export const db = new Proxy(
+  {},
+  {
+    get: () => error,
+    set: () => {
+      throw error();
+    },
+  }
+);
+
+export const query = error;
+export const testConnection = error;
+export const pool = error;
+export const databaseService = error;
+export const auth = {
+  getUser: error,
+  isAuthenticated: error,
+};

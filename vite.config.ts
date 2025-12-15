@@ -230,8 +230,20 @@ export default defineConfig(({ mode }) => {
       }),
       rollupOptions: {
         external: (id, importer) => {
-          // Don't externalize Node.js built-ins - the plugin will stub them for browser
-          // Don't externalize postgres or database services - let the plugin handle them with virtual stubs
+          // Externalize postgres and Node.js-only packages for Vercel deployment
+          if (
+            id === 'postgres' ||
+            id.includes('node_modules/postgres') ||
+            id === 'perf_hooks' ||
+            id === 'fs' ||
+            id === 'os' ||
+            id === 'net' ||
+            id === 'tls' ||
+            id === 'crypto' ||
+            id === 'stream'
+          ) {
+            return true;
+          }
           return false;
         },
         output: {
@@ -361,6 +373,12 @@ export default defineConfig(({ mode }) => {
         // Alias server-only packages to empty stubs for client builds
         // API routes run server-side and will use the real packages from node_modules
         ioredis: path.resolve(__dirname, 'vite.server-stub.js'),
+        postgres: path.resolve(__dirname, 'vite.server-stub.js'),
+        // Stub database services for client builds
+        './services/neonService': path.resolve(__dirname, 'vite.server-stub.js'),
+        './services/databaseService': path.resolve(__dirname, 'vite.server-stub.js'),
+        '../services/neonService': path.resolve(__dirname, 'vite.server-stub.js'),
+        '../services/databaseService': path.resolve(__dirname, 'vite.server-stub.js'),
       },
       // Ensure React is deduplicated - prevents multiple React instances
       dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
