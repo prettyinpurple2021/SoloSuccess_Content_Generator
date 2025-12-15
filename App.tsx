@@ -35,6 +35,7 @@ import {
   ListIcon,
   SparklesIcon,
   PLATFORMS,
+  SocialPlatform,
   TONES,
   AUDIENCES,
   Spinner,
@@ -102,8 +103,12 @@ const App: React.FC = () => {
   const [summary, setSummary] = useState('');
   const [headlines, setHeadlines] = useState<string[]>([]);
   const [socialMediaPosts, setSocialMediaPosts] = useState<SocialMediaPosts>({});
-  const [socialMediaTones, setSocialMediaTones] = useState<{ [key: string]: string }>({});
-  const [socialMediaAudiences, setSocialMediaAudiences] = useState<{ [key: string]: string }>({});
+  const [socialMediaTones, setSocialMediaTones] = useState<Partial<Record<SocialPlatform, string>>>(
+    {}
+  );
+  const [socialMediaAudiences, setSocialMediaAudiences] = useState<
+    Partial<Record<SocialPlatform, string>>
+  >({});
   const [imagePrompts, setImagePrompts] = useState<string[]>([]);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImages>({});
   const [selectedImageForPost, setSelectedImageForPost] = useState<string | null>(null);
@@ -476,7 +481,7 @@ const App: React.FC = () => {
     ) => Promise<{ content: string }>;
   };
 
-  const handleGenerateSocialPost = async (platform: string) => {
+  const handleGenerateSocialPost = async (platform: SocialPlatform) => {
     const key = `social-${platform}`;
     setIsLoading((prev) => ({ ...prev, [key]: true }));
     setErrorMessage('');
@@ -541,7 +546,7 @@ const App: React.FC = () => {
     setSocialMediaPosts((prev) => ({ ...prev, ...newPosts }));
   });
 
-  const handleSocialPostChange = (platform: string, value: string) => {
+  const handleSocialPostChange = (platform: SocialPlatform, value: string) => {
     setSocialMediaPosts((prev) => ({ ...prev, [platform]: value }));
   };
 

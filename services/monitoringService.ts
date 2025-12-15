@@ -1,4 +1,4 @@
-import { IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
+import { Integration, IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
 import { db } from './neonService';
 
 export class MonitoringService {
@@ -39,7 +39,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const metrics = await db.getIntegrationMetrics(integrationId, startTime, endTime);
+      const metrics = await (db as any).getIntegrationMetrics(integrationId, startTime, endTime);
 
       // Cache results
       this.metricsCache.set(cacheKey, metrics);
@@ -95,7 +95,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const logs = await db.getIntegrationLogs(integrationId, startTime, endTime, level);
+      const logs = await (db as any).getIntegrationLogs(integrationId, startTime, endTime, level);
 
       // Cache results
       this.logsCache.set(cacheKey, logs);
@@ -132,7 +132,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const alerts = await db.getIntegrationAlerts(integrationId, status);
+      const alerts = await (db as any).getIntegrationAlerts(integrationId, status);
 
       // Cache results
       this.alertsCache.set(cacheKey, alerts);
@@ -177,7 +177,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const metrics = await db.getIntegrationMetrics(null, startTime, endTime);
+      const metrics = await (db as any).getIntegrationMetrics(null, startTime, endTime);
       return metrics;
     } catch (error) {
       console.error('Error fetching all metrics:', error);
@@ -214,7 +214,7 @@ export class MonitoringService {
       }
 
       // Fetch from database
-      const logs = await db.getIntegrationLogs(null, startTime, endTime, level);
+      const logs = await (db as any).getIntegrationLogs(null, startTime, endTime, level);
       return logs;
     } catch (error) {
       console.error('Error fetching all logs:', error);
@@ -230,10 +230,9 @@ export class MonitoringService {
   async getIntegrations(): Promise<any[]> {
     try {
       // Delegate to database service; tests may stub this
-      // @ts-expect-error - dynamic db shim may expose getIntegrations
-      if (typeof (db as any).getIntegrations === 'function') {
-        // @ts-expect-error - invoking optional method on dynamic db shim
-        return await (db as any).getIntegrations();
+      const dbWithIntegrations = db as { getIntegrations?: () => Promise<Integration[]> };
+      if (typeof dbWithIntegrations.getIntegrations === 'function') {
+        return await dbWithIntegrations.getIntegrations();
       }
     } catch {
       // ignore
@@ -247,7 +246,7 @@ export class MonitoringService {
   async getAllAlerts(status?: 'active' | 'resolved' | 'dismissed'): Promise<IntegrationAlert[]> {
     try {
       // Fetch from database
-      const alerts = await db.getIntegrationAlerts(null, status);
+      const alerts = await (db as any).getIntegrationAlerts(null, status);
       return alerts;
     } catch (error) {
       console.error('Error fetching all alerts:', error);
@@ -262,7 +261,7 @@ export class MonitoringService {
    */
   async resolveAlert(alertId: string): Promise<void> {
     try {
-      await db.resolveIntegrationAlert(alertId);
+      await (db as any).resolveIntegrationAlert(alertId);
 
       // Clear cache for this integration
       this.alertsCache.clear();
@@ -281,7 +280,7 @@ export class MonitoringService {
     alert: Omit<IntegrationAlert, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<IntegrationAlert> {
     try {
-      const newAlert = await db.addIntegrationAlert({
+      const newAlert = await (db as any).addIntegrationAlert({
         ...alert,
         id: crypto.randomUUID(),
         createdAt: new Date(),
@@ -319,7 +318,7 @@ export class MonitoringService {
         timestamp: new Date(),
       };
 
-      await db.addIntegrationLog(log);
+      await (db as any).addIntegrationLog(log);
 
       // Clear cache
       this.logsCache.clear();
@@ -334,7 +333,7 @@ export class MonitoringService {
    */
   async updateMetrics(integrationId: string, metrics: Partial<IntegrationMetrics>): Promise<void> {
     try {
-      const existingMetrics = await db.getIntegrationMetrics(integrationId);
+      const existingMetrics = await (db as any).getIntegrationMetrics(integrationId);
       const latestMetrics = existingMetrics[existingMetrics.length - 1];
 
       if (latestMetrics) {
@@ -344,7 +343,7 @@ export class MonitoringService {
           ...metrics,
           timestamp: new Date(),
         };
-        await db.updateIntegrationMetrics(latestMetrics.id, updatedMetrics);
+        await (db as any).updateIntegrationMetrics(latestMetrics.id, updatedMetrics);
       } else {
         // Create new metrics record
         const newMetrics: IntegrationMetrics = {
@@ -358,7 +357,7 @@ export class MonitoringService {
           errorRate: metrics.errorRate || 0,
           timestamp: new Date(),
         };
-        await db.updateIntegrationMetrics(newMetrics.id, newMetrics);
+        await (db as any).updateIntegrationMetrics(newMetrics.id, newMetrics);
       }
 
       // Clear cache

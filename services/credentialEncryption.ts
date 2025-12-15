@@ -64,12 +64,9 @@ export class CredentialEncryption {
       const authTag = encryptedData.slice(-16);
       const ciphertext = encryptedData.slice(0, -16);
 
-      // Backward-compat: also expose legacy 'data' field mirroring 'encrypted'
       const encryptedB64 = this.arrayBufferToBase64(ciphertext.buffer);
       return {
         encrypted: encryptedB64,
-        // legacy alias used by some older tests
-        // @ts-expect-error: legacy field for compatibility
         data: encryptedB64,
         iv: this.arrayBufferToBase64(iv.buffer),
         authTag: this.arrayBufferToBase64(authTag.buffer),
@@ -77,7 +74,7 @@ export class CredentialEncryption {
         salt: this.arrayBufferToBase64(salt.buffer),
         iterations: options?.iterations || this.PBKDF2_ITERATIONS,
         version: options?.version || '1.0',
-      } as unknown as EncryptedCredentials & { data: string };
+      } as EncryptedCredentials;
     } catch (error) {
       console.error('Encryption error:', error);
       throw new Error(

@@ -776,7 +776,6 @@ export class AdvancedSecurityService {
       // Create security incident
       await this.createSecurityIncident(integrationId, {
         type: 'security_scan',
-        integrationId,
         severity: 'high',
         description: `Security scan detected ${issues.length} issues`,
         evidence: { issues, recommendations },
@@ -818,7 +817,6 @@ export class AdvancedSecurityService {
       // Create security incident
       await this.createSecurityIncident(integrationId, {
         type: 'vulnerability_scan',
-        integrationId,
         severity: 'critical',
         description: `Vulnerability scan detected ${vulnerabilities.length} vulnerabilities`,
         evidence: { vulnerabilities },
@@ -834,14 +832,14 @@ export class AdvancedSecurityService {
    */
   async createSecurityIncident(
     integrationId: string,
-    incident: Omit<SecurityIncident, 'id' | 'timestamp' | 'createdAt' | 'updatedAt'>
+    incident: Omit<SecurityIncident, 'id' | 'timestamp' | 'createdAt' | 'updatedAt' | 'integrationId'>
   ): Promise<void> {
     try {
       const securityIncident: SecurityIncident = {
         id: crypto.randomUUID(),
         timestamp: new Date(),
         ...incident,
-        integrationId,  // Override any integrationId in incident
+        integrationId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

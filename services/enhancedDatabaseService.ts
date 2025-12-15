@@ -13,7 +13,7 @@ interface ConnectionPoolConfig {
   idle_timeout: number;
   connect_timeout: number;
   prepare: boolean;
-  types: Record<string, unknown>;
+  types: Record<string, postgres.PostgresType<any>>;
   onnotice?: (notice: postgres.Notice) => void;
   debug?: boolean;
 }
@@ -65,9 +65,7 @@ class EnhancedDatabaseService {
       idle_timeout: 30, // 30 seconds
       connect_timeout: 10, // 10 seconds
       prepare: true, // Use prepared statements
-      types: {
-        // Custom type parsers if needed
-      },
+      types: {} as Record<string, postgres.PostgresType<any>>,
       onnotice: (notice) => {
         console.log('Database notice:', notice);
       },
@@ -115,7 +113,7 @@ class EnhancedDatabaseService {
 
       // Primary connection pool
       this.pool = postgres(process.env.DATABASE_URL, {
-        ...this.config,
+        ...(this.config as postgres.Options<Record<string, postgres.PostgresType<any>>>),
         connection: {
           application_name: 'solosuccess_primary',
         },
@@ -128,7 +126,7 @@ class EnhancedDatabaseService {
       // Read-only connection pool (for read replicas if available)
       const readOnlyUrl = process.env.DATABASE_READ_URL || process.env.DATABASE_URL;
       this.readOnlyPool = postgres(readOnlyUrl, {
-        ...this.config,
+        ...(this.config as postgres.Options<Record<string, postgres.PostgresType<any>>>),
         max: Math.ceil(this.config.max * 0.6), // 60% of max for read-only
         connection: {
           application_name: 'solosuccess_readonly',
@@ -209,7 +207,7 @@ class EnhancedDatabaseService {
       const queryString = this.formatQuery(query, params);
 
       try {
-        const result = await this.pool(query, ...params);
+        const result = await (this.pool as unknown as any)(query, ...params);
 
         const duration = Date.now() - startTime;
         this.recordQueryMetrics(queryString, duration, true);
@@ -250,7 +248,7 @@ class EnhancedDatabaseService {
       const queryString = this.formatQuery(query, params);
 
       try {
-        const result = await pool(query, ...params);
+        const result = await (pool as unknown as any)(query, ...params);
 
         const duration = Date.now() - startTime;
         this.recordQueryMetrics(`[READ] ${queryString}`, duration, true);
