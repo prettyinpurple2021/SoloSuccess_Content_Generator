@@ -310,7 +310,7 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
                 isRealTimeEnabled ? 'bg-blue-600' : 'bg-gray-200'
               }`}
               aria-label={`${isRealTimeEnabled ? 'Disable' : 'Enable'} real-time monitoring`}
-              aria-pressed={isRealTimeEnabled}
+              aria-pressed={isRealTimeEnabled ? 'true' : 'false'}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
