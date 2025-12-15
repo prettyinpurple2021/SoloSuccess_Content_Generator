@@ -191,7 +191,7 @@ export default function BrandVoiceManager({
     setError(null);
 
     try {
-      const analysis = await analyzeBrandVoice(form.sampleContent.join('\n\n'));
+      const analysis = await analyzeBrandVoice(form.sampleContent);
       setAnalysisResults(analysis);
 
       // Auto-populate form with analysis results

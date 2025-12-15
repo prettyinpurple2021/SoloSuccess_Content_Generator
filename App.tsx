@@ -494,7 +494,7 @@ const App: React.FC = () => {
           return await gemini.generateSocialMediaPost(
             currentBlogTopic || selectedIdea || 'Social post',
             platform,
-            tone,
+            tone as string,
             length
           );
         }
@@ -524,7 +524,7 @@ const App: React.FC = () => {
         const res = await gemini.generateSocialMediaPost(
           currentBlogTopic || selectedIdea || 'Social post',
           platform,
-          tone,
+          tone as string,
           length
         );
         return { platform, post: res.content || '' };
@@ -1404,7 +1404,7 @@ const App: React.FC = () => {
                         className="flex items-center gap-2 bg-gradient-to-br from-secondary to-accent hover:shadow-neon-accent transition-all duration-300 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50"
                       >
                         {isLoading.socialAll ? <Spinner /> : <SparklesIcon />}
-                        {isLoading.socialAll ? 'Generating All...' : 'Generate For All Platforms'}
+                        {(isLoading.socialAll) ? 'Generating All...' : 'Generate For All Platforms'}
                       </button>
                     </div>
                     <div className="space-y-4">
@@ -1496,12 +1496,12 @@ const App: React.FC = () => {
                                 />
                               )}
 
-                              {!isLoadingPlatform && (
+                              {!isLoadingPlatform && config && (
                                 <div className="flex justify-between items-center text-xs text-muted-foreground mt-1 px-1">
                                   {config.charLimit ? (
                                     <span
                                       className={
-                                        post.length > config.charLimit
+                                        post.length > (config.charLimit || 0)
                                           ? 'text-red-500 font-bold'
                                           : ''
                                       }
