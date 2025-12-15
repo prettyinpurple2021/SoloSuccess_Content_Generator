@@ -43,12 +43,14 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ isVisibl
           const entries = list.getEntries();
           entries.forEach((entry) => {
             if (entry.entryType === 'navigation') {
-              const navEntry = entry as PerformanceNavigationTiming;
-              setMetrics((prev) => ({
-                ...prev,
-                pageLoadTime: Math.max(0, navEntry.loadEventEnd - navEntry.navigationStart),
-                lastUpdated: new Date(),
-              }));
+              const navEntry = entry as any;
+              if (navEntry.loadEventEnd && navEntry.navigationStart) {
+                setMetrics((prev) => ({
+                  ...prev,
+                  pageLoadTime: Math.max(0, navEntry.loadEventEnd - navEntry.navigationStart),
+                  lastUpdated: new Date(),
+                }));
+              }
             }
           });
         });

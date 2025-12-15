@@ -474,7 +474,10 @@ export const useBatchOperations = () => {
         } else {
           // Execute operations sequentially
           for (let i = 0; i < operations.length; i++) {
-            const { key, operation } = operations[i];
+            const op = operations[i];
+            if (!op) continue;
+
+            const { key, operation } = op;
 
             try {
               const result = await operation();

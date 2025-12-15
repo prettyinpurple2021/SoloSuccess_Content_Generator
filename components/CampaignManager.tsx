@@ -249,8 +249,8 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
   const populateFormWithCampaign = (campaign: Campaign) => {
     setFormData({
       name: campaign.name,
-      description: campaign.description,
-      theme: campaign.theme,
+      description: campaign.description ?? '',
+      theme: campaign.theme ?? '',
       startDate: campaign.startDate.toISOString().split('T')[0],
       endDate: campaign.endDate.toISOString().split('T')[0],
       platforms: campaign.platforms,

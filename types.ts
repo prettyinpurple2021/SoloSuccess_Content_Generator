@@ -426,6 +426,7 @@ export interface Integration {
   type: IntegrationType;
   platform: string;
   status: IntegrationStatus;
+  healthScore?: number;
   credentials: EncryptedCredentials;
   configuration: IntegrationConfig;
   lastSync?: Date;
@@ -442,6 +443,7 @@ export interface DatabaseIntegration {
   type: IntegrationType;
   platform: string;
   status: IntegrationStatus;
+  health_score?: number;
   credentials: EncryptedCredentials;
   configuration: IntegrationConfig;
   last_sync?: string;

@@ -747,6 +747,45 @@ export class SocialMediaIntegrations {
   /**
    * Delays execution for retry logic
    */
+  /**
+   * Validates content for a specific platform
+   */
+  static async validateContentForPlatform(
+    content: string,
+    platform: string
+  ): Promise<{ isValid: boolean; issues: string[] }> {
+    const issues: string[] = [];
+
+    // Platform-specific validation rules
+    switch (platform) {
+      case 'twitter':
+        if (content.length > 280) {
+          issues.push('Tweet exceeds 280 characters');
+        }
+        break;
+      case 'linkedin':
+        if (content.length > 3000) {
+          issues.push('LinkedIn post exceeds 3000 characters');
+        }
+        break;
+      case 'facebook':
+        if (content.length > 63206) {
+          issues.push('Facebook post exceeds character limit');
+        }
+        break;
+      case 'instagram':
+        if (content.length > 2200) {
+          issues.push('Instagram caption exceeds 2200 characters');
+        }
+        break;
+    }
+
+    return {
+      isValid: issues.length === 0,
+      issues,
+    };
+  }
+
   private static delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }

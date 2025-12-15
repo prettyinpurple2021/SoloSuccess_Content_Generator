@@ -76,19 +76,30 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
       };
 
       let savedTemplate: ContentTemplate;
-      if (template?.id) {
-        // Update existing template
-        savedTemplate = await (db.updateContentTemplate?.(template.id, templateToSave) || Promise.reject(new Error('updateContentTemplate not available')));
-      } else {
-        // Create new template
-        savedTemplate = await (db.addContentTemplate?.(templateToSave) || Promise.reject(new Error('addContentTemplate not available')));
-      }
+        const templateToSave: Omit<ContentTemplate, 'id' | 'createdAt'> = {
+          userId: 'default-user',
+          name: templateData.name,
+          category: templateData.category || 'marketing',
+          industry: templateData.industry || 'general',
+          contentType: templateData.contentType || 'blog',
+          structure: templateData.structure || [],
+          customizableFields: templateData.customizableFields || [],
+          usageCount: templateData.usageCount || 0,
+          rating: templateData.rating || 0,
+          isPublic: templateData.isPublic || false,
+        };
 
-      onSave(savedTemplate);
-      onClose();
-    } catch (err) {
-      setError('Failed to save template. Please try again.');
-      console.error('Error saving template:', err);
+        if (template?.id) {
+          savedTemplate = await (db.updateContentTemplate?.(template.id, templateToSave) || Promise.reject(new Error('updateContentTemplate not available')));
+        } else {
+          savedTemplate = await (db.addContentTemplate?.(templateToSave) || Promise.reject(new Error('addContentTemplate not available')));
+        }
+
+        onSave(savedTemplate);
+        onClose();
+      } catch (error: any) {
+        setError('Failed to save template. Please try again.');
+        console.error('Error saving template:', error.message);
     } finally {
       setLoading(false);
     }
@@ -130,10 +141,11 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
 
     setTemplateData((prev) => {
       const newStructure = [...(prev.structure || [])];
-      [newStructure[index - 1], newStructure[index]] = [
-        newStructure[index],
-        newStructure[index - 1],
-      ];
+      const section1 = newStructure[index - 1];
+      const section2 = newStructure[index];
+      if (section1 && section2) {
+        [newStructure[index - 1], newStructure[index]] = [section2, section1];
+      }
       return { ...prev, structure: newStructure };
     });
   };
@@ -143,10 +155,11 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
 
     setTemplateData((prev) => {
       const newStructure = [...(prev.structure || [])];
-      [newStructure[index], newStructure[index + 1]] = [
-        newStructure[index + 1],
-        newStructure[index],
-      ];
+      const section1 = newStructure[index];
+      const section2 = newStructure[index + 1];
+      if (section1 && section2) {
+        [newStructure[index], newStructure[index + 1]] = [section2, section1];
+      }
       return { ...prev, structure: newStructure };
     });
   };

@@ -191,17 +191,26 @@ const RepurposingWorkflow: React.FC<RepurposingWorkflowProps> = ({
         ? ((await marked.parse(optimization.optimizedVersion)) as string)
         : result.parsedContent;
 
-      setResults((prev) => ({
-        ...prev,
-        [format]: {
-          ...prev[format],
-          optimizationScore: optimization.optimizationScore,
-          suggestions: optimization.suggestions,
-          content: optimization.optimizedVersion || prev[format].content,
-          parsedContent: optimizedParsedContent,
-        },
-      }));
-
+      setResults((prev) => {
+        const prevResult = prev[format];
+        return {
+          ...prev,
+          [format]: prevResult ? {
+            ...prevResult,
+            optimizationScore: optimization.optimizationScore,
+            suggestions: optimization.suggestions,
+            content: optimization.optimizedVersion || prevResult.content,
+            parsedContent: optimizedParsedContent,
+            format: format,
+          } : {
+            optimizationScore: optimization.optimizationScore,
+            suggestions: optimization.suggestions,
+            content: optimization.optimizedVersion || result.content,
+            parsedContent: optimizedParsedContent,
+            format: format,
+          },
+        };
+      });
       setShowOptimization((prev) => ({ ...prev, [format]: true }));
       onSuccess('Content optimized successfully');
     } catch (error: any) {

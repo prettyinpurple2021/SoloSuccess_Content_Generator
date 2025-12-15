@@ -195,6 +195,8 @@ const FeatureDiscoveryHints: React.FC = () => {
 
   const hint = hints[currentHint];
 
+  if (!hint) return null;
+
   return (
     <div className={`fixed ${hint.position} z-40 max-w-xs`}>
       <div className="bg-blue-600 text-white p-4 rounded-lg shadow-lg relative">

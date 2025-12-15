@@ -120,16 +120,16 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-white/70">Health Score</span>
-                <span
-                  className={`text-lg font-bold ${getHealthScoreColor(integration.status?.healthScore || 0)}`}
-                >
-                  {integration.status?.healthScore || 0}%
+                  <span
+                    className={`text-lg font-bold ${getHealthScoreColor(integration.healthScore || 0)}`}
+                  >
+                    {integration.healthScore || 0}%
                 </span>
               </div>
               <div className="w-full bg-white/20 rounded-full h-2">
                 <div
-                  className="bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${integration.status?.healthScore || 0}%` }}
+                    className="bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${integration.healthScore || 0}%` }}
                 />
               </div>
             </div>
@@ -286,7 +286,7 @@ const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
               <div>
                 <p className="text-2xl font-bold text-white">
                   {Math.round(
-                    integrations.reduce((sum, i) => sum + (i.status?.healthScore || 0), 0) /
+                      integrations.reduce((sum, i) => sum + (i.healthScore || 0), 0) /
                       integrations.length
                   )}
                   %

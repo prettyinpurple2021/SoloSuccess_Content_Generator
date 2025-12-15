@@ -63,6 +63,8 @@ export const ContentPreview: React.FC<ContentPreviewProps> = ({
             // Notify parent components
             selectedPlatforms.forEach((platform) => {
               const adaptedContent = adapted[platform];
+              if (!adaptedContent) return;
+
               const validation = validationMap[platform];
 
               onContentChange?.(platform, adaptedContent.content);

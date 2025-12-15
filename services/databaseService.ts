@@ -785,6 +785,115 @@ export const db = {
     }
   },
 
+  addContentTemplate: async (template: Omit<ContentTemplate, 'id' | 'createdAt'>): Promise<ContentTemplate> => {
+    try {
+      const result = await pool`
+          INSERT INTO content_templates 
+          (user_id, name, category, industry, content_type, structure, customizable_fields, usage_count, rating, is_public, created_at)
+          VALUES 
+          (${template.userId}, ${template.name}, ${template.category}, ${template.industry}, ${template.contentType}, ${JSON.stringify(template.structure)}, ${JSON.stringify(template.customizableFields)}, ${template.usageCount}, ${template.rating}, ${template.isPublic}, NOW())
+          RETURNING *
+        `;
+      const row = result[0];
+      return {
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        category: row.category,
+        industry: row.industry,
+        contentType: row.content_type,
+        structure: row.structure,
+        customizableFields: row.customizable_fields,
+        usageCount: row.usage_count,
+        rating: row.rating,
+        isPublic: row.is_public,
+        createdAt: new Date(row.created_at),
+      } as ContentTemplate;
+    } catch (error) {
+      console.error('Error adding content template:', error);
+      throw error;
+    }
+  },
+
+  updateContentTemplate: async (id: string, template: Partial<Omit<ContentTemplate, 'id' | 'createdAt'>>): Promise<ContentTemplate> => {
+    try {
+      if (!Object.keys(template).length) {
+        throw new Error('No fields to update');
+      }
+
+      const updates: string[] = [];
+      const values: any[] = [id];
+      let paramIndex = 2;
+
+      if (template.name !== undefined) {
+        updates.push(`name = $${paramIndex}`);
+        values.push(template.name);
+        paramIndex++;
+      }
+      if (template.category !== undefined) {
+        updates.push(`category = $${paramIndex}`);
+        values.push(template.category);
+        paramIndex++;
+      }
+      if (template.industry !== undefined) {
+        updates.push(`industry = $${paramIndex}`);
+        values.push(template.industry);
+        paramIndex++;
+      }
+      if (template.contentType !== undefined) {
+        updates.push(`content_type = $${paramIndex}`);
+        values.push(template.contentType);
+        paramIndex++;
+      }
+      if (template.structure !== undefined) {
+        updates.push(`structure = $${paramIndex}`);
+        values.push(JSON.stringify(template.structure));
+        paramIndex++;
+      }
+      if (template.customizableFields !== undefined) {
+        updates.push(`customizable_fields = $${paramIndex}`);
+        values.push(JSON.stringify(template.customizableFields));
+        paramIndex++;
+      }
+      if (template.usageCount !== undefined) {
+        updates.push(`usage_count = $${paramIndex}`);
+        values.push(template.usageCount);
+        paramIndex++;
+      }
+      if (template.rating !== undefined) {
+        updates.push(`rating = $${paramIndex}`);
+        values.push(template.rating);
+        paramIndex++;
+      }
+
+      const updateQuery = `UPDATE content_templates SET ${updates.join(', ')} WHERE id = $1 RETURNING *`;
+      const result = await pool.query(updateQuery, values);
+
+      if (result.rows.length === 0) {
+        throw new Error('Template not found');
+      }
+
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        category: row.category,
+        industry: row.industry,
+        contentType: row.content_type,
+        structure: row.structure,
+        customizableFields: row.customizable_fields,
+        usageCount: row.usage_count,
+        rating: row.rating,
+        isPublic: row.is_public,
+        createdAt: new Date(row.created_at),
+      } as ContentTemplate;
+    } catch (error) {
+      console.error('Error updating content template:', error);
+      throw error;
+    }
+  },
+
   // Campaigns CRUD operations
   getCampaigns: async (userId: string): Promise<Campaign[]> => {
     try {
