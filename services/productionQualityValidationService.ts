@@ -87,7 +87,7 @@ export class ProductionQualityValidationService {
         validationTime: Date.now() - validationStartTime,
         passedValidations,
         totalValidations: results.length,
-        validations: results,
+        validations: results.map(r => ({ ...r, type: r.type || 'unknown' })),
         criticalIssues: results.flatMap((r) =>
           r.issues.filter((issue) => issue.includes('CRITICAL') || issue.includes('critical'))
         ),

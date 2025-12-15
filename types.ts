@@ -145,8 +145,8 @@ export interface Campaign {
   id: string;
   userId?: string;
   name: string;
-  description: string;
-  theme: string;
+  description?: string;
+  theme?: string;
   startDate: Date;
   endDate: Date;
   posts: string[]; // Post IDs

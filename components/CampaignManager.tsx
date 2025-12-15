@@ -33,13 +33,20 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
   const [success, setSuccess] = useState('');
 
   // Form state for campaign creation/editing
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    theme: string;
+    startDate: string;
+    endDate: string;
+    platforms: string[];
+  }>({
     name: '',
     description: '',
     theme: '',
     startDate: '',
     endDate: '',
-    platforms: [] as string[],
+    platforms: [],
   });
 
   // Performance data
@@ -249,12 +256,12 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
   const populateFormWithCampaign = (campaign: Campaign) => {
     setFormData({
       name: campaign.name,
-      description: campaign.description ?? '',
-      theme: campaign.theme ?? '',
+      description: (campaign.description ?? '') as string,
+      theme: (campaign.theme ?? '') as string,
       startDate: campaign.startDate.toISOString().split('T')[0],
       endDate: campaign.endDate.toISOString().split('T')[0],
       platforms: campaign.platforms,
-    });
+    } as typeof formData);
   };
 
   const handlePlatformToggle = (platform: string) => {

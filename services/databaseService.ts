@@ -787,14 +787,35 @@ export const db = {
 
   addContentTemplate: async (template: Omit<ContentTemplate, 'id' | 'createdAt'>): Promise<ContentTemplate> => {
     try {
-      const result = await pool`
+      const structureJson = JSON.stringify(template.structure);
+      const fieldsJson = JSON.stringify(template.customizableFields);
+      const now = new Date();
+
+      const query = `
           INSERT INTO content_templates 
           (user_id, name, category, industry, content_type, structure, customizable_fields, usage_count, rating, is_public, created_at)
           VALUES 
-          (${template.userId}, ${template.name}, ${template.category}, ${template.industry}, ${template.contentType}, ${JSON.stringify(template.structure)}, ${JSON.stringify(template.customizableFields)}, ${template.usageCount}, ${template.rating}, ${template.isPublic}, NOW())
+          ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10, $11)
           RETURNING *
         `;
+
+      const result = await pool.unsafe(query, [
+        template.userId,
+        template.name,
+        template.category || '',
+        template.industry || '',
+        template.contentType,
+        structureJson,
+        fieldsJson,
+        template.usageCount,
+        template.rating,
+        template.isPublic,
+        now
+      ] as any[]);
       const row = result[0];
+      if (!row) {
+        throw new Error('Failed to create content template');
+      }
       return {
         id: row.id,
         userId: row.user_id,
@@ -866,14 +887,15 @@ export const db = {
         paramIndex++;
       }
 
+      // Use unsafe for dynamic query with parameters
       const updateQuery = `UPDATE content_templates SET ${updates.join(', ')} WHERE id = $1 RETURNING *`;
-      const result = await pool.query(updateQuery, values);
+      const result = await pool.unsafe(updateQuery, values);
 
-      if (result.rows.length === 0) {
+      if (result.length === 0 || !result[0]) {
         throw new Error('Template not found');
       }
 
-      const row = result.rows[0];
+      const row = result[0];
       return {
         id: row.id,
         userId: row.user_id,

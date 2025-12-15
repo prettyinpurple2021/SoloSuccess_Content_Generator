@@ -917,13 +917,16 @@ export class AdvancedSecurityService {
 
       results.forEach((result, index) => {
         const frameworks = ['GDPR', 'SOX', 'HIPAA', 'PCI-DSS'];
-        if (result.status === 'fulfilled') {
-          complianceStatus.frameworkCompliance[frameworks[index]] = result.value;
-        } else {
-          complianceStatus.frameworkCompliance[frameworks[index]] = {
-            compliant: false,
-            violations: [`Failed to check ${frameworks[index]} compliance`],
-          };
+        const framework = frameworks[index];
+        if (framework) {
+          if (result.status === 'fulfilled') {
+            complianceStatus.frameworkCompliance[framework] = result.value;
+          } else {
+            complianceStatus.frameworkCompliance[framework] = {
+              compliant: false,
+              violations: [`Failed to check ${framework} compliance`],
+            };
+          }
         }
       });
 

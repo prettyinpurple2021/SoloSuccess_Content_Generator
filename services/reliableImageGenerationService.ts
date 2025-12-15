@@ -358,8 +358,8 @@ class ReliableImageGenerationService {
     try {
       const geminiService = await import('./geminiService.js');
       const result = await geminiService.generateImage(prompt, {
-        style: request.style,
-        dimensions: request.dimensions,
+        aspectRatio: request.dimensions,
+        numberOfImages: 1,
       });
 
       return Array.isArray(result) ? result : [result];

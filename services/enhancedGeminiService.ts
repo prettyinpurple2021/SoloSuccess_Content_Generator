@@ -154,7 +154,7 @@ class EnhancedGeminiService {
     const recentRequests = this.requestQueue.filter((req) => now - req.timestamp < 60000);
     if (recentRequests.length >= this.rateLimitConfig.requestsPerMinute) {
       this.usageMetrics.rateLimitHits++;
-      const waitTime = 60000 - (now - recentRequests[0].timestamp);
+      const waitTime = 60000 - (now - (recentRequests[0]?.timestamp || now));
 
       console.warn(`Rate limit reached for ${operationType}, waiting ${waitTime}ms`);
       await this.sleep(waitTime);

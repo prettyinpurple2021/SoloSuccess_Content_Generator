@@ -172,7 +172,7 @@ class EnhancedDatabaseService {
 
       const result = await this.pool`SELECT 1 as test, NOW() as timestamp`;
 
-      if (result.length > 0 && result[0].test === 1) {
+      if (result.length > 0 && result[0]?.test === 1) {
         return true;
       }
 
@@ -266,7 +266,7 @@ class EnhancedDatabaseService {
    * Execute transaction with automatic retry
    */
   async executeTransaction<T>(callback: (sql: postgres.Sql) => Promise<T>): Promise<T> {
-    return this.executeWithErrorHandling(async () => {
+    return this.executeWithErrorHandling<T>(async () => {
       if (!this.pool) {
         throw new Error('Database not connected');
       }
@@ -279,7 +279,7 @@ class EnhancedDatabaseService {
         const duration = Date.now() - startTime;
         this.recordQueryMetrics('[TRANSACTION]', duration, true);
 
-        return result;
+        return result as T;
       } catch (error) {
         const duration = Date.now() - startTime;
         this.recordQueryMetrics('[TRANSACTION]', duration, false, error);
@@ -478,9 +478,9 @@ class EnhancedDatabaseService {
    * Utility methods
    */
   private formatQuery(query: TemplateStringsArray, params: unknown[]): string {
-    let formatted = query[0];
+    let formatted = query[0] || '';
     for (let i = 0; i < params.length; i++) {
-      formatted += `$${i + 1}${query[i + 1]}`;
+      formatted += `$${i + 1}${query[i + 1] || ''}`;
     }
     return formatted;
   }

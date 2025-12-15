@@ -61,7 +61,9 @@ export class CachingService {
     // If cache is at max size, remove oldest entry
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
     }
 
     this.cache.set(key, {

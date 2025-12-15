@@ -74,13 +74,18 @@ class ClientMonitoringService {
       // Largest Contentful Paint (LCP)
       this.observePerformanceEntry('largest-contentful-paint', (entries) => {
         const lastEntry = entries[entries.length - 1];
-        this.recordWebVital('LCP', lastEntry.startTime);
+        if (lastEntry) {
+          this.recordWebVital('LCP', lastEntry.startTime);
+        }
       });
 
       // First Input Delay (FID)
       this.observePerformanceEntry('first-input', (entries) => {
         const firstEntry = entries[0];
-        this.recordWebVital('FID', firstEntry.processingStart - firstEntry.startTime);
+        if (firstEntry && 'processingStart' in firstEntry) {
+          const entry = firstEntry as PerformanceEntry & { processingStart: number };
+          this.recordWebVital('FID', entry.processingStart - entry.startTime);
+        }
       });
 
       // Cumulative Layout Shift (CLS)
@@ -439,7 +444,7 @@ class ClientMonitoringService {
 
       if (isBeforeUnload) {
         // Use sendBeacon for reliability during page unload
-        requests.forEach((request) => request.catch(() => {})); // Ignore errors during unload
+        requests.forEach((request) => request.catch(() => { })); // Ignore errors during unload
       } else {
         await Promise.allSettled(requests);
       }
@@ -509,7 +514,7 @@ class ClientMonitoringService {
         const arr = new Uint8Array(1);
         window.crypto.getRandomValues(arr);
         const value = arr[0];
-        if (value < maxValue) {
+        if (value !== undefined && value < maxValue) {
           randomStr += (value % charsetSize).toString(36);
         }
         // else, discard and try again

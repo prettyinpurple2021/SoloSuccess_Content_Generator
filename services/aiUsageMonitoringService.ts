@@ -220,7 +220,7 @@ export class AIUsageMonitoringService {
       const dayCost = dayEvents.reduce((sum, event) => sum + (event.cost || 0), 0);
 
       costTrend.push({
-        date: date.toISOString().split('T')[0],
+        date: date.toISOString().split('T')[0] || '',
         cost: dayCost,
       });
     }
@@ -276,11 +276,11 @@ export class AIUsageMonitoringService {
 
       const averageTime =
         hourEvents.length > 0
-          ? hourEvents.reduce((sum, event) => sum + event.duration, 0) / hourEvents.length
+          ? hourEvents.reduce((sum, event) => sum + (event.duration || 0), 0) / hourEvents.length
           : 0;
 
       performanceTrend.push({
-        hour: hourStart.toISOString().split('T')[1].substring(0, 5),
+        hour: hourStart.toISOString().split('T')[1]?.substring(0, 5) || '00:00',
         averageTime,
       });
     }

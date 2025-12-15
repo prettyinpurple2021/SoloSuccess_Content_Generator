@@ -301,8 +301,13 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                           configuration: {
                             ...prev.configuration,
                             syncSettings: {
-                              ...prev.configuration?.syncSettings,
-                              autoSync: e.target.checked,
+                            autoSync: e.target.checked,
+                            syncInterval: prev.configuration?.syncSettings?.syncInterval ?? 300,
+                            batchSize: prev.configuration?.syncSettings?.batchSize ?? 50,
+                            retryAttempts: prev.configuration?.syncSettings?.retryAttempts ?? 3,
+                            timeoutMs: prev.configuration?.syncSettings?.timeoutMs ?? 30000,
+                            syncOnStartup: prev.configuration?.syncSettings?.syncOnStartup ?? false,
+                            syncOnSchedule: prev.configuration?.syncSettings?.syncOnSchedule ?? true,
                             },
                           },
                         }))
@@ -323,8 +328,13 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                           configuration: {
                             ...prev.configuration,
                             syncSettings: {
-                              ...prev.configuration?.syncSettings,
-                              syncInterval: parseInt(e.target.value),
+                            autoSync: prev.configuration?.syncSettings?.autoSync ?? true,
+                            syncInterval: parseInt(e.target.value),
+                            batchSize: prev.configuration?.syncSettings?.batchSize ?? 50,
+                            retryAttempts: prev.configuration?.syncSettings?.retryAttempts ?? 3,
+                            timeoutMs: prev.configuration?.syncSettings?.timeoutMs ?? 30000,
+                            syncOnStartup: prev.configuration?.syncSettings?.syncOnStartup ?? false,
+                            syncOnSchedule: prev.configuration?.syncSettings?.syncOnSchedule ?? true,
                             },
                           },
                         }))
@@ -347,8 +357,13 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                           configuration: {
                             ...prev.configuration,
                             syncSettings: {
-                              ...prev.configuration?.syncSettings,
-                              batchSize: parseInt(e.target.value),
+                            autoSync: prev.configuration?.syncSettings?.autoSync ?? true,
+                            syncInterval: prev.configuration?.syncSettings?.syncInterval ?? 300,
+                            batchSize: parseInt(e.target.value),
+                            retryAttempts: prev.configuration?.syncSettings?.retryAttempts ?? 3,
+                            timeoutMs: prev.configuration?.syncSettings?.timeoutMs ?? 30000,
+                            syncOnStartup: prev.configuration?.syncSettings?.syncOnStartup ?? false,
+                            syncOnSchedule: prev.configuration?.syncSettings?.syncOnSchedule ?? true,
                             },
                           },
                         }))
@@ -369,8 +384,13 @@ const ConfigureIntegration: React.FC<ConfigureIntegrationProps> = ({
                           configuration: {
                             ...prev.configuration,
                             syncSettings: {
-                              ...prev.configuration?.syncSettings,
-                              retryAttempts: parseInt(e.target.value),
+                            autoSync: prev.configuration?.syncSettings?.autoSync ?? true,
+                            syncInterval: prev.configuration?.syncSettings?.syncInterval ?? 300,
+                            batchSize: prev.configuration?.syncSettings?.batchSize ?? 50,
+                            retryAttempts: parseInt(e.target.value),
+                            timeoutMs: prev.configuration?.syncSettings?.timeoutMs ?? 30000,
+                            syncOnStartup: prev.configuration?.syncSettings?.syncOnStartup ?? false,
+                            syncOnSchedule: prev.configuration?.syncSettings?.syncOnSchedule ?? true,
                             },
                           },
                         }))

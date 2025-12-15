@@ -859,9 +859,10 @@ export const deleteUserData = {
 };
 
 // Add convenience methods to db object
-db.deleteUserPosts = deleteUserData.deleteUserPosts;
-db.deleteUserIntegrations = deleteUserData.deleteUserIntegrations;
-db.deleteUserNotifications = deleteUserData.deleteUserNotifications;
-db.deleteUserDrafts = deleteUserData.deleteUserDrafts;
+// Note: These deleteUser* methods need to be implemented if user data deletion is needed
+// db.deleteUserPosts = deleteUserData.deleteUserPosts;
+// db.deleteUserIntegrations = deleteUserData.deleteUserIntegrations;
+// db.deleteUserNotifications = deleteUserData.deleteUserNotifications;
+// db.deleteUserDrafts = deleteUserData.deleteUserDrafts;
 
 export default db;

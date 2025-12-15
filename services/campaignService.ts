@@ -460,7 +460,7 @@ export class CampaignService {
       const suggestions: string[] = [];
 
       // Check for theme consistency
-      const campaignTheme = campaign.theme.toLowerCase();
+      const campaignTheme = (campaign.theme || '').toLowerCase();
 
       for (const post of campaignPosts) {
         const postContent = post.content.toLowerCase();
@@ -722,12 +722,15 @@ export class CampaignService {
     analytics.forEach((data) => {
       if (!postEngagement[data.postId]) {
         postEngagement[data.postId] = 0;
-        postEngagement[data.postId] = engagement;
       }
-      postEngagement[data.postId] = engagement + data.likes + data.shares + data.comments + data.clicks;
+      const current = postEngagement[data.postId];
+      if (current !== undefined) {
+        postEngagement[data.postId] = current + data.likes + data.shares + data.comments + data.clicks;
+      }
     });
 
-    const topPerformingPost = Object.entries(postEngagement).sort(([, a], [, b]) => b - a)[0]?.[0];
+    const topPerformingPostEntry = Object.entries(postEngagement).sort(([, a], [, b]) => b - a)[0];
+    const topPerformingPost = topPerformingPostEntry?.[0];
 
     // Calculate platform performance
     const platformPerformance: { [platform: string]: PlatformMetrics } = {};

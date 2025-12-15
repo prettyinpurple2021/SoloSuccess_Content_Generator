@@ -196,7 +196,7 @@ class DatabasePerformanceService {
     let error: string | undefined;
 
     try {
-      const result = await pool.unsafe(query, params);
+      const result = await pool.unsafe(query, [...params] as unknown[]);
       const executionTime = Date.now() - startTime;
 
       // Record metrics
@@ -280,7 +280,7 @@ class DatabasePerformanceService {
         'info'
       );
 
-      return results;
+      return results as Array<Awaited<T>>;
     } catch (error) {
       const totalTime = Date.now() - startTime;
 

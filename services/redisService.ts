@@ -77,7 +77,7 @@ class RedisService {
         this.client = new Redis({
           url: process.env.UPSTASH_REDIS_REST_URL,
           token: process.env.UPSTASH_REDIS_REST_TOKEN,
-        });
+        }) as unknown as UpstashRedis;
         this.clientType = 'upstash';
         console.log('Redis: Initialized with Upstash');
       }
@@ -112,7 +112,7 @@ class RedisService {
               this.client = new Redis({
                 url: redisUrl,
                 token: token,
-              });
+              }) as unknown as UpstashRedis;
             } else {
               // Parse Upstash URL format: redis://default:token@host:port
               const urlObj = new URL(redisUrl);
@@ -123,7 +123,7 @@ class RedisService {
               this.client = new Redis({
                 url: `https://${host}:${port}`,
                 token: token,
-              });
+              }) as unknown as UpstashRedis;
             }
 
             this.clientType = 'upstash';
@@ -144,7 +144,7 @@ class RedisService {
               const delay = Math.min(times * 50, 2000);
               return delay;
             },
-          });
+          }) as unknown as IORedis;
           this.clientType = 'ioredis';
           console.log('Redis: Initialized with ioredis');
         }
@@ -158,7 +158,7 @@ class RedisService {
           password: process.env.REDIS_PASSWORD,
           tls: process.env.REDIS_TLS === 'true' ? {} : undefined,
           maxRetriesPerRequest: 3,
-        });
+        }) as unknown as IORedis;
         this.clientType = 'ioredis';
         console.log('Redis: Initialized with ioredis (connection params)');
       } else {
@@ -256,12 +256,12 @@ class RedisService {
 
       const value = JSON.stringify(entry);
 
-      if (this.clientType === 'upstash') {
+      if (this.clientType === 'upstash' && this.client) {
         // Upstash uses milliseconds for TTL
-        await this.client.set(key, value, { ex: ttlSeconds });
-      } else {
+        await (this.client as UpstashRedis).set(key, value, { ex: ttlSeconds });
+      } else if (this.client) {
         // ioredis uses seconds for TTL
-        await this.client.setex(key, ttlSeconds, value);
+        await (this.client as IORedis).setex(key, ttlSeconds, value);
       }
 
       return true;
@@ -309,33 +309,37 @@ class RedisService {
     try {
       let deletedCount = 0;
 
-      if (this.clientType === 'upstash') {
+      if (this.clientType === 'upstash' && this.client) {
         // Upstash doesn't support SCAN directly, so we need to use keys
         // Note: This is not recommended for production with large key sets
-        const keys = await this.client.keys(pattern);
+        const client = this.client as UpstashRedis;
+        const keys = await client.keys(pattern);
         if (keys && keys.length > 0) {
-          await this.client.del(...keys);
+          await client.del(keys as any);
           deletedCount = keys.length;
         }
-      } else {
+      } else if (this.client) {
         // ioredis supports SCAN for better performance
-        const stream = this.client.scanStream({
+        const client = this.client as IORedis;
+        const stream = client.scanStream({
           match: pattern,
           count: 100,
         });
 
         const keys: string[] = [];
-        stream.on('data', (resultKeys: string[]) => {
-          keys.push(...resultKeys);
+        stream.on('data', (resultKeys?: string[]) => {
+          if (resultKeys) {
+            keys.push(...resultKeys);
+          }
         });
 
-        await new Promise<void>((resolve, reject) => {
-          stream.on('end', resolve);
-          stream.on('error', reject);
+        await new Promise<void>((resolve) => {
+          stream.on('end', () => resolve());
+          stream.on('error', () => resolve());
         });
 
         if (keys.length > 0) {
-          await this.client.del(...keys);
+          await client.del(keys as any);
           deletedCount = keys.length;
         }
       }
@@ -375,7 +379,7 @@ class RedisService {
     if (this.client) {
       try {
         if (this.clientType === 'ioredis') {
-          await this.client.quit();
+          await (this.client as IORedis).quit();
         }
         // Upstash doesn't need explicit closing
         this.client = null;

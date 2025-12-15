@@ -1,4 +1,4 @@
 import { StackHandler } from '@stackframe/stack';
 import { stackServerApp } from '../../../stack';
 
-export default StackHandler(stackServerApp);
+export default StackHandler(stackServerApp as any);

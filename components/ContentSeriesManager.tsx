@@ -84,11 +84,19 @@ const ContentSeriesManager: React.FC<ContentSeriesManagerProps> = ({
 
       // Load optimization suggestions
       const suggestions = await campaignService.suggestSeriesAdjustments(seriesId);
-      setOptimizationSuggestions(suggestions);
+      setOptimizationSuggestions(suggestions.map(s => ({
+        ...s,
+        type: s.type as 'timing' | 'content' | 'hashtags' | 'format',
+        impact: (typeof s.impact === 'number' ? (s.impact > 70 ? 'high' : s.impact > 40 ? 'medium' : 'low') : s.impact) as 'high' | 'medium' | 'low',
+        effort: (typeof s.effort === 'number' ? (s.effort > 70 ? 'high' : s.effort > 40 ? 'medium' : 'low') : s.effort) as 'high' | 'medium' | 'low'
+      })));
 
       // Load scheduling suggestions
       const scheduleSuggestions = await campaignService.optimizeSeriesScheduling(seriesId);
-      setSchedulingSuggestions(scheduleSuggestions);
+      setSchedulingSuggestions(scheduleSuggestions.map(s => ({
+        ...s,
+        suggestedTime: new Date(s.suggestedTime)
+      })));
     } catch (err: any) {
       setError(`Failed to load suggestions: ${err.message}`);
     } finally {

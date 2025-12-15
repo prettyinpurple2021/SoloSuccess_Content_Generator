@@ -230,7 +230,7 @@ export class MonitoringService {
   async getIntegrations(): Promise<any[]> {
     try {
       // Delegate to database service; tests may stub this
-      const dbWithIntegrations = db as { getIntegrations?: () => Promise<Integration[]> };
+      const dbWithIntegrations = db as unknown as { getIntegrations?: () => Promise<Integration[]> };
       if (typeof dbWithIntegrations.getIntegrations === 'function') {
         return await dbWithIntegrations.getIntegrations();
       }
@@ -314,6 +314,7 @@ export class MonitoringService {
         integrationId,
         level,
         message,
+        metadata: details || {},
         details,
         timestamp: new Date(),
       };
@@ -347,17 +348,21 @@ export class MonitoringService {
       } else {
         // Create new metrics record
         const newMetrics: IntegrationMetrics = {
-          id: crypto.randomUUID(),
           integrationId,
           totalRequests: metrics.totalRequests || 0,
           successfulRequests: metrics.successfulRequests || 0,
           failedRequests: metrics.failedRequests || 0,
           avgResponseTime: metrics.avgResponseTime || 0,
+          averageResponseTime: metrics.avgResponseTime || 0,
           successRate: metrics.successRate || 0,
           errorRate: metrics.errorRate || 0,
-          timestamp: new Date(),
+          lastRequestTime: new Date(),
+          uptime: 0,
+          dataProcessed: 0,
+          syncCount: 0,
+          lastSyncDuration: 0,
         };
-        await (db as any).updateIntegrationMetrics(newMetrics.id, newMetrics);
+        await (db as any).createIntegrationMetrics(newMetrics);
       }
 
       // Clear cache
@@ -381,6 +386,9 @@ export class MonitoringService {
       }
 
       const latestMetrics = metrics[metrics.length - 1];
+      if (!latestMetrics) {
+        return 50; // Default middle score if no metrics
+      }
       let healthScore = 100;
 
       // Deduct points for low success rate

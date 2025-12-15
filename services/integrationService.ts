@@ -427,7 +427,7 @@ export class IntegrationService {
           return result.value;
         } else {
           return {
-            integrationId: activeIntegrations[index].id,
+            integrationId: activeIntegrations[index]?.id || '',
             success: false,
             recordsProcessed: 0,
             recordsCreated: 0,
@@ -616,8 +616,8 @@ export class IntegrationService {
       return {
         allowed: false,
         remaining: 0,
-        resetTime: tracker.requests[0] + 60 * 1000,
-        retryAfter: Math.ceil((tracker.requests[0] + 60 * 1000 - now) / 1000),
+        resetTime: (tracker.requests[0] || now) + 60 * 1000,
+        retryAfter: Math.ceil(((tracker.requests[0] || now) + 60 * 1000 - now) / 1000),
       };
     }
 

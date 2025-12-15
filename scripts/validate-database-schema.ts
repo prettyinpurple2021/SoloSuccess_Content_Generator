@@ -44,7 +44,7 @@ async function validateDatabaseSchema() {
     // Test connection
     console.log('1. Testing database connection...');
     const connectionTest = await pool`SELECT NOW() as current_time`;
-    console.log(`✅ Database connected successfully at ${connectionTest[0].current_time}\n`);
+    console.log(`✅ Database connected successfully at ${connectionTest[0]?.current_time}\n`);
 
     // Check required tables exist
     console.log('2. Checking required tables...');
@@ -283,7 +283,7 @@ async function validateDatabaseSchema() {
       VALUES (${testUserId}, 'Schema Test', 'Testing schema validation', 'Test content', 'draft')
       RETURNING id
     `;
-    const testPostId = insertResult[0].id;
+    const testPostId = insertResult[0]?.id;
     console.log(`   ✅ INSERT successful, created post with ID: ${testPostId}`);
 
     // Test select
@@ -294,7 +294,7 @@ async function validateDatabaseSchema() {
       WHERE id = ${testPostId}
     `;
     if (selectResult.length === 1) {
-      console.log(`   ✅ SELECT successful, retrieved post: ${selectResult[0].topic}`);
+      console.log(`   ✅ SELECT successful, retrieved post: ${selectResult[0]?.topic}`);
     } else {
       console.log(`   ❌ SELECT failed, expected 1 row, got ${selectResult.length}`);
     }
@@ -307,7 +307,7 @@ async function validateDatabaseSchema() {
       WHERE id = ${testPostId}
       RETURNING topic
     `;
-    if (updateResult.length === 1 && updateResult[0].topic === 'Updated Schema Test') {
+    if (updateResult.length === 1 && updateResult[0]?.topic === 'Updated Schema Test') {
       console.log(`   ✅ UPDATE successful`);
     } else {
       console.log(`   ❌ UPDATE failed`);
@@ -338,7 +338,7 @@ async function validateDatabaseSchema() {
     `;
 
     const jsonPost = jsonTestResult[0];
-    if (jsonPost.social_media_posts && jsonPost.tags) {
+    if (jsonPost && jsonPost.social_media_posts && jsonPost.tags) {
       console.log(`   ✅ JSON operations successful`);
       console.log(`      - JSON field: ${JSON.stringify(jsonPost.social_media_posts)}`);
       console.log(`      - Array field: ${JSON.stringify(jsonPost.tags)}`);
@@ -347,7 +347,9 @@ async function validateDatabaseSchema() {
     }
 
     // Clean up JSON test
-    await pool`DELETE FROM posts WHERE id = ${jsonPost.id}`;
+    if (jsonPost?.id) {
+      await pool`DELETE FROM posts WHERE id = ${jsonPost.id}`;
+    }
 
     // Performance test
     console.log('\n9. Testing query performance...');

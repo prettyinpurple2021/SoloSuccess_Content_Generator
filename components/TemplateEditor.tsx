@@ -63,41 +63,29 @@ export default function TemplateEditor({ isOpen, onClose, template, onSave }: Te
     setError(null);
 
     try {
-      const templateToSave = {
+      const templateToSave: Omit<ContentTemplate, 'id' | 'createdAt'> = {
+        userId: 'default-user',
         name: templateData.name,
         category: templateData.category || 'marketing',
         industry: templateData.industry || 'general',
-        content_type: templateData.contentType || 'blog',
+        contentType: templateData.contentType || 'blog',
         structure: templateData.structure || [],
-        customizable_fields: templateData.customizableFields || [],
-        usage_count: templateData.usageCount || 0,
+        customizableFields: templateData.customizableFields || [],
+        usageCount: templateData.usageCount || 0,
         rating: templateData.rating || 0,
-        is_public: templateData.isPublic || false,
+        isPublic: templateData.isPublic || false,
       };
 
       let savedTemplate: ContentTemplate;
-        const templateToSave: Omit<ContentTemplate, 'id' | 'createdAt'> = {
-          userId: 'default-user',
-          name: templateData.name,
-          category: templateData.category || 'marketing',
-          industry: templateData.industry || 'general',
-          contentType: templateData.contentType || 'blog',
-          structure: templateData.structure || [],
-          customizableFields: templateData.customizableFields || [],
-          usageCount: templateData.usageCount || 0,
-          rating: templateData.rating || 0,
-          isPublic: templateData.isPublic || false,
-        };
+      if (template?.id) {
+        savedTemplate = await (db.updateContentTemplate?.(template.id, templateToSave) || Promise.reject(new Error('updateContentTemplate not available')));
+      } else {
+        savedTemplate = await (db.addContentTemplate?.(templateToSave) || Promise.reject(new Error('addContentTemplate not available')));
+      }
 
-        if (template?.id) {
-          savedTemplate = await (db.updateContentTemplate?.(template.id, templateToSave) || Promise.reject(new Error('updateContentTemplate not available')));
-        } else {
-          savedTemplate = await (db.addContentTemplate?.(templateToSave) || Promise.reject(new Error('addContentTemplate not available')));
-        }
-
-        onSave(savedTemplate);
-        onClose();
-      } catch (error: any) {
+      onSave(savedTemplate);
+      onClose();
+    } catch (error: any) {
         setError('Failed to save template. Please try again.');
         console.error('Error saving template:', error.message);
     } finally {
