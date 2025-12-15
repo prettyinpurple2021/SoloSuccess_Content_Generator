@@ -7,9 +7,9 @@ import {
   IntegrationMetrics,
 } from '../types';
 import { integrationService } from './integrationService';
-import { socialMediaIntegrations } from './integrations/socialMediaIntegrations';
-import { analyticsIntegrations } from './integrations/analyticsIntegrations';
-import { aiServiceIntegrations } from './integrations/aiServiceIntegrations';
+import { SocialMediaIntegrations } from './integrations/socialMediaIntegrations';
+import { AnalyticsIntegrations } from './integrations/analyticsIntegrations';
+import { AIServiceIntegrations } from './integrations/aiServiceIntegrations';
 
 /**
  * IntegrationTestingService - Production-quality integration testing and validation
@@ -851,21 +851,24 @@ export class IntegrationTestingService {
     integration: Integration
   ): Promise<ConnectionTestResult> {
     // This would use the social media integrations service
-    return await socialMediaIntegrations.connectTwitter(integration.credentials as any);
+    const smIntegrations = new SocialMediaIntegrations();
+    return await smIntegrations.connectTwitter(integration.credentials as any);
   }
 
   private async testAnalyticsAuthentication(
     integration: Integration
   ): Promise<ConnectionTestResult> {
     // This would use the analytics integrations service
-    return await analyticsIntegrations.connectGoogleAnalytics(integration.credentials as any);
+    const analyticsInt = new AnalyticsIntegrations();
+    return await analyticsInt.connectGoogleAnalytics(integration.credentials as any);
   }
 
   private async testAIServiceAuthentication(
     integration: Integration
   ): Promise<ConnectionTestResult> {
     // This would use the AI service integrations service
-    return await aiServiceIntegrations.connectOpenAI(integration.credentials as any);
+    const aiIntegrations = new AIServiceIntegrations();
+    return await aiIntegrations.connectOpenAI(integration.credentials as any);
   }
 }
 

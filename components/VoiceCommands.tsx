@@ -283,10 +283,11 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
 
   const speak = useCallback(
     (text: string) => {
-      if (!voiceEnabled || !synthRef.current) return;
+      const synth = synthRef.current;
+      if (!voiceEnabled || !synth) return;
 
       // Cancel any ongoing speech
-      synthRef.current.cancel();
+      synth.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1.1;
@@ -294,7 +295,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
       utterance.volume = 0.8;
 
       // Try to use a female voice if available
-      const voices = synthRef.current.getVoices();
+      const voices = synth.getVoices();
       const femaleVoice = voices.find(
         (voice) =>
           voice.name.toLowerCase().includes('female') ||
@@ -306,7 +307,7 @@ export const VoiceCommands: React.FC<VoiceCommandsProps> = ({
         utterance.voice = femaleVoice;
       }
 
-      synthRef.current.speak(utterance);
+      synth.speak(utterance);
     },
     [voiceEnabled]
   );

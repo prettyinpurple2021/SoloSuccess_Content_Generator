@@ -1,10 +1,14 @@
 import {
   GoogleAnalyticsCredentials,
-  FacebookAnalyticsCredentials,
-  TwitterAnalyticsCredentials,
+  FacebookCredentials,
+  TwitterCredentials,
   ConnectionTestResult,
   SyncResult,
 } from '../../types';
+
+// Type aliases for analytics
+type FacebookAnalyticsCredentials = FacebookCredentials;
+type TwitterAnalyticsCredentials = TwitterCredentials;
 
 /**
  * AnalyticsIntegrations - Production-quality analytics platform integrations

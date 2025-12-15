@@ -49,9 +49,9 @@ export const useErrorState = (options: ErrorStateOptions = {}) => {
   const { showError, showSuccess } = showNotifications
     ? notificationHelpers
     : {
-        showError: () => {},
-        showSuccess: () => {},
-      };
+      showError: () => { },
+      showSuccess: () => { },
+    };
 
   // Set error with user-friendly message
   const setError = useCallback(
@@ -82,9 +82,9 @@ export const useErrorState = (options: ErrorStateOptions = {}) => {
         showError(userFriendlyError.title, userFriendlyError.message, {
           action: userFriendlyError.recoverable
             ? {
-                label: 'Retry',
-                onClick: () => retry(),
-              }
+              label: 'Retry',
+              onClick: () => retry(),
+            }
             : undefined,
         });
       }
@@ -396,8 +396,10 @@ export const useBatchErrorState = <T = any>(options: ErrorStateOptions = {}) => 
         } else {
           // Execute operations sequentially
           for (let i = 0; i < operations.length; i++) {
+            const operation = operations[i];
+            if (!operation) continue;
             try {
-              const data = await operations[i]();
+              const data = await operation();
               const result = { success: true, data };
               results.push(result);
               onItemComplete?.(i, result);

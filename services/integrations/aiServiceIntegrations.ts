@@ -371,6 +371,7 @@ export class AIServiceIntegrations {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         content: '',
+        model: credentials.modelName,
         timestamp: new Date(),
       };
     }

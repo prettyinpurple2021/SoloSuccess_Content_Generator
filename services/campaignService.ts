@@ -417,16 +417,16 @@ export class CampaignService {
 
           if (optimalTimes.length > 0) {
             const bestTime = optimalTimes[0];
-            if (bestTime) {
-                const suggestedDate = this.calculateNextAvailableSlot(bestTime, post.scheduleDate);
+            if (bestTime && post.scheduleDate) {
+              const suggestedDate = this.calculateNextAvailableSlot(bestTime, post.scheduleDate);
 
-                suggestions.push({
+              suggestions.push({
                 postId: post.id,
                 platform,
                 suggestedTime: suggestedDate,
                 reason: `Optimal engagement time for ${platform} based on audience patterns`,
                 confidence: bestTime.confidence,
-                });
+              });
             }
           }
         }
@@ -550,14 +550,14 @@ export class CampaignService {
           if (optimalTimes.length > 0) {
             const bestTime = optimalTimes[0];
             if (!bestTime) continue;
-            
+
             const scheduledDate = new Date(currentDate);
             scheduledDate.setDate(scheduledDate.getDate() + i * intervalDays);
 
             // Adjust to optimal time of day
             const parts = bestTime.time.split(':').map(Number);
-            const hours = parts[0] || 0;
-            const minutes = parts[1] || 0;
+            const hours = parts[0] ?? 0;
+            const minutes = parts[1] ?? 0;
             scheduledDate.setHours(hours, minutes, 0, 0);
 
             suggestions.push({
@@ -720,9 +720,8 @@ export class CampaignService {
     // Find top performing post
     const postEngagement: { [postId: string]: number } = {};
     analytics.forEach((data) => {
-      let engagement = postEngagement[data.postId];
-      if (!engagement) {
-        engagement = 0;
+      if (!postEngagement[data.postId]) {
+        postEngagement[data.postId] = 0;
         postEngagement[data.postId] = engagement;
       }
       postEngagement[data.postId] = engagement + data.likes + data.shares + data.comments + data.clicks;
@@ -734,29 +733,26 @@ export class CampaignService {
     const platformPerformance: { [platform: string]: PlatformMetrics } = {};
 
     analytics.forEach((data) => {
-      let perf = platformPerformance[data.platform];
-      if (!perf) {
-        perf = {
+      if (!platformPerformance[data.platform]) {
+        platformPerformance[data.platform] = {
           posts: 0,
           totalLikes: 0,
           totalShares: 0,
           totalComments: 0,
           avgEngagementRate: 0,
         };
-        platformPerformance[data.platform] = perf;
       }
 
-      perf.totalLikes += data.likes;
-      perf.totalShares += data.shares;
-      perf.totalComments += data.comments;
+      platformPerformance[data.platform]!.totalLikes += data.likes;
+      platformPerformance[data.platform]!.totalShares += data.shares;
+      platformPerformance[data.platform]!.totalComments += data.comments;
     });
 
     // Count posts per platform and calculate engagement rates
     posts.forEach((post) => {
       Object.keys(post.socialMediaPosts || {}).forEach((platform) => {
-        const metrics = platformPerformance[platform];
-        if (metrics) {
-          metrics.posts += 1;
+        if (platformPerformance[platform]) {
+          platformPerformance[platform]!.posts += 1;
         }
       });
     });
@@ -772,9 +768,8 @@ export class CampaignService {
         0
       );
 
-      const perf = platformPerformance[platform];
-      if (perf) {
-        perf.avgEngagementRate =
+      if (platformPerformance[platform]) {
+        platformPerformance[platform]!.avgEngagementRate =
           platformImpressions > 0 ? (platformEngagement / platformImpressions) * 100 : 0;
       }
     });
@@ -813,10 +808,10 @@ export class CampaignService {
     };
 
     // If audience profile is provided, adjust times based on engagement patterns
-    if (audienceProfile && audienceProfile.engagementPatterns && audienceProfile.engagementPatterns[platform]) {
+    if (audienceProfile?.engagementPatterns?.[platform]) {
       const patterns = audienceProfile.engagementPatterns[platform];
-      if (patterns) {
-        return patterns.bestPostingTimes || defaultOptimalTimes[platform] || [];
+      if (patterns?.bestPostingTimes) {
+        return patterns.bestPostingTimes;
       }
     }
 
