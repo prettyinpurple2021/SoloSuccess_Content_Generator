@@ -397,6 +397,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </HoloText>
           </div>
           <div className="w-full bg-gray-800/50 rounded-full h-3 overflow-hidden">
+            {/* Dynamic width calculation requires inline style - cannot be moved to CSS */}
             <div
               className="rainbow-progress h-full transition-all duration-500"
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}

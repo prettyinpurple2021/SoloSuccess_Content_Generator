@@ -468,6 +468,7 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
                           value={asset.type}
                           onChange={(e) => handleBrandAssetChange(index, 'type', e.target.value)}
                           className="bg-muted border border-border rounded px-2 py-1 text-foreground"
+                          aria-label="Brand asset type"
                         >
                           <option value="logo">Logo</option>
                           <option value="color">Color</option>
@@ -478,6 +479,7 @@ const ImageStyleManager: React.FC<ImageStyleManagerProps> = ({
                           value={asset.usage}
                           onChange={(e) => handleBrandAssetChange(index, 'usage', e.target.value)}
                           className="bg-muted border border-border rounded px-2 py-1 text-foreground"
+                          aria-label="Brand asset usage"
                         >
                           <option value="always">Always Include</option>
                           <option value="optional">Optional</option>

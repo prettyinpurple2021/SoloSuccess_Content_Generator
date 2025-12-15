@@ -390,18 +390,21 @@ const ContentBlockComponent: React.FC<{
           <button
             onClick={onEdit}
             className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+            aria-label="Edit block"
           >
             <Edit3 className="w-4 h-4" />
           </button>
           <button
             onClick={onDuplicate}
             className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 transition-colors"
+            aria-label="Duplicate block"
           >
             <Copy className="w-4 h-4" />
           </button>
           <button
             onClick={onDelete}
             className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
+            aria-label="Delete block"
           >
             <Trash2 className="w-4 h-4" />
           </button>

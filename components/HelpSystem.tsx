@@ -377,6 +377,7 @@ export const HelpSystem: React.FC<HelpSystemProps> = ({
               <button
                 onClick={onClose}
                 className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white"
+                aria-label="Close help system"
               >
                 <X className="w-5 h-5" />
               </button>

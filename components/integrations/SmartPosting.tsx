@@ -269,6 +269,7 @@ export const SmartPosting: React.FC<SmartPostingProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Content Tone</label>
               <select
+                title="Select content tone for your posts"
                 value={postingOptions.tone}
                 onChange={(e) =>
                   setPostingOptions((prev) => ({

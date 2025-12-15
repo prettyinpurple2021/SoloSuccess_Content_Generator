@@ -453,6 +453,7 @@ const SmartScheduler: React.FC<SmartSchedulerProps> = ({
                       setBulkOptions((prev) => ({ ...prev, targetTimezones: selected }));
                     }}
                     className="w-full p-2 bg-white/10 border border-white/20 rounded text-white"
+                    aria-label="Target timezones"
                     size={4}
                   >
                     {availableTimezones.map((tz) => (
