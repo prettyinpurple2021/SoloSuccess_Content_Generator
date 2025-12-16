@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import Switch from './common/Switch';
 
 interface HolographicThemeContextType {
   sparkleIntensity: 'low' | 'medium' | 'high';
@@ -419,74 +420,44 @@ export const ThemeSettings: React.FC<{
 
           {/* Toggle Options */}
           <div className="space-y-4">
-            <label className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <HoloText>Glow Effects 🌟</HoloText>
-              <input
-                type="checkbox"
+              <Switch
                 checked={glowEffect}
-                onChange={(e) => setGlowEffect(e.target.checked)}
-                className="sr-only"
+                onChange={setGlowEffect}
+                srLabel="Toggle glow effects"
+                className="h-6 w-12"
+                onClassName="bg-pink-500"
+                offClassName="bg-gray-600"
+                knobClassName="shadow-md"
               />
-              <div
-                className={`
-                w-12 h-6 rounded-full transition-colors cursor-pointer
-                ${glowEffect ? 'bg-pink-500' : 'bg-gray-600'}
-              `}
-              >
-                <div
-                  className={`
-                  w-5 h-5 bg-white rounded-full shadow-md transform transition-transform mt-0.5
-                  ${glowEffect ? 'translate-x-6' : 'translate-x-0.5'}
-                `}
-                />
-              </div>
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <HoloText>Rainbow Mode 🌈</HoloText>
-              <input
-                type="checkbox"
+              <Switch
                 checked={rainbowMode}
-                onChange={(e) => setRainbowMode(e.target.checked)}
-                className="sr-only"
+                onChange={setRainbowMode}
+                srLabel="Toggle rainbow mode"
+                className="h-6 w-12"
+                onClassName="bg-gradient-to-r from-pink-500 to-purple-500"
+                offClassName="bg-gray-600"
+                knobClassName="shadow-md"
               />
-              <div
-                className={`
-                w-12 h-6 rounded-full transition-colors cursor-pointer
-                ${rainbowMode ? 'bg-gradient-to-r from-pink-500 to-purple-500' : 'bg-gray-600'}
-              `}
-              >
-                <div
-                  className={`
-                  w-5 h-5 bg-white rounded-full shadow-md transform transition-transform mt-0.5
-                  ${rainbowMode ? 'translate-x-6' : 'translate-x-0.5'}
-                `}
-                />
-              </div>
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <HoloText>Girly Skulls 💀🎀</HoloText>
-              <input
-                type="checkbox"
+              <Switch
                 checked={skullsEnabled}
-                onChange={(e) => setSkullsEnabled(e.target.checked)}
-                className="sr-only"
+                onChange={setSkullsEnabled}
+                srLabel="Toggle girly skulls"
+                className="h-6 w-12"
+                onClassName="bg-pink-500"
+                offClassName="bg-gray-600"
+                knobClassName="shadow-md"
               />
-              <div
-                className={`
-                w-12 h-6 rounded-full transition-colors cursor-pointer
-                ${skullsEnabled ? 'bg-pink-500' : 'bg-gray-600'}
-              `}
-              >
-                <div
-                  className={`
-                  w-5 h-5 bg-white rounded-full shadow-md transform transition-transform mt-0.5
-                  ${skullsEnabled ? 'translate-x-6' : 'translate-x-0.5'}
-                `}
-                />
-              </div>
-            </label>
+            </div>
           </div>
         </div>
 

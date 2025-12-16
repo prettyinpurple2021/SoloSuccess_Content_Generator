@@ -3,7 +3,7 @@
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 
-console.log('🚀 index.tsx: Application starting...');
+console.log('🚀 index.tsx: Application starting (imports loaded)...');
 
 // Ensure React is available globally immediately
 if (typeof window !== 'undefined') {
@@ -26,27 +26,11 @@ import './styles/holographic-theme.css';
 import { stackClientApp } from './stack/client';
 
 // Then import Stack Auth components (which depend on React being available)
-import { StackProvider, StackTheme } from '@stackframe/react';
-const StackHandler = React.lazy(() =>
-  import('@stackframe/react').then((module) => ({ default: module.StackHandler }))
-);
+import { StackHandler, StackProvider, StackTheme } from '@stackframe/react';
 
-// Import app components - HolographicThemeProvider should NOT be lazy since it wraps main content
+// Import app components
 import { HolographicThemeProvider } from './components/HolographicTheme';
-const AppWithErrorHandling = React.lazy(() => import('./components/AppWithErrorHandling'));
-const LandingPage = React.lazy(() =>
-  import('./components/pages/LandingPage').then((module) => ({ default: module.LandingPage }))
-);
-const SignInPage = React.lazy(() =>
-  import('./components/pages/SignInPage').then((module) => ({ default: module.SignInPage }))
-);
-const SignUpPage = React.lazy(() =>
-  import('./components/pages/SignUpPage').then((module) => ({ default: module.SignUpPage }))
-);
-const ProtectedRoute = React.lazy(() =>
-  import('./components/auth/ProtectedRoute').then((module) => ({ default: module }))
-);
-// ErrorBoundaryEnhanced must be static or very safe, but let's keep it static for now as it's the safety net
+import AppWithErrorHandling from './components/AppWithErrorHandling';
 import { ErrorBoundaryEnhanced } from './components/ErrorBoundaryEnhanced';
 
 // Import Sentry last (after all React dependencies)
@@ -181,62 +165,7 @@ try {
                 <HolographicThemeProvider>
                   <Routes>
                     <Route path="/handler/*" element={<HandlerRoutes />} />
-                    {/* Public Routes */}
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/signin" element={<SignInPage />} />
-                    <Route path="/signup" element={<SignUpPage />} />
-                    <Route path="/auth/signin" element={<SignInPage />} />
-                    <Route path="/auth/signup" element={<SignUpPage />} />
-                    {/* Protected Routes */}
-                    <Route
-                      path="/dashboard"
-                      element={
-                        <Suspense
-                          fallback={
-                            <div
-                              style={{
-                                minHeight: '100vh',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                              }}
-                            >
-                              Loading...
-                            </div>
-                          }
-                        >
-                          <ProtectedRoute>
-                            <AppWithErrorHandling />
-                          </ProtectedRoute>
-                        </Suspense>
-                      }
-                    />
-                    {/* Catch all - redirect to dashboard for authenticated users, landing for others */}
-                    <Route
-                      path="*"
-                      element={
-                        <Suspense
-                          fallback={
-                            <div
-                              style={{
-                                minHeight: '100vh',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                              }}
-                            >
-                              Loading...
-                            </div>
-                          }
-                        >
-                          <ProtectedRoute>
-                            <AppWithErrorHandling />
-                          </ProtectedRoute>
-                        </Suspense>
-                      }
-                    />
+                    <Route path="/*" element={<AppWithErrorHandling />} />
                   </Routes>
                 </HolographicThemeProvider>
               </ErrorBoundaryEnhanced>

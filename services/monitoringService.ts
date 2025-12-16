@@ -1,5 +1,4 @@
 import { Integration, IntegrationMetrics, IntegrationLog, IntegrationAlert } from '../types';
-import { db } from './neonService';
 
 export class MonitoringService {
   private metricsCache: Map<string, IntegrationMetrics[]> = new Map();
@@ -38,8 +37,12 @@ export class MonitoringService {
           break;
       }
 
-      // Fetch from database
-      const metrics = await (db as any).getIntegrationMetrics(integrationId, startTime, endTime);
+      // Fetch from API
+      const response = await fetch(
+        `/api/integrations/${integrationId}/metrics?startTime=${startTime.toISOString()}&endTime=${endTime.toISOString()}&timeRange=${timeRange}`
+      );
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const metrics = (await response.json()) as IntegrationMetrics[];
 
       // Cache results
       this.metricsCache.set(cacheKey, metrics);
@@ -94,8 +97,16 @@ export class MonitoringService {
           break;
       }
 
-      // Fetch from database
-      const logs = await (db as any).getIntegrationLogs(integrationId, startTime, endTime, level);
+      // Fetch from API
+      const params = new URLSearchParams({
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        timeRange,
+        ...(level && { level }),
+      });
+      const response = await fetch(`/api/integrations/${integrationId}/logs?${params}`);
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const logs = (await response.json()) as IntegrationLog[];
 
       // Cache results
       this.logsCache.set(cacheKey, logs);
@@ -131,8 +142,11 @@ export class MonitoringService {
         return this.alertsCache.get(cacheKey)!;
       }
 
-      // Fetch from database
-      const alerts = await (db as any).getIntegrationAlerts(integrationId, status);
+      // Fetch from API
+      const params = new URLSearchParams(status ? { status } : {});
+      const response = await fetch(`/api/integrations/${integrationId}/alerts?${params}`);
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const alerts = (await response.json()) as IntegrationAlert[];
 
       // Cache results
       this.alertsCache.set(cacheKey, alerts);
@@ -176,8 +190,12 @@ export class MonitoringService {
           break;
       }
 
-      // Fetch from database
-      const metrics = await (db as any).getIntegrationMetrics(null, startTime, endTime);
+      // Fetch from API
+      const response = await fetch(
+        `/api/integrations/metrics/all?startTime=${startTime.toISOString()}&endTime=${endTime.toISOString()}&timeRange=${timeRange}`
+      );
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const metrics = (await response.json()) as IntegrationMetrics[];
       return metrics;
     } catch (error) {
       console.error('Error fetching all metrics:', error);
@@ -213,8 +231,16 @@ export class MonitoringService {
           break;
       }
 
-      // Fetch from database
-      const logs = await (db as any).getIntegrationLogs(null, startTime, endTime, level);
+      // Fetch from API
+      const params = new URLSearchParams({
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        timeRange,
+        ...(level && { level }),
+      });
+      const response = await fetch(`/api/integrations/logs/all?${params}`);
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const logs = (await response.json()) as IntegrationLog[];
       return logs;
     } catch (error) {
       console.error('Error fetching all logs:', error);
@@ -229,15 +255,15 @@ export class MonitoringService {
    */
   async getIntegrations(): Promise<any[]> {
     try {
-      // Delegate to database service; tests may stub this
-      const dbWithIntegrations = db as unknown as { getIntegrations?: () => Promise<Integration[]> };
-      if (typeof dbWithIntegrations.getIntegrations === 'function') {
-        return await dbWithIntegrations.getIntegrations();
-      }
+      // Delegate to API
+      const response = await fetch('/api/integrations');
+      if (!response.ok) return [];
+      const data = (await response.json()) as { integrations?: any[]; data?: any[] };
+      return data.integrations || data.data || [];
     } catch {
       // ignore
+      return [];
     }
-    return [];
   }
 
   /**
@@ -245,8 +271,11 @@ export class MonitoringService {
    */
   async getAllAlerts(status?: 'active' | 'resolved' | 'dismissed'): Promise<IntegrationAlert[]> {
     try {
-      // Fetch from database
-      const alerts = await (db as any).getIntegrationAlerts(null, status);
+      // Fetch from API
+      const params = new URLSearchParams(status ? { status } : {});
+      const response = await fetch(`/api/integrations/alerts/all?${params}`);
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const alerts = (await response.json()) as IntegrationAlert[];
       return alerts;
     } catch (error) {
       console.error('Error fetching all alerts:', error);
@@ -261,7 +290,10 @@ export class MonitoringService {
    */
   async resolveAlert(alertId: string): Promise<void> {
     try {
-      await (db as any).resolveIntegrationAlert(alertId);
+      const response = await fetch(`/api/integrations/alerts/${alertId}/resolve`, {
+        method: 'PATCH',
+      });
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
 
       // Clear cache for this integration
       this.alertsCache.clear();
@@ -280,12 +312,18 @@ export class MonitoringService {
     alert: Omit<IntegrationAlert, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<IntegrationAlert> {
     try {
-      const newAlert = await (db as any).addIntegrationAlert({
-        ...alert,
-        id: crypto.randomUUID(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      const response = await fetch(`/api/integrations/alerts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...alert,
+          id: crypto.randomUUID(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
       });
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      const newAlert = (await response.json()) as IntegrationAlert;
 
       // Clear cache
       this.alertsCache.clear();
@@ -319,7 +357,12 @@ export class MonitoringService {
         timestamp: new Date(),
       };
 
-      await (db as any).addIntegrationLog(log);
+      const response = await fetch(`/api/integrations/${integrationId}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(log),
+      });
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
 
       // Clear cache
       this.logsCache.clear();
@@ -334,36 +377,12 @@ export class MonitoringService {
    */
   async updateMetrics(integrationId: string, metrics: Partial<IntegrationMetrics>): Promise<void> {
     try {
-      const existingMetrics = await (db as any).getIntegrationMetrics(integrationId);
-      const latestMetrics = existingMetrics[existingMetrics.length - 1];
-
-      if (latestMetrics) {
-        // Update existing metrics
-        const updatedMetrics: IntegrationMetrics = {
-          ...latestMetrics,
-          ...metrics,
-          timestamp: new Date(),
-        };
-        await (db as any).updateIntegrationMetrics(latestMetrics.id, updatedMetrics);
-      } else {
-        // Create new metrics record
-        const newMetrics: IntegrationMetrics = {
-          integrationId,
-          totalRequests: metrics.totalRequests || 0,
-          successfulRequests: metrics.successfulRequests || 0,
-          failedRequests: metrics.failedRequests || 0,
-          avgResponseTime: metrics.avgResponseTime || 0,
-          averageResponseTime: metrics.avgResponseTime || 0,
-          successRate: metrics.successRate || 0,
-          errorRate: metrics.errorRate || 0,
-          lastRequestTime: new Date(),
-          uptime: 0,
-          dataProcessed: 0,
-          syncCount: 0,
-          lastSyncDuration: 0,
-        };
-        await (db as any).createIntegrationMetrics(newMetrics);
-      }
+      const response = await fetch(`/api/integrations/${integrationId}/metrics`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(metrics),
+      });
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
 
       // Clear cache
       this.metricsCache.clear();

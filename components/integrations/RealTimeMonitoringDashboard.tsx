@@ -8,6 +8,7 @@ import {
   WebhookDelivery,
 } from '../../types';
 import { monitoringService } from '../../services/monitoringService';
+import Switch from '../common/Switch';
 // import { webhookService } from '../../services/webhookService';
 
 interface RealTimeMonitoringDashboardProps {
@@ -37,6 +38,7 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const realtimeLabelId = React.useId();
 
   // WebSocket connection management
   useEffect(() => {
@@ -302,22 +304,12 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
         <div className="flex items-center space-x-4">
           {/* Real-time Toggle */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Real-time</span>
-            <button
-              type="button"
-              onClick={() => setIsRealTimeEnabled(!isRealTimeEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                isRealTimeEnabled ? 'bg-blue-600' : 'bg-gray-200'
-              }`}
-              aria-label={`${isRealTimeEnabled ? 'Disable' : 'Enable'} real-time monitoring`}
-              aria-pressed={isRealTimeEnabled ? 'true' : 'false'}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isRealTimeEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+            <Switch
+              checked={isRealTimeEnabled}
+              onChange={setIsRealTimeEnabled}
+              label="Real-time"
+              srLabel="Toggle real-time monitoring"
+            />
             <div
               className={`w-2 h-2 rounded-full ${
                 connectionStatus === 'connected'
