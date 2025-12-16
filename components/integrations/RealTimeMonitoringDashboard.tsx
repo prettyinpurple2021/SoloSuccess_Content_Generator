@@ -66,7 +66,9 @@ const RealTimeMonitoringDashboard: React.FC<RealTimeMonitoringDashboardProps> = 
     setConnectionStatus('connecting');
 
     try {
-      const wsUrl = process.env.VITE_WS_URL || 'ws://localhost:3001';
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const port = process.env.VITE_WS_PORT || window.location.port || '3001';
+      const wsUrl = process.env.VITE_WS_URL || `${protocol}://${window.location.hostname}:${port}`;
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
