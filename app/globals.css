@@ -1,9 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Import your existing holographic theme */
 @import '../styles/holographic-theme.css';
+@import '../src/index.css';
 
 /* Sparkle positioning helpers to avoid inline styles */
 .sparkle-hero-1 { top: 10%; left: 10%; animation-delay: 0s; }
